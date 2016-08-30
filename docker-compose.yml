@@ -1,0 +1,132 @@
+version: '2'
+
+services:
+
+  mysql-db:
+    image: mysql
+    container_name: mysql-db
+    ports:
+      - '3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - "./Account/doc/database:/docker-entrypoint-initdb.d:ro"
+    environment:
+      - MYSQL_ROOT_PASSWORD=Y3xUcheg
+      - MYSQL_USER=mydataaccount
+      - MYSQL_PASSWORD=wr8gabrA
+    networks:
+      - mydata_sdk_demo_network
+
+  account:
+    build:
+      context: ./Account/
+      dockerfile: Dockerfile-account
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-account
+    container_name: account
+    command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app 
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='mydataaccount'
+      - MYSQL_PASSWORD='wr8gabrA'
+      - MYSQL_DB='MyDataAccount'
+      - MYSQL_PORT=3306
+      - URL_PREFIX=''
+#      - SERVER_NAME=''
+#      - VIRTUAL_HOST=localhost
+    ports:
+      - '8080:8080'
+    networks:
+      - mydata_sdk_demo_network
+
+  operator_components:
+    build:
+      context: .
+#      context: context: ./Operator_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Operator_Components
+    container_name: operator_components
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
+      - ACCOUNT_MANAGEMENT_USER="test_sdk"
+      - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
+      - DATABASE_PATH="./db_Operator.sqlite"
+      - CELERY_BROKER_URL='redis://redis:6379/0'
+      - CELERY_RESULT_BACKEND='redis://redis:6379/0'
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
+      - OPERATOR_ROOT_PATH="/api/1.2"
+      - OPERATOR_CR_PATH="/cr"
+      - OPERATOR_SLR_PATH="/slr"
+      - SERVICE_URL="http://service_components:7000"
+      - VIRTUAL_HOST=localhost.operator
+    ports:
+      - '5000:5000'
+    networks:
+      - mydata_sdk_demo_network
+
+  service_components:
+    build:
+      context: .
+#      context: ./Service_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Components
+    container_name: service_components
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - DATABASE_PATH="./db_Operator.sqlite"
+      - CELERY_BROKER_URL='redis://redis:6379/0'
+      - CELERY_RESULT_BACKEND='redis://redis:6379/0'
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - SERVICE_URL="http://service_mockup:2000"
+      - OPERATOR_URL="http://operator_components:5000"
+      - SERVICE_ROOT_PATH="/api/1.2"
+      - SERVICE_CR_PATH="/cr"
+      - SERVICE_SLR_PATH="/slr"
+      - VIRTUAL_HOST=localhost.service
+    ports:
+      - '7000:7000'
+    networks:
+      - mydata_sdk_demo_network
+
+  service_mockup:
+    build:
+      context: .
+#      context: ./Service_Mockup/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Mockup
+    container_name: service_mockup
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - SERVICE_MGMNT_URL="http://service_components:7000"
+      - VIRTUAL_HOST=localhost.srvmockup
+    ports:
+      - '2000:2000'
+    networks:
+      - mydata_sdk_demo_network
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379"
+    networks:
+      - mydata_sdk_demo_network
+
+volumes:
+  mysql-data:
+
+networks:
+  mydata_sdk_demo_network:
