@@ -10,7 +10,7 @@ logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-
+import traceback
 api_CR_blueprint = Blueprint("api_CR_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
@@ -25,11 +25,14 @@ Operator_public_key = {}
 class ConsentFormHandler(Resource):
     def __init__(self):
         super(ConsentFormHandler, self).__init__()
-        am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
-        am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
-        am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
-        timeout = current_app.config["TIMEOUT"]
-        self.AM = AccountManagerHandler(am_url, am_user, am_password, timeout)
+        self.am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
+        self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
+        self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
+        self.timeout = current_app.config["TIMEOUT"]
+        try:
+            self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
+        except Exception as e:
+            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
 
         self.Helpers = Helpers(current_app.config)
 
@@ -79,8 +82,14 @@ class ConsentFormHandler(Resource):
                                         status=403)
 
         sq.send_to("Account Mgmt", "GET surrogate_id & slr_id")
-        sink_sur = self.AM.getSUR_ID(sink_srv_id, account_id)
-        source_sur = self.AM.getSUR_ID(source_srv_id, account_id)
+        try:
+            sink_sur = self.AM.getSUR_ID(sink_srv_id, account_id)
+            source_sur = self.AM.getSUR_ID(source_srv_id, account_id)
+        except AttributeError as e:
+            raise DetailedHTTPException(status=500,
+                                        title="It would seem initiating Account Manager Handler has failed.",
+                                        detail="Account Manager might be down or unresponsive.",
+                                        trace=traceback.format_exc(limit=100).splitlines())
         debug_log.info("sink_sur = {}".format(sink_sur))
         debug_log.info("source_sur = {}".format(source_sur))
         slr_id_sink, surrogate_id_sink = sink_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"], sink_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]  # Get slr and surrogate_id

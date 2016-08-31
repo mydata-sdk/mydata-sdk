@@ -11,7 +11,7 @@ from jwcrypto import jws, jwk
 from requests import post
 #from settings import operator_url, service_url, cert_path, cert_key_path, keysize
 from DetailedHTTPException import DetailedHTTPException, error_handler
-import db_handler as db_handler
+import traceback
 import logging
 from Templates import Sequences
 from helpers import Helpers
@@ -50,9 +50,9 @@ class GenCode(Resource):
         self.helpers = Helpers(current_app.config)
         self.storeCode = self.helpers.storeCode
     #@timeme
-    #@error_handler
+    @error_handler
     def get(self):
-        #try:
+        try:
             sq.task("Generate code")
             code = str(guid())
             code_storage = {code: "{}{}".format("!", code)}
@@ -60,11 +60,11 @@ class GenCode(Resource):
             self.storeCode(code_storage)
             sq.reply_to("Operator_Components Mgmnt", "Returning code")
             return {'code': code}
-        #except Exception as e:
-        #    raise e
-        #    raise DetailedHTTPException(exception=e,
-        #                                detail={"msg": "Most likely storing code failed.", "code_json": code_storage},
-        #                                title="Failure in GenCode endpoint")
+        except Exception as e:
+            raise DetailedHTTPException(exception=e,
+                                        detail={"msg": "Most likely storing code failed.", "code_json": code_storage},
+                                        title="Failure in GenCode endpoint",
+                                        trace=traceback.format_exc(limit=100).splitlines())
 
 
 class UserAuthenticated(Resource):
@@ -133,10 +133,12 @@ class UserAuthenticated(Resource):
                                             title=result.reason)
 
         except DetailedHTTPException as e:
+            e.trace=traceback.format_exc(limit=100).splitlines()
             raise e
         except Exception as e:
             raise DetailedHTTPException(exception=e,
-                                        detail="Something failed in generating and delivering Surrogate_ID.")
+                                        detail="Something failed in generating and delivering Surrogate_ID.",
+                                        trace=traceback.format_exc(limit=100).splitlines())
 
 class SignInRedirector(Resource):
     def __init__(self):
@@ -163,9 +165,12 @@ class SignInRedirector(Resource):
                                                     "Error from Service_Components": loads(result.text)},
                                                 title=result.reason)
             except DetailedHTTPException as e:
+                e.trace=traceback.format_exc(limit=100).splitlines()
                 raise e
             except Exception as e:
-                raise DetailedHTTPException(exception=e, detail="Failed to POST code/user to Service_Components's /login")
+                raise DetailedHTTPException(exception=e,
+                                            detail="Failed to POST code/user to Service_Components's /login",
+                                            trace=traceback.format_exc(limit=100).splitlines())
         else:
             abort(403)
 
@@ -285,7 +290,9 @@ class StoreSLR(Resource):
             debug_log.info("Surrogate was found: {}".format(self.helpers.verifySurrogate(code, surrogate_id)))
 
         except Exception as e:
-            raise DetailedHTTPException(title="Verifying Surrogate ID failed", exception=e)
+            raise DetailedHTTPException(title="Verifying Surrogate ID failed",
+                                        exception=e,
+                                        trace=traceback.format_exc(limit=100).splitlines())
 
         try:
             sq.task("Create empty JSW object")
@@ -303,7 +310,9 @@ class StoreSLR(Resource):
             debug_log.info(verifyJWS(slr))
             verify = jwssa.verify(sign_key)  # Verifying changes the state of this object
         except Exception as e:
-            raise DetailedHTTPException(title="Verifying JWS signature failed", exception=e)
+            raise DetailedHTTPException(title="Verifying JWS signature failed",
+                                        exception=e,
+                                        trace=traceback.format_exc(limit=100).splitlines())
 
         try:
             sq.task("Fix possible serialization errors in JWS")
@@ -322,7 +331,9 @@ class StoreSLR(Resource):
             req = {"data": {"code": code}, "slr": fixed}
             debug_log.info(dumps(req, indent=2))
         except Exception as e:
-            raise DetailedHTTPException(exception=e, title="JWS fix and subsequent signing of JWS with out key failed.")
+            raise DetailedHTTPException(exception=e,
+                                        title="JWS fix and subsequent signing of JWS with out key failed.",
+                                        trace=traceback.format_exc(limit=100).splitlines())
 
         sq.send_to("Operator_Components Mgmnt", "Verify SLR(JWS)")
         endpoint = "/api/1.2/slr/verify"

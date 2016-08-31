@@ -3,6 +3,7 @@ from uuid import uuid4 as guid
 from werkzeug.exceptions import HTTPException
 from json import dumps
 import traceback
+import sys
 from importlib import import_module
 
 def error_handler(method):
@@ -15,13 +16,18 @@ def error_handler(method):
                 result = method(self, *args, **kw)
                 return result
             except DetailedHTTPException as e:
+                print(e.trace, type(e.trace))
+                if e.trace is None:
+                    e.trace = traceback.format_exc(limit=100).splitlines()
+                    print(e.trace)
                 raise e
             except Exception as e:
-                raise DetailedHTTPException(exception=e)
+                trace = traceback.format_exc(limit=100).splitlines()
+                raise DetailedHTTPException(exception=e, trace=trace)
         except DetailedHTTPException as e:
             #Need for this can be questioned. It reduces portability of the decorator.
             if (SUPER_DEBUG):
-
+                print(e.trace)
                 try:
                     location_url = api.url_for(self) # This is a handy feature but as before, reduces portability.
                 except:
@@ -29,7 +35,7 @@ def error_handler(method):
                 # location = repr(method).split(" ")[1]
                 if (e.error["errors"][e.count]["source"] is None):
                     e.error["errors"][e.count]["source"] = location_url
-                    e.error["errors"][e.count]["trace"] = traceback.format_exc(limit=100).splitlines()
+                    e.error["errors"][e.count]["trace"] = e.trace
                 print(dumps(e.error, indent=2))
                 return e.error, e.code
             else:
@@ -38,12 +44,13 @@ def error_handler(method):
     return wrapper
 
 class DetailedHTTPException(HTTPException):
-    def __init__(self, status=None, source=None, title="An Error occurred", detail=None, exception=None, ):
+    def __init__(self, status=None, source=None, title="An Error occurred", detail=None, exception=None, trace=None):
         HTTPException.__init__(self)
         self.count = 0
         self.code = status
         self.detail = detail
         self.title = title
+        self.trace = trace
         self.source = source
         self.error = {
             "errors": [ ]
@@ -77,10 +84,11 @@ class DetailedHTTPException(HTTPException):
                     "id": uuid,
                     "status": self.code,
                     "source": self.source,
+                    "trace": self.trace,
                     "title": self.title,
                     "detail": self.detail,
                     "count": self.count
                 }
         self.error["errors"].append(er)
         self.description = dumps(self.error, indent=3)
-        # Loggaus koodia tähän uuid tunnisteen kanssa?
+
