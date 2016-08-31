@@ -5,8 +5,6 @@ services:
   mysql-db:
     image: mysql
     container_name: mysql-db
-    ports:
-      - '3306'
     volumes:
       - mysql-data:/var/lib/mysql
       - "./Account/doc/database:/docker-entrypoint-initdb.d:ro"
@@ -100,8 +98,6 @@ services:
       - SERVICE_CR_PATH="/cr"
       - SERVICE_SLR_PATH="/slr"
       - VIRTUAL_HOST=localhost.service
-    ports:
-      - '7000:7000'
     networks:
       - mydata_sdk_demo_network
 
@@ -118,8 +114,6 @@ services:
       - PYTHONUNBUFFERED='true'
       - SERVICE_MGMNT_URL="http://service_components:7000"
       - VIRTUAL_HOST=localhost.srvmockup
-    ports:
-      - '2000:2000'
     networks:
       - mydata_sdk_demo_network
 
@@ -155,16 +149,12 @@ services:
       - OPERATOR_SLR_PATH="/slr"
       - SERVICE_URL="http://service_components:7000"
       - VIRTUAL_HOST=localhost.celeryworker
-    ports:
-      - '5001'
     networks:
       - mydata_sdk_demo_network
 
   redis:
     image: redis
     container_name: redis
-    ports:
-      - "6379"
     networks:
       - mydata_sdk_demo_network
 
