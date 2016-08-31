@@ -17,7 +17,7 @@ CORS(api_SLR_Verify)
 api = Api()
 api.init_app(api_SLR_Verify)
 
-import logging
+import logging, traceback
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
 logger.setLevel(logging.INFO)
@@ -97,12 +97,15 @@ def header_fix(malformed_dictionary):  # We do not check if its malformed, we ex
 class VerifySLR(Resource):
     def __init__(self):
         super(VerifySLR, self).__init__()
-        am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
-        am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
-        am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
-        timeout = current_app.config["TIMEOUT"]
+        self.am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
+        self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
+        self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
+        self.timeout = current_app.config["TIMEOUT"]
+        try:
+            self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
+        except Exception as e:
+            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
 
-        self.AM = AccountManagerHandler(am_url, am_user, am_password, timeout)
         self.Helpers = Helpers(current_app.config)
         self.query_db = self.Helpers.query_db
 
@@ -153,7 +156,13 @@ class VerifySLR(Resource):
             code = request.json["data"]["code"]
 
             sq.send_to("Account Manager", "Verify SLR at Account Manager.")
-            reply = self.AM.verify_slr(payload, code, slr, account_id)
+            try:
+                reply = self.AM.verify_slr(payload, code, slr, account_id)
+            except AttributeError as e:
+                raise DetailedHTTPException(status=500,
+                                            title="It would seem initiating Account Manager Handler has failed.",
+                                            detail="Account Manager might be down or unresponsive.",
+                                            trace=traceback.format_exc(limit=100).splitlines())
             if reply.ok:
                 sq.reply_to("Service_Components Mgmnt", "201, SLR VERIFIED")
                 debug_log.info(reply.text)
