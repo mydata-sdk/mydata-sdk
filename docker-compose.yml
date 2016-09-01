@@ -5,8 +5,6 @@ services:
   mysql-db:
     image: mysql
     container_name: mysql-db
-    ports:
-      - '3306'
     volumes:
       - mysql-data:/var/lib/mysql
       - "./Account/doc/database:/docker-entrypoint-initdb.d:ro"
@@ -55,8 +53,11 @@ services:
       - ACCOUNT_MANAGEMENT_USER="test_sdk"
       - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
       - DATABASE_PATH="./db_Operator.sqlite"
-      - CELERY_BROKER_URL='redis://redis:6379/0'
-      - CELERY_RESULT_BACKEND='redis://redis:6379/0'
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
@@ -83,8 +84,11 @@ services:
     environment:
       - PYTHONUNBUFFERED='true'
       - DATABASE_PATH="./db_Operator.sqlite"
-      - CELERY_BROKER_URL='redis://redis:6379/0'
-      - CELERY_RESULT_BACKEND='redis://redis:6379/0'
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
@@ -94,8 +98,6 @@ services:
       - SERVICE_CR_PATH="/cr"
       - SERVICE_SLR_PATH="/slr"
       - VIRTUAL_HOST=localhost.service
-    ports:
-      - '7000:7000'
     networks:
       - mydata_sdk_demo_network
 
@@ -112,16 +114,47 @@ services:
       - PYTHONUNBUFFERED='true'
       - SERVICE_MGMNT_URL="http://service_components:7000"
       - VIRTUAL_HOST=localhost.srvmockup
-    ports:
-      - '2000:2000'
+    networks:
+      - mydata_sdk_demo_network
+
+  celery_worker:
+    build:
+      context: .
+#      context: context: ./Operator_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Operator_Components
+    container_name: celery_worker
+    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
+      - ACCOUNT_MANAGEMENT_USER="test_sdk"
+      - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
+      - DATABASE_PATH="./db_Operator.sqlite"
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      # Needed in order to run Celery as root.
+      - C_FORCE_ROOT="true"
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
+      - OPERATOR_ROOT_PATH="/api/1.2"
+      - OPERATOR_CR_PATH="/cr"
+      - OPERATOR_SLR_PATH="/slr"
+      - SERVICE_URL="http://service_components:7000"
+      - VIRTUAL_HOST=localhost.celeryworker
     networks:
       - mydata_sdk_demo_network
 
   redis:
     image: redis
     container_name: redis
-    ports:
-      - "6379"
     networks:
       - mydata_sdk_demo_network
 
