@@ -1,0 +1,62 @@
+# -*- coding: utf-8 -*-
+TIMEOUT = 8
+KEYSIZE = 512
+
+# Setting to /tmp or other ramdisk makes it faster.
+{% if DATABASE_PATH is defined %}
+DATABASE_PATH = {{ DATABASE_PATH }}
+{% else %}
+DATABASE_PATH = "./db_Operator.sqlite"
+{% endif %}
+
+
+{% if SELERY_BROKER_URL is defined %}
+SELERY_BROKER_URL = {{ SELERY_BROKER_URL }}
+{% else %}
+SELERY_BROKER_URL = 'redis://localhost:6379/0'
+{% endif %}
+
+{% if SELERY_RESULT_BACKEND is defined %}
+SELERY_RESULT_BACKEND = {{ SELERY_RESULT_BACKEND }}
+{% else %}
+SELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+{% endif %}
+
+
+CERT_PATH = "./service_key.jwk"
+CERT_KEY_PATH = "./service_key.jwk"
+CERT_PASSWORD_PATH = "./cert_pw"
+
+
+{% if SERVICE_URL is defined %}
+SERVICE_URL = {{ SERVICE_URL }}
+{% else %}
+SERVICE_URL = "http://localhost:2000"
+{% endif %}
+
+{% if OPERATOR_URL is defined %}
+OPERATOR_URL = {{ OPERATOR_URL }}
+{% else %}
+OPERATOR_URL = "http://localhost:5000"
+{% endif %}
+
+
+{% if SERVICE_ROOT_PATH is defined %}
+SERVICE_ROOT_PATH = {{ SERVICE_ROOT_PATH }}
+{% else %}
+SERVICE_ROOT_PATH = "/api/1.2"
+{% endif %}
+
+{% if SERVICE_CR_PATH is defined %}
+SERVICE_CR_PATH = {{ SERVICE_CR_PATH }}
+{% else %}
+SERVICE_CR_PATH = "/cr"
+{% endif %}
+
+{% if SERVICE_SLR_PATH is defined %}
+SERVICE_SLR_PATH = {{ SERVICE_SLR_PATH }}
+{% else %}
+SERVICE_SLR_PATH = "/slr"
+{% endif %}
+
+
