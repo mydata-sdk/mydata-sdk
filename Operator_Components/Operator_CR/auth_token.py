@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, current_app
-from flask_restful import Api, Resource
+import logging
+import traceback
+from json import dumps
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
+from flask import Blueprint, current_app
+from flask_restful import Api, Resource
 from helpers import AccountManagerHandler
-import traceback
+from helpers import Helpers
+
 api_CR_blueprint = Blueprint("api_AuthToken_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
-
-import logging
-
 debug_log = logging.getLogger("debug")
 
-from helpers import Helpers
-
-from json import dumps
 class AuthToken(Resource):
     def __init__(self):
         super(AuthToken, self).__init__()

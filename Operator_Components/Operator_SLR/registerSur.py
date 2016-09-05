@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 __author__ = 'alpaloma'
-from json import loads, dumps, load, dump
-from uuid import uuid4 as guid
-from flask import request, Blueprint, current_app
-from flask_restful import Resource, Api
-from requests import post
-from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import ServiceRegistryHandler, Sequences
-from helpers import AccountManagerHandler, Helpers
-from jwcrypto import jwk
 import logging
 import traceback
+from json import loads, dumps, load, dump
+from requests import post
+from uuid import uuid4 as guid
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from Templates import ServiceRegistryHandler, Sequences
+from flask import request, Blueprint, current_app
+from flask_cors import CORS
+from flask_restful import Resource, Api
+from helpers import AccountManagerHandler, Helpers
+from jwcrypto import jwk
 
 api_SLR_RegisterSur = Blueprint("api_SLR_RegisterSur", __name__)
-from flask_cors import CORS
+
 CORS(api_SLR_RegisterSur)
 api = Api()
 api.init_app(api_SLR_RegisterSur)

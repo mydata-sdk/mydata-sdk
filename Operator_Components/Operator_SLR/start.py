@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 __author__ = 'alpaloma'
-from json import loads, dumps
-from flask import Blueprint, current_app
-from flask_restful import Resource, Api
-from requests import get, post
-from DetailedHTTPException import DetailedHTTPException, error_handler
-from sqlite3 import OperationalError, IntegrityError
-from requests.exceptions import ConnectionError, Timeout
-from Templates import Sequences, ServiceRegistryHandler
-from helpers import Helpers
 import logging
 import traceback
+from json import loads
+from requests import get, post
+from requests.exceptions import ConnectionError, Timeout
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from Templates import Sequences, ServiceRegistryHandler
+from flask import Blueprint, current_app
 from flask_cors import CORS
+from flask_restful import Resource, Api
+from helpers import Helpers
 
 '''
 
@@ -29,7 +29,6 @@ Operator_Components Mgmnt->Service_Components Mgmnt: Redirect user to Service_Co
 '''
 
 api_SLR_Start = Blueprint("api_SLR_Start", __name__)
-from flask_cors import CORS
 CORS(api_SLR_Start)
 
 api = Api()

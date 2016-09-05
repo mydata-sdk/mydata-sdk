@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
 __author__ = 'alpaloma'
 import logging
+import traceback
 from json import dumps
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from Templates import ServiceRegistryHandler, Consent_form_Out, Sequences
 from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
-from tasks import CR_installer
 from helpers import AccountManagerHandler, Helpers
+from tasks import CR_installer
+
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
 
-from DetailedHTTPException import DetailedHTTPException, error_handler
-import traceback
 api_CR_blueprint = Blueprint("api_CR_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
-
-from Templates import ServiceRegistryHandler, Consent_form_Out, Sequences
 
 SH = ServiceRegistryHandler()
 getService = SH.getService
@@ -92,8 +93,12 @@ class ConsentFormHandler(Resource):
                                         trace=traceback.format_exc(limit=100).splitlines())
         debug_log.info("sink_sur = {}".format(sink_sur))
         debug_log.info("source_sur = {}".format(source_sur))
-        slr_id_sink, surrogate_id_sink = sink_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"], sink_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]  # Get slr and surrogate_id
-        slr_id_source, surrogate_id_source = source_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"], source_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"] # One for Sink, one for Source
+
+        slr_id_sink, surrogate_id_sink = sink_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"],\
+                                         sink_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]  # Get slr and surrogate_id
+
+        slr_id_source, surrogate_id_source = source_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"],\
+                                             source_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"] # One for Sink, one for Source
 
         # Generate common_cr for both sink and source.
         sq.task("Generate common CR")
@@ -101,7 +106,7 @@ class ConsentFormHandler(Resource):
         common_cr_sink = self.Helpers.gen_cr_common(surrogate_id_sink, _consent_form["source"]["rs_id"], slr_id_sink)
 
         sq.task("Generate ki_cr")
-        mvcr = self.Helpers.Gen_ki_cr(self)  # This is silly, someone needs to define this. TODO Rename to ki_cr
+        ki_cr = self.Helpers.Gen_ki_cr(self)
 
         sq.task("Generate CR for sink")
         sink_cr = self.Helpers.gen_cr_sink(common_cr_sink, _consent_form)
