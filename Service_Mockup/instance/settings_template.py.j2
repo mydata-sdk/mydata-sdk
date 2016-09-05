@@ -1,0 +1,9 @@
+# -*- coding: utf-8 -*-
+timeout = 8
+
+{% if SERVICE_MGMNT_URL is defined %}
+SERVICE_MGMNT_URL = {{ SERVICE_MGMNT_URL }}
+{% else %}
+SERVICE_MGMNT_URL = "http://localhost:7000"
+{% endif %}
+
