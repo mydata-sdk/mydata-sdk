@@ -127,7 +127,7 @@ Deactivate virtual environment
 ### Configure uWSGI
 
 #### uWSGI Configuration File
-Modify application path if necessary. At least application's base path should be updated.
+Modify application's base path if necessary.
 
     cd /var/www/myDataAccount/mydata-sdk/Account
     sudo nano uwsgi.ini
