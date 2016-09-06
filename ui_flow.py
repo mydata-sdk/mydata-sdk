@@ -24,10 +24,10 @@ def initialize(operator_url):
 # Then gives a Consent for these Services by sending a Consent form as JSON-payload to Operator backend.
 # Should print "201 Created" if the flow was excuted succesfully.
 def start_ui_flow(operator_url):
-    #slr_flow1 = get(operator_url + "api/1.2/slr/account/2/service/1")
-    #print(slr_flow1.url, slr_flow1.reason, slr_flow1.status_code, slr_flow1.text)
-    #slr_flow2 = get(operator_url + "api/1.2/slr/account/2/service/2")
-    #print(slr_flow2.url, slr_flow2.reason, slr_flow2.status_code, slr_flow2.text)
+    slr_flow1 = get(operator_url + "api/1.2/slr/account/2/service/1")
+    print(slr_flow1.url, slr_flow1.reason, slr_flow1.status_code, slr_flow1.text)
+    slr_flow2 = get(operator_url + "api/1.2/slr/account/2/service/2")
+    print(slr_flow2.url, slr_flow2.reason, slr_flow2.status_code, slr_flow2.text)
 
     # This format needs to be specified, even if done with url params instead.
     ids = {"sink": Service_ID_B, "source": Service_ID_A}
