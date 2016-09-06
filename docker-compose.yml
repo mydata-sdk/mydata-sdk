@@ -22,7 +22,7 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-account
     container_name: account
-    command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app 
+    command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 4 --threads 2
     environment:
       - PYTHONUNBUFFERED='true'
       - MYSQL_HOST='mysql-db'

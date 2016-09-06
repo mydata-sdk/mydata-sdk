@@ -11,6 +11,7 @@ Service_ID_B = 100
 # Sends JSON-payloads to Account that create three new accounts.
 # Needed in order to start_ui_flow() -function to work.
 def initialize(operator_url):
+    print("Initializing....")
     post(operator_url + '/api/accounts/', json={"firstName": "Erkki", "lastName": "Esimerkki", "dateOfBirth": "31-05-2016", "email": "erkki.esimerkki@examlpe.org", "username": "testUffser", "password": "Hello", "acceptTermsOfService": "True"})
     post(operator_url + '/api/accounts/', json={"firstName":"Iso", "lastName":"Pasi", "dateOfBirth":"31-05-2016", "email": "iso.pasi@examlpe.org", "username":"pasi", "password": "0nk0va", "acceptTermsOfService": "True"})
     post(operator_url + '/api/accounts/', json={"firstName":"Dude","lastName":"Dudeson","dateOfBirth":"31-05-2016","email":"dude.dudeson@examlpe.org","username":"mydata","password":"Hello","acceptTermsOfService":"True"})
