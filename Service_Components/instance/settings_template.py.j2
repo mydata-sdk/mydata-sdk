@@ -60,3 +60,9 @@ SERVICE_SLR_PATH = {{ SERVICE_SLR_PATH }}
 {% else %}
 SERVICE_SLR_PATH = "/slr"
 {% endif %}
+
+{% if DEBUG_MODE is defined %}
+DEBUG_MODE = {{ DEBUG_MODE }}
+{% else %}
+DEBUG_MODE = False
+{% endif %}

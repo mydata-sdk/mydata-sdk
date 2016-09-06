@@ -3,11 +3,9 @@ from uuid import uuid4 as guid
 from werkzeug.exceptions import HTTPException
 from json import dumps
 import traceback
-import sys
 from importlib import import_module
-
+from instance.settings import DEBUG_MODE
 def error_handler(method):
-    SUPER_DEBUG = True
     app = import_module(method.__module__)
     api = app.api
     def wrapper(self, *args, **kw):
@@ -26,7 +24,7 @@ def error_handler(method):
                 raise DetailedHTTPException(exception=e, trace=trace)
         except DetailedHTTPException as e:
             #Need for this can be questioned. It reduces portability of the decorator.
-            if (SUPER_DEBUG):
+            if (DEBUG_MODE):
                 print(e.trace)
                 try:
                     location_url = api.url_for(self) # This is a handy feature but as before, reduces portability.

@@ -7,3 +7,8 @@ SERVICE_MGMNT_URL = {{ SERVICE_MGMNT_URL }}
 SERVICE_MGMNT_URL = "http://localhost:7000"
 {% endif %}
 
+{% if DEBUG_MODE is defined %}
+DEBUG_MODE = {{ DEBUG_MODE }}
+{% else %}
+DEBUG_MODE = False
+{% endif %}
