@@ -99,7 +99,8 @@ class Install_CR(Resource):
             for e in errors:
                 raise DetailedHTTPException(detail={"msg": "Validating Source CR format and fields failed",
                                                     "validation_errors": errors},
-                                            title="Failure in CR validation")
+                                            title="Failure in CR validation",
+                                            status=400)
 
 
         else:
@@ -108,7 +109,8 @@ class Install_CR(Resource):
             for e in errors:
                 raise DetailedHTTPException(detail={"msg": "Validating Sink CR format and fields failed",
                                                     "validation_errors": errors},
-                                            title="Failure in CR validation")
+                                            title="Failure in CR validation",
+                                            status=400)
 
         debug_log.info(dumps(crt.get_CR_payload(), indent=2))
         debug_log.info(dumps(crt.get_CSR_payload(), indent=2))
@@ -128,7 +130,8 @@ class Install_CR(Resource):
             debug_log.info("CR was verified with key from SLR")
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CR failed",},
-                                        title="Failure in CR verifying")
+                                        title="Failure in CR verifying",
+                                        status=451)
 
         sq.task("Verify CSR integrity")
         # SLR includes CR keys which means we need to get key from stored SLR and use it to verify this
@@ -138,7 +141,8 @@ class Install_CR(Resource):
             debug_log.info("CSR was verified with key from SLR")
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR failed",},
-                                        title="Failure in CSR verifying")
+                                        title="Failure in CSR verifying",
+                                        status=451)
 
         sq.task("Verify Status Record")
 
@@ -147,21 +151,24 @@ class Install_CR(Resource):
         for e in errors:
             raise DetailedHTTPException(detail={"msg": "Validating CSR format and fields failed",
                                                 "validation_errors": errors},
-                                        title="Failure in CSR validation")
+                                        title="Failure in CSR validation",
+                                        status=400)
         # 1) CSR has link to CR
         csr_has_correct_cr_id = crt.cr_id_matches_in_csr_and_cr()
         if csr_has_correct_cr_id:
             debug_log.info("Verified CSR links to CR")
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR cr_id == CR cr_id failed",},
-                                        title="Failure in CSR verifying")
+                                        title="Failure in CSR verifying",
+                                        status=451)
         # 2) CSR has link to previous CSR
         prev_csr_id_refers_to_null_as_it_should = crt.get_prev_record_id() == "null"
         if prev_csr_id_refers_to_null_as_it_should:
             debug_log.info("prev_csr_id_referred to null as it should.")
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR previous_id == 'null' failed",},
-                                        title="Failure in CSR verifying")
+                                        title="Failure in CSR verifying",
+                                        status=451)
 
         verify_is_success = crt.verify_cr(slrt.get_cr_keys())
         if verify_is_success:

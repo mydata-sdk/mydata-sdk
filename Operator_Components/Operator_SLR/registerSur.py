@@ -154,7 +154,7 @@ class RegisterSur(Resource):
             try:
                 reply = self.AM.sign_slr(template, account_id)
             except AttributeError as e:
-                raise DetailedHTTPException(status=500,
+                raise DetailedHTTPException(status=502,
                                             title="It would seem initiating Account Manager Handler has failed.",
                                             detail="Account Manager might be down or unresponsive.",
                                             trace=traceback.format_exc(limit=100).splitlines())
