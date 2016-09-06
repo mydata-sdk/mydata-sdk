@@ -24,7 +24,7 @@ DROP TABLE IF EXISTS `MyDataAccount`.`Accounts` ;
 
 CREATE TABLE IF NOT EXISTS `MyDataAccount`.`Accounts` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `globalIdenttifyer` VARCHAR(1024) NOT NULL,
+  `globalIdenttifyer` VARCHAR(255) NOT NULL,
   `activated` TINYINT(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `globalIdenttifyer_UNIQUE` (`globalIdenttifyer` ASC))
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `MyDataAccount`.`Particulars` (
   `firstname` VARCHAR(255) NOT NULL,
   `lastname` VARCHAR(255) NOT NULL,
   `dateOfBirth` DATE NULL,
-  `img_url` VARCHAR(1024) NULL,
+  `img_url` VARCHAR(255) NULL,
   `Accounts_id` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_Particulars_Accounts1_idx` (`Accounts_id` ASC),
@@ -62,10 +62,10 @@ CREATE TABLE IF NOT EXISTS `MyDataAccount`.`ServiceLinkRecords` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `serviceLinkRecord` BLOB NOT NULL,
   `Accounts_id` INT NOT NULL,
-  `serviceLinkRecordId` VARCHAR(1024) NOT NULL,
-  `serviceId` VARCHAR(1024) NOT NULL,
-  `surrogateId` VARCHAR(1024) NOT NULL,
-  `operatorId` VARCHAR(1024) NOT NULL,
+  `serviceLinkRecordId` VARCHAR(255) NOT NULL,
+  `serviceId` VARCHAR(255) NOT NULL,
+  `surrogateId` VARCHAR(255) NOT NULL,
+  `operatorId` VARCHAR(255) NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_ServiceLinkRecords_Accounts1_idx` (`Accounts_id` ASC),
   UNIQUE INDEX `serviceLinkRecordId_UNIQUE` (`serviceLinkRecordId` ASC),
@@ -86,12 +86,12 @@ CREATE TABLE IF NOT EXISTS `MyDataAccount`.`ConsentRecords` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `consentRecord` BLOB NOT NULL,
   `ServiceLinkRecords_id` INT NOT NULL,
-  `surrogateId` VARCHAR(1024) NOT NULL,
-  `consentRecordId` VARCHAR(1024) NOT NULL,
-  `ResourceSetId` VARCHAR(1024) NOT NULL,
-  `serviceLinkRecordId` VARCHAR(1024) NOT NULL,
-  `subjectId` VARCHAR(1024) NOT NULL,
-  `role` VARCHAR(1024) NOT NULL,
+  `surrogateId` VARCHAR(255) NOT NULL,
+  `consentRecordId` VARCHAR(255) NOT NULL,
+  `ResourceSetId` VARCHAR(255) NOT NULL,
+  `serviceLinkRecordId` VARCHAR(255) NOT NULL,
+  `subjectId` VARCHAR(255) NOT NULL,
+  `role` VARCHAR(255) NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_ConsentRecords_ServiceLinkRecords1_idx` (`ServiceLinkRecords_id` ASC),
   UNIQUE INDEX `ConsentRecordId_UNIQUE` (`consentRecordId` ASC),
@@ -111,7 +111,7 @@ DROP TABLE IF EXISTS `MyDataAccount`.`LocalIdentityPWDs` ;
 
 CREATE TABLE IF NOT EXISTS `MyDataAccount`.`LocalIdentityPWDs` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `password` VARCHAR(1024) NULL,
+  `password` VARCHAR(255) NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS `MyDataAccount`.`OneTimeCookies` (
   `oneTimeCookie` VARCHAR(255) NOT NULL,
   `used` TINYINT(1) NOT NULL DEFAULT 0,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated` TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `updated` TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `LocalIdentities_id` INT NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `oneTimeCookie_UNIQUE` (`oneTimeCookie` ASC),
@@ -281,9 +281,9 @@ CREATE TABLE IF NOT EXISTS `MyDataAccount`.`ConsentStatusRecords` (
   `consentStatus` ENUM('Active', 'Paused', 'Withdrawn', 'NoSLR') NOT NULL,
   `consentStatusRecord` BLOB NOT NULL,
   `ConsentRecords_id` INT NOT NULL,
-  `consentRecordId` VARCHAR(1024) NOT NULL,
-  `issued_at` VARCHAR(1024) NOT NULL,
-  `prevRecordId` VARCHAR(1024) NOT NULL,
+  `consentRecordId` VARCHAR(255) NOT NULL,
+  `issued_at` VARCHAR(255) NOT NULL,
+  `prevRecordId` VARCHAR(255) NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_ConsentStatusRecords_ConsentRecords1_idx` (`ConsentRecords_id` ASC),
   CONSTRAINT `fk_ConsentStatusRecords_ConsentRecords1`
@@ -301,13 +301,13 @@ DROP TABLE IF EXISTS `MyDataAccount`.`ServiceLinkStatusRecords` ;
 
 CREATE TABLE IF NOT EXISTS `MyDataAccount`.`ServiceLinkStatusRecords` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `serviceLinkStatus` VARCHAR(1024) NOT NULL,
+  `serviceLinkStatus` VARCHAR(255) NOT NULL,
   `serviceLinkStatusRecord` BLOB NOT NULL,
   `ServiceLinkRecords_id` INT NOT NULL,
-  `serviceLinkRecordId` VARCHAR(1024) NOT NULL,
-  `issued_at` VARCHAR(1024) NOT NULL,
-  `prevRecordId` VARCHAR(1024) NOT NULL,
-  `serviceLinkStatusRecordId` VARCHAR(1024) NOT NULL,
+  `serviceLinkRecordId` VARCHAR(255) NOT NULL,
+  `issued_at` VARCHAR(255) NOT NULL,
+  `prevRecordId` VARCHAR(255) NOT NULL,
+  `serviceLinkStatusRecordId` VARCHAR(255) NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_ServiceLinkStatusRecords_ServiceLinkRecords1_idx` (`ServiceLinkRecords_id` ASC),
   UNIQUE INDEX `serviceLinkStatusRecordId_UNIQUE` (`serviceLinkStatusRecordId` ASC),
@@ -327,7 +327,7 @@ DROP TABLE IF EXISTS `MyDataAccount`.`EventLogs` ;
 CREATE TABLE IF NOT EXISTS `MyDataAccount`.`EventLogs` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `actor` ENUM('User', 'Operator', 'Service') NOT NULL,
-  `event` JSON NOT NULL,
+  `event` BLOB NOT NULL,
   `created` TIMESTAMP NOT NULL,
   `Accounts_id` INT NOT NULL,
   PRIMARY KEY (`id`),
@@ -385,6 +385,3 @@ ENGINE = InnoDB;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
-
-GRANT CREATE TEMPORARY TABLES, DELETE, DROP, INSERT, LOCK TABLES, SELECT, UPDATE ON MyDataAccount.* TO 'mydataaccount'@'%';
-FLUSH PRIVILEGES;
