@@ -44,7 +44,7 @@ You will be prompted for prompted to create a root password during the installat
 ### Clone from Git
     git clone https://github.com/HIIT/mydata-sdk.git
 
-Checkout master-branch.
+#### Checkout master-branch
     cd mydata-sdk
     git checkout master
     git pull origin
@@ -54,11 +54,12 @@ Checkout master-branch.
     cd Account
 
 #### MySQL Database
-Start mysql shell
+
+##### Start mysql shell
 
     mysql -u root -pY3xUcheg
 
-In MySQL shell
+##### In MySQL shell
 
     DROP DATABASE MyDataAccount;
     source doc/database/MyDataAccount-DBinit.sql
@@ -66,7 +67,7 @@ In MySQL shell
     GRANT CREATE TEMPORARY TABLES, DELETE, DROP, INSERT, LOCK TABLES, SELECT, UPDATE ON MyDataAccount.* TO 'mydataaccount'@'localhost';
     FLUSH PRIVILEGES;
 
-Quit from MySQL shell
+##### Quit from MySQL shell
 
     quit
 
