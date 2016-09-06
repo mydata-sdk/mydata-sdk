@@ -38,7 +38,7 @@ These instructions are using 'Y3xUcheg' as root password.
 ## Deployment
 
 ### Prepare directories
-    cd
+    cd ~
     mkdir myDataSDK
     cd myDataSDK
 
