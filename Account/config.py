@@ -10,7 +10,7 @@ SUPER_DEBUG = True
 
 # Application URL prefix
 ## Only leading slash
-URL_PREFIX = '/'
+URL_PREFIX = ''
 
 # Logger
 LOG_FORMATTER = '%(asctime)s - %(name)s in function %(funcName)s at line: %(lineno)s - %(levelname)s - %(message)s'
@@ -49,12 +49,10 @@ CSRF_ENABLED = True
 
 # Use a secure, unique and absolutely secret key for
 # signing the data.
-#CSRF_SESSION_KEY = str(urandom(24)) # TODO
-CSRF_SESSION_KEY = "salainen"
+CSRF_SESSION_KEY = str(urandom(24))
 
 # Secret key for signing cookies
-#SECRET_KEY = str(urandom(24)) # TODO
-SECRET_KEY = "Salaisempi"
+SECRET_KEY = str(urandom(24))
 
 # http://flask-restful-cn.readthedocs.org/en/0.3.5/reqparse.html#error-handling
 BUNDLE_ERRORS = True
