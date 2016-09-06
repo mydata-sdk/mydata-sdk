@@ -10,7 +10,8 @@ Note: Instructions based on clean Ubuntu 14.04 server
 ### MySQL Database
     sudo apt-get -y install mysql-server-5.6
 
-You will be prompted for prompted to create a root password during the installation. These instructions are using 'Y3xUcheg' as root password.
+You will be prompted for prompted to create a root password during the installation. 
+These instructions are using 'Y3xUcheg' as root password.
 
 #### Securing MySQL installation
     sudo mysql_secure_installation
@@ -37,7 +38,7 @@ You will be prompted for prompted to create a root password during the installat
 ## Deployment
 
 ### Prepare directories
-    cd
+    cd ~
     mkdir myDataSDK
     cd myDataSDK
 
@@ -120,6 +121,10 @@ Run application in production mode at port 80
 
 Try to access application with web-browser via (http://example.org:8080)
 
+Kill uwsgi process 
+
+    Ctrl + c
+
 Deactivate virtual environment
 
     deactivate
@@ -129,7 +134,6 @@ Deactivate virtual environment
 #### uWSGI Configuration File
 Modify application's base path if necessary.
 
-    cd /var/www/myDataAccount/mydata-sdk/Account
     sudo nano uwsgi.ini
 
 #### File permissions
