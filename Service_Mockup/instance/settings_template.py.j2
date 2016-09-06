@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+<<<<<<< HEAD
 TIMEOUT = 8
 KEYSIZE = 512
 
@@ -60,3 +61,13 @@ SERVICE_SLR_PATH = "/slr"
 {% endif %}
 
 
+=======
+timeout = 8
+
+{% if SERVICE_MGMNT_URL is defined %}
+SERVICE_MGMNT_URL = {{ SERVICE_MGMNT_URL }}
+{% else %}
+SERVICE_MGMNT_URL = "http://localhost:7000"
+{% endif %}
+
+>>>>>>> remotes/hjhsalo/mydata-sdk-bleeding-edge/master

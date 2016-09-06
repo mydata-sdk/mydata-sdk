@@ -6,7 +6,9 @@ KEYSIZE = 512
 {% if ACCOUNT_MANAGEMENT_URL is defined %}
 ACCOUNT_MANAGEMENT_URL = {{ ACCOUNT_MANAGEMENT_URL }}
 {% else %}
-ACCOUNT_MANAGEMENT_URL = "http://myaccount.dy.fi/"
+
+ACCOUNT_MANAGEMENT_URL = "http://myaccount.dy.fi/" 
+
 {% endif %}
 
 ACCOUNT_MANAGEMENT_USER="test_sdk"
@@ -27,20 +29,22 @@ ACCOUNT_MANAGEMENT_PASSWORD = "test_sdk_pw"
 {% if DATABASE_PATH is defined %}
 DATABASE_PATH = {{ DATABASE_PATH }}
 {% else %}
-DATABASE_PATH = "./db_Operator.sqlite"
+
+DATABASE_PATH = "./db_Operator.sqlite" 
 {% endif %}
 
 
-{% if CELERY_BROKER_URL is defined %}
-CELERY_BROKER_URL = {{ CELERY_BROKER_URL }}
+{% if SELERY_BROKER_URL is defined %}
+SELERY_BROKER_URL = {{ SELERY_BROKER_URL }}
 {% else %}
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+SELERY_BROKER_URL = 'redis://localhost:6379/0'
 {% endif %}
 
-{% if CELERY_RESULT_BACKEND is defined %}
-CELERY_RESULT_BACKEND = {{ CELERY_RESULT_BACKEND }}
+{% if SELERY_RESULT_BACKEND is defined %}
+SELERY_RESULT_BACKEND = {{ SELERY_RESULT_BACKEND }}
 {% else %}
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+SELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
 {% endif %}
 
 

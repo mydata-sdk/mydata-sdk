@@ -50,7 +50,6 @@ class GenCode(Resource):
         self.helpers = Helpers(current_app.config)
         self.storeCode = self.helpers.storeCode
 
-    # @timeme
     @error_handler
     def get(self):
         try:
