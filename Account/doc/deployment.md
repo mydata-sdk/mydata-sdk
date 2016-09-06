@@ -62,10 +62,9 @@ These instructions are using 'Y3xUcheg' as root password.
 
 ##### In MySQL shell
 
+    CREATE USER 'mydataaccount'@'localhost' IDENTIFIED BY 'wr8gabrA';
     DROP DATABASE MyDataAccount;
     source doc/database/MyDataAccount-DBinit.sql
-    CREATE USER 'mydataaccount'@'localhost' IDENTIFIED BY 'wr8gabrA';
-    GRANT CREATE TEMPORARY TABLES, DELETE, DROP, INSERT, LOCK TABLES, SELECT, UPDATE ON MyDataAccount.* TO 'mydataaccount'@'localhost';
     FLUSH PRIVILEGES;
 
 ##### Quit from MySQL shell
