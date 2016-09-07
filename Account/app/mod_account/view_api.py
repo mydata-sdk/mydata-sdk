@@ -27,6 +27,8 @@ from app.mod_blackbox.controllers import gen_account_key
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import Account, LocalIdentityPWD, LocalIdentity, Salt, Particulars, Email
 
+from Account.app.mod_api_auth.controllers import get_account_id_by_api_key
+
 mod_account_api = Blueprint('account_api', __name__, template_folder='templates')
 
 # create logger with 'spam_application'
@@ -232,7 +234,40 @@ class ExportAccount(Resource):
         try:
             account_id = str(account_id)
         except Exception as exp:
-            raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("account_id: " + account_id)
+
+        try:
+            account_id_by_api_key = get_account_id_by_api_key(api_key=api_key)
+        except Exception as exp:
+            error_title = "Account ID not found with provided ApiKey"
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                detail=repr(exp),
+                source=endpoint
+            )
+        else:
+            logger.debug("account_id_by_api_key: " + account_id_by_api_key)
+
+        # Check if Account IDs are matching
+        if account_id != account_id_by_api_key:
+            error_title = "Authenticated Account ID not matching with Account ID that was provided with request"
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                source=endpoint
+            )
+        else:
+            logger.info("Account IDs are matching")
+            logger.info("account_id: " + account_id)
+            logger.info("account_id_by_api_key: " + account_id_by_api_key)
+
 
         # Response data container
         try:
