@@ -94,5 +94,5 @@ ENTRYPOINT ["/docker-entrypoint-account.sh"]
 
 # NOTE: Maybe this should be replaced with something that doesn't run anything 
 # and the command below should go to compose.yml ??
-CMD ["uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app"]
+CMD ["uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 2"]
 

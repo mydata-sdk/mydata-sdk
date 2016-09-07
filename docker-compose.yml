@@ -22,7 +22,7 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-account
     container_name: account
-    command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app 
+    command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 2
     environment:
       - PYTHONUNBUFFERED='true'
       - MYSQL_HOST='mysql-db'
@@ -126,7 +126,9 @@ services:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Operator_Components
     container_name: celery_worker
-    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
+    # We can move docker-entrypoint.sh back to Dockerfile once we move to uwsgi (get rid of dumb-init)
+#    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
+    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
     environment:
       - PYTHONUNBUFFERED='true'
       - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
