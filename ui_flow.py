@@ -7,15 +7,22 @@ from requests import get, post
 Service_ID_A = 10
 Service_ID_B = 100
 
+
 # TODO: Add printing. Now user doesn't know if initialization happened and did it succeed or not.
 # Sends JSON-payloads to Account that create three new accounts.
 # Needed in order to start_ui_flow() -function to work.
 def initialize(operator_url):
-    resp = post(operator_url + 'api/accounts/', json={"firstName": "Erkki", "lastName": "Esimerkki", "dateOfBirth": "31-05-2016", "email": "erkki.esimerkki@examlpe.org", "username": "testUffser", "password": "Hello", "acceptTermsOfService": "True"})
-    print(resp.status_code, resp.reason, resp.text, resp.url)
-    print(json.dumps(json.loads(resp.text), indent=2))
-    post(operator_url + 'api/accounts/', json={"firstName":"Iso", "lastName":"Pasi", "dateOfBirth":"31-05-2016", "email": "iso.pasi@examlpe.org", "username":"pasi", "password": "0nk0va", "acceptTermsOfService": "True"})
-    post(operator_url + 'api/accounts/', json={"firstName":"Dude","lastName":"Dudeson","dateOfBirth":"31-05-2016","email":"dude.dudeson@examlpe.org","username":"mydata","password":"Hello","acceptTermsOfService":"True"})
+    print("Initializing....")
+    post(operator_url + '/api/accounts/',
+         json={"firstName": "Erkki", "lastName": "Esimerkki", "dateOfBirth": "31-05-2016",
+               "email": "erkki.esimerkki@examlpe.org", "username": "testUffser", "password": "Hello",
+               "acceptTermsOfService": "True"})
+    post(operator_url + '/api/accounts/',
+         json={"firstName": "Iso", "lastName": "Pasi", "dateOfBirth": "31-05-2016", "email": "iso.pasi@examlpe.org",
+               "username": "pasi", "password": "0nk0va", "acceptTermsOfService": "True"})
+    post(operator_url + '/api/accounts/', json={"firstName": "Dude", "lastName": "Dudeson", "dateOfBirth": "31-05-2016",
+                                                "email": "dude.dudeson@examlpe.org", "username": "mydata",
+                                                "password": "Hello", "acceptTermsOfService": "True"})
     return
 
 
@@ -39,14 +46,13 @@ def start_ui_flow(operator_url):
 
     req = post(operator_url + "api/1.2/cr/consent_form/account/2", json=js)
 
-    print(req.url, req.reason, req.status_code)
-    print(json.dumps(json.loads(req.text), indent=2))
+    print(req.url, req.reason, req.status_code, "\n", json.dumps(json.loads(req.text), indent=2))
 
     return
 
 
 if __name__ == '__main__':
-    
+
     # Parse command line arguments
     parser = argparse.ArgumentParser()
 
@@ -56,7 +62,7 @@ if __name__ == '__main__':
     parser.add_argument("--initialize",
                         help=help_string_initialize,
                         type=str,
-                        default="http://localhost:8080/",
+                        default=None,
                         required=False)
 
     help_string_operator_url = \
@@ -70,6 +76,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.initialize is not None:
-        initialize(args.initialize)
+        initialize(args.operator_url)
 
     start_ui_flow(args.operator_url)
