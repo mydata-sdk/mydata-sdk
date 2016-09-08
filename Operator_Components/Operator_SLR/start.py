@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 __author__ = 'alpaloma'
-from json import loads, dumps
-from flask import Blueprint, current_app
-from flask_restful import Resource, Api
-from requests import get, post
-from DetailedHTTPException import DetailedHTTPException, error_handler
-from sqlite3 import OperationalError, IntegrityError
-from requests.exceptions import ConnectionError, Timeout
-from Templates import Sequences, ServiceRegistryHandler
-from helpers import Helpers
 import logging
 import traceback
+from json import loads
+from requests import get, post
+from requests.exceptions import ConnectionError, Timeout
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from Templates import Sequences, ServiceRegistryHandler
+from flask import Blueprint, current_app
 from flask_cors import CORS
+from flask_restful import Resource, Api
+from helpers import Helpers
 
 '''
 
@@ -29,7 +29,6 @@ Operator_Components Mgmnt->Service_Components Mgmnt: Redirect user to Service_Co
 '''
 
 api_SLR_Start = Blueprint("api_SLR_Start", __name__)
-from flask_cors import CORS
 CORS(api_SLR_Start)
 
 api = Api()
@@ -48,6 +47,7 @@ SUPER_DEBUG = True
 class Start(Resource):
     def __init__(self):
         super(Start, self).__init__()
+        self.app = current_app
         self.service_registry_handler = ServiceRegistryHandler()
         self.request_timeout = current_app.config["TIMEOUT"]
         self.helper = Helpers(current_app.config)
@@ -85,15 +85,13 @@ class Start(Resource):
                                                         "Errors From SrvMgmnt": loads(result.text)},
                                                 title=result.reason)
             except Timeout:
-                raise DetailedHTTPException(status=408,
+                raise DetailedHTTPException(status=504,
                                             title="Request to Service_Components Mgmnt failed due to TimeoutError.",
-                                            source="POST /code",
                                             detail="Service_Components Mgmnt might be under heavy load, request for code got timeout.",
                                             trace=traceback.format_exc(limit=100).splitlines())
             except ConnectionError:
-                raise DetailedHTTPException(status=504,
+                raise DetailedHTTPException(status=503,
                                             title="Request to Service_Components Mgmnt failed due to ConnectionError.",
-                                            source="POST /code",
                                             detail="Service_Components Mgmnt might be down or unresponsive.",
                                             trace=traceback.format_exc(limit=100).splitlines())
             debug_log.info("We got code: {}".format(code))
@@ -114,15 +112,13 @@ class Start(Resource):
                                                 title=result.reason)
 
             except Timeout:
-                raise DetailedHTTPException(status=408,
+                raise DetailedHTTPException(status=504,
                                             title="Request to Service_Components Mgmnt failed due to TimeoutError.",
-                                            source="POST /login",
                                             detail="Service_Components Mgmnt might be under heavy load, request for code got timeout.",
                                             trace=traceback.format_exc(limit=100).splitlines())
             except ConnectionError:
                 raise DetailedHTTPException(status=504,
                                             title="Request to Service_Components Mgmnt failed due to ConnectionError.",
-                                            source="POST /login",
                                             detail="Service_Components Mgmnt might be down or unresponsive.",
                                             trace=traceback.format_exc(limit=100).splitlines())
 

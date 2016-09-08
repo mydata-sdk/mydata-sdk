@@ -22,3 +22,5 @@ OPERATOR_CR_PATH="/cr"
 OPERATOR_SLR_PATH="/slr"
 
 SERVICE_URL = "http://localhost:7000"
+
+DEBUG_MODE = True

@@ -6,7 +6,9 @@ KEYSIZE = 512
 {% if DATABASE_PATH is defined %}
 DATABASE_PATH = {{ DATABASE_PATH }}
 {% else %}
+
 DATABASE_PATH = "./db_Operator.sqlite" 
+
 {% endif %}
 
 
@@ -59,5 +61,8 @@ SERVICE_SLR_PATH = {{ SERVICE_SLR_PATH }}
 SERVICE_SLR_PATH = "/slr"
 {% endif %}
 
-
-
+{% if DEBUG_MODE is defined %}
+DEBUG_MODE = {{ DEBUG_MODE }}
+{% else %}
+DEBUG_MODE = False
+{% endif %}

@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 __author__ = 'alpaloma'
-from json import loads, dumps, load, dump
-from uuid import uuid4 as guid
-from flask import request, Blueprint, current_app
-from flask_restful import Resource, Api
-from requests import post
-from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import ServiceRegistryHandler, Sequences
-from helpers import AccountManagerHandler, Helpers
-from jwcrypto import jwk
 import logging
 import traceback
+from json import loads, dumps, load, dump
+from requests import post
+from uuid import uuid4 as guid
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from Templates import ServiceRegistryHandler, Sequences
+from flask import request, Blueprint, current_app
+from flask_cors import CORS
+from flask_restful import Resource, Api
+from helpers import AccountManagerHandler, Helpers
+from jwcrypto import jwk
 
 api_SLR_RegisterSur = Blueprint("api_SLR_RegisterSur", __name__)
-from flask_cors import CORS
+
 CORS(api_SLR_RegisterSur)
 api = Api()
 api.init_app(api_SLR_RegisterSur)
@@ -40,6 +42,7 @@ Operator_Components Mgmnt->Service_Components Mgmnt: Send created and signed SLR
 class RegisterSur(Resource):
     def __init__(self):
         super(RegisterSur, self).__init__()
+        self.app = current_app
         #print(current_app.config)
         keysize = current_app.config["KEYSIZE"]
         cert_key_path = current_app.config["CERT_KEY_PATH"]
@@ -152,7 +155,7 @@ class RegisterSur(Resource):
             try:
                 reply = self.AM.sign_slr(template, account_id)
             except AttributeError as e:
-                raise DetailedHTTPException(status=500,
+                raise DetailedHTTPException(status=502,
                                             title="It would seem initiating Account Manager Handler has failed.",
                                             detail="Account Manager might be down or unresponsive.",
                                             trace=traceback.format_exc(limit=100).splitlines())

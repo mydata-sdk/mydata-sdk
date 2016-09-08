@@ -6,7 +6,9 @@ KEYSIZE = 512
 {% if ACCOUNT_MANAGEMENT_URL is defined %}
 ACCOUNT_MANAGEMENT_URL = {{ ACCOUNT_MANAGEMENT_URL }}
 {% else %}
+
 ACCOUNT_MANAGEMENT_URL = "http://myaccount.dy.fi/" 
+
 {% endif %}
 
 ACCOUNT_MANAGEMENT_USER="test_sdk"
@@ -27,6 +29,7 @@ ACCOUNT_MANAGEMENT_PASSWORD = "test_sdk_pw"
 {% if DATABASE_PATH is defined %}
 DATABASE_PATH = {{ DATABASE_PATH }}
 {% else %}
+
 DATABASE_PATH = "./db_Operator.sqlite" 
 {% endif %}
 
@@ -41,6 +44,7 @@ SELERY_BROKER_URL = 'redis://localhost:6379/0'
 SELERY_RESULT_BACKEND = {{ SELERY_RESULT_BACKEND }}
 {% else %}
 SELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
 {% endif %}
 
 
@@ -92,4 +96,10 @@ OPERATOR_SLR_PATH = "/slr"
 SERVICE_URL = {{ SERVICE_URL }}
 {% else %}
 SERVICE_URL = "http://localhost:7000"
+{% endif %}
+
+{% if DEBUG_MODE is defined %}
+DEBUG_MODE = {{ DEBUG_MODE }}
+{% else %}
+DEBUG_MODE = False
 {% endif %}

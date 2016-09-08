@@ -19,5 +19,5 @@ SERVICE_ROOT_PATH = "/api/1.2"
 SERVICE_CR_PATH ="/cr"
 SERVICE_SLR_PATH="/slr"
 
-
+DEBUG_MODE = True
 
