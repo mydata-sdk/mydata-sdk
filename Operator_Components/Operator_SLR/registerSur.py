@@ -42,6 +42,7 @@ Operator_Components Mgmnt->Service_Components Mgmnt: Send created and signed SLR
 class RegisterSur(Resource):
     def __init__(self):
         super(RegisterSur, self).__init__()
+        self.app = current_app
         #print(current_app.config)
         keysize = current_app.config["KEYSIZE"]
         cert_key_path = current_app.config["CERT_KEY_PATH"]

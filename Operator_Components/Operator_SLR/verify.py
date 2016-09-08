@@ -101,6 +101,7 @@ def header_fix(malformed_dictionary):  # We do not check if its malformed, we ex
 class VerifySLR(Resource):
     def __init__(self):
         super(VerifySLR, self).__init__()
+        self.app = current_app
         self.am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
         self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
@@ -183,7 +184,8 @@ class VerifySLR(Resource):
             raise e
 
         except Exception as e:
-            raise DetailedHTTPException(status=501, detail="Verifying SLR failed for unknown reason, access is denied.")
+            raise DetailedHTTPException(exception=e,
+                                        detail="Verifying SLR failed for unknown reason, access is denied.")
 
 
 api.add_resource(VerifySLR, '/verify')

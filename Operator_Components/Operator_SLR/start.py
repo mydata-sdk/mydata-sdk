@@ -47,6 +47,7 @@ SUPER_DEBUG = True
 class Start(Resource):
     def __init__(self):
         super(Start, self).__init__()
+        self.app = current_app
         self.service_registry_handler = ServiceRegistryHandler()
         self.request_timeout = current_app.config["TIMEOUT"]
         self.helper = Helpers(current_app.config)
@@ -84,15 +85,13 @@ class Start(Resource):
                                                         "Errors From SrvMgmnt": loads(result.text)},
                                                 title=result.reason)
             except Timeout:
-                raise DetailedHTTPException(status=408,
+                raise DetailedHTTPException(status=504,
                                             title="Request to Service_Components Mgmnt failed due to TimeoutError.",
-                                            source="POST /code",
                                             detail="Service_Components Mgmnt might be under heavy load, request for code got timeout.",
                                             trace=traceback.format_exc(limit=100).splitlines())
             except ConnectionError:
-                raise DetailedHTTPException(status=504,
+                raise DetailedHTTPException(status=503,
                                             title="Request to Service_Components Mgmnt failed due to ConnectionError.",
-                                            source="POST /code",
                                             detail="Service_Components Mgmnt might be down or unresponsive.",
                                             trace=traceback.format_exc(limit=100).splitlines())
             debug_log.info("We got code: {}".format(code))
@@ -113,15 +112,13 @@ class Start(Resource):
                                                 title=result.reason)
 
             except Timeout:
-                raise DetailedHTTPException(status=408,
+                raise DetailedHTTPException(status=504,
                                             title="Request to Service_Components Mgmnt failed due to TimeoutError.",
-                                            source="POST /login",
                                             detail="Service_Components Mgmnt might be under heavy load, request for code got timeout.",
                                             trace=traceback.format_exc(limit=100).splitlines())
             except ConnectionError:
                 raise DetailedHTTPException(status=504,
                                             title="Request to Service_Components Mgmnt failed due to ConnectionError.",
-                                            source="POST /login",
                                             detail="Service_Components Mgmnt might be down or unresponsive.",
                                             trace=traceback.format_exc(limit=100).splitlines())
 

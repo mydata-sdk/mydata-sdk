@@ -87,7 +87,7 @@ class ConsentFormHandler(Resource):
             sink_sur = self.AM.getSUR_ID(sink_srv_id, account_id)
             source_sur = self.AM.getSUR_ID(source_srv_id, account_id)
         except AttributeError as e:
-            raise DetailedHTTPException(status=500,
+            raise DetailedHTTPException(status=502,
                                         title="It would seem initiating Account Manager Handler has failed.",
                                         detail="Account Manager might be down or unresponsive.",
                                         trace=traceback.format_exc(limit=100).splitlines())
