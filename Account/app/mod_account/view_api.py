@@ -20,14 +20,15 @@ from app import db, api, login_manager, app
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
 from app.mod_account.controllers import get_service_link_record_count, get_consent_record_count, get_telephones, \
-    get_emails, get_contacts, get_passive_consents_count, get_potential_services_count, get_potential_consents_count
+    get_emails, get_contacts, get_passive_consents_count, get_potential_services_count, get_potential_consents_count, \
+    get_particulars
 from app.mod_account.models import AccountSchema2
 from app.mod_api_auth.controllers import gen_account_api_key, requires_api_auth_user, provideApiKey
 from app.mod_blackbox.controllers import gen_account_key
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import Account, LocalIdentityPWD, LocalIdentity, Salt, Particulars, Email
 
-from Account.app.mod_api_auth.controllers import get_account_id_by_api_key
+from app.mod_api_auth.controllers import get_account_id_by_api_key
 
 mod_account_api = Blueprint('account_api', __name__, template_folder='templates')
 
@@ -218,7 +219,7 @@ class Accounts(Resource):
 class ExportAccount(Resource):
     @requires_api_auth_user
     def get(self, account_id):
-
+        logger.info("ExportAccount")
         try:
             endpoint = str(api.url_for(self, account_id=account_id))
         except Exception as exp:
@@ -227,9 +228,10 @@ class ExportAccount(Resource):
         try:
             api_key = request.headers.get('Api-Key')
         except Exception as exp:
-            logger.error("No ApiKey in headers")
-            logger.debug("No ApiKey in headers: " + repr(repr(exp)))
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
             return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
 
         try:
             account_id = str(account_id)
@@ -238,7 +240,7 @@ class ExportAccount(Resource):
             logger.error(error_title)
             raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
         else:
-            logger.debug("account_id: " + account_id)
+            logger.info("account_id: " + account_id)
 
         try:
             account_id_by_api_key = get_account_id_by_api_key(api_key=api_key)
@@ -252,10 +254,10 @@ class ExportAccount(Resource):
                 source=endpoint
             )
         else:
-            logger.debug("account_id_by_api_key: " + account_id_by_api_key)
+            logger.debug("account_id_by_api_key: " + str(account_id_by_api_key))
 
         # Check if Account IDs are matching
-        if account_id != account_id_by_api_key:
+        if str(account_id) is not str(account_id_by_api_key):
             error_title = "Authenticated Account ID not matching with Account ID that was provided with request"
             logger.error(error_title)
             raise ApiError(
@@ -265,18 +267,15 @@ class ExportAccount(Resource):
             )
         else:
             logger.info("Account IDs are matching")
-            logger.info("account_id: " + account_id)
-            logger.info("account_id_by_api_key: " + account_id_by_api_key)
+            logger.info("account_id: " + str(account_id))
+            logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
 
 
         # Response data container
         try:
             response_data = {}
-            response_data['meta'] = {}
-            response_data['meta']['activationInstructions'] = "Account Export"
-
             response_data['data'] = {}
-            response_data['data']['type'] = "Account"
+            response_data['data']['type'] = "AccountExport"
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
@@ -289,6 +288,191 @@ class ExportAccount(Resource):
         return make_json_response(data=response_data_dict, status_code=201)
 
 
+class AccountParticulars(Resource):
+    @requires_api_auth_user
+    def get(self, account_id):
+        logger.info("AccountParticulars")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        # Get Account ID by Api-Key
+        try:
+            logger.info("Fetching Account ID by Api-Key")
+            account_id_by_api_key = get_account_id_by_api_key(api_key=api_key)
+        except Exception as exp:
+            error_title = "Account ID not found with provided ApiKey"
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                detail=repr(exp),
+                source=endpoint
+            )
+        else:
+            logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
+
+        # Check if Account IDs are matching
+        logger.info("Check if Account IDs are matching")
+        if str(account_id) is not str(account_id_by_api_key):
+            error_title = "Authenticated Account ID not matching with Account ID that was provided with request"
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                source=endpoint
+            )
+        else:
+            logger.info("Account IDs are matching")
+            logger.info("account_id: " + str(account_id))
+            logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
+
+        # Get Particulars
+        try:
+            logger.info("Fetching Particulars")
+            account_particulars = get_particulars(account_id=account_id)
+        except Exception as exp:
+            error_title = "No Particulars found"
+            logger.error(error_title)
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Particulars Fetched")
+            logger.info("Particulars: " + account_particulars.log_entry)
+
+
+        # Response data container
+        try:
+            particulars_list = [account_particulars.to_api_json]
+            response_data = {}
+            response_data['data'] = particulars_list
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class AccountParticular(Resource):
+    @requires_api_auth_user
+    def get(self, account_id, particulars_id):
+        logger.info("AccountParticulars")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        try:
+            particulars_id = str(particulars_id)
+        except Exception as exp:
+            error_title = "Unsupported particulars_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("particulars_id: " + particulars_id)
+
+        # Get Account ID by Api-Key
+        try:
+            logger.info("Fetching Account ID by Api-Key")
+            account_id_by_api_key = get_account_id_by_api_key(api_key=api_key)
+        except Exception as exp:
+            error_title = "Account ID not found with provided ApiKey"
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                detail=repr(exp),
+                source=endpoint
+            )
+        else:
+            logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
+
+        # Check if Account IDs are matching
+        logger.info("Check if Account IDs are matching")
+        if str(account_id) is not str(account_id_by_api_key):
+            error_title = "Authenticated Account ID not matching with Account ID that was provided with request"
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                source=endpoint
+            )
+        else:
+            logger.info("Account IDs are matching")
+            logger.info("account_id: " + str(account_id))
+            logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
+
+        # Get Particulars
+        try:
+            logger.info("Fetching Particulars")
+            account_particulars = get_particulars(account_id=account_id, id=particulars_id)
+        except Exception as exp:
+            error_title = "No Particulars found"
+            logger.error(error_title)
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Particulars Fetched")
+            logger.info("Particulars: " + account_particulars.log_entry)
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = account_particulars.to_api_json
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
 # Register resources
 api.add_resource(Accounts, '/api/accounts/', '/', endpoint='/api/accounts/')
-api.add_resource(ExportAccount, '/api/account/<string:account_id>/export/', endpoint='account-export')
+api.add_resource(ExportAccount, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
+api.add_resource(AccountParticulars, '/api/accounts/<string:account_id>/particulars/', endpoint='account-particulars')
+api.add_resource(AccountParticular, '/api/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')

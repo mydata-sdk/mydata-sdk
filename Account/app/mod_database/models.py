@@ -6,6 +6,7 @@ import logging
 import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
 
 # Import the database object from the main app module
+import datetime
 from flask import json
 
 from app import db, api, login_manager, app
@@ -679,14 +680,25 @@ class Particulars():
 
     @property
     def to_dict(self):
+        if isinstance(self.date_of_birth, datetime.date):
+            self.date_of_birth = self.date_of_birth.strftime("%d-%m-%Y")
         return self.__dict__
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
         return dictionary
+
+    @property
+    def to_api_json(self):
+        particular_object = {}
+        particular_object['type'] = "Particular"
+        particular_object['id'] = self.id
+        particular_object['attributes'] = self.to_dict_external
+
+        return particular_object
 
     @property
     def to_json(self):
@@ -717,8 +729,6 @@ class Particulars():
     def from_db(self, cursor=None):
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
-
-        # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, firstname, lastname, dateOfBirth, img_url, Accounts_id " \
                     "FROM MyDataAccount.Particulars " \

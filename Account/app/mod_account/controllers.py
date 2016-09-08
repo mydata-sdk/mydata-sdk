@@ -17,13 +17,15 @@ from flask_restful import Resource, Api, reqparse
 from app import db, api, login_manager, app
 
 # Import services
-from app.helpers import get_custom_logger
+from app.helpers import get_custom_logger, ApiError
 from app.mod_database.helpers import get_db_cursor
 from app.mod_account.services import get_contacts_by_account, get_emails_by_account, get_telephones_by_account, \
     get_service_link_record_count_by_account, get_consent_record_count_by_account
 
 
 # create logger with 'spam_application'
+from app.mod_database.models import Particulars
+
 logger = get_custom_logger('mod_account_controllers')
 
 
@@ -58,8 +60,6 @@ def get_passive_consents_count(cursor=None, account_id=None):
 
 def get_service_link_record_count(cursor=None, account_id=None):
 
-    check_account_id(account_id=account_id)
-
     if cursor is None:
         cursor = get_db_cursor()
         logger.debug('No DB cursor provided as call parameter. Getting new one.')
@@ -70,8 +70,6 @@ def get_service_link_record_count(cursor=None, account_id=None):
 
 
 def get_consent_record_count(cursor=None, account_id=None):
-
-    check_account_id(account_id=account_id)
 
     if cursor is None:
         cursor = get_db_cursor()
@@ -84,8 +82,6 @@ def get_consent_record_count(cursor=None, account_id=None):
 
 def get_contacts(cursor=None, account_id=None):
 
-    check_account_id(account_id=account_id)
-
     if cursor is None:
         cursor = get_db_cursor()
         logger.debug('No DB cursor provided as call parameter. Getting new one.')
@@ -96,8 +92,6 @@ def get_contacts(cursor=None, account_id=None):
 
 
 def get_emails(cursor=None, account_id=None):
-
-    check_account_id(account_id=account_id)
 
     if cursor is None:
         cursor = get_db_cursor()
@@ -110,8 +104,6 @@ def get_emails(cursor=None, account_id=None):
 
 def get_telephones(cursor=None, account_id=None):
 
-    check_account_id(account_id=account_id)
-
     if cursor is None:
         cursor = get_db_cursor()
         logger.debug('No DB cursor provided as call parameter. Getting new one.')
@@ -119,5 +111,39 @@ def get_telephones(cursor=None, account_id=None):
     cursor, data = get_telephones_by_account(cursor=cursor, account_id=account_id)
 
     return cursor, data
+
+
+def get_particulars(account_id=None, id=""):
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    try:
+        account_particulars = Particulars(account_id=account_id, id=id)
+    except Exception as exp:
+        error_title = "Failed to create Particulars object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    finally:
+        logger.debug("Particulars object created: " + account_particulars.log_entry)
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get particulars from DB
+    try:
+        cursor = account_particulars.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Failed to fetch Particulars from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Particulars fetched")
+        logger.info("Particulars from db: " + account_particulars.log_entry)
+
+    return account_particulars
 
 
