@@ -43,7 +43,8 @@ def error_handler(method):
                 return {"errors": {"detail": e.detail,
                                    "title": e.title,
                                    "source": e.source,
-                                   "status": status_codes._codes[e.code][0].replace("_", " ").capitalize()}}, e.code
+                                   "status": status_codes._codes[e.code][0].replace("_", " ").capitalize(),
+                                   "code": str(e.code)}}, e.code
 
     return wrapper
 
