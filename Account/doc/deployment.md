@@ -45,13 +45,9 @@ These instructions are using 'Y3xUcheg' as root password.
 ### Clone from Git
     git clone https://github.com/HIIT/mydata-sdk.git
 
-#### Checkout master-branch
-    cd mydata-sdk
-    git checkout master
-    git pull origin
-
 ### Configure
 
+    cd mydata-sdk
     cd Account
 
 #### MySQL Database
@@ -135,16 +131,9 @@ Modify application's base path if necessary.
 
     sudo nano uwsgi.ini
 
-#### File permissions
-Ensure ownership and access rights of application files
-
-    sudo chown -R www-data /var/www/myDataSDK
-    sudo chmod 755 -R /var/www
-
 
 #### Start uWSGI serving
 
-    cd /var/www/myDataSDK/mydata-sdk/Account
     sudo uwsgi --ini uwsgi.ini &
 
 ### Configure Nginx
