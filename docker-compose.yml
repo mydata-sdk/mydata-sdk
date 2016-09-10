@@ -126,9 +126,11 @@ services:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Operator_Components
     container_name: celery_worker_operator
+    depends_on:
+      - redis
     # We can move docker-entrypoint.sh back to Dockerfile once we move to uwsgi (get rid of dumb-init)
 #    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
-    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker -Q op_queue"]
+    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker -E -n operator_worker -Q op_queue"]
     environment:
       - PYTHONUNBUFFERED='true'
       - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
@@ -163,9 +165,11 @@ services:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Service_Components
     container_name: celery_worker_service
+    depends_on:
+      - redis
     # We can move docker-entrypoint.sh back to Dockerfile once we move to uwsgi (get rid of dumb-init)
 #    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
-    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Service_Components && celery -A tasks worker -Q srv_queue"]
+    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Service_Components && celery -A tasks worker -E -n service_worker -Q srv_queue"]
     environment:
       - PYTHONUNBUFFERED='true'
       - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
