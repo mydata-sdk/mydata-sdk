@@ -117,7 +117,7 @@ services:
     networks:
       - mydata_sdk_demo_network
 
-  celery_worker:
+  celery_worker_operator:
     build:
       context: .
 #      context: context: ./Operator_Components/
@@ -125,16 +125,16 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Operator_Components
-    container_name: celery_worker
+    container_name: celery_worker_operator
     # We can move docker-entrypoint.sh back to Dockerfile once we move to uwsgi (get rid of dumb-init)
 #    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
-    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
+    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker -Q op_queue"]
     environment:
       - PYTHONUNBUFFERED='true'
       - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
       - ACCOUNT_MANAGEMENT_USER="test_sdk"
       - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
-      - DATABASE_PATH="./db_Mockup.sqlite"
+      - DATABASE_PATH="./db_Operator.sqlite"
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
       # https://github.com/celery/celery/issues/2765#issuecomment-228224236
@@ -150,7 +150,44 @@ services:
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
       - SERVICE_URL="http://service_components:7000"
-      - VIRTUAL_HOST=localhost.celeryworker
+      - VIRTUAL_HOST=localhost.celeryworker.operator
+    networks:
+      - mydata_sdk_demo_network
+
+  celery_worker_service:
+    build:
+      context: .
+#      context: context: ./Service_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Components
+    container_name: celery_worker_service
+    # We can move docker-entrypoint.sh back to Dockerfile once we move to uwsgi (get rid of dumb-init)
+#    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
+    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Service_Components && celery -A tasks worker -Q srv_queue"]
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
+      - ACCOUNT_MANAGEMENT_USER="test_sdk"
+      - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
+      - DATABASE_PATH="./db_Srv.sqlite"
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      # Needed in order to run Celery as root.
+      - C_FORCE_ROOT="true"
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
+      - OPERATOR_ROOT_PATH="/api/1.2"
+      - OPERATOR_CR_PATH="/cr"
+      - OPERATOR_SLR_PATH="/slr"
+      - SERVICE_URL="http://service_components:7000"
+      - VIRTUAL_HOST=localhost.celeryworker.service
     networks:
       - mydata_sdk_demo_network
 
