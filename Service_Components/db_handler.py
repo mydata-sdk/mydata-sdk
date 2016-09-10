@@ -22,23 +22,32 @@ def sqlite_create_table(conn, table_name, table_columns):
     conn.commit()
 
 def init_db(conn):
-    # create db for codes
+    # create db's
+    conn.execute('''CREATE TABLE token_storage
+        (cr_id TEXT PRIMARY KEY     NOT NULL,
+         token           TEXT    NOT NULL);''')
+
     conn.execute('''CREATE TABLE csr_storage
         (cr_id TEXT PRIMARY KEY     NOT NULL,
          json           TEXT    NOT NULL,
          slr_id           TEXT    NOT NULL,
          surrogate_id           TEXT    NOT NULL,
          rs_id           TEXT    NOT NULL);''')
+
+    # TODO: Rethink how unique these values need to be.
     conn.execute('''CREATE TABLE cr_storage
         (cr_id TEXT PRIMARY KEY     NOT NULL,
          json           TEXT    NOT NULL,
          slr_id           TEXT    NOT NULL,
          surrogate_id           TEXT    NOT NULL,
          rs_id           TEXT    NOT NULL);''')
+
     conn.execute('''CREATE TABLE codes
         (ID TEXT PRIMARY KEY     NOT NULL,
          code           TEXT    NOT NULL);''')
+
     conn.execute('''CREATE TABLE storage
         (surrogate_id TEXT PRIMARY KEY     NOT NULL,
          json           TEXT    NOT NULL);''')
+
     conn.commit()

@@ -83,7 +83,7 @@ services:
     container_name: service_components
     environment:
       - PYTHONUNBUFFERED='true'
-      - DATABASE_PATH="./db_Operator.sqlite"
+      - DATABASE_PATH="./db_Srv.sqlite"
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
       # https://github.com/celery/celery/issues/2765#issuecomment-228224236
@@ -134,7 +134,7 @@ services:
       - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
       - ACCOUNT_MANAGEMENT_USER="test_sdk"
       - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
-      - DATABASE_PATH="./db_Operator.sqlite"
+      - DATABASE_PATH="./db_Mockup.sqlite"
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
       # https://github.com/celery/celery/issues/2765#issuecomment-228224236

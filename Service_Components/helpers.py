@@ -52,6 +52,23 @@ class Helpers:
                 db.execute("UPDATE storage SET json=? WHERE surrogate_id=? ;", [dumps(DictionaryToStore[key]), key])
                 db.commit()
 
+    def storeToken(self, DictionaryToStore):
+        db = db_handler.get_db(self.db_path)
+        try:
+            db_handler.init_db(db)
+        except OperationalError:
+            pass
+        debug_log.info(DictionaryToStore)
+        for key in DictionaryToStore:
+            debug_log.info(key)
+            try:
+                db.execute("INSERT INTO token_storage (cr_id,token) \
+                    VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+                db.commit()
+            except IntegrityError as e:  # Rewrite incase we get new token.
+                db.execute("UPDATE token_storage SET token=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
+                db.commit()
+
     def storeCode(self, code):
         db = db_handler.get_db(self.db_path)
         try:

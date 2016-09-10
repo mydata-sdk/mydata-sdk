@@ -74,7 +74,7 @@ class Install_CR(Resource):
         super(Install_CR, self).__init__()
         self.helpers = Helpers(current_app.config)
         self.operator_url = current_app.config["OPERATOR_URL"]
-
+        self.db_path = current_app.config["DATABASE_PATH"]
     @error_handler
     def post(self):
         debug_log.info("arrived at Install_CR")
@@ -195,7 +195,7 @@ class Install_CR(Resource):
         self.helpers.storeCSR_JSON(store_dict)
         if role == "Sink":
             debug_log.info("Requesting auth_token")
-            get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url)
+            get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, self.db_path)
         return {"status": 200, "msg": "OK"}, 200
 
 

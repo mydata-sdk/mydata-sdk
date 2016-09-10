@@ -2,12 +2,12 @@
 import sqlite3
 
 
-DATABASE = '/tmp/db_Service.sqlite'
+DATABASE = '/tmp/db_Mockup.sqlite'
 
 def get_db():
-    db = None#getattr(g, '_database', None)
+    db = None  # getattr(g, '_database', None)
     if db is None:
-        db = sqlite3.connect(DATABASE)#g._database = sqlite3.connect(DATABASE)
+        db = sqlite3.connect(DATABASE) # g._database = sqlite3.connect(DATABASE)
         db.row_factory = sqlite3.Row
         try:
             init_db(db)
