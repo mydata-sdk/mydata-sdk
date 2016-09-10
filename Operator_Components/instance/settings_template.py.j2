@@ -103,3 +103,8 @@ DEBUG_MODE = {{ DEBUG_MODE }}
 {% else %}
 DEBUG_MODE = False
 {% endif %}
+
+CELERY_ROUTES = {
+    'op_CR_Installer': {'queue': 'op_queue'},
+    'srv_get_AuthToken': {'queue': 'srv_queue'}
+}

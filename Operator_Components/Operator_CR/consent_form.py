@@ -9,7 +9,7 @@ from Templates import ServiceRegistryHandler, Consent_form_Out, Sequences
 from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
 from helpers import AccountManagerHandler, Helpers
-from tasks import CR_installer
+from tasks import op_CR_installer
 
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
@@ -139,7 +139,7 @@ class ConsentFormHandler(Resource):
         sq.send_to("Source", "Post CR-Source, CSR-Source")
 
         debug_log.info(dumps(crs_csrs_payload, indent=2))
-        CR_installer.delay(crs_csrs_payload, SH.getService_url(sink_srv_id), SH.getService_url(source_srv_id))
+        op_CR_installer.delay(crs_csrs_payload, SH.getService_url(sink_srv_id), SH.getService_url(source_srv_id))
         return {"status": 201, "msg": "CREATED"}, 201
 
 
