@@ -9,7 +9,7 @@ from Templates import ServiceRegistryHandler, Consent_form_Out, Sequences
 from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
 from helpers import AccountManagerHandler, Helpers
-from tasks import CR_installer
+from op_tasks import CR_installer
 
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")

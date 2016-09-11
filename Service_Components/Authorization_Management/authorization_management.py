@@ -12,7 +12,7 @@ from flask_cors import CORS
 from flask_restful import Resource, Api
 from helpers import validate_json, SLR_tool, CR_tool, Helpers
 from jwcrypto import jwk
-from tasks import get_AuthToken
+from srv_tasks import get_AuthToken
 
 api_Service_Mgmnt = Blueprint("api_Service_Mgmnt", __name__)  # TODO Rename this
 
