@@ -25,6 +25,7 @@ class Account():
     id = None
     global_identifier = None
     activated = None
+    table_name = "MyDataAccount.Accounts"
 
     def __init__(self, id="", global_identifyer="", activated=""):
         if id is not None:
@@ -33,6 +34,10 @@ class Account():
             self.global_identifier = global_identifyer
         if activated is not None:
             self.activated = activated
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -78,7 +83,7 @@ class Account():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO Accounts (globalIdenttifyer) VALUES ('%s')" % (self.global_identifier)
+        sql_query = "INSERT INTO " + self.table_name + " (globalIdenttifyer) VALUES ('%s')" % (self.global_identifier)
 
         try:
             cursor, last_id = execute_sql_insert(cursor=cursor, sql_query=sql_query)
@@ -96,7 +101,7 @@ class Account():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, globalIdenttifyer, activated " \
-                    "FROM MyDataAccount.Accounts " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND globalIdenttifyer LIKE %s AND activated LIKE %s;"
 
         arguments = (
@@ -134,6 +139,7 @@ class LocalIdentity():
     username = None
     pwd_id = None
     accounts_id = None
+    table_name = "MyDataAccount.LocalIdentities"
 
     def __init__(self, id="", username="", pwd_id="", accounts_id=""):
         if id is not None:
@@ -144,6 +150,10 @@ class LocalIdentity():
             self.pwd_id = pwd_id
         if accounts_id is not None:
             self.accounts_id = accounts_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -198,7 +208,7 @@ class LocalIdentity():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO LocalIdentities (username, Accounts_id, LocalIdentityPWDs_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (username, Accounts_id, LocalIdentityPWDs_id) " \
                     "VALUES ('%s', '%s', '%s')" % \
                     (self.username, self.accounts_id, self.pwd_id)
 
@@ -218,7 +228,7 @@ class LocalIdentity():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, username, LocalIdentityPWDs_id, Accounts_id " \
-                    "FROM MyDataAccount.LocalIdentities " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND username LIKE %s AND LocalIdentityPWDs_id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
@@ -255,12 +265,17 @@ class LocalIdentity():
 class LocalIdentityPWD():
     id = None
     password = None
+    table_name = "MyDataAccount.LocalIdentityPWDs"
 
     def __init__(self, id="", password=""):
         if id is not None:
             self.id = id
         if password is not None:
             self.password = password
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -298,7 +313,7 @@ class LocalIdentityPWD():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO LocalIdentityPWDs (password) VALUES ('%s')" % (self.password)
+        sql_query = "INSERT INTO " + self.table_name + " (password) VALUES ('%s')" % (self.password)
 
         try:
             cursor, last_id = execute_sql_insert(cursor=cursor, sql_query=sql_query)
@@ -316,7 +331,7 @@ class LocalIdentityPWD():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, password " \
-                    "FROM MyDataAccount.LocalIdentityPWDs " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND password LIKE %s;"
 
         arguments = (
@@ -351,6 +366,7 @@ class OneTimeCookie():
     created = None
     updated = None
     identity_id = None
+    table_name = "MyDataAccount.OneTimeCookies"
 
     def __init__(self, id="", cookie="", used="", created="", updated="", identity_id=""):
         if id is not None:
@@ -365,6 +381,10 @@ class OneTimeCookie():
             self.updated = updated
         if identity_id is not None:
             self.identity_id = identity_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -434,7 +454,7 @@ class OneTimeCookie():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO OneTimeCookie (oneTimeCookie, LocalIdentities_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (oneTimeCookie, LocalIdentities_id) " \
                     "VALUES ('%s', '%s')" % \
                     (self.cookie, self.identity_id)
 
@@ -454,7 +474,7 @@ class OneTimeCookie():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, oneTimeCookie, used, created, updated, LocalIdentities_id " \
-                    "FROM MyDataAccount.OneTimeCookies " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND oneTimeCookie LIKE %s AND used LIKE %s AND created LIKE %s " \
                     "AND updated LIKE %s AND LocalIdentities_id LIKE %s;"
 
@@ -499,6 +519,7 @@ class Salt():
     id = None
     salt = None
     identity_id = None
+    table_name = "MyDataAccount.Salts"
 
     def __init__(self, id="", salt="", identity_id=""):
         if id is not None:
@@ -507,6 +528,10 @@ class Salt():
             self.salt = salt
         if identity_id is not None:
             self.identity_id = identity_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -552,7 +577,7 @@ class Salt():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO Salts (salt, LocalIdentities_id) VALUES ('%s', '%s')" % \
+        sql_query = "INSERT INTO " + self.table_name + " (salt, LocalIdentities_id) VALUES ('%s', '%s')" % \
                     (self.salt, self.identity_id)
 
         try:
@@ -571,7 +596,7 @@ class Salt():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, salt, LocalIdentities_id " \
-                    "FROM MyDataAccount.Salts " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND salt LIKE %s AND LocalIdentities_id LIKE %s;"
 
         arguments = (
@@ -611,8 +636,9 @@ class Particulars():
     date_of_birth = None
     img_url = None
     account_id = None
+    table_name = ""
 
-    def __init__(self, id="", firstname="", lastname="", date_of_birth="", img_url=app.config['AVATAR_URL'], account_id=""):
+    def __init__(self, id="", firstname="", lastname="", date_of_birth="", img_url=app.config['AVATAR_URL'], account_id="", table_name="MyDataAccount.Particulars"):
         if id is not None:
             self.id = id
         if firstname is not None:
@@ -625,6 +651,12 @@ class Particulars():
             self.img_url = str(img_url)
         if account_id is not None:
             self.account_id = account_id
+        if table_name is not None:
+            self.table_name = table_name
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -689,10 +721,11 @@ class Particulars():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        del dictionary['table_name']
         return dictionary
 
     @property
-    def to_api_json(self):
+    def to_api_dict(self):
         particular_object = {}
         particular_object['type'] = "Particular"
         particular_object['id'] = self.id
@@ -714,7 +747,7 @@ class Particulars():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO Particulars (firstname, lastname, dateOfBirth, img_url, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (firstname, lastname, dateOfBirth, img_url, Accounts_id) " \
                     "VALUES ('%s', '%s', STR_TO_DATE('%s', '%%d-%%m-%%Y'), '%s', '%s')" % \
                     (self.firstname, self.lastname, self.date_of_birth, self.img_url, self.account_id)
         try:
@@ -731,7 +764,7 @@ class Particulars():
             raise AttributeError("Provide cursor as parameter")
 
         sql_query = "SELECT id, firstname, lastname, dateOfBirth, img_url, Accounts_id " \
-                    "FROM MyDataAccount.Particulars " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND firstname LIKE %s AND lastname LIKE %s AND dateOfBirth LIKE %s " \
                     "AND img_url LIKE %s AND Accounts_id LIKE %s;"
 
@@ -778,6 +811,7 @@ class Email():
     type = None
     prime = None
     account_id = None
+    table_name = "MyDataAccount.Emails"
 
     def __init__(self, id="", email="", type="Personal", prime="", account_id=""):
         if id is not None:
@@ -790,6 +824,10 @@ class Email():
             self.prime = prime
         if account_id is not None:
             self.account_id = account_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -852,7 +890,7 @@ class Email():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO Emails (email, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (email, typeEnum, prime, Accounts_id) " \
                     "VALUES ('%s', '%s', '%s', '%s')" % \
                     (self.email, self.type, self.prime, self.account_id)
 
@@ -872,7 +910,7 @@ class Email():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, email, typeEnum, prime, Accounts_id " \
-                    "FROM MyDataAccount.Particulars " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND email LIKE %s AND typeEnum LIKE %s AND prime LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
@@ -915,6 +953,7 @@ class Telephone():
     type = None
     prime = None
     account_id = None
+    table_name = "MyDataAccount.Telephones"
 
     def __init__(self, id="", tel="", type="Personal", prime="", account_id=""):
         if id is not None:
@@ -927,6 +966,10 @@ class Telephone():
             self.prime = prime
         if account_id is not None:
             self.account_id = account_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -989,7 +1032,7 @@ class Telephone():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO Telephones (tel, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (tel, typeEnum, prime, Accounts_id) " \
                     "VALUES ('%s', '%s', '%s', '%s')" % \
                     (self.tel, self.type, self.prime, self.account_id)
 
@@ -1009,7 +1052,7 @@ class Telephone():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, tel, typeEnum, prime, Accounts_id " \
-                    "FROM MyDataAccount.Particulars " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND tel LIKE %s AND typeEnum LIKE %s AND prime LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
@@ -1051,6 +1094,7 @@ class Settings():
     key = None
     value = None
     account_id = None
+    table_name = "MyDataAccount.Settings"
 
     def __init__(self, id="", key="", value="", account_id=""):
         if id is not None:
@@ -1063,6 +1107,10 @@ class Settings():
             self.value = value
         if account_id is not None:
             self.account_id = account_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -1117,7 +1165,7 @@ class Settings():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO Settings (prefLang, timezone, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (prefLang, timezone, Accounts_id) " \
                     "VALUES ('%s', '%s', '%s')" % \
                     (self.pref_lang, self.timezone, self.account_id)
 
@@ -1135,7 +1183,7 @@ class Settings():
             raise AttributeError("Provide cursor as parameter")
 
         sql_query = "SELECT id, key, value, Accounts_id " \
-                    "FROM MyDataAccount.Settings " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND key LIKE %s AND value LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
@@ -1175,6 +1223,7 @@ class EventLog():
     event = None
     created = None
     account_id = None
+    table_name = "MyDataAccount.EventLogs"
 
     def __init__(self, id="", actor="", event="", created="", account_id=""):
         if id is not None:
@@ -1187,6 +1236,10 @@ class EventLog():
             self.created = created
         if account_id is not None:
             self.account_id = account_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -1249,7 +1302,7 @@ class EventLog():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO EventLogs (actor, event, created, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (actor, event, created, Accounts_id) " \
                     "VALUES ('%s', '%s', '%s', '%s')" % \
                     (self.actor, self.event, self.created, self.account_id)
 
@@ -1269,7 +1322,7 @@ class EventLog():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, actor, event, created, Accounts_id " \
-                    "FROM MyDataAccount.EventLogs " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND actor LIKE %s AND event LIKE %s AND created LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
@@ -1317,6 +1370,7 @@ class Contacts():
     typeEnum = None
     prime = None
     account_id = None
+    table_name = "MyDataAccount.Contacts"
 
     def __init__(self, id="", address1="", address2="", postal_code="", city="", state="", country="", type="Personal", prime="", account_id=""):
         if id is not None:
@@ -1339,6 +1393,10 @@ class Contacts():
             self.prime = prime
         if account_id is not None:
             self.account_id = account_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -1441,7 +1499,7 @@ class Contacts():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO Contacts (address1, address2, postalCode, city, state, country, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (address1, address2, postalCode, city, state, country, typeEnum, prime, Accounts_id) " \
                     "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')" % \
                     (self.address1, self.address2, self.postal_code, self.city, self.state, self.country, self.type, self.prime, self.account_id)
 
@@ -1461,7 +1519,7 @@ class Contacts():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, address1, address2, postal_code, city, state, country, typeEnum, prime, Accounts_id " \
-                    "FROM MyDataAccount.Contacts " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND address1 LIKE %s AND address2 LIKE %s AND postal_code LIKE %s " \
                     "AND city LIKE %s AND state LIKE %s AND country LIKE %s AND typeEnum LIKE %s " \
                     "AND prime LIKE %s AND Accounts_id LIKE %s;"
@@ -1523,6 +1581,7 @@ class ServiceLinkRecord():
     surrogate_id = None
     operator_id = None
     account_id = None
+    table_name = "MyDataAccount.ServiceLinkRecords"
 
     def __init__(self, id="", service_link_record="", service_link_record_id="", service_id="", surrogate_id="", operator_id="", account_id=""):
         if id is not None:
@@ -1539,6 +1598,10 @@ class ServiceLinkRecord():
             self.surrogate_id = surrogate_id
         if account_id is not None:
             self.account_id = account_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -1622,7 +1685,7 @@ class ServiceLinkRecord():
         #             "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')" % \
         #             (self.service_link_record, self.service_link_record_id, self.service_id, self.surrogate_id, self.operator_id, self.account_id)
 
-        sql_query = "INSERT INTO ServiceLinkRecords (" \
+        sql_query = "INSERT INTO " + self.table_name + " (" \
                     "serviceLinkRecord, " \
                     "serviceLinkRecordId, " \
                     "serviceId, " \
@@ -1655,7 +1718,7 @@ class ServiceLinkRecord():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, serviceLinkRecord, Accounts_id, serviceLinkRecordId, serviceId, surrogateId, operatorId  " \
-                    "FROM MyDataAccount.ServiceLinkRecords " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND serviceLinkRecord LIKE %s AND serviceLinkRecordId LIKE %s AND " \
                     "serviceId LIKE %s AND surrogateId LIKE %s AND operatorId LIKE %s AND Accounts_id LIKE %s;"
 
@@ -1706,6 +1769,7 @@ class ServiceLinkStatusRecord():
     issued_at = None
     prev_record_id = None
     service_link_records_id = None
+    table_name = "MyDataAccount.ServiceLinkStatusRecords"
 
     def __init__(self, id="", service_link_status_record_id="", status="", service_link_status_record="", service_link_record_id="", issued_at="", prev_record_id="", service_link_records_id=""):
         if id is not None:
@@ -1724,6 +1788,10 @@ class ServiceLinkStatusRecord():
             self.prev_record_id = prev_record_id
         if service_link_records_id is not None:
             self.service_link_records_id = service_link_records_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -1814,7 +1882,7 @@ class ServiceLinkStatusRecord():
         #             "VALUES ('%s','%s', '%s', '%s', '%s', '%s', '%s')" % \
         #             (self.service_link_status_record_id, self.status, self.service_link_status_record, self.service_link_records_id, self.service_link_record_id, self.issued_at, self.prev_record_id)
 
-        sql_query = "INSERT INTO ServiceLinkStatusRecords (" \
+        sql_query = "INSERT INTO " + self.table_name + " (" \
                     "serviceLinkStatusRecordId, " \
                     "serviceLinkStatus, " \
                     "serviceLinkStatusRecord, " \
@@ -1852,7 +1920,7 @@ class ServiceLinkStatusRecord():
 
         sql_query = "SELECT id, serviceLinkStatus, serviceLinkStatusRecord, ServiceLinkRecords_id, serviceLinkRecordId, " \
                     "issued_at, prevRecordId, serviceLinkStatusRecordId " \
-                    "FROM MyDataAccount.ServiceLinkStatusRecords " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND serviceLinkStatus LIKE %s AND serviceLinkStatusRecord LIKE %s AND " \
                     "ServiceLinkRecords_id LIKE %s AND serviceLinkRecordId LIKE %s AND issued_at LIKE %s AND " \
                     "prevRecordId LIKE %s AND serviceLinkStatusRecordId LIKE %s;"
@@ -1905,6 +1973,7 @@ class SurrogateId():
     servicelinkrecord_id = None
     service_id = None
     account_id = None
+    table_name = "MyDataAccount.ServiceLinkRecords"
 
     def __init__(self, service_id=None, account_id=None):
         if service_id is not None:
@@ -1957,7 +2026,7 @@ class SurrogateId():
     def from_db(self, cursor=""):
 
         sql_query = "SELECT surrogateId, serviceLinkRecordId " \
-                    "FROM MyDataAccount.ServiceLinkRecords " \
+                    "FROM " + self.table_name + " " \
                     "WHERE serviceId LIKE %s AND Accounts_id LIKE %s ORDER BY id DESC LIMIT 1;"
 
         arguments = (
@@ -1994,6 +2063,7 @@ class ConsentRecord():
     subject_id = None
     service_link_records_id = None
     role = None
+    table_name = "MyDataAccount.ConsentRecords"
 
     def __init__(self, id="", consent_record="", consent_id="", surrogate_id="", resource_set_id="", service_link_record_id="", subject_id="", service_link_records_id="", role=""):
         self.id = id
@@ -2005,6 +2075,10 @@ class ConsentRecord():
         self.subject_id = subject_id
         self.service_link_records_id = service_link_records_id
         self.role = role
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -2099,7 +2173,7 @@ class ConsentRecord():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO ConsentRecords (" \
+        sql_query = "INSERT INTO " + self.table_name + " (" \
                     "consentRecord, " \
                     "surrogateId, " \
                     "consentRecordId, " \
@@ -2136,7 +2210,7 @@ class ConsentRecord():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, consentRecord, ServiceLinkRecords_id, surrogateId, consentRecordId, ResourceSetId, serviceLinkRecordId, subjectId, role " \
-                    "FROM MyDataAccount.ConsentRecords " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND ServiceLinkRecords_id LIKE %s AND surrogateId LIKE %s AND " \
                     "consentRecordId LIKE %s AND ResourceSetId LIKE %s AND serviceLinkRecordId LIKE %s AND " \
                     "subjectId LIKE %s AND role LIKE %s;"
@@ -2199,6 +2273,7 @@ class ConsentStatusRecord():
     consent_record_id = None
     issued_at = None
     prev_record_id = None
+    table_name = "ConsentStatusRecords"
 
     def __init__(self, id="", status="", consent_status_record="", consent_records_id="", consent_record_id="", issued_at="", prev_record_id=""):
         if id is not None:
@@ -2215,6 +2290,10 @@ class ConsentStatusRecord():
             self.issued_at = issued_at
         if prev_record_id is not None:
             self.prev_record_id = prev_record_id
+
+    @property
+    def table_name(self):
+        return self.table_name
 
     @property
     def id(self):
@@ -2293,7 +2372,7 @@ class ConsentStatusRecord():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO ConsentStatusRecords (" \
+        sql_query = "INSERT INTO " + self.table_name + " (" \
                     "consentStatus, " \
                     "consentStatusRecord, " \
                     "ConsentRecords_id, " \
@@ -2329,7 +2408,7 @@ class ConsentStatusRecord():
 
         sql_query = "SELECT id, consentStatus, consentStatusRecord, ConsentRecords_id, consentRecordId, " \
                     "issued_at, prevRecordId " \
-                    "FROM MyDataAccount.ConsentStatusRecords " \
+                    "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND consentStatus LIKE %s AND consentStatusRecord LIKE %s AND " \
                     "ConsentRecords_id LIKE %s AND consentRecordId LIKE %s AND issued_at LIKE %s AND " \
                     "prevRecordId LIKE %s;"

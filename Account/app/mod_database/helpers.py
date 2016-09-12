@@ -211,8 +211,9 @@ def drop_table_content():
     sql_query = "SELECT Concat('TRUNCATE TABLE ',table_schema,'.',TABLE_NAME, ';') " \
                 "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
 
-    sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
-                "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
+    # sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
+    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
+    # TODO: Remove two upper rows
 
     try:
         cursor.execute(sql_query)
@@ -248,3 +249,43 @@ def drop_table_content():
             cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
 
             return True
+
+
+def get_primary_keys_by_account_id(cursor=None, account_id=None, table_name=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT id " \
+                "FROM " + table_name + " " \
+                "WHERE Accounts_id LIKE %s;"
+
+    arguments = (
+        '%' + str(account_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        for i in range(len(data_list)):
+            data_list[i] = int(data_list[i])
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
