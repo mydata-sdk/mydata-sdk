@@ -12,7 +12,7 @@ from flask_cors import CORS
 from flask_restful import Resource, Api
 from helpers import validate_json, SLR_tool, CR_tool, Helpers
 from jwcrypto import jwk
-from tasks import srv_get_AuthToken
+from srv_tasks import get_AuthToken
 
 api_Service_Mgmnt = Blueprint("api_Service_Mgmnt", __name__)  # TODO Rename this
 
@@ -195,7 +195,7 @@ class Install_CR(Resource):
         self.helpers.storeCSR_JSON(store_dict)
         if role == "Sink":
             debug_log.info("Requesting auth_token")
-            srv_get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, self.db_path)
+            get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, self.db_path)
         return {"status": 200, "msg": "OK"}, 200
 
 
