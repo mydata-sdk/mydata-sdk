@@ -23,6 +23,7 @@ def make_dicts(cursor, row):
 
 def init_db(conn):
     # create db for codes
+    conn = conn.cursor()
     conn.execute('''CREATE TABLE cr_tbl
         (rs_id TEXT PRIMARY KEY     NOT NULL,
          json           TEXT    NOT NULL);''')

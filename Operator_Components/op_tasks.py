@@ -5,7 +5,7 @@ from factory import create_celery_app
 celery = create_celery_app()
 
 @celery.task
-def op_CR_installer(crs_csrs_payload, sink_url, source_url):
+def CR_installer(crs_csrs_payload, sink_url, source_url):
     # Get these as parameter or inside crs_csrs_payload
     endpoint = "/api/1.2/cr/add_cr"
     print(crs_csrs_payload)
@@ -21,7 +21,7 @@ def op_CR_installer(crs_csrs_payload, sink_url, source_url):
 # from json import dumps, loads
 # from requests import get
 # @celery.task
-# def srv_get_AuthToken(cr_id, operator_url, db_path):
+# def get_AuthToken(cr_id, operator_url, db_path):
 #     print(operator_url, db_path, cr_id)
 #     def storeToken(DictionaryToStore):
 #         db = db_handler.get_db(db_path)

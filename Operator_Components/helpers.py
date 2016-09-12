@@ -267,18 +267,20 @@ class Helpers:
 
     def storeRS_ID(self, rs_id):
         db = db_handler.get_db(self.db_path)
+        cursor = db.cursor()
         try:
             db_handler.init_db(db)
         except OperationalError:
             pass
         rs_id_status = False
-        db.execute("INSERT INTO rs_id_tbl (rs_id, used) \
+        cursor.execute("INSERT INTO rs_id_tbl (rs_id, used) \
             VALUES (?, ?)", [rs_id, rs_id_status])
         db.commit()
-        db.close()
+        cursor.close()
 
     def change_rs_id_status(self, rs_id, status):
         db = db_handler.get_db(self.db_path)
+        cursor = db.cursor()
         try:
             db_handler.init_db(db)
         except OperationalError:
@@ -288,17 +290,18 @@ class Helpers:
             status_from_db = bool(rs_id_object["used"])
             status_is_unused = status_from_db == False
             if (status_is_unused):
-                db.execute("UPDATE rs_id_tbl SET used=? WHERE rs_id=? ;", [status, rs_id])
+                cursor.execute("UPDATE rs_id_tbl SET used=? WHERE rs_id=? ;", [status, rs_id])
                 db.commit()
-                db.close()
+                cursor.close()
                 return True
             else:
-                db.close()
+                cursor.close()
                 return False
 
 
     def store_session(self, DictionaryToStore):
         db = db_handler.get_db(self.db_path)
+        cursor = db.cursor()
         try:
             db_handler.init_db(db)
         except OperationalError:
@@ -309,18 +312,19 @@ class Helpers:
             debug_log.info(key)
 
             try:
-                db.execute("INSERT INTO session_store (code,json) \
+                cursor.execute("INSERT INTO session_store (code,json) \
                     VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
                 db.commit()
-                db.close()
+                cursor.close()
             except IntegrityError as e:
-                db.execute("UPDATE session_store SET json=? WHERE code=? ;", [dumps(DictionaryToStore[key]), key])
+                cursor.execute("UPDATE session_store SET json=? WHERE code=? ;", [dumps(DictionaryToStore[key]), key])
                 db.commit()
-                db.close()
+                cursor.close()
 
     def query_db(self, query, args=(), one=False):
         db = db_handler.get_db(self.db_path)
-        cur = db.execute(query, args)
+        cursor = db.cursor()
+        cur = cursor.execute(query, args)
         rv = cur.fetchall()
         cur.close()
         return (rv[0] if rv else None) if one else rv

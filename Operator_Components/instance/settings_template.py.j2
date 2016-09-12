@@ -106,13 +106,14 @@ DEBUG_MODE = {{ DEBUG_MODE }}
 DEBUG_MODE = False
 {% endif %}
 
+
+
 CELERY_QUEUES = (
-    Queue('default', Exchange('default'), routing_key='default'),
     Queue('op_queue', Exchange('op_queue'), routing_key='op_queue'),
-    Queue('srv_queue', Exchange('srv_queue'), routing_key='srv_queue'),
 )
 
+CELERY_DEFAULT_QUEUE = 'op_queue'
+
 CELERY_ROUTES = {
-    'op_CR_Installer': {'queue': 'op_queue','routing_key': "op_queue"},
-    'srv_get_AuthToken': {'queue': 'srv_queue', 'routing_key': "srv_queue"}
+    'CR_Installer': {'queue': 'op_queue','routing_key': "op_queue"},
 }

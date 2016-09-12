@@ -6,7 +6,7 @@ celery = create_celery_app()
 
 # TODO Possibly remove this on release
 # @celery.task
-# def op_CR_installer(crs_csrs_payload, sink_url, source_url):
+# def CR_installer(crs_csrs_payload, sink_url, source_url):
 #     # Get these as parameter or inside crs_csrs_payload
 #     endpoint = "/api/1.2/cr/add_cr"
 #     print(crs_csrs_payload)
@@ -22,21 +22,22 @@ import db_handler
 from json import dumps, loads
 from requests import get
 @celery.task
-def srv_get_AuthToken(cr_id, operator_url, db_path):
+def get_AuthToken(cr_id, operator_url, db_path):
     print(operator_url, db_path, cr_id)
     def storeToken(DictionaryToStore):
         db = db_handler.get_db(db_path)
+        cursor = db.cursor()
         try:
             db_handler.init_db(db)
         except OperationalError:
             pass
         for key in DictionaryToStore:
             try:
-                db.execute("INSERT INTO token_storage (cr_id,token) \
+                cursor.execute("INSERT INTO token_storage (cr_id,token) \
                     VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
                 db.commit()
             except IntegrityError as e:  # Rewrite incase we get new token.
-                db.execute("UPDATE token_storage SET token=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
+                cursor.execute("UPDATE token_storage SET token=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
                 db.commit()
 
     print(cr_id)

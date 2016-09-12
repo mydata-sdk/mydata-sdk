@@ -18,13 +18,13 @@ DATABASE_PATH = "./db_Operator.sqlite"
 {% if SELERY_BROKER_URL is defined %}
 SELERY_BROKER_URL = {{ SELERY_BROKER_URL }}
 {% else %}
-SELERY_BROKER_URL = 'redis://localhost:6379/0'
+SELERY_BROKER_URL = 'redis://localhost:6379/1'
 {% endif %}
 
 {% if SELERY_RESULT_BACKEND is defined %}
 SELERY_RESULT_BACKEND = {{ SELERY_RESULT_BACKEND }}
 {% else %}
-SELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+SELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
 {% endif %}
 
 
@@ -71,12 +71,11 @@ DEBUG_MODE = False
 {% endif %}
 
 CELERY_QUEUES = (
-    Queue('default', Exchange('default'), routing_key='default'),
-    Queue('op_queue', Exchange('op_queue'), routing_key='op_queue'),
     Queue('srv_queue', Exchange('srv_queue'), routing_key='srv_queue'),
 )
 
+CELERY_DEFAULT_QUEUE = 'srv_queue'
+
 CELERY_ROUTES = {
-    'op_CR_Installer': {'queue': 'op_queue','routing_key': "op_queue"},
-    'srv_get_AuthToken': {'queue': 'srv_queue', 'routing_key': "srv_queue"}
+    'get_AuthToken': {'queue': 'srv_queue', 'routing_key': "srv_queue"}
 }

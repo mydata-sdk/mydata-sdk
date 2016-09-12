@@ -23,6 +23,7 @@ def sqlite_create_table(conn, table_name, table_columns):
 
 def init_db(conn):
     # create db's
+    conn = conn.cursor()
     conn.execute('''CREATE TABLE token_storage
         (cr_id TEXT PRIMARY KEY     NOT NULL,
          token           TEXT    NOT NULL);''')
