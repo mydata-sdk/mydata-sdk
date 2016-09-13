@@ -1,12 +1,88 @@
 # -*- coding: utf-8 -*-
 import importlib
+import logging
 import pkgutil
+from json import dumps
+from sqlite3 import IntegrityError
 
 from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
 from flask_restful import Api
 
+import db_handler
+from DetailedHTTPException import DetailedHTTPException
 
+debug_log = logging.getLogger("debug")
+class Helpers:
+    def __init__(self, app_config):  # TODO: Reconsider only giving db_path
+        self.db_path = app_config["DATABASE_PATH"]
+
+    def query_db(self, query, args=(), one=False):
+        """
+        Query database
+        :param query: 
+        :param args: 
+        :param one: 
+        :return: None
+        """
+        db = db_handler.get_db(self.db_path)
+        cur = db.cursor().execute(query, args)
+        rv = cur.fetchall()
+        db.close()
+        return (rv[0] if rv else None) if one else rv
+
+    def storeJSON(self, DictionaryToStore):
+        db = db_handler.get_db(self.db_path)
+        cursor = db.cursor()
+        debug_log.info(DictionaryToStore)
+
+        for key in DictionaryToStore:
+            debug_log.info(key)
+            # codes = {"jsons": {}}
+            # codes = {"jsons": {}}
+            try:
+                cursor.execute("INSERT INTO storage (ID,json) \
+                    VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+                db.commit()
+            except IntegrityError as e:
+                cursor.execute("UPDATE storage SET json=? WHERE ID=? ;", [dumps(DictionaryToStore[key]), key])
+                db.commit()
+
+    def storeCodeUser(self, DictionaryToStore):
+        # {"code": "user_id"}
+        db = db_handler.get_db(self.db_path)
+        cursor = db.cursor()
+
+        debug_log.info(DictionaryToStore)
+
+        for key in DictionaryToStore:
+            debug_log.info(key)
+            cursor.execute("INSERT INTO code_and_user_mapping (code, user_id) \
+                VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+            db.commit()
+
+    def get_user_id_with_code(self, code):
+        db = db_handler.get_db(self.db_path)
+        for code_row in self.query_db("select * from code_and_user_mapping where code = ?;", [code]):
+            user_from_db = code_row["user_id"]
+            return user_from_db
+        raise DetailedHTTPException(status=500,
+                                    detail={"msg": "Unable to link code to user_id in database",
+                                            "detail": {"code": code}},
+                                    title="Failed to link code to user_id")
+        # Letting world burn if user was not in db. Fail fast, fail hard.
+
+    def storeSurrogateJSON(self, DictionaryToStore):
+        db = db_handler.get_db(self.db_path)
+        cursor = db.cursor()
+        debug_log.info(DictionaryToStore)
+
+        for key in DictionaryToStore:
+            debug_log.info(key)
+            cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id) \
+                VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+            db.commit()
+            
 def read_key(path, password=None):
     ##
     # Read RSA key from PEM file and return JWK object of it.

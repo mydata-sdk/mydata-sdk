@@ -21,9 +21,9 @@ def make_dicts(cursor, row):
                 for idx, value in enumerate(row))
 
 
-def init_db(conn):
+def init_db(db):
     # create db for codes
-    conn = conn.cursor()
+    conn = db.cursor()
     conn.execute('''CREATE TABLE cr_tbl
         (rs_id TEXT PRIMARY KEY     NOT NULL,
          json           TEXT    NOT NULL);''')
@@ -33,4 +33,4 @@ def init_db(conn):
     conn.execute('''CREATE TABLE session_store
         (code TEXT PRIMARY KEY     NOT NULL,
          json           TEXT    NOT NULL);''')
-    conn.commit()
+    db.commit()

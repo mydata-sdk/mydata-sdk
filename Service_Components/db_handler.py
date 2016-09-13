@@ -21,9 +21,9 @@ def sqlite_create_table(conn, table_name, table_columns):
     conn.cursor.execute("CREATE TABLE {} ({});".format(table_name, ",".join(table_columns)))
     conn.commit()
 
-def init_db(conn):
+def init_db(db):
     # create db's
-    conn = conn.cursor()
+    conn = db.cursor()
     conn.execute('''CREATE TABLE token_storage
         (cr_id TEXT PRIMARY KEY     NOT NULL,
          token           TEXT    NOT NULL);''')
@@ -51,4 +51,4 @@ def init_db(conn):
         (surrogate_id TEXT PRIMARY KEY     NOT NULL,
          json           TEXT    NOT NULL);''')
 
-    conn.commit()
+    db.commit()

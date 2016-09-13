@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-import pkgutil
 import importlib
+import logging
+import pkgutil
+import time
+from base64 import urlsafe_b64decode as decode
+from sqlite3 import OperationalError, IntegrityError
 
+from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
 from flask_restful import Api
-from Crypto.PublicKey.RSA import importKey as import_rsa_key
-from base64 import urlsafe_b64decode as decode
+
 import db_handler as db_handler
-from sqlite3 import OperationalError, IntegrityError
-import time
-import logging
+
 debug_log = logging.getLogger("debug")
 from datetime import datetime
 
@@ -85,7 +87,7 @@ def register_blueprints(app, package_name, package_path):
 
 from jwcrypto import jwt, jwk
 #from Templates import SLR_tool
-from json import dumps, loads, dump, load
+from json import dumps, dump, load
 from uuid import uuid4 as guid
 
 
@@ -288,8 +290,8 @@ class Helpers:
         for rs_id_object in self.query_db("select * from rs_id_tbl where rs_id = ?;", [rs_id]):
             rs_id_from_db = rs_id_object["rs_id"]
             status_from_db = bool(rs_id_object["used"])
-            status_is_unused = status_from_db == False
-            if (status_is_unused):
+            status_is_unused = status_from_db is False
+            if status_is_unused:
                 cursor.execute("UPDATE rs_id_tbl SET used=? WHERE rs_id=? ;", [status, rs_id])
                 db.commit()
                 cursor.close()
@@ -297,7 +299,6 @@ class Helpers:
             else:
                 cursor.close()
                 return False
-
 
     def store_session(self, DictionaryToStore):
         db = db_handler.get_db(self.db_path)
