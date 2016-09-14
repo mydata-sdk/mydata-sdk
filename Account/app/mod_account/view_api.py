@@ -19,8 +19,9 @@ from app import db, api, login_manager, app
 
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
-from app.mod_account.controllers import get_particulars, get_particular, verify_api_key_match_with_account
-from app.mod_account.models import AccountSchema2
+from app.mod_account.controllers import get_particulars, get_particular, verify_api_key_match_with_account, \
+    update_particular
+from app.mod_account.models import AccountSchema2, ParticularsSchema
 from app.mod_api_auth.controllers import gen_account_api_key, requires_api_auth_user, provideApiKey
 from app.mod_blackbox.controllers import gen_account_key
 from app.mod_database.helpers import get_db_cursor
@@ -40,14 +41,19 @@ class Accounts(Resource):
         """
         Example JSON
         {
-          "username": "jukkakukkulansukka",
-          "password": "kukka",
-          "firstName": "string",
-          "lastName": "string",
-          "email": "jukka@kukkula.sukka",
-          "dateOfBirth": "18-08-2016",
-          "acceptTermsOfService": "True"
-        }
+                "data": {
+                    "type": "Account",
+                    "attributes": {
+                        'firstName': 'Erkki',
+                        'lastName': 'Esimerkki',
+                        'dateOfBirth': '31-05-2016',
+                        'email': 'erkki.esimerkki@examlpe.org',
+                        'username': 'testUser',
+                        'password': 'Hello',
+                        'acceptTermsOfService': 'True'
+                    }
+                }
+            }
         :return:
         """
 
@@ -76,13 +82,13 @@ class Accounts(Resource):
             logger.debug("JSON validation -> OK")
 
         try:
-            username = json_data['username']
-            password = json_data['password']
-            firstName = json_data['firstName']
-            lastName = json_data['lastName']
-            email_address = json_data['email']
-            dateOfBirth = json_data['dateOfBirth']
-            acceptTermsOfService = json_data['acceptTermsOfService']
+            username = json_data['data']['attributes']['username']
+            password = json_data['data']['attributes']['password']
+            firstName = json_data['data']['attributes']['firstName']
+            lastName = json_data['data']['attributes']['lastName']
+            email_address = json_data['data']['attributes']['email']
+            dateOfBirth = json_data['data']['attributes']['dateOfBirth']
+            acceptTermsOfService = json_data['data']['attributes']['acceptTermsOfService']
 
             global_identifier = str(uuid.uuid4())
             salt_str = str(bcrypt.gensalt())
@@ -195,13 +201,7 @@ class Accounts(Resource):
             response_data['data'] = {}
             response_data['data']['type'] = "Account"
             response_data['data']['id'] = str(account.id)
-            response_data['data']['attributes'] = {}
-            response_data['data']['attributes']['username'] = username
-            response_data['data']['attributes']['firstName'] = firstName
-            response_data['data']['attributes']['lastName'] = lastName
-            response_data['data']['attributes']['email'] = email_address
-            response_data['data']['attributes']['dateOfBirth'] = dateOfBirth
-            response_data['data']['attributes']['acceptTermsOfService'] = acceptTermsOfService
+            response_data['data']['attributes'] = json_data['data']['attributes']
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
@@ -306,7 +306,7 @@ class AccountParticular(Resource):
     def get(self, account_id, particulars_id):
         logger.info("AccountParticulars")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(api.url_for(self, account_id=account_id, particulars_id=particulars_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -345,6 +345,98 @@ class AccountParticular(Resource):
         try:
             logger.info("Fetching Particulars")
             account_particulars = get_particular(account_id=account_id, id=particulars_id)
+        except Exception as exp:
+            error_title = "No Particulars found"
+            logger.error(error_title)
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Particulars Fetched")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = account_particulars
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+    @requires_api_auth_user
+    def put(self, account_id, particulars_id): # TODO: Should be PATCH instead of PUT
+        logger.info("AccountParticulars")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id, particulars_id=particulars_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        try:
+            particulars_id = str(particulars_id)
+        except Exception as exp:
+            error_title = "Unsupported particulars_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("particulars_id: " + particulars_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_api_key_match_with_account(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # load JSON from payload
+        json_data = request.get_json()
+        if not json_data:
+            error_detail = {'0': 'Set application/json as Content-Type', '1': 'Provide json payload'}
+            raise ApiError(code=400, title="No input data provided", detail=error_detail, source=endpoint)
+        else:
+            logger.debug("json_data: " + json.dumps(json_data))
+
+        # Validate payload content
+        schema = ParticularsSchema()
+        schema_validation_result = schema.load(json_data)
+
+        # Check validation errors
+        if schema_validation_result.errors:
+            logger.error("Invalid payload")
+            raise ApiError(code=400, title="Invalid payload", detail=dict(schema_validation_result.errors), source=endpoint)
+        else:
+            logger.debug("JSON validation -> OK")
+
+        # Collect data
+        try:
+            attributes = json_data['data']['attributes']
+        except Exception as exp:
+            error_title = "Could not collect data"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Update Particulars
+        try:
+            logger.info("Fetching Particulars")
+            account_particulars = update_particular(account_id=account_id, id=particulars_id, attributes=attributes)
         except Exception as exp:
             error_title = "No Particulars found"
             logger.error(error_title)

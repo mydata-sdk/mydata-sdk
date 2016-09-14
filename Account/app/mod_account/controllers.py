@@ -83,7 +83,7 @@ def get_particular(account_id=None, id=None, cursor=None):
     Get one particular entry from database by Account ID and Particulars ID
     :param account_id:
     :param id:
-    :return: Particular object
+    :return: Particular dict
     """
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
@@ -103,7 +103,7 @@ def get_particular(account_id=None, id=None, cursor=None):
         error_title = "Failed to create Particulars object"
         logger.error(error_title + ": " + repr(exp))
         raise
-    finally:
+    else:
         logger.debug("Particulars object created: " + account_particular.log_entry)
 
     # Get particulars from DB
@@ -124,7 +124,7 @@ def get_particulars(account_id=None):
     """
     Get all Particulars -entries related to account
     :param account_id:
-    :return:
+    :return: List of Particular dicts
     """
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
@@ -163,4 +163,109 @@ def get_particulars(account_id=None):
 
     return particulars_list
 
+
+def update_particular(account_id=None, id=None, attributes=None, cursor=None):
+    """
+    Update one particular entry at database identified by Account ID and Particulars ID
+    :param account_id:
+    :param id:
+    :return: Particular dict
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if id is None:
+        raise AttributeError("Provide id as parameter")
+    if attributes is None:
+        raise AttributeError("Provide attributes as parameter")
+    if not isinstance(attributes, dict):
+        raise AttributeError("attributes must be a dict")
+    if cursor is None:
+        # Get DB cursor
+        try:
+            cursor = get_db_cursor()
+        except Exception as exp:
+            logger.error('Could not get database cursor: ' + repr(exp))
+            raise
+
+    try:
+        account_particular = Particulars(account_id=account_id, id=id)
+    except Exception as exp:
+        error_title = "Failed to create Particulars object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("Particulars object created: " + account_particular.log_entry)
+
+    # Get particulars from DB
+    try:
+        cursor = account_particular.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Failed to fetch Particulars from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Particulars fetched")
+        logger.info("Particulars fetched from db: " + account_particular.log_entry)
+
+    # Update Particulars object
+    if len(attributes) == 0:
+        logger.info("Empty attributes dict provided. Nothing to update.")
+        return account_particular.to_api_dict
+    else:
+        logger.info("Particulars object to update: " + account_particular.log_entry)
+
+    # log provided attributes
+    for key, value in attributes.items():
+        logger.debug("attributes[" + str(key) + "]: " + str(value))
+
+    # Update object attributes
+    if "lastname" in attributes:
+        old_value = str(account_particular.lastname)
+        new_value = str(attributes.get("lastname", "None"))
+        logger.info("Updating " + "lastname" + " from " + old_value + " to " + new_value)
+        account_particular.lastname = new_value
+        logger.info("Particulars object: " + account_particular.log_entry)
+
+    if "firstname" in attributes:
+        old_value = str(account_particular.lastname)
+        new_value = str(attributes.get("firstname", "None"))
+        logger.info("Updating " + "firstname" + " from " + old_value + " to " + new_value)
+        account_particular.firstname = new_value
+        logger.info("Particulars object: " + account_particular.log_entry)
+
+    if "img_url" in attributes:
+        old_value = str(account_particular.lastname)
+        new_value = str(attributes.get("img_url", "None"))
+        logger.info("Updating " + "img_url" + " from " + old_value + " to " + new_value)
+        account_particular.img_url = new_value
+        logger.info("Particulars object: " + account_particular.log_entry)
+
+    if "date_of_birth" in attributes:
+        old_value = str(account_particular.lastname)
+        new_value = str(attributes.get("date_of_birth", "None"))
+        logger.info("Updating " + "date_of_birth" + " from " + old_value + " to " + new_value)
+        account_particular.date_of_birth = new_value
+        logger.info("Particulars object: " + account_particular.log_entry)
+
+    # Store updates# Get particulars from DB
+    try:
+        cursor = account_particular.update_db(cursor=cursor)
+        ###
+        # Commit
+        db.connection.commit()
+    except Exception as exp:
+        error_title = "Failed to update Particulars to DB"
+        logger.error(error_title + ": " + repr(exp))
+        logger.debug('commit failed: ' + repr(exp))
+        logger.debug('--> rollback')
+        db.connection.rollback()
+        raise
+    else:
+        logger.info("Particulars updated")
+        logger.info(account_particular.log_entry)
+
+
+
+
+    return account_particular.to_api_dict
 

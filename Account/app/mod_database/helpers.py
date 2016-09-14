@@ -9,7 +9,7 @@ from app import db, app
 # create logger with 'spam_application'
 from app.helpers import get_custom_logger
 
-logger = get_custom_logger('mod_database_helpers')
+logger = get_custom_logger(__name__)
 
 
 def get_db_cursor():
@@ -91,6 +91,33 @@ def execute_sql_insert_2(cursor, sql_query, arguments):
         logger.debug('cursor.lastrowid: ' + last_id)
 
         return cursor, last_id
+
+
+def execute_sql_update(cursor, sql_query, arguments):
+    """
+    :param arguments:
+    :param cursor:
+    :param sql_query:
+    :return: cursor:
+
+    INSERT to MySQL
+    """
+
+    logger.debug('sql_query: ' + str(sql_query))
+
+    for index in range(len(arguments)):
+        logger.debug("arguments[" + str(index) + "]: " + str(arguments[index]))
+
+    try:
+        # Should be done like here: http://stackoverflow.com/questions/3617052/escape-string-python-for-mysql/27575399#27575399
+        cursor.execute(sql_query, (arguments))
+
+    except Exception as exp:
+        logger.debug('Error in SQL query execution: ' + repr(exp))
+        raise
+    else:
+        logger.debug('db entry updated')
+        return cursor
 
 
 def execute_sql_select(cursor=None, sql_query=None):
