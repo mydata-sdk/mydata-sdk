@@ -740,7 +740,7 @@ class Particulars():
     @property
     def to_dict(self):
         if isinstance(self.date_of_birth, datetime.date):
-            self.date_of_birth = self.date_of_birth.strftime("%d-%m-%Y")
+            self.date_of_birth = self.date_of_birth.strftime("%Y-%m-%d")
         return self.__dict__
 
     @property
@@ -774,7 +774,7 @@ class Particulars():
     def to_db(self, cursor=""):
 
         sql_query = "INSERT INTO " + self.table_name + " (firstname, lastname, dateOfBirth, img_url, Accounts_id) " \
-                    "VALUES (%s, %s, STR_TO_DATE(%s, '%%d-%%m-%%Y'), %s, %s)"
+                    "VALUES (%s, %s, STR_TO_DATE(%s, '%%Y-%%m-%%d'), %s, %s)"
 
         arguments = (
             str(self.firstname),
@@ -795,9 +795,8 @@ class Particulars():
 
     def update_db(self, cursor=""):
 
-        sql_query = "UPDATE " + self.table_name + " SET (firstname, lastname, dateOfBirth, img_url, Accounts_id) " \
-                    "VALUES (%s, %s, STR_TO_DATE(%s, '%%d-%%m-%%Y'), %s) " \
-                    "WHERE id LIKE %s AND Accounts_id LIKE %s"
+        sql_query = "UPDATE " + self.table_name + " SET firstname=%s, lastname=%s, dateOfBirth=STR_TO_DATE(%s, '%%Y-%%m-%%d'), img_url=%s " \
+                    "WHERE id=%s AND Accounts_id=%s"
 
         arguments = (
             str(self.firstname),
@@ -809,29 +808,40 @@ class Particulars():
         )
 
         try:
-            cursor, last_id = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
         except Exception as exp:
             logger.debug('sql_query: ' + repr(exp))
             raise
         else:
-            self.id = last_id
+            logger.info("SQL query executed")
             return cursor
 
     def from_db(self, cursor=None):
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
+        # Querying with all data disabled due formatting problems
+        # TODO: Enable Querying with Date
+        # sql_query = "SELECT id, firstname, lastname, dateOfBirth, img_url, Accounts_id " \
+        #             "FROM " + self.table_name + " " \
+        #             "WHERE id LIKE %s AND firstname LIKE %s AND lastname LIKE %s AND dateOfBirth LIKE %s " \
+        #             "AND img_url LIKE %s AND Accounts_id LIKE %s;"
+        #
+        # arguments = (
+        #     '%' + str(self.id) + '%',
+        #     '%' + str(self.firstname) + '%',
+        #     '%' + str(self.lastname) + '%',
+        #     '%' + str(self.date_of_birth) + '%',
+        #     '%' + str(self.img_url) + '%',
+        #     '%' + str(self.account_id) + '%',
+        # )
+
         sql_query = "SELECT id, firstname, lastname, dateOfBirth, img_url, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND firstname LIKE %s AND lastname LIKE %s AND dateOfBirth LIKE %s " \
-                    "AND img_url LIKE %s AND Accounts_id LIKE %s;"
+                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
-            '%' + str(self.firstname) + '%',
-            '%' + str(self.lastname) + '%',
-            '%' + str(self.date_of_birth) + '%',
-            '%' + str(self.img_url) + '%',
             '%' + str(self.account_id) + '%',
         )
 

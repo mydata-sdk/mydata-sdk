@@ -103,7 +103,7 @@ class InitDb(Resource):
                     "attributes": {
                         'firstName': 'Erkki',
                         'lastName': 'Esimerkki',
-                        'dateOfBirth': '31-05-2016',
+                        'dateOfBirth': '2016-04-29',
                         'email': 'erkki.esimerkki@examlpe.org',
                         'username': 'testUser',
                         'password': 'Hello',
@@ -117,7 +117,7 @@ class InitDb(Resource):
                     "attributes": {
                         'firstName': 'Iso',
                         'lastName': 'Pasi',
-                        'dateOfBirth': '31-05-2016',
+                        'dateOfBirth': '2016-08-12',
                         'email': 'iso.pasi@examlpe.org',
                         'username': 'pasi',
                         'password': '0nk0va',
@@ -131,7 +131,7 @@ class InitDb(Resource):
                     "attributes": {
                         'firstName': 'Dude',
                         'lastName': 'Dudeson',
-                        'dateOfBirth': '31-05-2016',
+                        'dateOfBirth': '2016-05-31',
                         'email': 'dude.dudeson@examlpe.org',
                         'username': 'mydata',
                         'password': 'Hello',
@@ -145,7 +145,7 @@ class InitDb(Resource):
             {
                 'firstname': 'Erkki',
                 'lastname': 'Esimerkki',
-                'dateofbirth': '31-05-2016',
+                'dateofbirth': '2016-05-31',
                 'email': 'erkki.esimerkki@examlpe.org',
                 'username': 'testUser',
                 'password': 'Hello'
@@ -153,7 +153,7 @@ class InitDb(Resource):
             {
                 'firstname': 'Iso',
                 'lastname': 'Pasi',
-                'dateofbirth': '31-05-2016',
+                'dateofbirth': '2016-05-31',
                 'email': 'iso.pasi@examlpe.org',
                 'username': 'pasi',
                 'password': '0nk0va'
@@ -161,7 +161,7 @@ class InitDb(Resource):
             {
                 'firstname': 'Dude',
                 'lastname': 'Dudeson',
-                'dateofbirth': '31-05-2016',
+                'dateofbirth': '2016-05-31',
                 'email': 'dude.dudeson@examlpe.org',
                 'username': 'mydata',
                 'password': 'Hello'

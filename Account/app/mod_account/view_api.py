@@ -19,7 +19,7 @@ from app import db, api, login_manager, app
 
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
-from app.mod_account.controllers import get_particulars, get_particular, verify_api_key_match_with_account, \
+from app.mod_account.controllers import get_particulars, get_particular, verify_account_id_match, \
     update_particular
 from app.mod_account.models import AccountSchema2, ParticularsSchema
 from app.mod_api_auth.controllers import gen_account_api_key, requires_api_auth_user, provideApiKey
@@ -46,7 +46,7 @@ class Accounts(Resource):
                     "attributes": {
                         'firstName': 'Erkki',
                         'lastName': 'Esimerkki',
-                        'dateOfBirth': '31-05-2016',
+                        'dateOfBirth': '2016-05-31',
                         'email': 'erkki.esimerkki@examlpe.org',
                         'username': 'testUser',
                         'password': 'Hello',
@@ -268,7 +268,7 @@ class AccountParticulars(Resource):
             logger.info("account_id: " + account_id)
 
         # Check if Account IDs from path and ApiKey are matching
-        if verify_api_key_match_with_account(account_id=account_id, api_key=api_key, endpoint=endpoint):
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
             logger.info("Account IDs are matching")
 
         # Get Particulars
@@ -338,7 +338,7 @@ class AccountParticular(Resource):
             logger.info("particulars_id: " + particulars_id)
 
         # Check if Account IDs from path and ApiKey are matching
-        if verify_api_key_match_with_account(account_id=account_id, api_key=api_key, endpoint=endpoint):
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
             logger.info("Account IDs are matching")
 
         # Get Particulars
@@ -403,8 +403,8 @@ class AccountParticular(Resource):
             logger.info("particulars_id: " + particulars_id)
 
         # Check if Account IDs from path and ApiKey are matching
-        if verify_api_key_match_with_account(account_id=account_id, api_key=api_key, endpoint=endpoint):
-            logger.info("Account IDs are matching")
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs from path and ApiKey are matching")
 
         # load JSON from payload
         json_data = request.get_json()
@@ -425,6 +425,10 @@ class AccountParticular(Resource):
         else:
             logger.debug("JSON validation -> OK")
 
+        # Check if Account IDs from path and payload are matching
+        if verify_account_id_match(account_id=account_id, account_id_to_compare=json_data['data']['id'], endpoint=endpoint):
+            logger.info("Account IDs from path and payload are matching")
+
         # Collect data
         try:
             attributes = json_data['data']['attributes']
@@ -442,7 +446,7 @@ class AccountParticular(Resource):
             logger.error(error_title)
             raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
         else:
-            logger.info("Particulars Fetched")
+            logger.info("Particulars Updated")
 
         # Response data container
         try:

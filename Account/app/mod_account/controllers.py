@@ -28,7 +28,7 @@ from app.mod_database.models import Particulars
 logger = get_custom_logger(__name__)
 
 
-def verify_api_key_match_with_account(account_id=None, api_key=None, endpoint=None):
+def verify_account_id_match(account_id=None, api_key=None, account_id_to_compare=None, endpoint=None):
     """
     Verifies that provided account id matches with account id fetched with api key.
 
@@ -39,31 +39,34 @@ def verify_api_key_match_with_account(account_id=None, api_key=None, endpoint=No
     """
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
-    if api_key is None:
-        raise AttributeError("Provide api_key as parameter")
     if endpoint is None:
         raise AttributeError("Provide endpoint as parameter")
 
-    # Get Account ID by Api-Key
-    try:
-        logger.info("Fetching Account ID by Api-Key")
-        account_id_by_api_key = get_account_id_by_api_key(api_key=api_key)
-    except Exception as exp:
-        error_title = "Account ID not found with provided ApiKey"
-        logger.error(error_title)
-        raise ApiError(
-            code=403,
-            title=error_title,
-            detail=repr(exp),
-            source=endpoint
-        )
-    else:
-        logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
+    # Get Account ID by Api-Key or compare to provided
+    if api_key is not None:
+        try:
+            logger.info("Fetching Account ID by Api-Key")
+            account_id_by_api_key = get_account_id_by_api_key(api_key=api_key)
+        except Exception as exp:
+            error_title = "Account ID not found with provided ApiKey"
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                detail=repr(exp),
+                source=endpoint
+            )
+        else:
+            logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
+            account_id_to_compare = account_id_by_api_key
+            error_title = "Authenticated Account ID not matching with Account ID that was provided with request"
+    elif account_id_to_compare is not None:
+        logger.info("account_id_to_compare provided as parameter")
+        error_title = "Account ID in payload not matching with Account ID that was provided with request"
 
     # Check if Account IDs are matching
     logger.info("Check if Account IDs are matching")
-    if str(account_id) is not str(account_id_by_api_key):
-        error_title = "Authenticated Account ID not matching with Account ID that was provided with request"
+    if str(account_id) is not str(account_id_to_compare):
         logger.error(error_title)
         raise ApiError(
             code=403,
@@ -73,7 +76,7 @@ def verify_api_key_match_with_account(account_id=None, api_key=None, endpoint=No
     else:
         logger.info("Account IDs are matching")
         logger.info("account_id: " + str(account_id))
-        logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
+        logger.info("account_id_to_compare: " + str(account_id_to_compare))
 
     return True
 
@@ -220,34 +223,38 @@ def update_particular(account_id=None, id=None, attributes=None, cursor=None):
 
     # Update object attributes
     if "lastname" in attributes:
+        logger.info("Updating lastname")
         old_value = str(account_particular.lastname)
         new_value = str(attributes.get("lastname", "None"))
-        logger.info("Updating " + "lastname" + " from " + old_value + " to " + new_value)
+        logger.debug("Updating: " + old_value + " --> " + new_value)
         account_particular.lastname = new_value
         logger.info("Particulars object: " + account_particular.log_entry)
 
     if "firstname" in attributes:
-        old_value = str(account_particular.lastname)
+        logger.info("Updating firstname")
+        old_value = str(account_particular.firstname)
         new_value = str(attributes.get("firstname", "None"))
-        logger.info("Updating " + "firstname" + " from " + old_value + " to " + new_value)
+        logger.debug("Updating: " + old_value + " --> " + new_value)
         account_particular.firstname = new_value
         logger.info("Particulars object: " + account_particular.log_entry)
 
     if "img_url" in attributes:
-        old_value = str(account_particular.lastname)
+        logger.info("Updating img_url")
+        old_value = str(account_particular.img_url)
         new_value = str(attributes.get("img_url", "None"))
-        logger.info("Updating " + "img_url" + " from " + old_value + " to " + new_value)
+        logger.debug("Updating: " + old_value + " --> " + new_value)
         account_particular.img_url = new_value
         logger.info("Particulars object: " + account_particular.log_entry)
 
     if "date_of_birth" in attributes:
-        old_value = str(account_particular.lastname)
+        logger.info("Updating date_of_birth")
+        old_value = str(account_particular.date_of_birth)
         new_value = str(attributes.get("date_of_birth", "None"))
-        logger.info("Updating " + "date_of_birth" + " from " + old_value + " to " + new_value)
+        logger.debug("Updating: " + old_value + " --> " + new_value)
         account_particular.date_of_birth = new_value
         logger.info("Particulars object: " + account_particular.log_entry)
 
-    # Store updates# Get particulars from DB
+    # Store updates
     try:
         cursor = account_particular.update_db(cursor=cursor)
         ###
@@ -261,10 +268,9 @@ def update_particular(account_id=None, id=None, attributes=None, cursor=None):
         db.connection.rollback()
         raise
     else:
+        logger.debug("Committed")
         logger.info("Particulars updated")
         logger.info(account_particular.log_entry)
-
-
 
 
     return account_particular.to_api_dict

@@ -12,6 +12,20 @@ from app.helpers import get_custom_logger
 logger = get_custom_logger(__name__)
 
 
+def log_query(sql_query=None, arguments=None):
+    if sql_query is None:
+        raise AttributeError("Provide sql_query as parameter")
+    if arguments is None:
+        raise AttributeError("Provide arguments as parameter")
+
+    logger.debug('sql_query: ' + repr(sql_query))
+
+    for index in range(len(arguments)):
+        logger.debug("arguments[" + str(index) + "]: " + str(arguments[index]))
+
+    logger.debug('SQL query to execute: ' + repr(sql_query % arguments))
+
+
 def get_db_cursor():
     try:
         cursor = db.connection.cursor()
@@ -69,15 +83,13 @@ def execute_sql_insert_2(cursor, sql_query, arguments):
 
     last_id = ""
 
-    logger.debug('sql_query: ' + str(sql_query))
-
-    for index in range(len(arguments)):
-        logger.debug("arguments[" + str(index) + "]: " + str(arguments[index]))
+    log_query(sql_query=sql_query, arguments=arguments)
 
     try:
         # Should be done like here: http://stackoverflow.com/questions/3617052/escape-string-python-for-mysql/27575399#27575399
         cursor.execute(sql_query, (arguments))
-
+        logger.debug("Executed SQL query: " + str(cursor._last_executed))
+        logger.debug("Affected rows: " + str(cursor.rowcount))
     except Exception as exp:
         logger.debug('Error in SQL query execution: ' + repr(exp))
         raise
@@ -111,7 +123,8 @@ def execute_sql_update(cursor, sql_query, arguments):
     try:
         # Should be done like here: http://stackoverflow.com/questions/3617052/escape-string-python-for-mysql/27575399#27575399
         cursor.execute(sql_query, (arguments))
-
+        logger.debug("Executed SQL query: " + str(cursor._last_executed))
+        logger.debug("Affected rows SQL query: " + str(cursor.rowcount))
     except Exception as exp:
         logger.debug('Error in SQL query execution: ' + repr(exp))
         raise
@@ -162,12 +175,13 @@ def execute_sql_select_2(cursor=None, sql_query=None, arguments=None):
     SELECT from MySQL
     """
 
-    if app.config["SUPER_DEBUG"]:
-        logger.debug('sql_query: ' + repr(sql_query))
+    log_query(sql_query=sql_query, arguments=arguments)
 
     try:
-        cursor.execute(sql_query, (arguments))
 
+        cursor.execute(sql_query, (arguments))
+        logger.debug("Executed SQL query: " + str(cursor._last_executed))
+        logger.debug("Affected rows: " + str(cursor.rowcount))
     except Exception as exp:
         logger.debug('Error in SQL query execution: ' + repr(exp))
         raise
@@ -178,8 +192,7 @@ def execute_sql_select_2(cursor=None, sql_query=None, arguments=None):
         logger.debug('cursor.fetchall() failed: ' + repr(exp))
         data = 'No content'
 
-    if app.config["SUPER_DEBUG"]:
-        logger.debug('data ' + repr(data))
+    logger.debug('data ' + repr(data))
 
     return cursor, data
 
