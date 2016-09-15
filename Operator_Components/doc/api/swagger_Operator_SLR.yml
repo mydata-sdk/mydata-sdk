@@ -39,7 +39,7 @@ paths:
     get:
       tags:
       - "Operator"
-      description: "Entry point for creating new SLR with service\nWill takes a UUID\
+      description: "Entry point for creating new SLR with service.\nWill take UUID\
         \ of service to link with as paramater"
       parameters:
       - name: "account_id"

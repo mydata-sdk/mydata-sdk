@@ -53,6 +53,11 @@ services:
       - ACCOUNT_MANAGEMENT_USER="test_sdk"
       - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
       - DATABASE_PATH="./db_Operator.sqlite"
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='mydataaccount'
+      - MYSQL_PASSWORD='wr8gabrA'
+      - MYSQL_DB='MyDataAccount'
+      - MYSQL_PORT=3306
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
       # https://github.com/celery/celery/issues/2765#issuecomment-228224236

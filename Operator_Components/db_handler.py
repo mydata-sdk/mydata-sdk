@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-import sqlite3
+import logging
 
+import MySQLdb
 
-def get_db(db_path):
+debug_log = logging.getLogger("debug")
+def get_db(host, user, password, database, port):
     db = None
     if db is None:
-        db = sqlite3.connect(db_path)
-        db.row_factory = sqlite3.Row
+        db = MySQLdb.connect(host=host, user=user, passwd=password, db=database, port=port)
+        #db.row_factory = sqlite3.Row
 
         try:
             init_db(db)
         except Exception as e:
-            pass
+            debug_log.exception(e)
     return db
-
 
 
 def make_dicts(cursor, row):

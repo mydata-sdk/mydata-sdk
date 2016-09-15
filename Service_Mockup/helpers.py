@@ -13,6 +13,7 @@ import db_handler
 from DetailedHTTPException import DetailedHTTPException
 
 debug_log = logging.getLogger("debug")
+
 class Helpers:
     def __init__(self, app_config):  # TODO: Reconsider only giving db_path
         self.db_path = app_config["DATABASE_PATH"]
@@ -20,10 +21,10 @@ class Helpers:
     def query_db(self, query, args=(), one=False):
         """
         Query database
-        :param query: 
-        :param args: 
-        :param one: 
-        :return: None
+        :param query: SQL query to execute
+        :param args: arguments list to inject into query
+        :param one: Return only one result
+        :return: Query results
         """
         db = db_handler.get_db(self.db_path)
         cur = db.cursor().execute(query, args)

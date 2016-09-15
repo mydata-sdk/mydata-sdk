@@ -96,6 +96,7 @@ class RegisterSur(Resource):
     def __init__(self):
         super(RegisterSur, self).__init__()
         self.db_path = current_app.config["DATABASE_PATH"]
+        self.helpers = Helpers(current_app.config)
     @timeme
     @error_handler
     def post(self):
@@ -112,6 +113,7 @@ class StoreSlr(Resource):
     def __init__(self):
         super(StoreSlr, self).__init__()
         self.db_path = current_app.config["DATABASE_PATH"]
+        self.helpers = Helpers(current_app.config)
 
     @timeme
     @error_handler

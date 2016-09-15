@@ -4,7 +4,7 @@ import logging
 import pkgutil
 import time
 from base64 import urlsafe_b64decode as decode
-from sqlite3 import OperationalError, IntegrityError
+from sqlite3 import IntegrityError
 
 from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
@@ -257,9 +257,14 @@ class AccountManagerHandler:
 
 class Helpers:
     def __init__(self, app_config):
-        self.db_path = app_config["DATABASE_PATH"]
+        self.host = app_config["MYSQL_HOST"]
         self.cert_key_path = app_config["CERT_KEY_PATH"]
         self.keysize = app_config["KEYSIZE"]
+        self.user = app_config["MYSQL_USER"]
+        self.passwd = app_config["MYSQL_PASSWORD"]
+        self.db = app_config["MYSQL_DB"]
+        self.port = app_config["MYSQL_PORT"]
+
 
     def validate_rs_id(self, rs_id):
         ##
@@ -268,12 +273,8 @@ class Helpers:
         return self.change_rs_id_status(rs_id, True)
 
     def storeRS_ID(self, rs_id):
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        try:
-            db_handler.init_db(db)
-        except OperationalError:
-            pass
         rs_id_status = False
         cursor.execute("INSERT INTO rs_id_tbl (rs_id, used) \
             VALUES (?, ?)", [rs_id, rs_id_status])
@@ -281,12 +282,8 @@ class Helpers:
         cursor.close()
 
     def change_rs_id_status(self, rs_id, status):
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        try:
-            db_handler.init_db(db)
-        except OperationalError:
-            pass
         for rs_id_object in self.query_db("select * from rs_id_tbl where rs_id = ?;", [rs_id]):
             rs_id_from_db = rs_id_object["rs_id"]
             status_from_db = bool(rs_id_object["used"])
@@ -301,12 +298,8 @@ class Helpers:
                 return False
 
     def store_session(self, DictionaryToStore):
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        try:
-            db_handler.init_db(db)
-        except OperationalError:
-            pass
         debug_log.info(DictionaryToStore)
 
         for key in DictionaryToStore:
@@ -314,16 +307,16 @@ class Helpers:
 
             try:
                 cursor.execute("INSERT INTO session_store (code,json) \
-                    VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
                 cursor.close()
             except IntegrityError as e:
-                cursor.execute("UPDATE session_store SET json=? WHERE code=? ;", [dumps(DictionaryToStore[key]), key])
+                cursor.execute("UPDATE session_store SET json=%s WHERE code=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
                 cursor.close()
 
     def query_db(self, query, args=(), one=False):
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cur = cursor.execute(query, args)
         rv = cur.fetchall()
