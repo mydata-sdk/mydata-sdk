@@ -1660,6 +1660,34 @@ class Contacts():
             self.id = last_id
             return cursor
 
+    def update_db(self, cursor=""):
+
+        sql_query = "UPDATE " + self.table_name + " SET address1=%s, address2=%s, postalCode=%s, city=%s, state=%s, " \
+                                                  "country=%s, typeEnum=%s, prime=%s " \
+                                                  "WHERE id=%s AND Accounts_id=%s"
+
+        arguments = (
+            str(self.address1),
+            str(self.address2),
+            str(self.postal_code),
+            str(self.city),
+            str(self.state),
+            str(self.country),
+            str(self.type),
+            str(self.prime),
+            str(self.id),
+            str(self.account_id),
+        )
+
+        try:
+            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+        except Exception as exp:
+            logger.debug('sql_query: ' + repr(exp))
+            raise
+        else:
+            logger.info("SQL query executed")
+            return cursor
+
     def from_db(self, cursor=None):
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
