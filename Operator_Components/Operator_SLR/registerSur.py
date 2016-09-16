@@ -111,10 +111,14 @@ class RegisterSur(Resource):
             js = request.json
 
             sq.task("Load account_id and service_id from database")
-            for code_json in self.query_db("select * from session_store where code = %s;", [js["code"]]):
-                debug_log.debug("{}  {}".format(type(code_json), code_json))
-                account_id = loads(code_json["json"])["account_id"]
-                self.payload["service_id"] = loads(code_json["json"])["service_id"]
+            query = self.query_db("select * from session_store where code=%s;", (js["code"],))
+            debug_log.info(type(query))
+            debug_log.info(query)
+            for key, value in query.iteritems():
+                line = {'33f2ca9b-17ab-4ed7-9189-52c274cbf9a5': '{"service_id": "2", "account_id": "2"}'}
+                debug_log.debug("{}  {}".format(type(query), query))
+                account_id = loads(value)["account_id"]
+                self.payload["service_id"] = loads(value)["service_id"]
             # Check Surrogate_ID exists.
             # Fill token_key
             try:

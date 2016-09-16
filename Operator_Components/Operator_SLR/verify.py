@@ -148,7 +148,7 @@ class VerifySLR(Resource):
             # Verify SLR with key from Service_Components Management
             ##
             sq.task("Load account_id from database")
-            for code_json in self.query_db("select * from session_store where code = ?;",
+            for code_json in self.query_db("select * from session_store where code=%s;",
                                            [request.json["data"]["code"]]):
                 debug_log.debug("{}  {}".format(type(code_json), code_json))
                 account_id = loads(code_json["json"])["account_id"]

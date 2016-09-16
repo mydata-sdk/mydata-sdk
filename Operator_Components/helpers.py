@@ -284,7 +284,7 @@ class Helpers:
     def change_rs_id_status(self, rs_id, status):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        for rs_id_object in self.query_db("select * from rs_id_tbl where rs_id = ?;", [rs_id]):
+        for rs_id_object in self.query_db("select * from rs_id_tbl where rs_id=%s;", [rs_id]):
             rs_id_from_db = rs_id_object["rs_id"]
             status_from_db = bool(rs_id_object["used"])
             status_is_unused = status_from_db is False
@@ -319,8 +319,20 @@ class Helpers:
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cur = cursor.execute(query, args)
-        rv = cur.fetchall()
-        cur.close()
+        rs = {}
+        try:
+            rv = cursor.fetchall()
+            for key, value in rv:
+                rs.update({key: value})
+            db.close()
+            return rs
+        except AttributeError as e:
+            debug_log.exception(e)
+            debug_log.info(cur)
+            db.close()
+            return cur
+
+        db.close()
         return (rv[0] if rv else None) if one else rv
 
     def gen_rs_id(self, source_name):
