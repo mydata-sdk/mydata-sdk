@@ -7,7 +7,7 @@ services:
     container_name: mysql-db
     volumes:
       - mysql-data:/var/lib/mysql
-      - "./Account/doc/database:/docker-entrypoint-initdb.d:ro"
+      - "./init-db:/docker-entrypoint-initdb.d:ro"
     environment:
       - MYSQL_ROOT_PASSWORD=Y3xUcheg
       - MYSQL_USER=mydataaccount
@@ -54,9 +54,9 @@ services:
       - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
       - DATABASE_PATH="./db_Operator.sqlite"
       - MYSQL_HOST='mysql-db'
-      - MYSQL_USER='mydataaccount'
-      - MYSQL_PASSWORD='wr8gabrA'
-      - MYSQL_DB='MyDataAccount'
+      - MYSQL_USER='operator'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Operator'
       - MYSQL_PORT=3306
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here

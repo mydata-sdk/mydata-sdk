@@ -445,6 +445,7 @@ class Helpers:
         payload = {"iss": slrt.get_operator_key(),  # Operator_Key
                    "sub": slrt.get_sink_key(),  # Service_Components(Sink) Key
                    "aud": slrt.get_dataset(),  # Hard to build real
+                   # TODO: Logic to determine exp time
                    "exp": datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z "), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
                    "nbf": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z "),  # The time before which token MUST NOT be accepted
