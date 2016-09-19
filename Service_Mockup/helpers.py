@@ -64,9 +64,9 @@ class Helpers:
 
     def get_user_id_with_code(self, code):
         db = db_handler.get_db(self.db_path)
-        for code_row in self.query_db("select * from code_and_user_mapping where code=?;", [code]):
-            user_from_db = code_row["user_id"]
-            return user_from_db
+        query = self.query_db("select * from code_and_user_mapping where code=?;", [code])
+        user_from_db = loads(query)["user_id"]
+        return user_from_db
         raise DetailedHTTPException(status=500,
                                     detail={"msg": "Unable to link code to user_id in database",
                                             "detail": {"code": code}},

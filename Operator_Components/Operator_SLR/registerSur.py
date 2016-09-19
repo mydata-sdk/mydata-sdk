@@ -114,11 +114,12 @@ class RegisterSur(Resource):
             query = self.query_db("select * from session_store where code=%s;", (js["code"],))
             debug_log.info(type(query))
             debug_log.info(query)
-            for key, value in query.iteritems():
-                line = {'33f2ca9b-17ab-4ed7-9189-52c274cbf9a5': '{"service_id": "2", "account_id": "2"}'}
-                debug_log.debug("{}  {}".format(type(query), query))
-                account_id = loads(value)["account_id"]
-                self.payload["service_id"] = loads(value)["service_id"]
+            dict_query = loads(query)
+            line = '{"service_id": "2", "account_id": "2"}'
+            debug_log.debug("{}  {}".format(type(query), query))
+
+            account_id = dict_query["account_id"]
+            self.payload["service_id"] = dict_query["service_id"]
             # Check Surrogate_ID exists.
             # Fill token_key
             try:

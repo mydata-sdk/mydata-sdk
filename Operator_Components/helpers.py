@@ -284,18 +284,19 @@ class Helpers:
     def change_rs_id_status(self, rs_id, status):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        for rs_id_object in self.query_db("select * from rs_id_tbl where rs_id=%s;", [rs_id]):
-            rs_id_from_db = rs_id_object["rs_id"]
-            status_from_db = bool(rs_id_object["used"])
-            status_is_unused = status_from_db is False
-            if status_is_unused:
-                cursor.execute("UPDATE rs_id_tbl SET used=? WHERE rs_id=? ;", [status, rs_id])
-                db.commit()
-                cursor.close()
-                return True
-            else:
-                cursor.close()
-                return False
+        query = self.query_db("select * from rs_id_tbl where rs_id=%s;", [rs_id])
+        dict_query = loads(query)
+        rs_id_from_db = dict_query["rs_id"]
+        status_from_db = bool(dict_query["used"])
+        status_is_unused = status_from_db is False
+        if status_is_unused:
+            cursor.execute("UPDATE rs_id_tbl SET used=? WHERE rs_id=? ;", [status, rs_id])
+            db.commit()
+            cursor.close()
+            return True
+        else:
+            cursor.close()
+            return False
 
     def store_session(self, DictionaryToStore):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
@@ -315,25 +316,26 @@ class Helpers:
                 db.commit()
                 cursor.close()
 
-    def query_db(self, query, args=(), one=False):
+    def query_db(self, query, args=()):
+        '''
+        Simple queries to DB
+        :param query: SQL query
+        :param args: Arguments to inject into the query
+        :return: Single hit for the given query
+        '''
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cur = cursor.execute(query, args)
-        rs = {}
         try:
-            rv = cursor.fetchall()
-            for key, value in rv:
-                rs.update({key: value})
+            rv = cursor.fetchone()  # Returns tuple
+            debug_log.info(rv)
             db.close()
-            return rs
-        except AttributeError as e:
+            return rv[1]  # The second value in the tuple.
+        except Exception as e:
             debug_log.exception(e)
             debug_log.info(cur)
             db.close()
-            return cur
-
-        db.close()
-        return (rv[0] if rv else None) if one else rv
+            return None
 
     def gen_rs_id(self, source_name):
         ##
