@@ -54,9 +54,10 @@ class ConsentFormHandler(Resource):
         _consent_form["source"]["service_id"] = source["name"]
 
         sq.task("Generate RS_ID")
-        sq.task("Store RS_ID")
+
 
         rs_id = self.Helpers.gen_rs_id(source["name"])
+        sq.task("Store RS_ID")
         _consent_form["source"]["rs_id"] = rs_id
 
         sq.reply_to("UI", msg="Consent Form+RS_ID")

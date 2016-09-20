@@ -277,20 +277,23 @@ class Helpers:
         cursor = db.cursor()
         rs_id_status = False
         cursor.execute("INSERT INTO rs_id_tbl (rs_id, used) \
-            VALUES (?, ?)", [rs_id, rs_id_status])
+            VALUES (%s, %s)", (rs_id, rs_id_status))
         db.commit()
+        debug_log.info("Stored RS_ID({}) into DB".format(rs_id))
         cursor.close()
 
     def change_rs_id_status(self, rs_id, status):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        query = self.query_db("select * from rs_id_tbl where rs_id=%s;", [rs_id])
-        dict_query = loads(query)
-        rs_id_from_db = dict_query["rs_id"]
-        status_from_db = bool(dict_query["used"])
+        query = cursor.execute("select * from rs_id_tbl where rs_id=%s;", (rs_id,))
+        result = cursor.fetchone()
+        rs_id = result[0]
+        used = result[1]
+        debug_log.info(result)
+        status_from_db = bool(used)
         status_is_unused = status_from_db is False
         if status_is_unused:
-            cursor.execute("UPDATE rs_id_tbl SET used=? WHERE rs_id=? ;", [status, rs_id])
+            cursor.execute("UPDATE rs_id_tbl SET used=%s WHERE rs_id=%s ;", (status, rs_id))
             db.commit()
             cursor.close()
             return True
