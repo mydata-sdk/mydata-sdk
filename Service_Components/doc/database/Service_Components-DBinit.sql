@@ -78,6 +78,20 @@ ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
 
+-- -----------------------------------------------------
+-- Table `db_Srv`.`token_storage`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `db_Srv`.`token_storage` ;
+
+CREATE TABLE IF NOT EXISTS `db_Srv`.`token_storage` (
+  `cr_id` LONGTEXT NOT NULL,
+  `token` LONGTEXT NOT NULL,
+  PRIMARY KEY (`cr_id`(255)))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;

@@ -313,11 +313,12 @@ class Helpers:
                 cursor.execute("INSERT INTO session_store (code,json) \
                     VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
-                cursor.close()
+                #db.close()
             except IntegrityError as e:
                 cursor.execute("UPDATE session_store SET json=%s WHERE code=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
-                cursor.close()
+                #db.close()
+        db.close()
 
     def query_db(self, query, args=()):
         '''
@@ -332,8 +333,11 @@ class Helpers:
         try:
             rv = cursor.fetchone()  # Returns tuple
             debug_log.info(rv)
-            db.close()
-            return rv[1]  # The second value in the tuple.
+            if rv is not None:
+                db.close()
+                return rv[1]  # The second value in the tuple.
+            else:
+                return None
         except Exception as e:
             debug_log.exception(e)
             debug_log.info(cur)

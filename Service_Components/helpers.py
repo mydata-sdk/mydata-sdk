@@ -26,21 +26,38 @@ def validate_json(schema, json): # "json" here needs to be python dict.
 
 class Helpers:
     def __init__(self, app_config):
-        self.db_path = app_config["DATABASE_PATH"]
+        self.host = app_config["MYSQL_HOST"]
+        self.cert_key_path = app_config["CERT_KEY_PATH"]
+        self.keysize = app_config["KEYSIZE"]
+        self.user = app_config["MYSQL_USER"]
+        self.passwd = app_config["MYSQL_PASSWORD"]
+        self.db = app_config["MYSQL_DB"]
+        self.port = app_config["MYSQL_PORT"]
 
-    def query_db(self, query, args=(), one=False):
-        """
-        Query database
-        :param query: 
-        :param args: 
-        :param one: 
-        :return: None
-        """
-        db = db_handler.get_db(self.db_path)
-        cur = db.cursor().execute(query, args)
-        rv = cur.fetchall()
-        db.close()
-        return (rv[0] if rv else None) if one else rv
+    def query_db(self, query, args=()):
+        '''
+        Simple queries to DB
+        :param query: SQL query
+        :param args: Arguments to inject into the query
+        :return: Single hit for the given query
+        '''
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+        cursor = db.cursor()
+        cur = cursor.execute(query, args)
+        try:
+            rv = cursor.fetchone()  # Returns tuple
+            debug_log.info(rv)
+            if rv is not None:
+                db.close()
+                return rv[1]  # The second value in the tuple.
+            else:
+                return None
+        except Exception as e:
+            debug_log.exception(e)
+            debug_log.info(cur)
+            db.close()
+            return None
+
 
     def storeJSON(self, DictionaryToStore):
         """
@@ -48,22 +65,19 @@ class Helpers:
         :param DictionaryToStore: Dictionary in form {"key" : "dict_to_store"}
         :return: 
         """
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        try:
-            db_handler.init_db(db)
-        except OperationalError:
-            pass
         debug_log.info(DictionaryToStore)
         for key in DictionaryToStore:
             debug_log.info(key)
             try:
                 cursor.execute("INSERT INTO storage (surrogate_id,json) \
-                    VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
             except IntegrityError as e:
-                cursor.execute("UPDATE storage SET json=? WHERE surrogate_id=? ;", [dumps(DictionaryToStore[key]), key])
+                cursor.execute("UPDATE storage SET json=%s WHERE surrogate_id=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
+        db.close()
 
     def storeToken(self, DictionaryToStore):
         """
@@ -71,18 +85,19 @@ class Helpers:
         :param DictionaryToStore: Dictionary in form {"key" : "dict_to_store"}
         :return: 
         """
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         debug_log.info(DictionaryToStore)
         for key in DictionaryToStore:
             debug_log.info(key)
             try:
                 cursor.execute("INSERT INTO token_storage (cr_id,token) \
-                    VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
             except IntegrityError as e:  # Rewrite incase we get new token.
-                cursor.execute("UPDATE token_storage SET token=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
+                cursor.execute("UPDATE token_storage SET token=%s WHERE cr_id=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
+        db.close()
 
     def storeCode(self, code):
         """
@@ -90,17 +105,14 @@ class Helpers:
         :param code: 
         :return: None
         """
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         code_key = list(code.keys())[0]
         code_value = code[code_key]
         cursor.execute("INSERT INTO codes (ID,code) \
-            VALUES (?, ?)", [code_key, code_value])
+            VALUES (%s, %s)", (code_key, code_value))
         db.commit()
-
         debug_log.info("{}  {}".format(code_key, code_value))
-        for code in self.query_db("select * from codes where ID = ?;", [code_key]):
-            debug_log.info(code["code"])
         db.close()
 
     def add_surrogate_id_to_code(self, code, surrogate_id):
@@ -110,16 +122,19 @@ class Helpers:
         :param surrogate_id: 
         :return: None
         """
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        for code in self.query_db("select * from codes where code = ?;", [code]):
-            code_from_db = code["code"]
-            code_is_valid_and_unused = "!" in code_from_db
-            if (code_is_valid_and_unused):
-                cursor.execute("UPDATE codes SET code=? WHERE ID=? ;", [surrogate_id, code])
-                db.commit()
-            else:
-                raise Exception("Invalid code")
+        debug_log.info("Code we look up is {}".format(code))
+        code = self.query_db("select * from codes where ID = %s;", (code,))
+        debug_log.info("Result for query: {}".format(code))
+        code_from_db = code
+        code_is_valid_and_unused = "!" in code_from_db
+        if (code_is_valid_and_unused):
+            cursor.execute("UPDATE codes SET code=%s WHERE ID=%s ;", (surrogate_id, code))
+            db.commit()
+            db.close()
+        else:
+            raise Exception("Invalid code")
 
     def verifyCode(self, code):
         """
@@ -127,7 +142,8 @@ class Helpers:
         :param code: 
         :return: Boolean True if code is found in db. 
         """
-        for code_row in self.query_db("select * from codes where ID = ?;", [code]):
+        code = self.query_db("select * from codes where ID = %s;", (code,))
+        if code is not None:
             return True
         return False
 
@@ -138,8 +154,8 @@ class Helpers:
         :param surrogate: surrogate_id
         :return: Boolean True if surrogate_id matches code
         """
-        for code_row in self.query_db("select * from codes where ID = ? AND code = ?;", [code, surrogate]):
-            #code_from_db = code_row["code"]
+        code = self.query_db("select * from codes where ID = %s AND code = %s;", (code, surrogate))
+        if code is not None:
             # TODO: Could we remove code and surrogate_id after this check to ensure they wont be abused later.
             return True
         return False
@@ -150,9 +166,9 @@ class Helpers:
         :param surrogate_id: surrogate_id
         :return: Return SLR made for given surrogate_id or None
         """
-        for storage_row in self.query_db("select * from storage where surrogate_id = ?;", [surrogate_id]):
-            slr_from_db = storage_row["json"]
-            return loads(slr_from_db)
+        storage_row = self.query_db("select * from storage where surrogate_id = %s;", (surrogate_id,))
+        slr_from_db = loads(storage_row)
+        return slr_from_db
 
     def storeCR_JSON(self, DictionaryToStore):
         """
@@ -165,13 +181,13 @@ class Helpers:
         surrogate_id = DictionaryToStore["surrogate_id"]
         slr_id = DictionaryToStore["slr_id"]
         json = DictionaryToStore["json"]
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         debug_log.info(DictionaryToStore)
         # debug_log.info(key)
         try:
             cursor.execute("INSERT INTO cr_storage (cr_id, surrogate_id, slr_id, rs_id, json) \
-                VALUES (?, ?, ?, ?, ?)", [cr_id, surrogate_id, slr_id, rs_id, dumps(json)])
+                VALUES (%s, %s, %s, %s, %s)", (cr_id, surrogate_id, slr_id, rs_id, dumps(json)))
             db.commit()
         except IntegrityError as e:
             # db.execute("UPDATE cr_storage SET json=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
@@ -191,13 +207,13 @@ class Helpers:
         surrogate_id = DictionaryToStore["surrogate_id"]
         slr_id = DictionaryToStore["slr_id"]
         json = DictionaryToStore["json"]
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         debug_log.info(DictionaryToStore)
         # debug_log.info(key)
         try:
             cursor.execute("INSERT INTO csr_storage (cr_id, surrogate_id, slr_id, rs_id, json) \
-                VALUES (?, ?, ?, ?, ?)", [cr_id, surrogate_id, slr_id, rs_id, dumps(json)])
+                VALUES (%s, %s, %s, %s, %s)", [cr_id, surrogate_id, slr_id, rs_id, dumps(json)])
             db.commit()
         except IntegrityError as e:
             # db.execute("UPDATE csr_storage SET json=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
