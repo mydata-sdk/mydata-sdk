@@ -132,6 +132,16 @@ class ParticularsSchema(Schema):
     data = fields.Nested(nested=ParticularsData, required=True)
 
 
+class ParticularsDataForUpdate(Schema):
+    type = fields.Str(required=True, validate=Equal("Particular"))
+    id = fields.Str(required=True, validate=Length(max=STRING_MAX_LENGTH))
+    attributes = fields.Nested(nested=ParticularsAttributes, required=True)
+
+
+class ParticularsSchemaForUpdate(Schema):
+    data = fields.Nested(nested=ParticularsDataForUpdate, required=True)
+
+
 ##
 ##
 # Contacts
@@ -143,7 +153,7 @@ class ContactsAttributes(Schema):
     state = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     country = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     type = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
-    primary = fields.Str(validate=OneOf(["True", "False"]))
+    primary = fields.Str(validate=OneOf(["True", "False"]))  # TODO: Not acting as Boolean for MySQL
 
 
 class ContactsData(Schema):
@@ -154,6 +164,16 @@ class ContactsData(Schema):
 
 class ContactsSchema(Schema):
     data = fields.Nested(nested=ContactsData, required=True)
+
+
+class ContactsDataForUpdate(Schema):
+    type = fields.Str(required=True, validate=Equal("Contact"))
+    id = fields.Str(required=True, validate=Length(max=STRING_MAX_LENGTH))
+    attributes = fields.Nested(nested=ContactsAttributes, required=True)
+
+
+class ContactsSchemaForUpdate(Schema):
+    data = fields.Nested(nested=ContactsDataForUpdate, required=True)
 
 
 ##
@@ -175,6 +195,16 @@ class TelephonesSchema(Schema):
     data = fields.Nested(nested=TelephonesData, required=True)
 
 
+class TelephonesDataForUpdate(Schema):
+    type = fields.Str(required=True, validate=Equal("Telephone"))
+    id = fields.Str(required=True, validate=Length(max=STRING_MAX_LENGTH))
+    attributes = fields.Nested(nested=TelephonesAttributes, required=True)
+
+
+class TelephonesSchemaForUpdate(Schema):
+    data = fields.Nested(nested=TelephonesDataForUpdate, required=True)
+
+
 ##
 ##
 # Email
@@ -194,9 +224,19 @@ class EmailsSchema(Schema):
     data = fields.Nested(nested=EmailsData, required=True)
 
 
+class EmailsDataForUpdate(Schema):
+    type = fields.Str(required=True, validate=Equal("Email"))
+    id = fields.Str(required=True, validate=Length(max=STRING_MAX_LENGTH))
+    attributes = fields.Nested(nested=EmailsAttributes, required=True)
+
+
+class EmailsSchemaForUpdate(Schema):
+    data = fields.Nested(nested=EmailsDataForUpdate, required=True)
+
+
 ##
 ##
-# Email
+# Settings
 class SettingsAttributes(Schema):
     key = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     value = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
@@ -210,3 +250,13 @@ class SettingsData(Schema):
 
 class SettingsSchema(Schema):
     data = fields.Nested(nested=SettingsData, required=True)
+
+
+class SettingsDataForUpdate(Schema):
+    type = fields.Str(required=True, validate=Equal("Setting"))
+    id = fields.Str(required=True, validate=Length(max=STRING_MAX_LENGTH))
+    attributes = fields.Nested(nested=SettingsAttributes, required=True)
+
+
+class SettingsSchemaForUpdate(Schema):
+    data = fields.Nested(nested=SettingsDataForUpdate, required=True)

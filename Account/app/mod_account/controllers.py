@@ -66,7 +66,9 @@ def verify_account_id_match(account_id=None, api_key=None, account_id_to_compare
 
     # Check if Account IDs are matching
     logger.info("Check if Account IDs are matching")
-    if str(account_id) is not str(account_id_to_compare):
+    logger.info("account_id: " + str(account_id))
+    logger.info("account_id_to_compare: " + str(account_id_to_compare))
+    if str(account_id) != str(account_id_to_compare):
         logger.error(error_title)
         raise ApiError(
             code=403,
@@ -332,7 +334,7 @@ def get_contacts(account_id=None):
 
     # Get table name
     logger.info("Create contact")
-    db_entry_object = Particulars()
+    db_entry_object = Contacts()
     logger.info(db_entry_object.log_entry)
     logger.info("Get table name")
     table_name = db_entry_object.table_name
@@ -358,7 +360,7 @@ def get_contacts(account_id=None):
     for id in id_list:
         # TODO: try-except needed?
         logger.info("Getting contacts with particular_id: " + str(id))
-        db_entry_dict = get_particular(account_id=account_id, id=id)
+        db_entry_dict = get_contact(account_id=account_id, id=id)
         db_entry_list.append(db_entry_dict)
         logger.info("contact object added to list: " + json.dumps(db_entry_dict))
 

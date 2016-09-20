@@ -20,8 +20,8 @@ from app import db, api, login_manager, app
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
 from app.mod_account.controllers import get_particulars, get_particular, verify_account_id_match, \
-    update_particular, get_contacts, add_contact
-from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema
+    update_particular, get_contacts, add_contact, get_contact, update_contact
+from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate
 from app.mod_api_auth.controllers import gen_account_api_key, requires_api_auth_user, provideApiKey
 from app.mod_blackbox.controllers import gen_account_key
 from app.mod_database.helpers import get_db_cursor
@@ -368,8 +368,8 @@ class AccountParticular(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
     @requires_api_auth_user
-    def put(self, account_id, particulars_id):  # TODO: Should be PATCH instead of PUT
-        logger.info("AccountParticulars")
+    def patch(self, account_id, particulars_id):
+        logger.info("AccountParticular")
         try:
             endpoint = str(api.url_for(self, account_id=account_id, particulars_id=particulars_id))
         except Exception as exp:
@@ -425,9 +425,31 @@ class AccountParticular(Resource):
         else:
             logger.debug("JSON validation -> OK")
 
-        # Check if Account IDs from path and payload are matching
-        if verify_account_id_match(account_id=account_id, account_id_to_compare=json_data['data'].get("id", ""), endpoint=endpoint):
-            logger.info("Account IDs from path and payload are matching")
+        try:
+            particulars_id_from_payload = json_data['data'].get("id", "")
+        except Exception as exp:
+            error_title = "Could not get id from payload"
+            logger.error(error_title)
+            raise ApiError(
+                code=404,
+                title=error_title,
+                detail=repr(exp),
+                source=endpoint
+            )
+
+        # Check if particulars_id from path and payload are matching
+        if particulars_id != particulars_id_from_payload:
+            error_title = "Particulars IDs from path and payload are not matching"
+            compared_ids = {'IdFromPath': particulars_id, 'IdFromPayload': particulars_id_from_payload}
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                detail=compared_ids,
+                source=endpoint
+            )
+        else:
+            logger.info("Particulars IDs from path and payload are matching")
 
         # Collect data
         try:
@@ -523,7 +545,7 @@ class AccountContacts(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
     @requires_api_auth_user
-    def post(self, account_id, contacts_id):
+    def post(self, account_id):
         logger.info("AccountContacts")
         try:
             endpoint = str(api.url_for(self, account_id=account_id))
@@ -583,7 +605,7 @@ class AccountContacts(Resource):
         # Add Contact
         try:
             logger.info("Adding Contacts")
-            db_entries = add_contact(account_id=account_id, id=contacts_id, attributes=attributes)
+            db_entries = add_contact(account_id=account_id, attributes=attributes)
         except Exception as exp:
             error_title = "Could not add Contact entry"
             logger.error(error_title)
@@ -604,7 +626,7 @@ class AccountContacts(Resource):
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
-        return make_json_response(data=response_data_dict, status_code=200)
+        return make_json_response(data=response_data_dict, status_code=201)
 
 
 class AccountContact(Resource):
@@ -650,7 +672,7 @@ class AccountContact(Resource):
         # Get Contacts
         try:
             logger.info("Fetching Contacts")
-            db_entries = get_particular(account_id=account_id, id=contacts_id)
+            db_entries = get_contact(account_id=account_id, id=contacts_id)
         except Exception as exp:
             error_title = "No Contacts found"
             logger.error(error_title)
@@ -674,7 +696,7 @@ class AccountContact(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
     @requires_api_auth_user
-    def put(self, account_id, contacts_id):  # TODO: Should be PATCH instead of PUT
+    def patch(self, account_id, contacts_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountContact")
         try:
             endpoint = str(api.url_for(self, account_id=account_id, contacts_id=contacts_id))
@@ -721,7 +743,7 @@ class AccountContact(Resource):
             logger.debug("json_data: " + json.dumps(json_data))
 
         # Validate payload content
-        schema = ContactsSchema()
+        schema = ContactsSchemaForUpdate()
         schema_validation_result = schema.load(json_data)
 
         # Check validation errors
@@ -731,9 +753,31 @@ class AccountContact(Resource):
         else:
             logger.debug("JSON validation -> OK")
 
-        # Check if Account IDs from path and payload are matching
-        if verify_account_id_match(account_id=account_id, account_id_to_compare=json_data['data'].get("id", ""), endpoint=endpoint):
-            logger.info("Account IDs from path and payload are matching")
+        try:
+            contacts_id_from_payload = json_data['data'].get("id", "")
+        except Exception as exp:
+            error_title = "Could not get id from payload"
+            logger.error(error_title)
+            raise ApiError(
+                code=404,
+                title=error_title,
+                detail=repr(exp),
+                source=endpoint
+            )
+
+        # Check if contacts_id from path and payload are matching
+        if contacts_id != contacts_id_from_payload:
+            error_title = "Contact IDs from path and payload are not matching"
+            compared_ids = {'IdFromPath': contacts_id, 'IdFromPayload': contacts_id_from_payload}
+            logger.error(error_title)
+            raise ApiError(
+                code=403,
+                title=error_title,
+                detail=compared_ids,
+                source=endpoint
+            )
+        else:
+            logger.info("Contact IDs from path and payload are matching")
 
         # Collect data
         try:
@@ -746,7 +790,7 @@ class AccountContact(Resource):
         # Update Contact
         try:
             logger.info("Updating Contacts")
-            db_entries = update_particular(account_id=account_id, id=contacts_id, attributes=attributes)
+            db_entries = update_contact(account_id=account_id, id=contacts_id, attributes=attributes)
         except Exception as exp:
             error_title = "No Contacts found"
             logger.error(error_title)

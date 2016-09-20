@@ -71,7 +71,7 @@ class Account():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         return dictionary
 
@@ -199,7 +199,7 @@ class LocalIdentity():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['accounts_id']
         return dictionary
@@ -312,7 +312,7 @@ class LocalIdentityPWD():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         return dictionary
 
@@ -459,7 +459,7 @@ class OneTimeCookie():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         return dictionary
 
@@ -586,7 +586,7 @@ class Salt():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         return dictionary
 
@@ -889,7 +889,10 @@ class Email():
         if type is not None:
             self.type = type
         if prime is not None:
-            self.prime = prime
+            if prime == "True":
+                self.prime = 1
+            else:
+                self.prime = 0
         if account_id is not None:
             self.account_id = account_id
         if table_name is not None:
@@ -945,9 +948,13 @@ class Email():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        if dictionary['prime'] == 1:
+            dictionary['prime'] = "True"
+        elif dictionary['prime'] == 0:
+            dictionary['prime'] = "False"
         return dictionary
 
     @property
@@ -1045,7 +1052,10 @@ class Telephone():
         if type is not None:
             self.type = type
         if prime is not None:
-            self.prime = prime
+            if prime == "True":
+                self.prime = 1
+            else:
+                self.prime = 0
         if account_id is not None:
             self.account_id = account_id
         if table_name is not None:
@@ -1101,9 +1111,13 @@ class Telephone():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        if dictionary['prime'] == 1:
+            dictionary['prime'] = "True"
+        elif dictionary['prime'] == 0:
+            dictionary['prime'] = "False"
         return dictionary
 
     @property
@@ -1250,7 +1264,7 @@ class Settings():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
         return dictionary
@@ -1402,7 +1416,7 @@ class EventLog():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
         return dictionary
@@ -1517,7 +1531,10 @@ class Contacts():
         if type is not None:
             self.type = type
         if prime is not None:
-            self.prime = prime
+            if prime == "True":
+                self.prime = 1
+            else:
+                self.prime = 0
         if account_id is not None:
             self.account_id = account_id
         if table_name is not None:
@@ -1613,9 +1630,13 @@ class Contacts():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        if dictionary['prime'] == 1:
+            dictionary['prime'] = "True"
+        elif dictionary['prime'] == 0:
+            dictionary['prime'] = "False"
         return dictionary
 
     @property
@@ -1692,24 +1713,12 @@ class Contacts():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        # TODO: Don't allow if role is only criteria
-
-        sql_query = "SELECT id, address1, address2, postal_code, city, state, country, typeEnum, prime, Accounts_id " \
+        sql_query = "SELECT id, address1, address2, postalCode, city, state, country, typeEnum, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND address1 LIKE %s AND address2 LIKE %s AND postal_code LIKE %s " \
-                    "AND city LIKE %s AND state LIKE %s AND country LIKE %s AND typeEnum LIKE %s " \
-                    "AND prime LIKE %s AND Accounts_id LIKE %s;"
+                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
-            '%' + str(self.address1) + '%',
-            '%' + str(self.address2) + '%',
-            '%' + str(self.postal_code) + '%',
-            '%' + str(self.city) + '%',
-            '%' + str(self.state) + '%',
-            '%' + str(self.country) + '%',
-            '%' + str(self.typeEnum) + '%',
-            '%' + str(self.prime) + '%',
             '%' + str(self.account_id) + '%',
         )
 
@@ -1843,7 +1852,7 @@ class ServiceLinkRecord():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
         return dictionary
@@ -2051,7 +2060,7 @@ class ServiceLinkStatusRecord():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['service_link_records_id']
         return dictionary
@@ -2209,7 +2218,7 @@ class SurrogateId():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         return dictionary
 
@@ -2366,7 +2375,7 @@ class ConsentRecord():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['service_link_records_id']
         return dictionary
@@ -2575,7 +2584,7 @@ class ConsentStatusRecord():
 
     @property
     def to_dict_external(self):
-        dictionary = self.__dict__
+        dictionary = self.to_dict
         del dictionary['id']
         del dictionary['consent_records_id']
         return dictionary
