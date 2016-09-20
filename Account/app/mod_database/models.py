@@ -26,8 +26,9 @@ class Account():
     global_identifier = None
     activated = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", global_identifyer="", activated="", table_name="MyDataAccount.Accounts"):
+    def __init__(self, id="", global_identifyer="", activated="", deleted=0, table_name="MyDataAccount.Accounts"):
         if id is not None:
             self.id = id
         if global_identifyer is not None:
@@ -36,6 +37,8 @@ class Account():
             self.activated = activated
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -73,6 +76,8 @@ class Account():
     def to_dict_external(self):
         dictionary = self.to_dict
         del dictionary['id']
+        del dictionary['deleted']
+        del dictionary['table_name']
         return dictionary
 
     @property
@@ -144,8 +149,9 @@ class LocalIdentity():
     pwd_id = None
     accounts_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", username="", pwd_id="", accounts_id="", table_name="MyDataAccount.LocalIdentities"):
+    def __init__(self, id="", username="", pwd_id="", accounts_id="", deleted=0, table_name="MyDataAccount.LocalIdentities"):
         if id is not None:
             self.id = id
         if username is not None:
@@ -156,6 +162,8 @@ class LocalIdentity():
             self.accounts_id = accounts_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -202,6 +210,8 @@ class LocalIdentity():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['accounts_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -277,14 +287,17 @@ class LocalIdentityPWD():
     id = None
     password = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", password="", table_name="MyDataAccount.LocalIdentityPWDs"):
+    def __init__(self, id="", password="", deleted=0, table_name="MyDataAccount.LocalIdentityPWDs"):
         if id is not None:
             self.id = id
         if password is not None:
             self.password = password
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -314,6 +327,8 @@ class LocalIdentityPWD():
     def to_dict_external(self):
         dictionary = self.to_dict
         del dictionary['id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -384,8 +399,9 @@ class OneTimeCookie():
     updated = None
     identity_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", cookie="", used="", created="", updated="", identity_id="", table_name="MyDataAccount.OneTimeCookies"):
+    def __init__(self, id="", cookie="", used="", created="", updated="", identity_id="", deleted=0, table_name="MyDataAccount.OneTimeCookies"):
         if id is not None:
             self.id = id
         if cookie is not None:
@@ -400,6 +416,8 @@ class OneTimeCookie():
             self.identity_id = identity_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -461,6 +479,8 @@ class OneTimeCookie():
     def to_dict_external(self):
         dictionary = self.to_dict
         del dictionary['id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -541,8 +561,9 @@ class Salt():
     salt = None
     identity_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", salt="", identity_id="", table_name="MyDataAccount.Salts"):
+    def __init__(self, id="", salt="", identity_id="", deleted=0, table_name="MyDataAccount.Salts"):
         if id is not None:
             self.id = id
         if salt is not None:
@@ -551,6 +572,8 @@ class Salt():
             self.identity_id = identity_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -588,6 +611,8 @@ class Salt():
     def to_dict_external(self):
         dictionary = self.to_dict
         del dictionary['id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -664,8 +689,9 @@ class Particulars():
     img_url = None
     account_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", firstname="", lastname="", date_of_birth="", img_url=app.config['AVATAR_URL'], account_id="", table_name="MyDataAccount.Particulars"):
+    def __init__(self, id="", firstname="", lastname="", date_of_birth="", img_url=app.config['AVATAR_URL'], account_id="", deleted=0, table_name="MyDataAccount.Particulars"):
         if id is not None:
             self.id = id
         if firstname is not None:
@@ -680,6 +706,8 @@ class Particulars():
             self.account_id = account_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -749,6 +777,7 @@ class Particulars():
         del dictionary['id']
         del dictionary['account_id']
         del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -880,8 +909,9 @@ class Email():
     prime = None
     account_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", email="", type="Personal", prime="", account_id="", table_name="MyDataAccount.Emails"):
+    def __init__(self, id="", email="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Emails"):
         if id is not None:
             self.id = id
         if email is not None:
@@ -897,6 +927,8 @@ class Email():
             self.account_id = account_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -951,6 +983,8 @@ class Email():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         if dictionary['prime'] == 1:
             dictionary['prime'] = "True"
         elif dictionary['prime'] == 0:
@@ -1043,8 +1077,9 @@ class Telephone():
     prime = None
     account_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", tel="", type="Personal", prime="", account_id="", table_name="MyDataAccount.Telephones"):
+    def __init__(self, id="", tel="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Telephones"):
         if id is not None:
             self.id = id
         if tel is not None:
@@ -1060,6 +1095,8 @@ class Telephone():
             self.account_id = account_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -1114,6 +1151,8 @@ class Telephone():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         if dictionary['prime'] == 1:
             dictionary['prime'] = "True"
         elif dictionary['prime'] == 0:
@@ -1207,8 +1246,9 @@ class Settings():
     value = None
     account_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", key="", value="", account_id="", table_name="MyDataAccount.Settings"):
+    def __init__(self, id="", key="", value="", account_id="", deleted=0, table_name="MyDataAccount.Settings"):
         if id is not None:
             self.id = id
         if key is not None:
@@ -1221,6 +1261,8 @@ class Settings():
             self.account_id = account_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -1267,6 +1309,8 @@ class Settings():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -1351,8 +1395,9 @@ class EventLog():
     created = None
     account_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", actor="", event="", created="", account_id="", table_name="MyDataAccount.EventLogs"):
+    def __init__(self, id="", actor="", event="", created="", account_id="", deleted=0, table_name="MyDataAccount.EventLogs"):
         if id is not None:
             self.id = id
         if actor is not None:
@@ -1365,6 +1410,8 @@ class EventLog():
             self.account_id = account_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -1419,6 +1466,8 @@ class EventLog():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -1512,8 +1561,9 @@ class Contacts():
     prime = None
     account_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", address1="", address2="", postal_code="", city="", state="", country="", type="Personal", prime="", account_id="", table_name="MyDataAccount.Contacts"):
+    def __init__(self, id="", address1="", address2="", postal_code="", city="", state="", country="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Contacts"):
         if id is not None:
             self.id = id
         if address1 is not None:
@@ -1539,6 +1589,8 @@ class Contacts():
             self.account_id = account_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -1633,6 +1685,8 @@ class Contacts():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         if dictionary['prime'] == 1:
             dictionary['prime'] = "True"
         elif dictionary['prime'] == 0:
@@ -1767,8 +1821,9 @@ class ServiceLinkRecord():
     operator_id = None
     account_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", service_link_record="", service_link_record_id="", service_id="", surrogate_id="", operator_id="", account_id="", table_name="MyDataAccount.ServiceLinkRecords"):
+    def __init__(self, id="", service_link_record="", service_link_record_id="", service_id="", surrogate_id="", operator_id="", account_id="", deleted=0, table_name="MyDataAccount.ServiceLinkRecords"):
         if id is not None:
             self.id = id
         if service_link_record is not None:
@@ -1785,6 +1840,8 @@ class ServiceLinkRecord():
             self.account_id = account_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -1855,6 +1912,8 @@ class ServiceLinkRecord():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['account_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -1965,8 +2024,9 @@ class ServiceLinkStatusRecord():
     prev_record_id = None
     service_link_records_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", service_link_status_record_id="", status="", service_link_status_record="", service_link_record_id="", issued_at="", prev_record_id="", service_link_records_id="", table_name="MyDataAccount.ServiceLinkStatusRecords"):
+    def __init__(self, id="", service_link_status_record_id="", status="", service_link_status_record="", service_link_record_id="", issued_at="", prev_record_id="", service_link_records_id="", deleted=0, table_name="MyDataAccount.ServiceLinkStatusRecords"):
         if id is not None:
             self.id = id
         if service_link_status_record_id is not None:
@@ -1985,6 +2045,8 @@ class ServiceLinkStatusRecord():
             self.service_link_records_id = service_link_records_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -2063,6 +2125,8 @@ class ServiceLinkStatusRecord():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['service_link_records_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -2174,19 +2238,23 @@ class ServiceLinkStatusRecord():
 
 class SurrogateId():
     # TODO: Rename to SlrIDs or similar
+    # TODO: How to react if slr is deleted?
     surrogate_id = None
     servicelinkrecord_id = None
     service_id = None
     account_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, service_id=None, account_id=None, table_name="MyDataAccount.ServiceLinkRecords"):
+    def __init__(self, service_id=None, account_id=None, deleted=0, table_name="MyDataAccount.ServiceLinkRecords"):
         if service_id is not None:
             self.service_id = service_id
         if account_id is not None:
             self.account_id = account_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def surrogate_id(self):
@@ -2279,8 +2347,9 @@ class ConsentRecord():
     service_link_records_id = None
     role = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", consent_record="", consent_id="", surrogate_id="", resource_set_id="", service_link_record_id="", subject_id="", service_link_records_id="", role="", table_name="MyDataAccount.ConsentRecords"):
+    def __init__(self, id="", consent_record="", consent_id="", surrogate_id="", resource_set_id="", service_link_record_id="", subject_id="", service_link_records_id="", role="", deleted=0, table_name="MyDataAccount.ConsentRecords"):
         self.id = id
         self.consent_record = consent_record
         self.surrogate_id = surrogate_id
@@ -2292,6 +2361,8 @@ class ConsentRecord():
         self.role = role
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -2378,6 +2449,8 @@ class ConsentRecord():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['service_link_records_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
@@ -2499,8 +2572,9 @@ class ConsentStatusRecord():
     issued_at = None
     prev_record_id = None
     table_name = ""
+    deleted = ""
 
-    def __init__(self, id="", status="", consent_status_record="", consent_records_id="", consent_record_id="", issued_at="", prev_record_id="", table_name="MyDataAccount.ConsentStatusRecords"):
+    def __init__(self, id="", status="", consent_status_record="", consent_records_id="", consent_record_id="", issued_at="", prev_record_id="", deleted=0, table_name="MyDataAccount.ConsentStatusRecords"):
         if id is not None:
             self.id = id
         if status is not None:
@@ -2517,6 +2591,8 @@ class ConsentStatusRecord():
             self.prev_record_id = prev_record_id
         if table_name is not None:
             self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
 
     @property
     def table_name(self):
@@ -2587,6 +2663,8 @@ class ConsentStatusRecord():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['consent_records_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
