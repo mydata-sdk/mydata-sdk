@@ -3,7 +3,6 @@ __author__ = 'alpaloma'
 import logging
 import traceback
 from json import loads, dumps, load, dump
-from requests import post
 from uuid import uuid4 as guid
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
@@ -13,6 +12,7 @@ from flask_cors import CORS
 from flask_restful import Resource, Api
 from helpers import AccountManagerHandler, Helpers
 from jwcrypto import jwk
+from requests import post
 
 api_SLR_RegisterSur = Blueprint("api_SLR_RegisterSur", __name__)
 
@@ -111,10 +111,15 @@ class RegisterSur(Resource):
             js = request.json
 
             sq.task("Load account_id and service_id from database")
-            for code_json in self.query_db("select * from session_store where code = ?;", [js["code"]]):
-                debug_log.debug("{}  {}".format(type(code_json), code_json))
-                account_id = loads(code_json["json"])["account_id"]
-                self.payload["service_id"] = loads(code_json["json"])["service_id"]
+            query = self.query_db("select * from session_store where code=%s;", (js["code"],))
+            debug_log.info(type(query))
+            debug_log.info(query)
+            dict_query = loads(query)
+            line = '{"service_id": "2", "account_id": "2"}'
+            debug_log.debug("{}  {}".format(type(query), query))
+
+            account_id = dict_query["account_id"]
+            self.payload["service_id"] = dict_query["service_id"]
             # Check Surrogate_ID exists.
             # Fill token_key
             try:

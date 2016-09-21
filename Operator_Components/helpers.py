@@ -4,7 +4,7 @@ import logging
 import pkgutil
 import time
 from base64 import urlsafe_b64decode as decode
-from sqlite3 import OperationalError, IntegrityError
+from sqlite3 import IntegrityError
 
 from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
@@ -257,9 +257,14 @@ class AccountManagerHandler:
 
 class Helpers:
     def __init__(self, app_config):
-        self.db_path = app_config["DATABASE_PATH"]
+        self.host = app_config["MYSQL_HOST"]
         self.cert_key_path = app_config["CERT_KEY_PATH"]
         self.keysize = app_config["KEYSIZE"]
+        self.user = app_config["MYSQL_USER"]
+        self.passwd = app_config["MYSQL_PASSWORD"]
+        self.db = app_config["MYSQL_DB"]
+        self.port = app_config["MYSQL_PORT"]
+
 
     def validate_rs_id(self, rs_id):
         ##
@@ -268,45 +273,37 @@ class Helpers:
         return self.change_rs_id_status(rs_id, True)
 
     def storeRS_ID(self, rs_id):
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        try:
-            db_handler.init_db(db)
-        except OperationalError:
-            pass
         rs_id_status = False
         cursor.execute("INSERT INTO rs_id_tbl (rs_id, used) \
-            VALUES (?, ?)", [rs_id, rs_id_status])
+            VALUES (%s, %s)", (rs_id, rs_id_status))
         db.commit()
+        debug_log.info("Stored RS_ID({}) into DB".format(rs_id))
         cursor.close()
 
     def change_rs_id_status(self, rs_id, status):
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        try:
-            db_handler.init_db(db)
-        except OperationalError:
-            pass
-        for rs_id_object in self.query_db("select * from rs_id_tbl where rs_id = ?;", [rs_id]):
-            rs_id_from_db = rs_id_object["rs_id"]
-            status_from_db = bool(rs_id_object["used"])
-            status_is_unused = status_from_db is False
-            if status_is_unused:
-                cursor.execute("UPDATE rs_id_tbl SET used=? WHERE rs_id=? ;", [status, rs_id])
-                db.commit()
-                cursor.close()
-                return True
-            else:
-                cursor.close()
-                return False
+        query = cursor.execute("select * from rs_id_tbl where rs_id=%s;", (rs_id,))
+        result = cursor.fetchone()
+        rs_id = result[0]
+        used = result[1]
+        debug_log.info(result)
+        status_from_db = bool(used)
+        status_is_unused = status_from_db is False
+        if status_is_unused:
+            cursor.execute("UPDATE rs_id_tbl SET used=%s WHERE rs_id=%s ;", (status, rs_id))
+            db.commit()
+            cursor.close()
+            return True
+        else:
+            cursor.close()
+            return False
 
     def store_session(self, DictionaryToStore):
-        db = db_handler.get_db(self.db_path)
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        try:
-            db_handler.init_db(db)
-        except OperationalError:
-            pass
         debug_log.info(DictionaryToStore)
 
         for key in DictionaryToStore:
@@ -314,21 +311,38 @@ class Helpers:
 
             try:
                 cursor.execute("INSERT INTO session_store (code,json) \
-                    VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
-                cursor.close()
+                #db.close()
             except IntegrityError as e:
-                cursor.execute("UPDATE session_store SET json=? WHERE code=? ;", [dumps(DictionaryToStore[key]), key])
+                cursor.execute("UPDATE session_store SET json=%s WHERE code=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
-                cursor.close()
+                #db.close()
+        db.close()
 
-    def query_db(self, query, args=(), one=False):
-        db = db_handler.get_db(self.db_path)
+    def query_db(self, query, args=()):
+        '''
+        Simple queries to DB
+        :param query: SQL query
+        :param args: Arguments to inject into the query
+        :return: Single hit for the given query
+        '''
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cur = cursor.execute(query, args)
-        rv = cur.fetchall()
-        cur.close()
-        return (rv[0] if rv else None) if one else rv
+        try:
+            rv = cursor.fetchone()  # Returns tuple
+            debug_log.info(rv)
+            if rv is not None:
+                db.close()
+                return rv[1]  # The second value in the tuple.
+            else:
+                return None
+        except Exception as e:
+            debug_log.exception(e)
+            debug_log.info(cur)
+            db.close()
+            return None
 
     def gen_rs_id(self, source_name):
         ##
@@ -452,6 +466,7 @@ class Helpers:
         payload = {"iss": slrt.get_operator_key(),  # Operator_Key
                    "sub": slrt.get_sink_key(),  # Service_Components(Sink) Key
                    "aud": slrt.get_dataset(),  # Hard to build real
+                   # TODO: Logic to determine exp time
                    "exp": datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z "), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
                    "nbf": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z "),  # The time before which token MUST NOT be accepted

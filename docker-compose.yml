@@ -7,7 +7,7 @@ services:
     container_name: mysql-db
     volumes:
       - mysql-data:/var/lib/mysql
-      - "./Account/doc/database:/docker-entrypoint-initdb.d:ro"
+      - "./init-db:/docker-entrypoint-initdb.d:ro"
     environment:
       - MYSQL_ROOT_PASSWORD=Y3xUcheg
       - MYSQL_USER=mydataaccount
@@ -53,6 +53,11 @@ services:
       - ACCOUNT_MANAGEMENT_USER="test_sdk"
       - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
       - DATABASE_PATH="./db_Operator.sqlite"
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='operator'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Operator'
+      - MYSQL_PORT=3306
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
       # https://github.com/celery/celery/issues/2765#issuecomment-228224236
@@ -84,6 +89,11 @@ services:
     environment:
       - PYTHONUNBUFFERED='true'
       - DATABASE_PATH="./db_Srv.sqlite"
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='service'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Srv'
+      - MYSQL_PORT=3306
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
       # https://github.com/celery/celery/issues/2765#issuecomment-228224236
@@ -114,6 +124,11 @@ services:
       - PYTHONUNBUFFERED='true'
       - SERVICE_MGMNT_URL="http://service_components:7000"
       - VIRTUAL_HOST=localhost.srvmockup
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='serviceMockup'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Service_Mockup'
+      - MYSQL_PORT=3306
     networks:
       - mydata_sdk_demo_network
 
@@ -183,6 +198,11 @@ services:
       - SELERY_RESULT_BACKEND='redis://redis:6379/0'
       # Needed in order to run Celery as root.
       - C_FORCE_ROOT="true"
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='service'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Srv'
+      - MYSQL_PORT=3306
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"

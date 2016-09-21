@@ -21,24 +21,22 @@ from sqlite3 import OperationalError, IntegrityError
 import db_handler
 from json import dumps, loads
 from requests import get
+from instance.settings import MYSQL_HOST, MYSQL_PASSWORD, MYSQL_USER, MYSQL_PORT, MYSQL_DB
 @celery.task
 def get_AuthToken(cr_id, operator_url, db_path):
     print(operator_url, db_path, cr_id)
     def storeToken(DictionaryToStore):
-        db = db_handler.get_db(db_path)
+        db = db_handler.get_db(host=MYSQL_HOST, password=MYSQL_PASSWORD, user=MYSQL_USER, port=MYSQL_PORT, database=MYSQL_DB)
         cursor = db.cursor()
-        try:
-            db_handler.init_db(db)
-        except OperationalError:
-            pass
         for key in DictionaryToStore:
             try:
                 cursor.execute("INSERT INTO token_storage (cr_id,token) \
-                    VALUES (?, ?)", [key, dumps(DictionaryToStore[key])])
+                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
             except IntegrityError as e:  # Rewrite incase we get new token.
-                cursor.execute("UPDATE token_storage SET token=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
+                cursor.execute("UPDATE token_storage SET token=? WHERE cr_id=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
+        db.close()
 
     print(cr_id)
     token = get("{}/api/1.2/cr/auth_token/{}".format(operator_url, cr_id))  # TODO Get api path from some config?
