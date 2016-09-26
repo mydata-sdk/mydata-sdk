@@ -5,9 +5,17 @@ TIMEOUT = 8
 
 KEYSIZE = 512
 
+{% if IS_SINK is defined %}
+IS_SINK = {{ IS_SINK }}
+{% else %}
+IS_SINK = True
+{% endif %}
 
-
-
+{% if IS_SOURCE is defined %}
+IS_SOURCE = {{ IS_SOURCE }}
+{% else %}
+IS_SOURCE = False
+{% endif %}
 
 # Name of host to connect to. Default: use the local host via a UNIX socket (where applicable)
 {% if MYSQL_HOST is defined %}

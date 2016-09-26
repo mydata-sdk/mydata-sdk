@@ -11,6 +11,8 @@ from werkzeug.wsgi import DispatcherMiddleware
 import Service_Mgmnt
 import Service_Root
 import Authorization_Management
+import Sink
+import Source
 
 
 
@@ -29,14 +31,23 @@ debug_log = logging.getLogger("debug")
 logging.basicConfig()
 debug_log.setLevel(logging.INFO)
 
-from instance.settings import SERVICE_ROOT_PATH, SERVICE_CR_PATH, SERVICE_SLR_PATH
+from instance.settings import SERVICE_ROOT_PATH, SERVICE_CR_PATH, SERVICE_SLR_PATH, IS_SINK, IS_SOURCE
 
-application = DispatcherMiddleware(Service_Root.create_app(),
-                                   {
-                                    SERVICE_ROOT_PATH+SERVICE_SLR_PATH: Service_Mgmnt.create_app(),
-                                    SERVICE_ROOT_PATH+SERVICE_CR_PATH: Authorization_Management.create_app()
-                                    }
-                                   )
+# Common parts.
+paths = {
+        SERVICE_ROOT_PATH+SERVICE_SLR_PATH: Service_Mgmnt.create_app(),
+        SERVICE_ROOT_PATH+SERVICE_CR_PATH: Authorization_Management.create_app()
+        }
+
+if IS_SINK:
+    paths[SERVICE_ROOT_PATH+"/sink_flow"] = Sink.create_app()
+if IS_SOURCE:
+    paths[SERVICE_ROOT_PATH+"/source_flow"] = Source.create_app()
+
+application = DispatcherMiddleware(Service_Root.create_app(), paths)
+
+
+
 
 if __name__ == "__main__":
     run_simple('0.0.0.0', 7000, application, use_reloader=False, use_debugger=False, threaded=True)
