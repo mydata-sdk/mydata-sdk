@@ -26,9 +26,6 @@ paths:
         description: "Signature for the request"
         required: true
         type: string
- #       schema:
-#          $ref: "#/definitions/DataRequestParams"
-
       responses:
         200:
           description: "Returns 200"
@@ -36,7 +33,6 @@ paths:
           description: "Internal server error"
           schema:
             $ref: "#/definitions/errors"
-
 
 definitions:
   errors:
