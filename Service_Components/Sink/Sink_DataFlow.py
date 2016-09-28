@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from flask import current_app
+
+from helpers import Helpers
+
 __author__ = 'alpaloma'
 
 from DetailedHTTPException import error_handler
@@ -26,10 +30,20 @@ class Status(Resource):
         return status
 
 class DataFlow(Resource):
+    def __init__(self):
+        super(DataFlow, self).__init__()
+        self.service_url = current_app.config["SERVICE_URL"]
+        self.helpers = Helpers(current_app.config)
+
     @error_handler
     def get(self, user_id, cr_id, rs_id):
 
+        # Get data_set_id fromm query param
+        data_set_id = request.args.get("data_set_id")
+
         # Create request
+        request = {"we want": "data"}
+
         # Validate CR
         # Check integrity (signature)
         # Check that state is "Active"
@@ -79,7 +93,7 @@ class DataFlow(Resource):
         # Request created.
 
         # Make Data Request
-
+        self.helpers.validate_cr(cr_id)
         status = {"status": "running", "service_mode": "Sink"}
         return status
 

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, time
+
 __author__ = 'alpaloma'
 import logging
 import traceback
@@ -103,8 +105,31 @@ class ConsentFormHandler(Resource):
 
         # Generate common_cr for both sink and source.
         sq.task("Generate common CR")
-        common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source, _consent_form["source"]["rs_id"], slr_id_source)
-        common_cr_sink = self.Helpers.gen_cr_common(surrogate_id_sink, _consent_form["source"]["rs_id"], slr_id_sink)
+
+        issued = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z ")
+        not_before = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z ")
+        not_after = datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%S %Z ")
+        operator_id = current_app.config["OPERATOR_ID"]
+
+        common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source,
+                                                      _consent_form["source"]["rs_id"],
+                                                      slr_id_source,
+                                                      issued,
+                                                      not_before,
+                                                      not_after,
+                                                      source_srv_id,
+                                                      operator_id)
+
+        common_cr_sink = self.Helpers.gen_cr_common(surrogate_id_sink,
+                                                    _consent_form["source"]["rs_id"],
+                                                    slr_id_sink,
+                                                    issued,
+                                                    not_before,
+                                                    not_after,
+                                                    sink_srv_id,
+                                                    operator_id)
+
+        common_cr_sink["cr"]["role_specific_part"]["resource_set_description"] = common_cr_source["cr"]["role_specific_part"]["resource_set_description"]
 
         sq.task("Generate ki_cr")
         ki_cr = self.Helpers.Gen_ki_cr(self)

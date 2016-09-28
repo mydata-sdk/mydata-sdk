@@ -10,7 +10,7 @@ from flask_restful import Api
 debug_log = logging.getLogger("debug")
 import jsonschema
 import db_handler
-from sqlite3 import OperationalError, IntegrityError
+from sqlite3 import IntegrityError
 from DetailedHTTPException import  DetailedHTTPException
 
 def validate_json(schema, json): # "json" here needs to be python dict.
@@ -135,6 +135,27 @@ class Helpers:
             db.close()
         else:
             raise Exception("Invalid code")
+
+
+    def validate_cr(self, cr_id):
+        """
+        Lookup and validate ConsentRecord based on given CR_ID
+        :param cr_id:
+        :return: CR if found and validated.
+        """
+        # TODO: query_db is not really optimal when making two separate queries in row.
+        cr = self.query_db("select * from cr_storage where cr_id = %s;", (cr_id,))
+        csr = self.query_db("select * from csr_storage where cr_id = %s;", (cr_id,))
+        cr_from_db = loads(cr)
+        csr_from_db = loads(csr)
+        debug_log.info("Printing CR from DB:")
+        debug_log.info(cr)
+        debug_log.info("Printing CSR from DB:")
+        debug_log.info(csr)
+        combined = {"cr": cr_from_db, "csr": csr_from_db}
+
+        return combined
+
 
     def verifyCode(self, code):
         """

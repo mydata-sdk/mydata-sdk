@@ -359,9 +359,10 @@ class Helpers:
         ##
         return True
 
-    def gen_cr_common(self, sur_id, rs_ID, slr_id):
+    def gen_cr_common(self, sur_id, rs_ID, slr_id, issued, not_before, not_after, subject_id, issued_at):
         ##
         # Return common part of CR
+        # Some of these fields are filled in consent_form.py
         ##
         common_cr = {
             "version_number": "String",
@@ -369,11 +370,11 @@ class Helpers:
             "surrogate_id": sur_id,
             "rs_id": rs_ID,
             "slr_id": slr_id,
-            "issued": "String",
-            "not_before": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z "),
-            "not_after": datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z "),
-            "issued_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z "),
-            "subject_id": "String"  # TODO: Should this really be in common_cr?
+            "issued": issued,
+            "not_before": not_before,
+            "not_after": not_after,
+            "issued_at": issued_at,
+            "subject_id": subject_id,  # TODO: Should this really be in common_cr?
         }
 
         return common_cr

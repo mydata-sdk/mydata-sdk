@@ -4,7 +4,17 @@ from kombu import Exchange, Queue
 TIMEOUT = 8
 KEYSIZE = 512
 
+{% if OPERATOR_ID is defined %}
+OPERATOR_ID = {{ OPERATOR_ID }}
+{% else %}
+OPERATOR_ID = 'Operator112'
+{% endif %}
 
+{% if NOT_AFTER_INTERVAL is defined %}
+NOT_AFTER_INTERVAL = {{ NOT_AFTER_INTERVAL }}
+{% else %}
+NOT_AFTER_INTERVAL = 2592000 # 30 days in seconds.
+{% endif %}
 
 # Name of host to connect to. Default: use the local host via a UNIX socket (where applicable)
 {% if MYSQL_HOST is defined %}
