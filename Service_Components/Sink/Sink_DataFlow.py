@@ -100,4 +100,4 @@ class DataFlow(Resource):
 
 
 api.add_resource(Status, '/init')
-api.add_resource(DataFlow, ' /user/<user_id>/consentRecord/<cr_id>/resourceSet/<rs_id>')
+api.add_resource(DataFlow, '/user/<user_id>/consentRecord/<cr_id>/resourceSet/<rs_id>')
