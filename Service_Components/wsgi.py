@@ -40,6 +40,7 @@ paths = {
         }
 
 if IS_SINK:
+    debug_log.info(SERVICE_ROOT_PATH+"/sink_flow")
     paths[SERVICE_ROOT_PATH+"/sink_flow"] = Sink.create_app()
 if IS_SOURCE:
     paths[SERVICE_ROOT_PATH+"/source_flow"] = Source.create_app()

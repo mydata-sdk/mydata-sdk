@@ -8,7 +8,8 @@ __author__ = 'alpaloma'
 from DetailedHTTPException import error_handler
 from flask import Blueprint
 from flask_restful import Resource, Api
-
+import logging
+debug_log = logging.getLogger("debug")
 api_Sink_blueprint = Blueprint("api_Sink_blueprint", __name__)
 api = Api()
 api.init_app(api_Sink_blueprint)
@@ -39,18 +40,15 @@ class DataFlow(Resource):
     def get(self, user_id, cr_id, rs_id):
 
         # Get data_set_id fromm query param
-        data_set_id = request.args.get("data_set_id")
-
+        data_set_id = request.args.get("data_set_id", None)
+        debug_log.info("data_set_id is ({}), cr_id is ({}), user_id ({}) and rs_id ({})"
+                       .format(data_set_id, cr_id, user_id, rs_id))
         # Create request
         request = {"we want": "data"}
 
         # Validate CR
-        # Check integrity (signature)
-        # Check that state is "Active"
-        # Check "Issued" timestamp
-        # Check "Not Before" timestamp
-        # Check "Not After" timestamp
-        # CR validated.
+        self.helpers.validate_cr(cr_id)
+
 
         # Validate Request from UI
         # Check that rs_description field contains rs_id
@@ -93,7 +91,7 @@ class DataFlow(Resource):
         # Request created.
 
         # Make Data Request
-        self.helpers.validate_cr(cr_id)
+
         status = {"status": "running", "service_mode": "Sink"}
         return status
 

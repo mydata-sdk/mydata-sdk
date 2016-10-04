@@ -344,12 +344,12 @@ class Helpers:
             db.close()
             return None
 
-    def gen_rs_id(self, source_name):
+    def gen_rs_id(self, source_URI):
         ##
         # Something to check state here?
         # Also store RS_ID in DB around here.
         ##
-        rs_id = "{}_{}".format(source_name, str(guid()))
+        rs_id = "{}||{}".format(source_URI, str(guid()))
         self.storeRS_ID(rs_id)
         return rs_id
 

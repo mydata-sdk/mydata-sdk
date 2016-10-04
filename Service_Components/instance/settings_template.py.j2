@@ -111,6 +111,11 @@ OPERATOR_URL = {{ OPERATOR_URL }}
 OPERATOR_URL = "http://localhost:5000"
 {% endif %}
 
+{% if SERVICE_ID is defined %}
+SERVICE_ID = {{ SERVICE_ID }}
+{% else %}
+SERVICE_ID = "SRVMGMNT-CHANGE_ME"
+{% endif %}
 
 {% if SERVICE_ROOT_PATH is defined %}
 SERVICE_ROOT_PATH = {{ SERVICE_ROOT_PATH }}
