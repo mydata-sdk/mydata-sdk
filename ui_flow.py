@@ -4,8 +4,8 @@ import argparse
 from requests import get, post
 
 # TODO: Maybe these should be given as parameters
-Service_ID_A = 10
-Service_ID_B = 100
+Service_ID_Source   = "57ed79c60cf213ffa7b02092"  # MyLocation
+Service_ID_Sink     = "57ed79c60cf213ffa7b02093"  # PHR
 
 
 # TODO: Add more printing. Now user barely knows if initialization happened and did it succeed or not.
@@ -38,16 +38,16 @@ def initialize(operator_url):
 # Should print "201 Created" if the flow was excuted succesfully.
 def start_ui_flow(operator_url):
     print("\n##### MAKE TWO SERVICE LINKS #####")
-    slr_flow1 = get(operator_url + "api/1.2/slr/account/2/service/1")
+    slr_flow1 = get(operator_url + "api/1.2/slr/account/2/service/"+Service_ID_Sink)
     print(slr_flow1.url, slr_flow1.reason, slr_flow1.status_code, slr_flow1.text)
-    slr_flow2 = get(operator_url + "api/1.2/slr/account/2/service/2")
+    slr_flow2 = get(operator_url + "api/1.2/slr/account/2/service/"+Service_ID_Source)
     print(slr_flow2.url, slr_flow2.reason, slr_flow2.status_code, slr_flow2.text)
 
     # This format needs to be specified, even if done with url params instead.
-    ids = {"sink": Service_ID_B, "source": Service_ID_A}
+    ids = {"sink": Service_ID_Sink, "source": Service_ID_Source}
 
     print("\n##### GIVE CONSENT #####")
-    req = get(operator_url + "api/1.2/cr/consent_form/account/2?sink={}&source={}".format(Service_ID_B, Service_ID_A))
+    req = get(operator_url + "api/1.2/cr/consent_form/account/2?sink={}&source={}".format(Service_ID_Sink, Service_ID_Source))
 
     print(req.url, req.reason, req.status_code, req.text)
     js = json.loads(req.text)

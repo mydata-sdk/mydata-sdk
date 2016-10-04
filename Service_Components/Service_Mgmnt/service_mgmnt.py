@@ -72,11 +72,8 @@ class UserAuthenticated(Resource):
         super(UserAuthenticated, self).__init__()
         keysize = current_app.config["KEYSIZE"]
         cert_key_path = current_app.config["CERT_KEY_PATH"]
-        Service_ID = "SRVMGNT-RSA-{}".format(keysize)
-        gen = {"generate": "EC", "cvr": "P-256", "kid": Service_ID}
-        gen2 = {"generate": "EC", "cvr": "P-256", "kid": Service_ID}
-
-        gen3 = {"generate": "RSA", "size": keysize, "kid": Service_ID}
+        service_id = "SRVMGNT-RSA-{}".format(keysize)
+        gen3 = {"generate": "RSA", "size": keysize, "kid": service_id}
         self.service_key = jwk.JWK(**gen3)
         try:
             with open(cert_key_path, "r") as cert_file:
@@ -89,9 +86,9 @@ class UserAuthenticated(Resource):
         service_cert = self.service_key.export_public()
         self.token_key = self.service_key
 
-        templ = {Service_ID: {"cr_keys": loads(self.token_key.export_public())}}
+        templ = {service_id: {"cr_keys": loads(self.token_key.export_public())}}
         protti = {"alg": "RS256"}
-        headeri = {"kid": Service_ID, "jwk": loads(self.service_key.export_public())}
+        headeri = {"kid": service_id, "jwk": loads(self.service_key.export_public())}
 
         self.service_url = current_app.config["SERVICE_URL"]
         self.operator_url = current_app.config["OPERATOR_URL"]

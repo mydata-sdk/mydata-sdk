@@ -2,18 +2,19 @@
 import importlib
 import logging
 import pkgutil
-from json import dumps
+from json import dumps, load, dump
 
 from flask import Blueprint
 from flask_restful import Api
-
-debug_log = logging.getLogger("debug")
 import jsonschema
 import db_handler
 from sqlite3 import IntegrityError
 from DetailedHTTPException import  DetailedHTTPException
 
-def validate_json(schema, json): # "json" here needs to be python dict.
+debug_log = logging.getLogger("debug")
+
+
+def validate_json(schema, json):  # "json" here needs to be python dict.
     errors = []
     validator = jsonschema.Draft4Validator(schema)
     validator.check_schema(schema)
@@ -21,7 +22,6 @@ def validate_json(schema, json): # "json" here needs to be python dict.
         debug_log.warning("Validation error found: {}".format(repr(error)))
         errors.append(repr(error))
     return errors
-
 
 
 class Helpers:
@@ -33,6 +33,29 @@ class Helpers:
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
         self.port = app_config["MYSQL_PORT"]
+        self.service_id = app_config["SERVICE_ID"]
+
+    def get_key(self):
+        keysize = self.keysize
+        cert_key_path = self.cert_key_path
+        gen3 = {"generate": "RSA", "size": keysize, "kid": self.service_id}
+        service_key = jwk.JWK(**gen3)
+        try:
+            with open(cert_key_path, "r") as cert_file:
+                service_key2 = jwk.JWK(**loads(load(cert_file)))
+                service_key = service_key2
+        except Exception as e:
+            debug_log.error(e)
+            with open(cert_key_path, "w+") as cert_file:
+                dump(service_key.export(), cert_file, indent=2)
+        public_key = loads(service_key.export_public())
+        full_key = loads(service_key)
+        protti = {"alg": "RS256"}
+        headeri = {"kid": self.service_id, "jwk": public_key}
+        return {"pub:": public_key,
+                "key": full_key,
+                "prot": protti,
+                "header": headeri}
 
     def query_db(self, query, args=()):
         '''
@@ -148,11 +171,35 @@ class Helpers:
         csr = self.query_db("select * from csr_storage where cr_id = %s;", (cr_id,))
         cr_from_db = loads(cr)
         csr_from_db = loads(csr)
+
+        # We need to get cr and csr to properly use CR tool
         debug_log.info("Printing CR from DB:")
         debug_log.info(cr)
         debug_log.info("Printing CSR from DB:")
         debug_log.info(csr)
         combined = {"cr": cr_from_db, "csr": csr_from_db}
+        # Using CR tool we get nice helper functions.
+        tool = CR_tool()
+        tool.cr = combined
+        # To fetch key from SLR we need surrogate_id, we can get this from cr
+        surrogate_id = tool.get_surrogate_id()
+        # Now we fetch the SLR and put it to SLR_Tool
+        slr_tool = SLR_tool()
+        slr = self.get_slr(surrogate_id)
+        slr_tool.slr = slr
+        # Fetch key from SLR.
+        keys = slr_tool.get_cr_keys()
+
+        # Verify the CR with the keys from SLR
+        # Check integrity (signature)
+        tool.verify_cr(keys)
+
+        # Check that state is "Active"
+        # Check "Issued" timestamp
+        # Check "Not Before" timestamp
+        # Check "Not After" timestamp
+        # CR validated.
+
 
         return combined
 
