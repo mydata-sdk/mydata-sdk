@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import current_app
+from flask import current_app, request
 
 from helpers import Helpers
 
@@ -36,9 +36,16 @@ class DataFlow(Resource):
         self.service_url = current_app.config["SERVICE_URL"]
         self.helpers = Helpers(current_app.config)
 
-    @error_handler
-    def get(self, user_id, cr_id, rs_id):
 
+    @error_handler
+    def post(self):
+        from flask import request
+        params = request.json
+        debug_log.info(params)
+        debug_log.info(request.json)
+        user_id = params["user_id"]
+        cr_id = params["cr_id"]
+        rs_id = params["rs_id"]
         # Get data_set_id fromm query param
         data_set_id = request.args.get("data_set_id", None)
         debug_log.info("data_set_id is ({}), cr_id is ({}), user_id ({}) and rs_id ({})"
@@ -47,7 +54,7 @@ class DataFlow(Resource):
         request = {"we want": "data"}
 
         # Validate CR
-        self.helpers.validate_cr(cr_id)
+        self.helpers.validate_cr(cr_id, surrogate_id=user_id)
 
 
         # Validate Request from UI
@@ -98,4 +105,7 @@ class DataFlow(Resource):
 
 
 api.add_resource(Status, '/init')
-api.add_resource(DataFlow, '/user/<user_id>/consentRecord/<cr_id>/resourceSet/<rs_id>')
+api.add_resource(DataFlow, '/dc')
+#api.add_resource(DataFlow, '/user/<string:user_id>/consentRecord/<string:cr_id>/resourceSet/<string:rs_id>')
+
+#"http://service_components:7000/api/1.2/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"

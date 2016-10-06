@@ -3,7 +3,8 @@ import importlib
 import logging
 import pkgutil
 from json import dumps, load, dump
-
+import time
+from datetime import datetime
 from flask import Blueprint
 from flask_restful import Api
 import jsonschema
@@ -160,7 +161,7 @@ class Helpers:
             raise Exception("Invalid code")
 
 
-    def validate_cr(self, cr_id):
+    def validate_cr(self, cr_id, surrogate_id):
         """
         Lookup and validate ConsentRecord based on given CR_ID
         :param cr_id:
@@ -178,11 +179,16 @@ class Helpers:
         debug_log.info("Printing CSR from DB:")
         debug_log.info(csr)
         combined = {"cr": cr_from_db, "csr": csr_from_db}
+        debug_log.info(dumps(combined, indent=2))
         # Using CR tool we get nice helper functions.
         tool = CR_tool()
         tool.cr = combined
-        # To fetch key from SLR we need surrogate_id, we can get this from cr
-        surrogate_id = tool.get_surrogate_id()
+        # To fetch key from SLR we need surrogate_id.
+        # We get this as parameter so as further check we verify its same as in cr.
+        surrogate_id_from_cr = tool.get_surrogate_id()
+        debug_log.info("Surrogate_id as parameter was ({}) and from CR ({})".format(surrogate_id, surrogate_id_from_cr))
+        if surrogate_id_from_cr != surrogate_id:
+            raise NameError("User surrogate_id doesn't match surrogate_id in consent record.")
         # Now we fetch the SLR and put it to SLR_Tool
         slr_tool = SLR_tool()
         slr = self.get_slr(surrogate_id)
@@ -192,12 +198,39 @@ class Helpers:
 
         # Verify the CR with the keys from SLR
         # Check integrity (signature)
-        tool.verify_cr(keys)
 
+        tool.verify_cr(keys)
+        tool.verify_csr(keys)
+        debug_log.info("Verified cr/csr ({}) for surrogate_id ({}) ".format(cr_id, surrogate_id))
+
+        combined_decrypted = dumps({"cr": tool.get_CR_payload(), "csr": tool.get_CSR_payload()}, indent=2)
+        debug_log.info(combined_decrypted)
         # Check that state is "Active"
+        state = tool.get_state()
+        if state != "Active":
+            raise ValueError("CR state is not 'Active' but ({})".format(state))
+
         # Check "Issued" timestamp
+        time_now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z")
+        issued_in_cr = tool.get_issued()
+        issued = datetime.strptime(issued_in_cr, "%Y-%m-%dT%H:%M:%S %Z")
+        if time_now<issued:
+            raise EnvironmentError("This CR is issued in the future!")
+        debug_log.info("Issued timestamp is valid.")
+
         # Check "Not Before" timestamp
+        not_before_in_cr = tool.get_not_before()
+        not_before = datetime.strptime(not_before_in_cr, "%Y-%m-%dT%H:%M:%S %Z")
+        if time_now<not_before:
+            raise EnvironmentError("This CR will be available in the future, not yet.")
+        debug_log.info("Not Before timestamp is valid.")
+
         # Check "Not After" timestamp
+        not_after_in_cr = tool.get_not_after()
+        not_after = datetime.strptime(not_after_in_cr, "%Y-%m-%dT%H:%M:%S %Z")
+        if time_now>not_after:
+            raise EnvironmentError("This CR is expired.")
+        debug_log.info("Not After timestamp is valid.")
         # CR validated.
 
 
@@ -491,8 +524,20 @@ class CR_tool:
     def get_slr_id(self):
         return self.get_CR_payload()["common_part"]["slr_id"]
 
+    def get_issued(self):
+        return self.get_CR_payload()["common_part"]["issued"]
+
+    def get_not_before(self):
+        return self.get_CR_payload()["common_part"]["not_before"]
+
+    def get_not_after(self):
+        return self.get_CR_payload()["common_part"]["not_after"]
+
     def get_rs_id(self):
         return self.get_CR_payload()["common_part"]["rs_id"]
+
+    def get_state(self):
+        return self.get_CSR_payload()["consent_status"]
 
     def get_subject_id(self):
         return self.get_CR_payload()["common_part"]["subject_id"]

@@ -187,11 +187,11 @@ class Install_CR(Resource):
             "cr_id": crt.get_cr_id_from_cr(),
             "surrogate_id": surr_id,
             "slr_id": crt.get_slr_id(),
-            "json": crt.get_CR_payload()  # possibly store the base64 representation
+            "json": crt.cr["cr"]  # possibly store the base64 representation
         }
         self.helpers.storeCR_JSON(store_dict)
 
-        store_dict["json"] = crt.get_CSR_payload()
+        store_dict["json"] = crt.cr["csr"]
         self.helpers.storeCSR_JSON(store_dict)
         if role == "Sink":
             debug_log.info("Requesting auth_token")
