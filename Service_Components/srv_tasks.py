@@ -49,8 +49,9 @@ def get_AuthToken(cr_id, operator_url, db_path):
     req = get("http://service_components:7000/api/1.2/sink_flow/init")
     print(req.url, req.status_code, req.content)
 
-    data  = {"cr_id": "18993c1f-437c-4e46-9b43-3725be4684c9", "user_id": "3ec34aa5-6130-473c-84f9-63bf28878092_20b6e313-8cf6-49e0-80b2-29c09979ab68",
-             "rs_id":urllib.quote_plus("http://service_components:7000||ef88e58e-5f6a-4746-98dc-1eefcfe5f86f")}
+    data  = {"cr_id": "4b50b597-a981-4f9a-8f1b-86fecc96d479",
+             "user_id": "cfc2157d-59b3-4e6a-98ee-d49b946345f6_f9be871c-cb0d-44b8-8cab-ef2ff9fdc7f0",
+             "rs_id": urllib.quote_plus("http://service_components:7000||9af5bcc3-d49d-44a5-a486-e0bc137523cf")}
 
     req = post("http://service_components:7000/api/1.2/sink_flow/dc", json=data)
     # req = get("http://service_components:7000/api/1.2/sink_flow/"

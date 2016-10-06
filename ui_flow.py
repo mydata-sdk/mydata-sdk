@@ -13,8 +13,8 @@ Service_ID_Sink     = "57f3a57b0cf2fcf22eea33a3"  # PHR
 # Needed in order to start_ui_flow() -function to work.
 def initialize(operator_url):
     print ("\n##### CREATE USER ACCOUNTS #####")
-    print("NOTE: Throws an error if run for second time as you cannot " \
-          "create more accounts with same unique usernames. " \
+    print("NOTE: Throws an error if run for second time as you cannot "
+          "create more accounts with same unique usernames. "
           "(Will be fixed in later releases.)\n\n"
          )
     resp = post(operator_url + 'api/accounts/',

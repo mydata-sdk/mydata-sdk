@@ -48,7 +48,7 @@ class AuthToken(Resource):
                                         trace=traceback.format_exc(limit=100).splitlines())
         debug_log.debug(dumps(result, indent=2))
         token = self.gen_auth_token(result)
-
+        debug_log.info(dumps(result, indent=2))
         return {"auth_token" : token}
 
 

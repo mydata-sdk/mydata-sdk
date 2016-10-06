@@ -1,19 +1,14 @@
 # -*- coding: utf-8 -*-
-from flask import current_app, request
-
-from helpers import Helpers
-
 __author__ = 'alpaloma'
-
+from flask import Blueprint, current_app, request
+from helpers import Helpers
 from DetailedHTTPException import error_handler
-from flask import Blueprint
 from flask_restful import Resource, Api
 import logging
 debug_log = logging.getLogger("debug")
 api_Sink_blueprint = Blueprint("api_Sink_blueprint", __name__)
 api = Api()
 api.init_app(api_Sink_blueprint)
-
 
 # import xmltodict
 # @api.representation('application/xml')
@@ -36,10 +31,8 @@ class DataFlow(Resource):
         self.service_url = current_app.config["SERVICE_URL"]
         self.helpers = Helpers(current_app.config)
 
-
     @error_handler
-    def post(self):
-        from flask import request
+    def post(self):  # TODO Make this a GET
         params = request.json
         debug_log.info(params)
         debug_log.info(request.json)
@@ -51,7 +44,7 @@ class DataFlow(Resource):
         debug_log.info("data_set_id is ({}), cr_id is ({}), user_id ({}) and rs_id ({})"
                        .format(data_set_id, cr_id, user_id, rs_id))
         # Create request
-        request = {"we want": "data"}
+        req = {"we want": "data"}
 
         # Validate CR
         self.helpers.validate_cr(cr_id, surrogate_id=user_id)
@@ -106,6 +99,7 @@ class DataFlow(Resource):
 
 api.add_resource(Status, '/init')
 api.add_resource(DataFlow, '/dc')
+
 #api.add_resource(DataFlow, '/user/<string:user_id>/consentRecord/<string:cr_id>/resourceSet/<string:rs_id>')
 
 #"http://service_components:7000/api/1.2/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"

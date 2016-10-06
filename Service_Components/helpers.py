@@ -170,6 +170,8 @@ class Helpers:
         # TODO: query_db is not really optimal when making two separate queries in row.
         cr = self.query_db("select * from cr_storage where cr_id = %s;", (cr_id,))
         csr = self.query_db("select * from csr_storage where cr_id = %s;", (cr_id,))
+        if cr is None or csr is None:
+            raise IndexError("CR and CSR couldn't be found with given id ({})".format(cr_id))
         cr_from_db = loads(cr)
         csr_from_db = loads(csr)
 
@@ -211,29 +213,29 @@ class Helpers:
             raise ValueError("CR state is not 'Active' but ({})".format(state))
 
         # Check "Issued" timestamp
-        time_now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z")
+        time_now = datetime.utcnow()
         issued_in_cr = tool.get_issued()
-        issued = datetime.strptime(issued_in_cr, "%Y-%m-%dT%H:%M:%S %Z")
+        issued = datetime.strptime(issued_in_cr, "%Y-%m-%dT%H:%M:%SZ")
         if time_now<issued:
             raise EnvironmentError("This CR is issued in the future!")
         debug_log.info("Issued timestamp is valid.")
 
         # Check "Not Before" timestamp
         not_before_in_cr = tool.get_not_before()
-        not_before = datetime.strptime(not_before_in_cr, "%Y-%m-%dT%H:%M:%S %Z")
+        not_before = datetime.strptime(not_before_in_cr, "%Y-%m-%dT%H:%M:%SZ")
         if time_now<not_before:
             raise EnvironmentError("This CR will be available in the future, not yet.")
         debug_log.info("Not Before timestamp is valid.")
 
         # Check "Not After" timestamp
         not_after_in_cr = tool.get_not_after()
-        not_after = datetime.strptime(not_after_in_cr, "%Y-%m-%dT%H:%M:%S %Z")
+        not_after = datetime.strptime(not_after_in_cr, "%Y-%m-%dT%H:%M:%SZ")
         if time_now>not_after:
             raise EnvironmentError("This CR is expired.")
         debug_log.info("Not After timestamp is valid.")
         # CR validated.
 
-
+        debug_log.info("CR has been validated.")
         return combined
 
 

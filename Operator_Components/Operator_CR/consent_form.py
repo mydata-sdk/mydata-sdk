@@ -105,9 +105,9 @@ class ConsentFormHandler(Resource):
         # Generate common_cr for both sink and source.
         sq.task("Generate common CR")
 
-        issued = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z")
-        not_before = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z")
-        not_after = datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%S %Z")
+        issued = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        not_before = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        not_after = datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
         operator_id = current_app.config["OPERATOR_ID"]
 
         common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source,
