@@ -47,22 +47,29 @@ class DataFlow(Resource):
         req = {"we want": "data"}
 
         # Validate CR
-        self.helpers.validate_cr(cr_id, surrogate_id=user_id)
-
+        cr = self.helpers.validate_cr(cr_id, surrogate_id=user_id)
 
         # Validate Request from UI
-        # Check that rs_description field contains rs_id
-        # Check that rs_description field contains data_set_id (Optional?)
-        # Request from UI validated.
+        distribution_ids = self.helpers.validate_request_from_ui(cr, data_set_id, rs_id)
 
         # Fetch data request urls
         # LOOP: for every data_set_id
+        for distribution_id in distribution_ids:
             # Fetch corresponding distrubution point url based on data_set_id
+            pass  # TODO: Implement
+
         # Data request urls fetched.
+        debug_log.info("Data request urls fetched.")
 
         # Validate Authorisation Token
-        # Fetch Authorisation Token related CR from data storage by rs_id
+        surrogate_id = cr["common_part"]["surrogate_id"]
+        self.helpers.validate_authorization_token(cr_id, surrogate_id)
+        # Fetch Authorisation Token related to CR from data storage by rs_id (cr_id?)
+
+        token = self.helpers.get_token(cr_id)
+        debug_log.info(token)
         # Check Integrity ( Signed by operator, Operator's public key can be found from SLR)
+
         # Check that "sub" contains correct public key (operators, sources?)
         # Check "Issued" timestamp
         # Check "Not Before" timestamp

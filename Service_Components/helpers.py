@@ -201,8 +201,10 @@ class Helpers:
         # Verify the CR with the keys from SLR
         # Check integrity (signature)
 
-        tool.verify_cr(keys)
-        tool.verify_csr(keys)
+        cr_verified = tool.verify_cr(keys)
+        csr_verified = tool.verify_csr(keys)
+        if not (cr_verified and csr_verified):
+            raise ValueError("CR and CSR verification failed.")
         debug_log.info("Verified cr/csr ({}) for surrogate_id ({}) ".format(cr_id, surrogate_id))
 
         combined_decrypted = dumps({"cr": tool.get_CR_payload(), "csr": tool.get_CSR_payload()}, indent=2)
@@ -236,7 +238,7 @@ class Helpers:
         # CR validated.
 
         debug_log.info("CR has been validated.")
-        return combined
+        return combined_decrypted
 
 
     def verifyCode(self, code):
@@ -272,6 +274,16 @@ class Helpers:
         storage_row = self.query_db("select * from storage where surrogate_id = %s;", (surrogate_id,))
         slr_from_db = loads(storage_row)
         return slr_from_db
+
+    def get_token(self, cr_id):
+        """
+        Fetch token for given cr_id from the database
+        :param cr_id: cr_id
+        :return: Return Token made for given cr_id or None
+        """
+        storage_row = self.query_db("select * from token_storage where cr_id = %s;", (cr_id,))
+        token_from_db = loads(storage_row)
+        return token_from_db
 
     def storeCR_JSON(self, DictionaryToStore):
         """
@@ -324,6 +336,38 @@ class Helpers:
             db.rollback()
             raise DetailedHTTPException(detail={"msg": "Adding CSR to the database has failed.",},
                                         title="Failure in CSR storage", exception=e)
+
+    def validate_request_from_ui(self, cr, data_set_id, rs_id):
+        rs_id_in_cr = cr["cr"]["common_part"]["rs_id"]
+
+        # Check that rs_description field contains rs_id
+        if(rs_id != rs_id_in_cr):
+            raise ValueError("Given rs_id doesn't match CR")
+
+        # Check that rs_description field contains data_set_id (Optional?)
+        distribution_ids = []
+        if data_set_id is not None:
+            datasets = cr["cr"]["role_specific_part"]["resource_set"]["dataset"]
+            for dataset in datasets:
+                if dataset["dataset_id"] == data_set_id:
+                    distribution_ids.append(dataset["distribution_id"])
+        else:
+            datasets = cr["cr"]["role_specific_part"]["resource_set"]["dataset"]
+            for dataset in datasets:
+                distribution_ids.append(dataset["distribution_id"])
+
+        debug_log.info(distribution_ids)
+        # Request from UI validated.
+        debug_log.info("Request from UI validated.")
+        return distribution_ids
+
+    def validate_authorization_token(self, cr_id, surrogate_id):
+        slr = self.get_slr(surrogate_id)
+        slr_tool = SLR_tool()
+        slr_tool.slr = slr
+        key = slr_tool.get_operator_key()
+        token = self.get_token(cr_id)
+
 
 
 def register_blueprints(app, package_name, package_path):
