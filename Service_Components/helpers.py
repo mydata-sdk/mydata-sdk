@@ -232,7 +232,7 @@ class Helpers:
         # CR validated.
 
         debug_log.info("CR has been validated.")
-        return combined_decrypted
+        return loads(combined_decrypted)
 
 
     def verifyCode(self, code):
@@ -332,12 +332,14 @@ class Helpers:
                                         title="Failure in CSR storage", exception=e)
 
     def validate_request_from_ui(self, cr, data_set_id, rs_id):
+        debug_log.info(cr)
+        debug_log.info(type(cr))
         rs_id_in_cr = cr["cr"]["common_part"]["rs_id"]
 
         # Check that rs_description field contains rs_id
         if(rs_id != rs_id_in_cr):
             raise ValueError("Given rs_id doesn't match CR")
-
+        debug_log.info("RS_ID checked successfully")
         # Check that rs_description field contains data_set_id (Optional?)
         distribution_ids = []
         if data_set_id is not None:
