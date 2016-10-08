@@ -195,7 +195,7 @@ class Install_CR(Resource):
         self.helpers.storeCSR_JSON(store_dict)
         if role == "Sink":
             debug_log.info("Requesting auth_token")
-            get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, self.db_path)
+            get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, current_app.config)
         return {"status": 200, "msg": "OK"}, 200
 
 

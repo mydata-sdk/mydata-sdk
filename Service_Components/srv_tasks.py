@@ -22,36 +22,31 @@ import db_handler
 from json import dumps, loads
 from requests import get
 from instance.settings import MYSQL_HOST, MYSQL_PASSWORD, MYSQL_USER, MYSQL_PORT, MYSQL_DB
-
+from helpers import Helpers, CR_tool
 @celery.task
-def get_AuthToken(cr_id, operator_url, db_path):
-    print(operator_url, db_path, cr_id)
-    def storeToken(DictionaryToStore):  # TODO: Figure if this could be put to helpers without getting to trouble with settings
-        db = db_handler.get_db(host=MYSQL_HOST, password=MYSQL_PASSWORD, user=MYSQL_USER, port=MYSQL_PORT, database=MYSQL_DB)
-        cursor = db.cursor()
-        for key in DictionaryToStore:
-            try:
-                cursor.execute("INSERT INTO token_storage (cr_id,token) \
-                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
-                db.commit()
-            except IntegrityError as e:  # Rewrite incase we get new token.
-                cursor.execute("UPDATE token_storage SET token=? WHERE cr_id=%s ;", (dumps(DictionaryToStore[key]), key))
-                db.commit()
-        db.close()
-
+def get_AuthToken(cr_id, operator_url, app_config):
+    print(operator_url, cr_id)
+    helpers = Helpers(app_config)
     print(cr_id)
     token = get("{}/api/1.2/cr/auth_token/{}".format(operator_url, cr_id))  # TODO Get api path from some config?
     print(token.url, token.reason, token.status_code, token.text)
     store_dict = {cr_id: dumps(loads(token.text.encode()))}
-    storeToken(store_dict)
+    helpers.storeToken(store_dict)
 
+    cr_csr = helpers.get_cr_json(cr_id)
+    cr_tool = CR_tool()
+    cr_tool.cr = cr_csr
+
+    user_id = cr_tool.get_surrogate_id()
+    rs_id = cr_tool.get_rs_id()
 
     req = get("http://service_components:7000/api/1.2/sink_flow/init")
     print(req.url, req.status_code, req.content)
 
-    data  = {"cr_id": "4b50b597-a981-4f9a-8f1b-86fecc96d479",
-             "user_id": "cfc2157d-59b3-4e6a-98ee-d49b946345f6_f9be871c-cb0d-44b8-8cab-ef2ff9fdc7f0",
-             "rs_id": urllib.quote_plus("http://service_components:7000||9af5bcc3-d49d-44a5-a486-e0bc137523cf")}
+    data  = {"cr_id": cr_id,
+             "user_id": user_id,
+             "rs_id": urllib.quote_plus(rs_id)}
+    print(dumps(data, indent=2))
 
     req = post("http://service_components:7000/api/1.2/sink_flow/dc", json=data)
     # req = get("http://service_components:7000/api/1.2/sink_flow/"

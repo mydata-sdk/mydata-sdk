@@ -111,15 +111,13 @@ class Helpers:
         """
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info(DictionaryToStore)
         for key in DictionaryToStore:
-            debug_log.info(key)
             try:
                 cursor.execute("INSERT INTO token_storage (cr_id,token) \
                     VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
             except IntegrityError as e:  # Rewrite incase we get new token.
-                cursor.execute("UPDATE token_storage SET token=%s WHERE cr_id=%s ;", (dumps(DictionaryToStore[key]), key))
+                cursor.execute("UPDATE token_storage SET token=? WHERE cr_id=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
         db.close()
 
@@ -160,13 +158,7 @@ class Helpers:
         else:
             raise Exception("Invalid code")
 
-
-    def validate_cr(self, cr_id, surrogate_id):
-        """
-        Lookup and validate ConsentRecord based on given CR_ID
-        :param cr_id:
-        :return: CR if found and validated.
-        """
+    def get_cr_json(self, cr_id):
         # TODO: query_db is not really optimal when making two separate queries in row.
         cr = self.query_db("select * from cr_storage where cr_id = %s;", (cr_id,))
         csr = self.query_db("select * from csr_storage where cr_id = %s;", (cr_id,))
@@ -174,13 +166,15 @@ class Helpers:
             raise IndexError("CR and CSR couldn't be found with given id ({})".format(cr_id))
         cr_from_db = loads(cr)
         csr_from_db = loads(csr)
-
-        # We need to get cr and csr to properly use CR tool
-        debug_log.info("Printing CR from DB:")
-        debug_log.info(cr)
-        debug_log.info("Printing CSR from DB:")
-        debug_log.info(csr)
         combined = {"cr": cr_from_db, "csr": csr_from_db}
+        return combined
+    def validate_cr(self, cr_id, surrogate_id):
+        """
+        Lookup and validate ConsentRecord based on given CR_ID
+        :param cr_id:
+        :return: CR if found and validated.
+        """
+        combined = self.get_cr_json(cr_id)
         debug_log.info(dumps(combined, indent=2))
         # Using CR tool we get nice helper functions.
         tool = CR_tool()
