@@ -2,6 +2,7 @@
 import importlib
 import logging
 import pkgutil
+import urllib
 from json import dumps, load, dump
 import time
 from datetime import datetime
@@ -276,7 +277,7 @@ class Helpers:
         :return: Return Token made for given cr_id or None
         """
         storage_row = self.query_db("select * from token_storage where cr_id = %s;", (cr_id,))
-        token_from_db = loads(storage_row)
+        token_from_db = loads(loads(storage_row))
         return token_from_db
 
     def storeCR_JSON(self, DictionaryToStore):
@@ -334,21 +335,23 @@ class Helpers:
     def validate_request_from_ui(self, cr, data_set_id, rs_id):
         debug_log.info(cr)
         debug_log.info(type(cr))
-        rs_id_in_cr = cr["cr"]["common_part"]["rs_id"]
+        # The rs_id is urlencoded, do the same to one fetched from cr
+        rs_id_in_cr = urllib.quote_plus(cr["cr"]["common_part"]["rs_id"])
 
         # Check that rs_description field contains rs_id
+        debug_log.info("rs_id in cr({}) and from ui({})".format(rs_id_in_cr, rs_id))
         if(rs_id != rs_id_in_cr):
             raise ValueError("Given rs_id doesn't match CR")
         debug_log.info("RS_ID checked successfully")
         # Check that rs_description field contains data_set_id (Optional?)
         distribution_ids = []
         if data_set_id is not None:
-            datasets = cr["cr"]["role_specific_part"]["resource_set"]["dataset"]
+            datasets = cr["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"]
             for dataset in datasets:
                 if dataset["dataset_id"] == data_set_id:
                     distribution_ids.append(dataset["distribution_id"])
         else:
-            datasets = cr["cr"]["role_specific_part"]["resource_set"]["dataset"]
+            datasets = cr["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"]
             for dataset in datasets:
                 distribution_ids.append(dataset["distribution_id"])
 
@@ -363,6 +366,15 @@ class Helpers:
         slr_tool.slr = slr
         key = slr_tool.get_operator_key()
         token = self.get_token(cr_id)
+        debug_log.info("Fetched key and token.")
+        debug_log.info(key)
+        debug_log.info(token)
+        tt = Token_tool()
+        tt.token = token
+        tt.key = key
+        plain_token = tt.get_token()
+
+
 
 
 
@@ -627,3 +639,31 @@ class CR_tool:
 # print(crt.get_cr_id())
 # print(crt.get_usage_rules())
 # print(crt.get_surrogate_id())
+from jwcrypto import jwt
+class Token_tool:
+    def __init__(self):
+        #  Replace token.
+        self.token = {"auth_token": "eyJhbGciOiJSUzI1NiJ9.eyJhdWQiOlt7ImRhdGFzZXRfaWQiOiJTdHJpbmciLCJkaXN0cmlidXRpb25faWQiOiJTdHJpbmcifV0sImV4cCI6IjIwMTYtMTEtMDhUMTM6MzA6MjUgIiwiaWF0IjoiMjAxNi0xMC0wOVQxMzozMDoyNSAiLCJpc3MiOnsiZSI6IkFRQUIiLCJraWQiOiJBQ0MtSUQtUkFORE9NIiwia3R5IjoiUlNBIiwibiI6InRtaGxhUFV3SmdvNHlTVE1yVEdGRnliVnhLMjh1REd0SlNGRGRHazNiYXhUV21nZkswQzZETXF3NWxxcC1FWFRNVFJmSXFNYmRNY0RtVU5ueUpwUTF3In0sImp0aSI6Ijc5ZmI3NDg0LTE2YjYtNDEzYy04ZGI0LWZlMjcwYjg4Y2UxNiIsIm5iZiI6IjIwMTYtMTAtMDlUMTM6MzA6MjUgIiwicnNfaWQiOiJodHRwOi8vc2VydmljZV9jb21wb25lbnRzOjcwMDB8fDljMWYxNTdkLWM4MWEtNGY1Ni1hZmYxLTc2MWZjNTVhNDBkOSIsInN1YiI6eyJlIjoiQVFBQiIsImtpZCI6IlNSVk1HTlQtUlNBLTUxMiIsImt0eSI6IlJTQSIsIm4iOiJ5R2dzUDljV01pUFBtZ09RMEp0WVN3Nnp3dURvdThBR0F5RHV0djVwTHc1aXZ6NnhvTGhaTS1pUVdGN0VzckVHdFNyUU55WUxzMlZzLUpxbW50UGpIUSJ9fQ.s1KOu1Q_ifNEnmBQ6QcmNxd0Oy1Fxp-z_4hsCI5fNfOa5vtWai68_OKN_NoUjtqUCy-CJcLHnGGoxTh_vHcjtg"}
+        #  Replace key.
+        self.key = {}
+
+    def decrypt_payload(self, payload):
+        key = jwk.JWK()
+        key.import_key(**self.key)
+        jsoni = jwt.JWT()
+        jsoni.deserialize(self.token["auth_token"], key)
+        jsoni = jsoni.serialize()
+        #payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
+        #content = decode(payload.encode('utf-8'))
+        debug_log.info(jsoni)
+        #payload = loads(loads(content.decode('utf-8')))
+        return jsoni
+    def get_token(self):
+        debug_log.info(self.token)
+        debug_log.info(type(self.token))
+        decrypted_token = self.decrypt_payload(self.token["auth_token"])
+        debug_log.info(dumps(decrypted_token, indent=2))
+        return decrypted_token
+
+#tt = Token_tool()
+#print(tt.decrypt_payload(tt.token["auth_token"]))

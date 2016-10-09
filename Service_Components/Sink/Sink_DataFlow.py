@@ -55,6 +55,7 @@ class DataFlow(Resource):
         # Fetch data request urls
         # LOOP: for every data_set_id
         for distribution_id in distribution_ids:
+            debug_log.info(distribution_id)
             # Fetch corresponding distrubution point url based on data_set_id
             pass  # TODO: Implement
 
@@ -62,7 +63,7 @@ class DataFlow(Resource):
         debug_log.info("Data request urls fetched.")
 
         # Validate Authorisation Token
-        surrogate_id = cr["common_part"]["surrogate_id"]
+        surrogate_id = cr["cr"]["common_part"]["surrogate_id"]
         self.helpers.validate_authorization_token(cr_id, surrogate_id)
         # Fetch Authorisation Token related to CR from data storage by rs_id (cr_id?)
 
