@@ -90,7 +90,27 @@ contact_template_for_patch = {
     }
 }
 
+email_template = {
+    "data": {
+        "type": "Email",
+        "attributes": {
+            'email': 'erkki@example.com',
+            'type': 'Personal',
+            'primary': 'True'
+        }
+    }
+}
 
+email_template_for_patch = {
+    "data": {
+        "type": "Email",
+        "attributes": {
+            'email': 'pasi@example.org',
+            'type': 'School',
+            'primary': 'False'
+        }
+    }
+}
 
 
 
@@ -177,6 +197,8 @@ try:
     account = post(host=account_host, endpoint="/api/accounts/", headers=headers, data=account_template)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_response = title + ": " + account[0] + ": " + json.dumps(account[1])
     print('request_response: ' + request_response)
@@ -194,6 +216,8 @@ try:
     api_auth = get(host=account_host, endpoint="/api/auth/user/", headers=headers, username=username, password=password)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_response = title + ": " + api_auth[0] + ": " + json.dumps(api_auth[1])
     print('request_response: ' + request_response)
@@ -217,6 +241,8 @@ try:
     particulars = get(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_response = title + ": " + particulars[0] + ": " + json.dumps(particulars[1])
     print('request_response: ' + request_response)
@@ -233,6 +259,8 @@ try:
     particular = get(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/" + particular_id + "/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_response = title + ": " + particular[0] + ": " + json.dumps(particular[1])
     print('request_response: ' + request_response)
@@ -249,24 +277,14 @@ try:
     updated_particular = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/" + particular_id + "/", headers=headers, data=particular_template_for_patch)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_response = title + ": " + updated_particular[0] + ": " + json.dumps(updated_particular[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
     print ("Response " + updated_particular[0] + ": " + json.dumps(updated_particular[1]))
 
-
-print ("------------------------------------")
-title = "Verify Patching Particular"
-print(title)
-if json.dumps(particular[1]) != json.dumps(updated_particular[1]):
-    request_response = title + ": " + "Updated"
-    print(request_response)
-    request_statuses.append(request_response)
-else:
-    request_response = title + ": " + "Not Updated"
-    print(request_response)
-    request_statuses.append(request_response)
 
 ##################################
 # CONTACTS
@@ -281,6 +299,8 @@ try:
     new_contact = post(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/", headers=headers, data=contact_template)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_response = title + ": " + new_contact[0] + ": " + json.dumps(new_contact[1])
     print('request_response: ' + request_response)
@@ -294,6 +314,8 @@ try:
     contacts = get(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_response = title + ": " + contacts[0] + ": " + json.dumps(contacts[1])
     print('request_response: ' + request_response)
@@ -310,6 +332,8 @@ try:
     contact = get(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/" + contacts_id + "/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_statuses.append(title + ": " + contact[0] + ": " + json.dumps(contact[1]))
     print ("Response " + contact[0] + ": " + json.dumps(contact[1]))
@@ -324,6 +348,8 @@ try:
     updated_contact = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/" + contacts_id + "/", headers=headers, data=contact_template_for_patch)
 except Exception as exp:
     print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
 else:
     request_response = title + ": " + updated_contact[0] + ": " + json.dumps(updated_contact[1])
     print('request_response: ' + request_response)
@@ -331,17 +357,76 @@ else:
     print ("Response " + updated_contact[0] + ": " + json.dumps(updated_contact[1]))
 
 
-print ("------------------------------------")
-title = "Verify Patching Contact"
+##################################
+# EMAIL
+##################################
+label = "# \n# EMAIL \n#################################"
+print(label)
+request_statuses.append(label)
+
+title = "Add Email"
 print(title)
-if json.dumps(contact[1]) != json.dumps(updated_contact[1]):
-    request_response = title + ": " + "Updated"
-    print(request_response)
+try:
+    new_email = post(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/", headers=headers, data=email_template)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + "Not Updated"
-    print(request_response)
+    request_response = title + ": " + new_email[0] + ": " + json.dumps(new_email[1])
+    print('request_response: ' + request_response)
     request_statuses.append(request_response)
+    print ("Response " + new_email[0] + ": " + json.dumps(new_email[1]))
+
+print ("------------------------------------")
+title = "List Emails"
+print(title)
+try:
+    emails = get(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+else:
+    request_response = title + ": " + emails[0] + ": " + json.dumps(emails[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    email_id = str(emails[1]['data'][0].get("id", "None"))
+    print ("Response " + new_email[0] + ": " + json.dumps(new_email[1]))
+    print ("contacts_id: " + email_id)
+
+
+print ("------------------------------------")
+title = "One Email"
+print(title)
+try:
+    email = get(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/" + email_id + "/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+else:
+    request_statuses.append(title + ": " + email[0] + ": " + json.dumps(email[1]))
+    print ("Response " + email[0] + ": " + json.dumps(email[1]))
+    print ("contacts_id: " + str(email[1]['data'].get("id", "None")))
+
+
+print ("------------------------------------")
+title = "Patch Email"
+print(title)
+try:
+    email_template_for_patch['data']['id'] = str(email_id)
+    updated_email = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/" + email_id + "/", headers=headers, data=email_template_for_patch)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+else:
+    request_response = title + ": " + updated_email[0] + ": " + json.dumps(updated_email[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    print ("Response " + updated_email[0] + ": " + json.dumps(updated_email[1]))
+
 
 
 #################################
