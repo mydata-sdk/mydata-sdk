@@ -112,6 +112,28 @@ email_template_for_patch = {
     }
 }
 
+telephone_template = {
+    "data": {
+        "type": "Telephone",
+        "attributes": {
+            'tel': '0501234567',
+            'type': 'Personal',
+            'primary': 'True'
+        }
+    }
+}
+
+telephone_template_for_patch = {
+    "data": {
+        "type": "Telephone",
+        "attributes": {
+            'tel': '+358 50 123 4567',
+            'type': 'School',
+            'primary': 'False'
+        }
+    }
+}
+
 
 
 def post(host=None, endpoint=None, headers=None, data=None):
@@ -238,17 +260,17 @@ request_statuses.append(label)
 title = "List Particulars"
 print(title)
 try:
-    particulars = get(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/", headers=headers)
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + particulars[0] + ": " + json.dumps(particulars[1])
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    particular_id = str(particulars[1]['data'][0].get("id", "None"))
-    print ("Response " + particulars[0] + ": " + json.dumps(particulars[1]))
+    particular_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
     print ("particular_id: " + particular_id)
 
 
@@ -256,17 +278,17 @@ print ("------------------------------------")
 title = "One Particular"
 print(title)
 try:
-    particular = get(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/" + particular_id + "/", headers=headers)
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/" + particular_id + "/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + particular[0] + ": " + json.dumps(particular[1])
+    request_response = title + ": " + entry[0] + ": " + json.dumps(entry[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    print ("Response " + particular[0] + ": " + json.dumps(particular[1]))
-    print ("particular_id: " + str(particular[1]['data'].get("id", "None")))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("particular_id: " + str(entry[1]['data'].get("id", "None")))
 
 
 print ("------------------------------------")
@@ -274,16 +296,16 @@ title = "Patch Particular"
 print(title)
 try:
     particular_template_for_patch['data']['id'] = str(particular_id)
-    updated_particular = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/" + particular_id + "/", headers=headers, data=particular_template_for_patch)
+    updated_entry = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/" + particular_id + "/", headers=headers, data=particular_template_for_patch)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + updated_particular[0] + ": " + json.dumps(updated_particular[1])
+    request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    print ("Response " + updated_particular[0] + ": " + json.dumps(updated_particular[1]))
+    print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
 
 
 ##################################
@@ -296,32 +318,32 @@ request_statuses.append(label)
 title = "Add Contact"
 print(title)
 try:
-    new_contact = post(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/", headers=headers, data=contact_template)
+    new_entry = post(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/", headers=headers, data=contact_template)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + new_contact[0] + ": " + json.dumps(new_contact[1])
+    request_response = title + ": " + new_entry[0] + ": " + json.dumps(new_entry[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    print ("Response " + new_contact[0] + ": " + json.dumps(new_contact[1]))
+    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
 
 print ("------------------------------------")
 title = "List Contacts"
 print(title)
 try:
-    contacts = get(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/", headers=headers)
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + contacts[0] + ": " + json.dumps(contacts[1])
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    contacts_id = str(contacts[1]['data'][0].get("id", "None"))
-    print ("Response " + contacts[0] + ": " + json.dumps(contacts[1]))
+    contacts_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
     print ("contacts_id: " + contacts_id)
 
 
@@ -329,15 +351,15 @@ print ("------------------------------------")
 title = "One Contact"
 print(title)
 try:
-    contact = get(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/" + contacts_id + "/", headers=headers)
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/" + contacts_id + "/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_statuses.append(title + ": " + contact[0] + ": " + json.dumps(contact[1]))
-    print ("Response " + contact[0] + ": " + json.dumps(contact[1]))
-    print ("contacts_id: " + str(contact[1]['data'].get("id", "None")))
+    request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("contacts_id: " + str(entry[1]['data'].get("id", "None")))
 
 
 print ("------------------------------------")
@@ -345,16 +367,16 @@ title = "Patch Contact"
 print(title)
 try:
     contact_template_for_patch['data']['id'] = str(contacts_id)
-    updated_contact = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/" + contacts_id + "/", headers=headers, data=contact_template_for_patch)
+    updated_entry = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/" + contacts_id + "/", headers=headers, data=contact_template_for_patch)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + updated_contact[0] + ": " + json.dumps(updated_contact[1])
+    request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    print ("Response " + updated_contact[0] + ": " + json.dumps(updated_contact[1]))
+    print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
 
 
 ##################################
@@ -367,32 +389,32 @@ request_statuses.append(label)
 title = "Add Email"
 print(title)
 try:
-    new_email = post(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/", headers=headers, data=email_template)
+    new_entry = post(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/", headers=headers, data=email_template)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + new_email[0] + ": " + json.dumps(new_email[1])
+    request_response = title + ": " + new_entry[0] + ": " + json.dumps(new_entry[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    print ("Response " + new_email[0] + ": " + json.dumps(new_email[1]))
+    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
 
 print ("------------------------------------")
 title = "List Emails"
 print(title)
 try:
-    emails = get(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/", headers=headers)
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + emails[0] + ": " + json.dumps(emails[1])
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    email_id = str(emails[1]['data'][0].get("id", "None"))
-    print ("Response " + new_email[0] + ": " + json.dumps(new_email[1]))
+    email_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
     print ("contacts_id: " + email_id)
 
 
@@ -400,15 +422,15 @@ print ("------------------------------------")
 title = "One Email"
 print(title)
 try:
-    email = get(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/" + email_id + "/", headers=headers)
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/" + email_id + "/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_statuses.append(title + ": " + email[0] + ": " + json.dumps(email[1]))
-    print ("Response " + email[0] + ": " + json.dumps(email[1]))
-    print ("contacts_id: " + str(email[1]['data'].get("id", "None")))
+    request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("contacts_id: " + str(entry[1]['data'].get("id", "None")))
 
 
 print ("------------------------------------")
@@ -416,16 +438,87 @@ title = "Patch Email"
 print(title)
 try:
     email_template_for_patch['data']['id'] = str(email_id)
-    updated_email = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/" + email_id + "/", headers=headers, data=email_template_for_patch)
+    updated_entry = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/emails/" + email_id + "/", headers=headers, data=email_template_for_patch)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
 else:
-    request_response = title + ": " + updated_email[0] + ": " + json.dumps(updated_email[1])
+    request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    print ("Response " + updated_email[0] + ": " + json.dumps(updated_email[1]))
+    print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
+
+
+##################################
+# TELEPHONE
+##################################
+label = "# \n# TELEPHONE \n#################################"
+print(label)
+request_statuses.append(label)
+
+title = "Add Telephone"
+print(title)
+try:
+    new_entry = post(host=account_host, endpoint="/api/accounts/" + account_id + "/telephones/", headers=headers, data=telephone_template)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+else:
+    request_response = title + ": " + new_entry[0] + ": " + json.dumps(new_entry[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+
+print ("------------------------------------")
+title = "List Telephones"
+print(title)
+try:
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/telephones/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+else:
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    telephones_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+    print ("contacts_id: " + email_id)
+
+
+print ("------------------------------------")
+title = "One Telephone"
+print(title)
+try:
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/telephones/" + telephones_id + "/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+else:
+    request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("contacts_id: " + str(entry[1]['data'].get("id", "None")))
+
+
+print ("------------------------------------")
+title = "Patch Telephone"
+print(title)
+try:
+    telephone_template_for_patch['data']['id'] = str(telephones_id)
+    updated_entry = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/telephones/" + telephones_id + "/", headers=headers, data=telephone_template_for_patch)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+else:
+    request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
 
 
 
