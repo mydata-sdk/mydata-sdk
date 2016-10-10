@@ -1226,13 +1226,10 @@ class Telephone():
 
         sql_query = "SELECT id, tel, typeEnum, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND tel LIKE %s AND typeEnum LIKE %s AND prime LIKE %s AND Accounts_id LIKE %s;"
+                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
-            '%' + str(self.tel) + '%',
-            '%' + str(self.type) + '%',
-            '%' + str(self.prime) + '%',
             '%' + str(self.account_id) + '%',
         )
 
@@ -1258,6 +1255,28 @@ class Telephone():
                 self.prime = data[0][3]
                 self.account_id = data[4]
 
+            return cursor
+
+    def update_db(self, cursor=""):
+
+        sql_query = "UPDATE " + self.table_name + " SET tel=%s, typeEnum=%s, prime=%s " \
+                                                  "WHERE id=%s AND Accounts_id=%s"
+
+        arguments = (
+            str(self.tel),
+            str(self.type),
+            str(self.prime),
+            str(self.id),
+            str(self.account_id),
+        )
+
+        try:
+            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+        except Exception as exp:
+            logger.debug('sql_query: ' + repr(exp))
+            raise
+        else:
+            logger.info("SQL query executed")
             return cursor
 
 
