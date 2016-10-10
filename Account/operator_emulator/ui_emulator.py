@@ -162,9 +162,15 @@ def get(host=None, endpoint=None, headers=None, username=None, password=None):
 
 ######### Actions
 
+##################################
+# Create Account and Authenticate
+##################################
+label = "# \n# Create Account and Authenticate \n#################################"
+print(label)
+request_statuses.append(label)
+
 #
 # Create Account
-print ("------------------------------------")
 title = "Create Account"
 print(title)
 try:
@@ -197,9 +203,14 @@ else:
     print ("Response " + api_auth[0] + ": " + json.dumps(api_auth[1]))
     print ("apikey: " + apikey)
 
-#
+
+##################################
 # PARTICULARS
-print ("------------------------------------")
+##################################
+label = "# \n# PARTICULARS \n#################################"
+print(label)
+request_statuses.append(label)
+
 title = "List Particulars"
 print(title)
 try:
@@ -213,21 +224,6 @@ else:
     particular_id = str(particulars[1]['data'][0].get("id", "None"))
     print ("Response " + particulars[0] + ": " + json.dumps(particulars[1]))
     print ("particular_id: " + particular_id)
-
-
-print ("------------------------------------")
-title = "Update Particular"
-print(title)
-try:
-    particular_template_for_patch['data']['id'] = str(particular_id)
-    updated_particular = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/" + particular_id + "/", headers=headers, data=particular_template_for_patch)
-except Exception as exp:
-    print(title + ": " + repr(exp))
-else:
-    request_response = title + ": " + updated_particular[0] + ": " + json.dumps(updated_particular[1])
-    print('request_response: ' + request_response)
-    request_statuses.append(request_response)
-    print ("Response " + updated_particular[0] + ": " + json.dumps(updated_particular[1]))
 
 
 print ("------------------------------------")
@@ -245,9 +241,40 @@ else:
     print ("particular_id: " + str(particular[1]['data'].get("id", "None")))
 
 
-#
-# CONTACTS
 print ("------------------------------------")
+title = "Patch Particular"
+print(title)
+try:
+    particular_template_for_patch['data']['id'] = str(particular_id)
+    updated_particular = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/particulars/" + particular_id + "/", headers=headers, data=particular_template_for_patch)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+else:
+    request_response = title + ": " + updated_particular[0] + ": " + json.dumps(updated_particular[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    print ("Response " + updated_particular[0] + ": " + json.dumps(updated_particular[1]))
+
+
+print ("------------------------------------")
+title = "Verify Patching Particular"
+print(title)
+if json.dumps(particular[1]) != json.dumps(updated_particular[1]):
+    request_response = title + ": " + "Updated"
+    print(request_response)
+    request_statuses.append(request_response)
+else:
+    request_response = title + ": " + "Not Updated"
+    print(request_response)
+    request_statuses.append(request_response)
+
+##################################
+# CONTACTS
+##################################
+label = "# \n# CONTACTS \n#################################"
+print(label)
+request_statuses.append(label)
+
 title = "Add Contact"
 print(title)
 try:
@@ -277,20 +304,6 @@ else:
 
 
 print ("------------------------------------")
-title = "Update Contact"
-print(title)
-try:
-    contact_template_for_patch['data']['id'] = str(contacts_id)
-    updated_contact = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/" + contacts_id + "/", headers=headers, data=contact_template_for_patch)
-except Exception as exp:
-    print(title + ": " + repr(exp))
-else:
-    request_response = title + ": " + updated_contact[0] + ": " + json.dumps(updated_contact[1])
-    print('request_response: ' + request_response)
-    request_statuses.append(request_response)
-    print ("Response " + updated_contact[0] + ": " + json.dumps(updated_contact[1]))
-
-print ("------------------------------------")
 title = "One Contact"
 print(title)
 try:
@@ -303,10 +316,41 @@ else:
     print ("contacts_id: " + str(contact[1]['data'].get("id", "None")))
 
 
-##########
-# REPORT #
-##########
 print ("------------------------------------")
+title = "Patch Contact"
+print(title)
+try:
+    contact_template_for_patch['data']['id'] = str(contacts_id)
+    updated_contact = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/contacts/" + contacts_id + "/", headers=headers, data=contact_template_for_patch)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+else:
+    request_response = title + ": " + updated_contact[0] + ": " + json.dumps(updated_contact[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    print ("Response " + updated_contact[0] + ": " + json.dumps(updated_contact[1]))
+
+
+print ("------------------------------------")
+title = "Verify Patching Contact"
+print(title)
+if json.dumps(contact[1]) != json.dumps(updated_contact[1]):
+    request_response = title + ": " + "Updated"
+    print(request_response)
+    request_statuses.append(request_response)
+else:
+    request_response = title + ": " + "Not Updated"
+    print(request_response)
+    request_statuses.append(request_response)
+
+
+#################################
+#################################
+#################################
+#################################
+# REPORT #
+#################################
+print ("=====================================")
 print("Request report")
 for request in request_statuses:
     print(request)
