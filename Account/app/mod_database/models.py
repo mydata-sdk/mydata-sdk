@@ -1068,6 +1068,28 @@ class Email():
 
             return cursor
 
+    def update_db(self, cursor=""):
+
+        sql_query = "UPDATE " + self.table_name + " SET email=%s, typeEnum=%s, prime=%s " \
+                                                  "WHERE id=%s AND Accounts_id=%s"
+
+        arguments = (
+            str(self.email),
+            str(self.type),
+            str(self.prime),
+            str(self.id),
+            str(self.account_id),
+        )
+
+        try:
+            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+        except Exception as exp:
+            logger.debug('sql_query: ' + repr(exp))
+            raise
+        else:
+            logger.info("SQL query executed")
+            return cursor
+
 
 #####################
 class Telephone():

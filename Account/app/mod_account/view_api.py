@@ -20,8 +20,10 @@ from app import db, api, login_manager, app
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
 from app.mod_account.controllers import get_particulars, get_particular, verify_account_id_match, \
-    update_particular, get_contacts, add_contact, get_contact, update_contact
-from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate
+    update_particular, get_contacts, add_contact, get_contact, update_contact, get_emails, add_email, get_email, \
+    update_email
+from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
+    EmailsSchema, EmailsSchemaForUpdate
 from app.mod_api_auth.controllers import gen_account_api_key, requires_api_auth_user, provideApiKey
 from app.mod_blackbox.controllers import gen_account_key
 from app.mod_database.helpers import get_db_cursor
@@ -441,7 +443,7 @@ class AccountParticular(Resource):
         if particulars_id != particulars_id_from_payload:
             error_title = "Particulars IDs from path and payload are not matching"
             compared_ids = {'IdFromPath': particulars_id, 'IdFromPayload': particulars_id_from_payload}
-            logger.error(error_title)
+            logger.error(error_title + ", " + json.dumps(compared_ids))
             raise ApiError(
                 code=403,
                 title=error_title,
@@ -769,7 +771,7 @@ class AccountContact(Resource):
         if contacts_id != contacts_id_from_payload:
             error_title = "Contact IDs from path and payload are not matching"
             compared_ids = {'IdFromPath': contacts_id, 'IdFromPayload': contacts_id_from_payload}
-            logger.error(error_title)
+            logger.error(error_title + ", " + json.dumps(compared_ids))
             raise ApiError(
                 code=403,
                 title=error_title,
@@ -814,6 +816,335 @@ class AccountContact(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
+class AccountEmails(Resource):
+    @requires_api_auth_user
+    def get(self, account_id):
+        logger.info("AccountEmails")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Get Emails
+        try:
+            logger.info("Fetching Emails")
+            db_entries = get_emails(account_id=account_id)
+        except Exception as exp:
+            error_title = "No Emails found"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Emails Fetched")
+
+        # Response data container
+        try:
+            db_entry_list = db_entries
+            response_data = {}
+            response_data['data'] = db_entry_list
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+    @requires_api_auth_user
+    def post(self, account_id):
+        logger.info("AccountEmails")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs from path and ApiKey are matching")
+
+        # load JSON from payload
+        json_data = request.get_json()
+        if not json_data:
+            error_detail = {'0': 'Set application/json as Content-Type', '1': 'Provide json payload'}
+            raise ApiError(code=400, title="No input data provided", detail=error_detail, source=endpoint)
+        else:
+            logger.debug("json_data: " + json.dumps(json_data))
+
+        # Validate payload content
+        schema = EmailsSchema()
+        schema_validation_result = schema.load(json_data)
+
+        # Check validation errors
+        if schema_validation_result.errors:
+            logger.error("Invalid payload")
+            raise ApiError(code=400, title="Invalid payload", detail=dict(schema_validation_result.errors),
+                           source=endpoint)
+        else:
+            logger.debug("JSON validation -> OK")
+
+        # Collect data
+        try:
+            attributes = json_data['data']['attributes']
+        except Exception as exp:
+            error_title = "Could not collect data"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Add Email
+        try:
+            logger.info("Adding Email")
+            db_entries = add_email(account_id=account_id, attributes=attributes)
+        except Exception as exp:
+            error_title = "Could not add Email entry"
+            logger.error(error_title)
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Email added")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = db_entries
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=201)
+
+
+class AccountEmail(Resource):
+    @requires_api_auth_user
+    def get(self, account_id, emails_id):
+        logger.info("AccountEmail")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id, emails_id=emails_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        try:
+            emails_id = str(emails_id)
+        except Exception as exp:
+            error_title = "Unsupported emails_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("emails_id: " + emails_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Get Email
+        try:
+            logger.info("Fetching Email")
+            db_entries = get_email(account_id=account_id, id=emails_id)
+        except Exception as exp:
+            error_title = "No Email found"
+            logger.error(error_title)
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Email Fetched")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = db_entries
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+    @requires_api_auth_user
+    def patch(self, account_id, emails_id):  # TODO: Should be PATCH instead of PUT
+        logger.info("AccountEmail")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id, emails_id=emails_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        try:
+            emails_id = str(emails_id)
+        except Exception as exp:
+            error_title = "Unsupported emails_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("emails_id: " + emails_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs from path and ApiKey are matching")
+
+        # load JSON from payload
+        json_data = request.get_json()
+        if not json_data:
+            error_detail = {'0': 'Set application/json as Content-Type', '1': 'Provide json payload'}
+            raise ApiError(code=400, title="No input data provided", detail=error_detail, source=endpoint)
+        else:
+            logger.debug("json_data: " + json.dumps(json_data))
+
+        # Validate payload content
+        schema = EmailsSchemaForUpdate()
+        schema_validation_result = schema.load(json_data)
+
+        # Check validation errors
+        if schema_validation_result.errors:
+            logger.error("Invalid payload")
+            raise ApiError(code=400, title="Invalid payload", detail=dict(schema_validation_result.errors), source=endpoint)
+        else:
+            logger.debug("JSON validation -> OK")
+
+        try:
+            emails_id_from_payload = json_data['data'].get("id", "")
+        except Exception as exp:
+            error_title = "Could not get id from payload"
+            logger.error(error_title)
+            raise ApiError(
+                code=404,
+                title=error_title,
+                detail=repr(exp),
+                source=endpoint
+            )
+
+        # Check if emails_id from path and payload are matching
+        if emails_id != emails_id_from_payload:
+            error_title = "Email IDs from path and payload are not matching"
+            compared_ids = {'IdFromPath': emails_id, 'IdFromPayload': emails_id_from_payload}
+            logger.error(error_title + ", " + json.dumps(compared_ids))
+            raise ApiError(
+                code=403,
+                title=error_title,
+                detail=compared_ids,
+                source=endpoint
+            )
+        else:
+            logger.info("Email IDs from path and payload are matching")
+
+        # Collect data
+        try:
+            attributes = json_data['data']['attributes']
+        except Exception as exp:
+            error_title = "Could not collect data"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Update Email
+        try:
+            logger.info("Updating Emails")
+            db_entries = update_email(account_id=account_id, id=emails_id, attributes=attributes)
+        except Exception as exp:
+            # TODO: Error handling on more detailed level
+            error_title = "No Email found"
+            logger.error(error_title)
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Email Updated")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = db_entries
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
 # Register resources
 api.add_resource(Accounts, '/api/accounts/', '/', endpoint='/api/accounts/')
 api.add_resource(ExportAccount, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
@@ -821,3 +1152,5 @@ api.add_resource(AccountParticulars, '/api/accounts/<string:account_id>/particul
 api.add_resource(AccountParticular, '/api/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')
 api.add_resource(AccountContacts, '/api/accounts/<string:account_id>/contacts/', endpoint='account-contacts')
 api.add_resource(AccountContact, '/api/accounts/<string:account_id>/contacts/<string:contacts_id>/', endpoint='account-contact')
+api.add_resource(AccountEmails, '/api/accounts/<string:account_id>/emails/', endpoint='account-emails')
+api.add_resource(AccountEmail, '/api/accounts/<string:account_id>/emails/<string:emails_id>/', endpoint='account-email')

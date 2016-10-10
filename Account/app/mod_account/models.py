@@ -15,7 +15,8 @@ __status__ = "Development"
 from marshmallow import Schema, fields, validates, ValidationError
 from marshmallow.validate import Range, Regexp, ContainsOnly, Equal, OneOf, Length
 
-TYPE_LIST = ["Personal", "Work", "School", "Other"]  # List that contains types for contact details
+TYPE_LIST = ["Personal", "Work", "School", "Other"]  # List that contains types entries
+PRIMARY_LIST = ["True", "False"]  # List that contains primary values
 
 STRING_MIN_LENGTH = 3
 STRING_MAX_LENGTH = 255
@@ -44,7 +45,7 @@ LASTNAME_MAX = GENERAL_STRING_MAX_LENGTH
 LASTNAME_REGEX = GENERAL_REGEX
 
 class BaseSchema(Schema):
-    type = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
+    type = fields.Str(validate=[Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH), OneOf(TYPE_LIST)])
 
 
 class AccountSchema(BaseSchema):
@@ -152,8 +153,8 @@ class ContactsAttributes(Schema):
     city = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     state = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     country = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
-    type = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
-    primary = fields.Str(validate=OneOf(["True", "False"]))  # TODO: Not acting as Boolean for MySQL
+    type = fields.Str(validate=[Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH), OneOf(TYPE_LIST)])
+    primary = fields.Str(validate=OneOf(PRIMARY_LIST))  # TODO: Not acting as Boolean for MySQL
 
 
 class ContactsData(Schema):
@@ -181,8 +182,8 @@ class ContactsSchemaForUpdate(Schema):
 # Telephone
 class TelephonesAttributes(Schema):
     tel = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
-    type = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
-    primary = fields.Str(validate=OneOf(TYPE_LIST))
+    type = fields.Str(validate=[Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH), OneOf(TYPE_LIST)])
+    primary = fields.Str(validate=OneOf(PRIMARY_LIST))  # TODO: Not acting as Boolean for MySQL
 
 
 class TelephonesData(Schema):
@@ -210,8 +211,8 @@ class TelephonesSchemaForUpdate(Schema):
 # Email
 class EmailsAttributes(Schema):
     email = fields.Email(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
-    type = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
-    primary = fields.Str(validate=OneOf(TYPE_LIST))
+    type = fields.Str(validate=[Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH), OneOf(TYPE_LIST)])
+    primary = fields.Str(validate=OneOf(PRIMARY_LIST))  # TODO: Not acting as Boolean for MySQL
 
 
 class EmailsData(Schema):
