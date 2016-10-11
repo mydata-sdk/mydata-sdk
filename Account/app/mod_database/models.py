@@ -1372,7 +1372,7 @@ class Settings():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (key, value, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (setting_key, setting_value, Accounts_id) " \
                     "VALUES (%s, %s, %s)"
 
         arguments = (
@@ -1394,14 +1394,12 @@ class Settings():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        sql_query = "SELECT id, key, value, Accounts_id " \
+        sql_query = "SELECT id, setting_key, setting_value, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND key LIKE %s AND value LIKE %s AND Accounts_id LIKE %s;"
+                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
-            '%' + str(self.key) + '%',
-            '%' + str(self.value) + '%',
             '%' + str(self.account_id) + '%',
         )
 
@@ -1425,6 +1423,27 @@ class Settings():
                 self.value = data[2]
                 self.account_id = data[3]
 
+            return cursor
+
+    def update_db(self, cursor=""):
+
+        sql_query = "UPDATE " + self.table_name + " SET setting_key=%s, setting_value=%s " \
+                                                  "WHERE id=%s AND Accounts_id=%s"
+
+        arguments = (
+            str(self.key),
+            str(self.value),
+            str(self.id),
+            str(self.account_id),
+        )
+
+        try:
+            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+        except Exception as exp:
+            logger.debug('sql_query: ' + repr(exp))
+            raise
+        else:
+            logger.info("SQL query executed")
             return cursor
 
 
