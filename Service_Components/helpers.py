@@ -51,10 +51,10 @@ class Helpers:
             with open(cert_key_path, "w+") as cert_file:
                 dump(service_key.export(), cert_file, indent=2)
         public_key = loads(service_key.export_public())
-        full_key = loads(service_key)
+        full_key = loads(service_key.export())
         protti = {"alg": "RS256"}
         headeri = {"kid": self.service_id, "jwk": public_key}
-        return {"pub:": public_key,
+        return {"pub": public_key,
                 "key": full_key,
                 "prot": protti,
                 "header": headeri}
@@ -360,7 +360,7 @@ class Helpers:
         debug_log.info("Request from UI validated.")
         return distribution_ids
 
-    def validate_authorization_token(self, cr_id, surrogate_id):
+    def validate_authorization_token(self, cr_id, surrogate_id, our_key):
         slr = self.get_slr(surrogate_id)
         slr_tool = SLR_tool()
         slr_tool.slr = slr
@@ -372,7 +372,9 @@ class Helpers:
         tt = Token_tool()
         tt.token = token
         tt.key = key
-        plain_token = tt.get_token()
+        aud = tt.verify_token(our_key)
+        debug_log.info(aud)
+        return aud
 
 
 
@@ -640,30 +642,55 @@ class CR_tool:
 # print(crt.get_usage_rules())
 # print(crt.get_surrogate_id())
 from jwcrypto import jwt
+from jwcrypto.jwt import JWTExpired
 class Token_tool:
     def __init__(self):
         #  Replace token.
         self.token = {"auth_token": "eyJhbGciOiJSUzI1NiJ9.eyJhdWQiOlt7ImRhdGFzZXRfaWQiOiJTdHJpbmciLCJkaXN0cmlidXRpb25faWQiOiJTdHJpbmcifV0sImV4cCI6IjIwMTYtMTEtMDhUMTM6MzA6MjUgIiwiaWF0IjoiMjAxNi0xMC0wOVQxMzozMDoyNSAiLCJpc3MiOnsiZSI6IkFRQUIiLCJraWQiOiJBQ0MtSUQtUkFORE9NIiwia3R5IjoiUlNBIiwibiI6InRtaGxhUFV3SmdvNHlTVE1yVEdGRnliVnhLMjh1REd0SlNGRGRHazNiYXhUV21nZkswQzZETXF3NWxxcC1FWFRNVFJmSXFNYmRNY0RtVU5ueUpwUTF3In0sImp0aSI6Ijc5ZmI3NDg0LTE2YjYtNDEzYy04ZGI0LWZlMjcwYjg4Y2UxNiIsIm5iZiI6IjIwMTYtMTAtMDlUMTM6MzA6MjUgIiwicnNfaWQiOiJodHRwOi8vc2VydmljZV9jb21wb25lbnRzOjcwMDB8fDljMWYxNTdkLWM4MWEtNGY1Ni1hZmYxLTc2MWZjNTVhNDBkOSIsInN1YiI6eyJlIjoiQVFBQiIsImtpZCI6IlNSVk1HTlQtUlNBLTUxMiIsImt0eSI6IlJTQSIsIm4iOiJ5R2dzUDljV01pUFBtZ09RMEp0WVN3Nnp3dURvdThBR0F5RHV0djVwTHc1aXZ6NnhvTGhaTS1pUVdGN0VzckVHdFNyUU55WUxzMlZzLUpxbW50UGpIUSJ9fQ.s1KOu1Q_ifNEnmBQ6QcmNxd0Oy1Fxp-z_4hsCI5fNfOa5vtWai68_OKN_NoUjtqUCy-CJcLHnGGoxTh_vHcjtg"}
         #  Replace key.
-        self.key = {}
+        self.key = None
 
     def decrypt_payload(self, payload):
         key = jwk.JWK()
         key.import_key(**self.key)
-        jsoni = jwt.JWT()
-        jsoni.deserialize(self.token["auth_token"], key)
-        jsoni = jsoni.serialize()
+        token = jwt.JWT()
+        # This step actually verifies the signature, the format and timestamps.
+        try:
+            token.deserialize(self.token["auth_token"], key)
+        except JWTExpired as e:
+            debug_log.exception(e)
+            # TODO: get new auth token and start again.
+            raise e
+        claims = token.claims
         #payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         #content = decode(payload.encode('utf-8'))
-        debug_log.info(jsoni)
+        debug_log.info(claims)
         #payload = loads(loads(content.decode('utf-8')))
-        return jsoni
+        return loads(claims)
     def get_token(self):
         debug_log.info(self.token)
         debug_log.info(type(self.token))
         decrypted_token = self.decrypt_payload(self.token["auth_token"])
         debug_log.info(dumps(decrypted_token, indent=2))
         return decrypted_token
+
+    def verify_token(self, our_key):
+        debug_log.info(our_key)
+        debug_log.info(type(our_key))
+
+        if self.key is None:
+            raise UnboundLocalError("Set objects key variable to Operator key before use.")
+        token = self.get_token()
+        sub_key = token["sub"]
+        sub_key = loads(sub_key)
+        debug_log.info(type(sub_key))
+        debug_log.info(sub_key)
+        debug_log.info(our_key)
+        if cmp(sub_key, our_key) != 0:
+            raise ValueError("JWK's didn't match.")
+
+        # TODO: Figure out beter way to return aud
+        return token["aud"]
 
 #tt = Token_tool()
 #print(tt.decrypt_payload(tt.token["auth_token"]))

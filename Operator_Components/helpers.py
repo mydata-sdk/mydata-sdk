@@ -468,10 +468,10 @@ class Helpers:
                    "sub": dumps(slrt.get_sink_key()),  # Service_Components(Sink) Key
                    "aud": slrt.get_dataset(),  # Hard to build real
                    # TODO: Logic to determine exp time
-                   "exp": datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
+                   "exp": time.time()+2592000,  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
-                   "nbf": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted
-                   "iat": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
+                   "nbf": time.time(),  # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted
+                   "iat": time.time(), #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
                    "jti": str(guid()),  # JWT id claim provides a unique identifier for the JWT
                    "rs_id": slrt.get_rs_id(),  # Resource set id that was assigned in the linked Consent Record
                    }

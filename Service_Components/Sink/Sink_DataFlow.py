@@ -64,25 +64,26 @@ class DataFlow(Resource):
 
         # Validate Authorisation Token
         surrogate_id = cr["cr"]["common_part"]["surrogate_id"]
-        self.helpers.validate_authorization_token(cr_id, surrogate_id)
+        our_key = self.helpers.get_key()
+        our_key_pub = our_key["pub"]
+        aud = self.helpers.validate_authorization_token(cr_id, surrogate_id, our_key_pub)
         # Fetch Authorisation Token related to CR from data storage by rs_id (cr_id?)
-
-        token = self.helpers.get_token(cr_id)
-        debug_log.info(token)
         # Check Integrity ( Signed by operator, Operator's public key can be found from SLR)
-
-        # Check that "sub" contains correct public key (operators, sources?)
         # Check "Issued" timestamp
         # Check "Not Before" timestamp
         # Check "Not After" timestamp
 
+        # Check that "sub" contains correct public key(Our key.)
+
         # OPT: Token expired
-        # Get new Authorization token, start agian from validation.
+        # Get new Authorization token, start again from validation.
 
         # Check URL patterns in "aud" field
         # Check that fetched distribution urls can be found from "aud" field
 
+
         # Token validated
+        debug_log.info("Auth Token Validated.")
         # With these two steps Sink has verified that it's allowed to make request.
 
         # Construct request
@@ -92,7 +93,7 @@ class DataFlow(Resource):
 
         # Sign request
         # Fetch private key pair of public key specified in Authorisation Token's "sub" field.
-        # Sign with fetched private key
+        our_key_full = our_key["key"]
         # Sign with fetched private key
         # Add signature to request
         # Request signed.
