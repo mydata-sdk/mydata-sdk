@@ -23,7 +23,7 @@ from app.mod_api_auth.controllers import get_account_id_by_api_key
 from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id
 
 # create logger with 'spam_application'
-from app.mod_database.models import Particulars, Contacts, Email, Telephone
+from app.mod_database.models import Particulars, Contacts, Email, Telephone, Settings
 
 logger = get_custom_logger(__name__)
 
@@ -353,7 +353,7 @@ def get_contacts(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for particulars
+    # Get primary keys for contacts
     try:
         cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
     except Exception as exp:
@@ -365,7 +365,7 @@ def get_contacts(account_id=None):
     db_entry_list = []
     for id in id_list:
         # TODO: try-except needed?
-        logger.info("Getting contacts with particular_id: " + str(id))
+        logger.info("Getting contacts with contacts_id: " + str(id))
         db_entry_dict = get_contact(account_id=account_id, id=id)
         db_entry_list.append(db_entry_dict)
         logger.info("contact object added to list: " + json.dumps(db_entry_dict))
@@ -655,7 +655,7 @@ def get_emails(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for particulars
+    # Get primary keys for emails
     try:
         cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
     except Exception as exp:
@@ -667,7 +667,7 @@ def get_emails(account_id=None):
     db_entry_list = []
     for id in id_list:
         # TODO: try-except needed?
-        logger.info("Getting emails with particular_id: " + str(id))
+        logger.info("Getting emails with emails_id: " + str(id))
         db_entry_dict = get_email(account_id=account_id, id=id)
         db_entry_list.append(db_entry_dict)
         logger.info("email object added to list: " + json.dumps(db_entry_dict))
@@ -914,7 +914,7 @@ def get_telephones(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for particulars
+    # Get primary keys for telephones
     try:
         cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
     except Exception as exp:
@@ -926,7 +926,7 @@ def get_telephones(account_id=None):
     db_entry_list = []
     for id in id_list:
         # TODO: try-except needed?
-        logger.info("Getting telephones with particular_id: " + str(id))
+        logger.info("Getting telephones with telephones_id: " + str(id))
         db_entry_dict = get_telephone(account_id=account_id, id=id)
         db_entry_list.append(db_entry_dict)
         logger.info("telephone object added to list: " + json.dumps(db_entry_dict))
@@ -1098,4 +1098,255 @@ def update_telephone(account_id=None, id=None, attributes=None, cursor=None):
         logger.info(db_entry_object.log_entry)
 
     return db_entry_object.to_api_dict
+
+
+
+##################################
+###################################
+# Settings
+##################################
+##################################
+def get_setting(account_id=None, id=None, cursor=None):
+    """
+    Get one setting entry from database by Account ID and ID
+    :param account_id:
+    :param id:
+    :return: dict
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if id is None:
+        raise AttributeError("Provide id as parameter")
+    if cursor is None:
+        # Get DB cursor
+        try:
+            cursor = get_db_cursor()
+        except Exception as exp:
+            logger.error('Could not get database cursor: ' + repr(exp))
+            raise
+
+    try:
+        db_entry_object = Settings(account_id=account_id, id=id)
+    except Exception as exp:
+        error_title = "Failed to create setting object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("setting object created: " + db_entry_object.log_entry)
+
+    # Get setting from DB
+    try:
+        cursor = db_entry_object.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Failed to fetch setting from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("setting fetched")
+        logger.info("setting fetched from db: " + db_entry_object.log_entry)
+
+    return db_entry_object.to_api_dict
+
+
+def get_settings(account_id=None):
+    """
+    Get all setting -entries related to account
+    :param account_id:
+    :return: List of dicts
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Get table name
+    logger.info("Create setting")
+    db_entry_object = Settings()
+    logger.info(db_entry_object.log_entry)
+    logger.info("Get table name")
+    table_name = db_entry_object.table_name
+    logger.info("Got table name: " + str(table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get primary keys for setting
+    try:
+        cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get setting from database
+    logger.info("Get setting from database")
+    db_entry_list = []
+    for id in id_list:
+        # TODO: try-except needed?
+        logger.info("Getting setting with setting_id: " + str(id))
+        db_entry_dict = get_setting(account_id=account_id, id=id)
+        db_entry_list.append(db_entry_dict)
+        logger.info("setting object added to list: " + json.dumps(db_entry_dict))
+
+    return db_entry_list
+
+
+def add_setting(account_id=None, attributes=None, cursor=None):
+    """
+    Add one setting entry to database identified by Account ID and ID
+    :param account_id:
+    :param id:
+    :return: dict
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if attributes is None:
+        raise AttributeError("Provide attributes as parameter")
+    if not isinstance(attributes, dict):
+        raise AttributeError("attributes must be a dict")
+    if cursor is None:
+        # Get DB cursor
+        try:
+            cursor = get_db_cursor()
+        except Exception as exp:
+            logger.error('Could not get database cursor: ' + repr(exp))
+            raise
+
+    # Update setting object
+    if len(attributes) == 0:
+        logger.info("Empty attributes dict provided. Nothing to add.")
+        raise StandardError("Not adding empty entry to database")
+    else:
+        # log provided attributes
+        for key, value in attributes.items():
+            logger.debug("attributes[" + str(key) + "]: " + str(value))
+
+    # Create object
+    try:
+        db_entry_object = Settings(
+            account_id=account_id,
+            key=str(attributes.get("key", "")),
+            value=str(attributes.get("value", ""))
+        )
+    except Exception as exp:
+        error_title = "Failed to create setting object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("setting object created: " + db_entry_object.log_entry)
+
+    # Store updates
+    try:
+        cursor = db_entry_object.to_db(cursor=cursor)
+        ###
+        # Commit
+        db.connection.commit()
+    except Exception as exp:
+        error_title = "Failed to add setting to DB"
+        logger.error(error_title + ": " + repr(exp))
+        logger.debug('commit failed: ' + repr(exp))
+        logger.debug('--> rollback')
+        db.connection.rollback()
+        raise
+    else:
+        logger.debug("Committed")
+        logger.info("setting added")
+        logger.info(db_entry_object.log_entry)
+
+    return db_entry_object.to_api_dict
+
+
+def update_setting(account_id=None, id=None, attributes=None, cursor=None):
+    """
+    Update one setting entry at database identified by Account ID and ID
+    :param account_id:
+    :param id:
+    :return: dict
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if id is None:
+        raise AttributeError("Provide id as parameter")
+    if attributes is None:
+        raise AttributeError("Provide attributes as parameter")
+    if not isinstance(attributes, dict):
+        raise AttributeError("attributes must be a dict")
+    if cursor is None:
+        # Get DB cursor
+        try:
+            cursor = get_db_cursor()
+        except Exception as exp:
+            logger.error('Could not get database cursor: ' + repr(exp))
+            raise
+
+    try:
+        db_entry_object = Settings(account_id=account_id, id=id)
+    except Exception as exp:
+        error_title = "Failed to create setting object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("setting object created: " + db_entry_object.log_entry)
+
+    # Get setting from DB
+    try:
+        cursor = db_entry_object.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Failed to fetch setting from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("setting fetched")
+        logger.info("setting fetched from db: " + db_entry_object.log_entry)
+
+    # Update setting object
+    if len(attributes) == 0:
+        logger.info("Empty attributes dict provided. Nothing to update.")
+        return db_entry_object.to_api_dict
+    else:
+        logger.info("setting object to update: " + db_entry_object.log_entry)
+
+    # log provided attributes
+    for key, value in attributes.items():
+        logger.debug("attributes[" + str(key) + "]: " + str(value))
+
+    # Update object attributes
+    if "key" in attributes:
+        logger.info("Updating key")
+        old_value = str(db_entry_object.key)
+        new_value = str(attributes.get("key", "None"))
+        logger.debug("Updating: " + old_value + " --> " + new_value)
+        db_entry_object.key = new_value
+        logger.info(db_entry_object.log_entry)
+
+    if "value" in attributes:
+        logger.info("Updating value")
+        old_value = str(db_entry_object.value)
+        new_value = str(attributes.get("value", "None"))
+        logger.debug("Updating: " + old_value + " --> " + new_value)
+        db_entry_object.value = new_value
+        logger.info(db_entry_object.log_entry)
+
+    # Store updates
+    try:
+        cursor = db_entry_object.update_db(cursor=cursor)
+        ###
+        # Commit
+        db.connection.commit()
+    except Exception as exp:
+        error_title = "Failed to update setting to DB"
+        logger.error(error_title + ": " + repr(exp))
+        logger.debug('commit failed: ' + repr(exp))
+        logger.debug('--> rollback')
+        db.connection.rollback()
+        raise
+    else:
+        logger.debug("Committed")
+        logger.info("setting updated")
+        logger.info(db_entry_object.log_entry)
+
+    return db_entry_object.to_api_dict
+
+
 

@@ -240,7 +240,7 @@ class EmailsSchemaForUpdate(Schema):
 # Settings
 class SettingsAttributes(Schema):
     key = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
-    value = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
+    value = fields.Str(validate=Length(min=2, max=STRING_MAX_LENGTH))
 
 
 class SettingsData(Schema):
