@@ -134,6 +134,26 @@ telephone_template_for_patch = {
     }
 }
 
+setting_template = {
+    "data": {
+        "type": "Setting",
+        "attributes": {
+            'key': 'lang',
+            'value': 'fi'
+        }
+    }
+}
+
+setting_template_for_patch = {
+    "data": {
+        "type": "Setting",
+        "attributes": {
+            'key': 'lang',
+            'value': 'se'
+        }
+    }
+}
+
 
 
 def post(host=None, endpoint=None, headers=None, data=None):
@@ -221,6 +241,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + account[0] + ": " + json.dumps(account[1])
     print('request_response: ' + request_response)
@@ -240,6 +261,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + api_auth[0] + ": " + json.dumps(api_auth[1])
     print('request_response: ' + request_response)
@@ -265,6 +287,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
     print('request_response: ' + request_response)
@@ -283,6 +306,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + entry[0] + ": " + json.dumps(entry[1])
     print('request_response: ' + request_response)
@@ -301,6 +325,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
     print('request_response: ' + request_response)
@@ -323,6 +348,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + new_entry[0] + ": " + json.dumps(new_entry[1])
     print('request_response: ' + request_response)
@@ -338,6 +364,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
     print('request_response: ' + request_response)
@@ -356,6 +383,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
@@ -372,6 +400,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
     print('request_response: ' + request_response)
@@ -394,6 +423,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + new_entry[0] + ": " + json.dumps(new_entry[1])
     print('request_response: ' + request_response)
@@ -409,6 +439,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
     print('request_response: ' + request_response)
@@ -427,6 +458,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
@@ -443,6 +475,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
     print('request_response: ' + request_response)
@@ -465,6 +498,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + new_entry[0] + ": " + json.dumps(new_entry[1])
     print('request_response: ' + request_response)
@@ -480,6 +514,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
     print('request_response: ' + request_response)
@@ -498,6 +533,7 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
 else:
     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
@@ -514,6 +550,83 @@ except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
     request_statuses.append(request_response)
+    raise
+else:
+    request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
+    print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
+
+
+##################################
+# SETTINGS
+##################################
+label = "# \n# SETTINGS \n#################################"
+print(label)
+request_statuses.append(label)
+
+title = "Add Setting"
+print(title)
+try:
+    new_entry = post(host=account_host, endpoint="/api/accounts/" + account_id + "/settings/", headers=headers, data=setting_template)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_response = title + ": " + new_entry[0] + ": " + json.dumps(new_entry[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+
+print ("------------------------------------")
+title = "List Settings"
+print(title)
+try:
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/settings/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    settings_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+    print ("contacts_id: " + email_id)
+
+
+print ("------------------------------------")
+title = "One Setting"
+print(title)
+try:
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/settings/" + settings_id + "/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("settings_id: " + str(entry[1]['data'].get("id", "None")))
+
+
+print ("------------------------------------")
+title = "Patch Setting"
+print(title)
+try:
+    setting_template_for_patch['data']['id'] = str(settings_id)
+    updated_entry = patch(host=account_host, endpoint="/api/accounts/" + account_id + "/settings/" + settings_id + "/", headers=headers, data=setting_template_for_patch)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
 else:
     request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
     print('request_response: ' + request_response)
