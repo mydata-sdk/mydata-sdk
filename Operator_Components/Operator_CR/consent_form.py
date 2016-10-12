@@ -51,8 +51,38 @@ class ConsentFormHandler(Resource):
         sq.task("Fetch services")
         sink = getService(service_ids["sink"])
         _consent_form["sink"]["service_id"] = sink["serviceId"]
+        purposes = _consent_form["sink"]["dataset"][0]["purposes"] # TODO replace this once Service registry stops being stupid.
+        _consent_form["sink"]["dataset"] = [] # Clear out template.
+        for dataset in sink["serviceDescription"]["serviceDataDescription"][0]["dataset"]:
+            item = {
+                "dataset_id": dataset["datasetId"],
+                "title": dataset["title"],
+                "description": dataset["description"],
+                "keyword": dataset["keyword"],
+                "publisher": dataset["publisher"],
+                "purposes": purposes
+            }
+
+            _consent_form["sink"]["dataset"].append(item)
+
+
         source = getService(service_ids["source"])
         _consent_form["source"]["service_id"] = source["serviceId"]
+        _consent_form["source"]["dataset"] = [] # Clear out template.
+        for dataset in source["serviceDescription"]["serviceDataDescription"][0]["dataset"]:
+            item = {
+                "dataset_id": dataset["datasetId"],
+                "title": dataset["title"],
+                "description": dataset["description"],
+                "keyword": dataset["keyword"],
+                "publisher": dataset["publisher"],
+                "distribution": {
+                    "distribution_id": dataset["distribution"][0]["distributionId"],
+                    "access_url": dataset["distribution"][0]["accessURL"],
+                }
+            }
+            _consent_form["source"]["dataset"].append(item)
+
 
         sq.task("Generate RS_ID")
 

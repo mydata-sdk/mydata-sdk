@@ -110,5 +110,4 @@ api.add_resource(Status, '/init')
 api.add_resource(DataFlow, '/dc')
 
 #api.add_resource(DataFlow, '/user/<string:user_id>/consentRecord/<string:cr_id>/resourceSet/<string:rs_id>')
-
 #"http://service_components:7000/api/1.2/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"

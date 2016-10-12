@@ -414,21 +414,30 @@ class Helpers:
                 "resource_set_description": {
                     "resource_set":
                         {
-                            "rs_id": "String",
+                            "rs_id": consent_form["source"]["rs_id"],
                             "dataset": [
                                 {
                                     "dataset_id": "String",
                                     "distribution_id": "String"
-                                 }
-                                ]
+                                }
+                            ]
                         }
 
-                    }
+                }
             },
             "ki_cr": {},
             "extensions": {}
         }
         }
+        _tmpl["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"] = []
+
+        for dataset in consent_form["source"]["dataset"]:
+            dt_tmp = {
+                "dataset_id": dataset["dataset_id"],
+                "distribution_id": dataset["distribution"]["distribution_id"]
+            }
+            _tmpl["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"].append(dt_tmp)
+
         return _tmpl
 
     def Gen_ki_cr(self, everything):

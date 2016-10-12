@@ -24,7 +24,7 @@ Consent_form_Out = {  # From Operator_CR to UI
         "rs_id": "String",
         "dataset": [
             {
-                "datase_id": "String",
+                "dataset_id": "String",
                 "title": "String",
                 "description": "String",
                 "keyword": [],
