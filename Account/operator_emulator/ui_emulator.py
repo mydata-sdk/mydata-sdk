@@ -456,7 +456,7 @@ else:
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
     email_id = str(entries[1]['data'][0].get("id", "None"))
-    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
     print ("email_id: " + email_id)
 
 
@@ -531,7 +531,7 @@ else:
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
     telephones_id = str(entries[1]['data'][0].get("id", "None"))
-    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
     print ("telephones_id: " + telephones_id)
 
 
@@ -566,7 +566,6 @@ else:
     request_response = title + ": " + updated_entry[0] + ": " + json.dumps(updated_entry[1])
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
-    print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
     print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
 
 
@@ -607,7 +606,7 @@ else:
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
     settings_id = str(entries[1]['data'][0].get("id", "None"))
-    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
     print ("settings_id: " + settings_id)
 
 
