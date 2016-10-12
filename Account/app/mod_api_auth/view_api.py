@@ -91,7 +91,8 @@ class ApiKeyUser(Resource):
 
 
         response_data = {
-            'Api-Key': api_key
+            'Api-Key': api_key,
+            'account_id': str(self.account_id)
         }
 
         return make_json_response(data=response_data, status_code=200)

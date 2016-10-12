@@ -1034,13 +1034,10 @@ class Email():
 
         sql_query = "SELECT id, email, typeEnum, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND email LIKE %s AND typeEnum LIKE %s AND prime LIKE %s AND Accounts_id LIKE %s;"
+                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
-            '%' + str(self.email) + '%',
-            '%' + str(self.type) + '%',
-            '%' + str(self.prime) + '%',
             '%' + str(self.account_id) + '%',
         )
 
