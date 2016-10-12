@@ -770,6 +770,48 @@ else:
     print ("slsr_id: " + str(entry[1]['data'].get("id", "None")))
 
 
+##################################
+# Consent Records
+##################################
+label = "# \n# Service Link Status Records \n#################################"
+print(label)
+request_statuses.append(label)
+
+print ("------------------------------------")
+title = "Consent Records"
+print(title)
+try:
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/consents/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    cr_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
+    print ("cr_id: " + cr_id)
+
+
+print ("------------------------------------")
+title = "One Consent Record"
+print(title)
+try:
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/consents/" + cr_id + "/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("cr_id: " + str(entry[1]['data'].get("id", "None")))
+
+
 
 #################################
 #################################
