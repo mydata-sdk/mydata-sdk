@@ -634,6 +634,48 @@ else:
     print ("Response " + updated_entry[0] + ": " + json.dumps(updated_entry[1]))
 
 
+##################################
+# EVENT LOGS
+##################################
+# label = "# \n# EVENT LOGS \n#################################"
+# print(label)
+# request_statuses.append(label)
+#
+# print ("------------------------------------")
+# title = "List Events"
+# print(title)
+# try:
+#     entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/logs/events/", headers=headers)
+# except Exception as exp:
+#     print(title + ": " + repr(exp))
+#     request_response = title + ": " + repr(exp)
+#     request_statuses.append(request_response)
+#     raise
+# else:
+#     request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
+#     print('request_response: ' + request_response)
+#     request_statuses.append(request_response)
+#     event_log_id = str(entries[1]['data'][0].get("id", "None"))
+#     print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+#     print ("contacts_id: " + email_id)
+#
+#
+# print ("------------------------------------")
+# title = "One Event"
+# print(title)
+# try:
+#     entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/logs/events/" + event_log_id + "/", headers=headers)
+# except Exception as exp:
+#     print(title + ": " + repr(exp))
+#     request_response = title + ": " + repr(exp)
+#     request_statuses.append(request_response)
+#     raise
+# else:
+#     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+#     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+#     print ("event_log_id: " + str(entry[1]['data'].get("id", "None")))
+
+
 
 #################################
 #################################
