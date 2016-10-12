@@ -709,7 +709,7 @@ else:
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
     slr_id = str(entries[1]['data'][0].get("id", "None"))
-    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
     print ("slr_id: " + slr_id)
 
 
@@ -727,6 +727,48 @@ else:
     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
     print ("slr_id: " + str(entry[1]['data'].get("id", "None")))
+
+
+##################################
+# Service Link Status Records
+##################################
+label = "# \n# Service Link Status Records \n#################################"
+print(label)
+request_statuses.append(label)
+
+print ("------------------------------------")
+title = "Service Link Status Records"
+print(title)
+try:
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/statuses/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    slsr_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
+    print ("slsr_id: " + slsr_id)
+
+
+print ("------------------------------------")
+title = "One Service Link Status Record"
+print(title)
+try:
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/statuses/" + slsr_id + "/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("slsr_id: " + str(entry[1]['data'].get("id", "None")))
 
 
 
