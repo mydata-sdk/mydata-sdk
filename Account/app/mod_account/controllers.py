@@ -21,11 +21,11 @@ from app import db, api, login_manager, app
 from app.helpers import get_custom_logger, ApiError
 from app.mod_api_auth.controllers import get_account_id_by_api_key
 from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id, get_slr_ids_by_account_id, \
-    get_slsr_ids_by_slr_id
+    get_slsr_ids_by_slr_id, get_cr_ids_by_slr_id
 
 # create logger with 'spam_application'
 from app.mod_database.models import Particulars, Contacts, Email, Telephone, Settings, EventLog, ServiceLinkRecord, \
-    ServiceLinkStatusRecord
+    ServiceLinkStatusRecord, ConsentRecord
 
 logger = get_custom_logger(__name__)
 
@@ -1645,6 +1645,124 @@ def get_slsrs(account_id=None, slr_id=None):
         logger.info("slsr object added to list: " + json.dumps(db_entry_dict))
 
     return db_entry_list
+
+
+##################################
+###################################
+# Consent Records
+##################################
+##################################
+def get_cr(account_id=None, slr_id=None, cr_id=None, cursor=None):
+    """
+    Get one cr entry from database by Account ID and ID
+    :param slr_id:
+    :param slsr_id:
+    :return: dict
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if cursor is None:
+        # Get DB cursor
+        try:
+            cursor = get_db_cursor()
+        except Exception as exp:
+            logger.error('Could not get database cursor: ' + repr(exp))
+            raise
+
+    # Check if slr can be found with account_id and slr_id
+    try:
+        slr = get_slr(account_id=account_id, slr_id=slr_id)
+    except Exception as exp:
+        func_data = {'account_id': account_id, 'slr_id': slr_id}
+        title = "No SLR with: " + json.dumps(func_data)
+        logger.error(title)
+        raise StandardError(title)
+
+    try:
+        db_entry_object = ConsentRecord(consent_id=cr_id, service_link_record_id=slr_id)
+    except Exception as exp:
+        error_title = "Failed to create cr object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("cr object created: " + db_entry_object.log_entry)
+
+    # Get cr from DB
+    try:
+        cursor = db_entry_object.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Failed to fetch cr from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("cr fetched")
+        logger.info("cr fetched from db: " + db_entry_object.log_entry)
+
+    return db_entry_object.to_api_dict
+
+
+def get_crs(account_id=None, slr_id=None):
+    """
+    Get all cr -entries related to service link record
+    :param account_id:
+    :param slr_id:
+    :return: List of dicts
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+
+    # Check if slr can be found with account_id and slr_id
+    try:
+        slr = get_slr(account_id=account_id, slr_id=slr_id)
+    except Exception as exp:
+        func_data = {'account_id': account_id, 'slr_id': slr_id}
+        title = "No SLR with: " + json.dumps(func_data)
+        logger.error(title)
+        raise StandardError(title)
+
+    # Get table name
+    logger.info("Create cr")
+    db_entry_object = ConsentRecord()
+    logger.info(db_entry_object.log_entry)
+    logger.info("Get table name")
+    table_name = db_entry_object.table_name
+    logger.info("Got table name: " + str(table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get primary keys for crs
+    try:
+        cursor, id_list = get_cr_ids_by_slr_id(cursor=cursor, slr_id=slr_id, table_name=table_name)
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get crs from database
+    logger.info("Get crs from database")
+    db_entry_list = []
+    for id in id_list:
+        # TODO: try-except needed?
+        logger.info("Getting cr with account_id: " + str(account_id) + " slr_id: " + str(slr_id) + " cr_id: " + str(id))
+        db_entry_dict = get_cr(account_id=account_id, slr_id=slr_id, cr_id=id)
+        db_entry_list.append(db_entry_dict)
+        logger.info("cr object added to list: " + json.dumps(db_entry_dict))
+
+    return db_entry_list
+
+
+
+
 
 
 

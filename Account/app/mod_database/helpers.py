@@ -412,4 +412,48 @@ def get_slsr_ids_by_slr_id(cursor=None, slr_id=None, table_name=None):
         return cursor, id_list
 
 
+def get_cr_ids_by_slr_id(cursor=None, slr_id=None, table_name=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT consentRecordId " \
+                "FROM " + table_name + " " \
+                "WHERE serviceLinkRecordId LIKE %s;"
+
+    arguments = (
+        '%' + str(slr_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i])
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
+
+
+
+
+
+
 

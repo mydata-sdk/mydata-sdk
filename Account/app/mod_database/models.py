@@ -2594,7 +2594,7 @@ class ConsentRecord():
         else:
             logger.debug("Got data: " + repr(data))
             if len(data) == 0:
-                raise IndexError("Surrogate Id and serviceLinkRecordId could not be found with provided information")
+                raise IndexError("Consent Record could not be found with provided information")
             if len(data[0]):
                 self.id = data[0][0]
                 self.consent_record = data[0][1]
