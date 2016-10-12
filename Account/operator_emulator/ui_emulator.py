@@ -697,7 +697,7 @@ print ("------------------------------------")
 title = "Service Link Records"
 print(title)
 try:
-    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/", headers=headers)
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
@@ -716,7 +716,7 @@ print ("------------------------------------")
 title = "One Service Link Record"
 print(title)
 try:
-    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/", headers=headers)
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/" + slr_id + "/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
@@ -739,7 +739,7 @@ print ("------------------------------------")
 title = "Service Link Status Records"
 print(title)
 try:
-    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/statuses/", headers=headers)
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/" + slr_id + "/statuses/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
@@ -758,7 +758,7 @@ print ("------------------------------------")
 title = "One Service Link Status Record"
 print(title)
 try:
-    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/statuses/" + slsr_id + "/", headers=headers)
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/" + slr_id + "/statuses/" + slsr_id + "/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
@@ -781,7 +781,7 @@ print ("------------------------------------")
 title = "Consent Records"
 print(title)
 try:
-    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/consents/", headers=headers)
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/" + slr_id + "/consents/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)
@@ -800,7 +800,7 @@ print ("------------------------------------")
 title = "One Consent Record"
 print(title)
 try:
-    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/consents/" + cr_id + "/", headers=headers)
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/" + slr_id + "/consents/" + cr_id + "/", headers=headers)
 except Exception as exp:
     print(title + ": " + repr(exp))
     request_response = title + ": " + repr(exp)

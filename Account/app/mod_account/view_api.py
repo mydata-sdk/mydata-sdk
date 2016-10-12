@@ -2378,12 +2378,12 @@ api.add_resource(AccountSettings, '/api/accounts/<string:account_id>/settings/',
 api.add_resource(AccountSetting, '/api/accounts/<string:account_id>/settings/<string:settings_id>/', endpoint='account-setting')
 api.add_resource(AccountEventLogs, '/api/accounts/<string:account_id>/logs/events/', endpoint='account-events')
 api.add_resource(AccountEventLog, '/api/accounts/<string:account_id>/logs/events/<string:event_log_id>/', endpoint='account-event')
-api.add_resource(AccountServiceLinkRecords, '/api/accounts/<string:account_id>/servicelink/', endpoint='account-slrs')
-api.add_resource(AccountServiceLinkRecord, '/api/accounts/<string:account_id>/servicelink/<string:slr_id>/', endpoint='account-slr')
-api.add_resource(AccountServiceLinkStatusRecords, '/api/accounts/<string:account_id>/servicelink/<string:slr_id>/statuses/', endpoint='account-slsrs')
-api.add_resource(AccountServiceLinkStatusRecord, '/api/accounts/<string:account_id>/servicelink/<string:slr_id>/statuses/<string:slsr_id>/', endpoint='account-slsr')
-api.add_resource(AccountConsentRecords, '/api/accounts/<string:account_id>/servicelink/<string:slr_id>/consents/', endpoint='account-crs')
-api.add_resource(AccountConsentRecord, '/api/accounts/<string:account_id>/servicelink/<string:slr_id>/consents/<string:cr_id>/', endpoint='account-cr')
+api.add_resource(AccountServiceLinkRecords, '/api/accounts/<string:account_id>/servicelinks/', endpoint='account-slrs')
+api.add_resource(AccountServiceLinkRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/', endpoint='account-slr')
+api.add_resource(AccountServiceLinkStatusRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/', endpoint='account-slsrs')
+api.add_resource(AccountServiceLinkStatusRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/<string:slsr_id>/', endpoint='account-slsr')
+api.add_resource(AccountConsentRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/', endpoint='account-crs')
+api.add_resource(AccountConsentRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/', endpoint='account-cr')
 
 
 
