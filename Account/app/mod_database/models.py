@@ -1982,7 +1982,7 @@ class ServiceLinkRecord():
     def to_api_dict(self):
         dictionary = {}
         dictionary['type'] = "ServiceLinkRecord"
-        dictionary['id'] = str(self.id)
+        dictionary['id'] = str(self.service_link_record_id)
         dictionary['attributes'] = self.to_dict_external
         return dictionary
 
@@ -2195,7 +2195,7 @@ class ServiceLinkStatusRecord():
     def to_api_dict(self):
         dictionary = {}
         dictionary['type'] = "ServiceLinkStatusRecord"
-        dictionary['id'] = str(self.id)
+        dictionary['id'] = str(self.service_link_status_record_id)
         dictionary['attributes'] = self.to_dict_external
         return dictionary
 
@@ -2519,7 +2519,7 @@ class ConsentRecord():
     def to_api_dict(self):
         dictionary = {}
         dictionary['type'] = "ConsentRecord"
-        dictionary['id'] = str(self.id)
+        dictionary['id'] = str(self.consent_id)
         dictionary['attributes'] = self.to_dict_external
         return dictionary
 
@@ -2733,7 +2733,7 @@ class ConsentStatusRecord():
     def to_api_dict(self):
         dictionary = {}
         dictionary['type'] = "ConsentStatusRecord"
-        dictionary['id'] = str(self.id)
+        dictionary['id'] = str(self.consent_record_id)
         dictionary['attributes'] = self.to_dict_external
         return dictionary
 
