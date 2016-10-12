@@ -1510,6 +1510,14 @@ class EventLog():
         self.created = value
 
     @property
+    def table_name(self):
+        return self.table_name
+
+    @table_name.setter
+    def table_name(self, value):
+        self._table_name = value
+
+    @property
     def account_id(self):
         return self.account_id
 
@@ -1573,13 +1581,10 @@ class EventLog():
 
         sql_query = "SELECT id, actor, event, created, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND actor LIKE %s AND event LIKE %s AND created LIKE %s AND Accounts_id LIKE %s;"
+                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
-            '%' + str(self.actor) + '%',
-            '%' + str(self.event) + '%',
-            '%' + str(self.created) + '%',
             '%' + str(self.account_id) + '%',
         )
 

@@ -23,7 +23,7 @@ from app.mod_api_auth.controllers import get_account_id_by_api_key
 from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id
 
 # create logger with 'spam_application'
-from app.mod_database.models import Particulars, Contacts, Email, Telephone, Settings
+from app.mod_database.models import Particulars, Contacts, Email, Telephone, Settings, EventLog
 
 logger = get_custom_logger(__name__)
 
@@ -1347,6 +1347,99 @@ def update_setting(account_id=None, id=None, attributes=None, cursor=None):
         logger.info(db_entry_object.log_entry)
 
     return db_entry_object.to_api_dict
+
+
+##################################
+###################################
+# Event logs
+##################################
+##################################
+def get_event_log(account_id=None, id=None, cursor=None):
+    """
+    Get one event_log entry from database by Account ID and ID
+    :param account_id:
+    :param id:
+    :return: dict
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if id is None:
+        raise AttributeError("Provide id as parameter")
+    if cursor is None:
+        # Get DB cursor
+        try:
+            cursor = get_db_cursor()
+        except Exception as exp:
+            logger.error('Could not get database cursor: ' + repr(exp))
+            raise
+
+    try:
+        db_entry_object = EventLog(account_id=account_id, id=id)
+    except Exception as exp:
+        error_title = "Failed to create event_log object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("event_log object created: " + db_entry_object.log_entry)
+
+    # Get event_log from DB
+    try:
+        cursor = db_entry_object.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Failed to fetch event_log from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("event_log fetched")
+        logger.info("event_log fetched from db: " + db_entry_object.log_entry)
+
+    return db_entry_object.to_api_dict
+
+
+def get_event_logs(account_id=None):
+    """
+    Get all event_log -entries related to account
+    :param account_id:
+    :return: List of dicts
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Get table name
+    logger.info("Create event_log")
+    db_entry_object = EventLog()
+    logger.info(db_entry_object.log_entry)
+    logger.info("Get table name")
+    table_name = db_entry_object.table_name
+    logger.info("Got table name: " + str(table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get primary keys for event_log
+    try:
+        cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get event_log from database
+    logger.info("Get event_log from database")
+    db_entry_list = []
+    for id in id_list:
+        # TODO: try-except needed?
+        logger.info("Getting event_log with event_log_id: " + str(id))
+        db_entry_dict = get_event_log(account_id=account_id, id=id)
+        db_entry_list.append(db_entry_dict)
+        logger.info("event_log object added to list: " + json.dumps(db_entry_dict))
+
+    return db_entry_list
+
+
 
 
 
