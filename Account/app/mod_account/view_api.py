@@ -22,7 +22,7 @@ from app.helpers import get_custom_logger, make_json_response, ApiError
 from app.mod_account.controllers import get_particulars, get_particular, verify_account_id_match, \
     update_particular, get_contacts, add_contact, get_contact, update_contact, get_emails, add_email, get_email, \
     update_email, get_telephone, update_telephone, get_telephones, add_telephone, get_settings, add_setting, get_setting, \
-    update_setting, get_event_log, get_event_logs
+    update_setting, get_event_log, get_event_logs, get_slrs, get_slr
 from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
     EmailsSchema, EmailsSchemaForUpdate, TelephonesSchema, TelephonesSchemaForUpdate, SettingsSchema, \
     SettingsSchemaForUpdate
@@ -1931,6 +1931,134 @@ class AccountEventLog(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
+class AccountServiceLinkRecords(Resource):
+    @requires_api_auth_user
+    def get(self, account_id):
+        logger.info("AccountServiceLinkRecords")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Get ServiceLinkRecords
+        try:
+            logger.info("Fetching ServiceLinkRecords")
+            db_entries = get_slrs(account_id=account_id)
+        except Exception as exp:
+            error_title = "No ServiceLinkRecords found"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("ServiceLinkRecords Fetched")
+
+        # Response data container
+        try:
+            db_entry_list = db_entries
+            response_data = {}
+            response_data['data'] = db_entry_list
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class AccountServiceLinkRecord(Resource):
+    @requires_api_auth_user
+    def get(self, account_id, slr_id):
+        logger.info("AccountServiceLinkRecord")
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        try:
+            slr_id = str(slr_id)
+        except Exception as exp:
+            error_title = "Unsupported slr_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("slr_id: " + slr_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Get ServiceLinkRecord
+        try:
+            logger.info("Fetching ServiceLinkRecord")
+            db_entries = get_slr(account_id=account_id, id=slr_id)
+        except Exception as exp:
+            error_title = "No ServiceLinkRecord found"
+            logger.error(error_title)
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("ServiceLinkRecord Fetched")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = db_entries
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+
+
 # Register resources
 api.add_resource(Accounts, '/api/accounts/', '/', endpoint='/api/accounts/')
 api.add_resource(ExportAccount, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
@@ -1946,3 +2074,6 @@ api.add_resource(AccountSettings, '/api/accounts/<string:account_id>/settings/',
 api.add_resource(AccountSetting, '/api/accounts/<string:account_id>/settings/<string:settings_id>/', endpoint='account-setting')
 api.add_resource(AccountEventLogs, '/api/accounts/<string:account_id>/logs/events/', endpoint='account-events')
 api.add_resource(AccountEventLog, '/api/accounts/<string:account_id>/logs/events/<string:event_log_id>/', endpoint='account-event')
+api.add_resource(AccountServiceLinkRecords, '/api/accounts/<string:account_id>/servicelink/', endpoint='account-slrs')
+api.add_resource(AccountServiceLinkRecord, '/api/accounts/<string:account_id>/servicelink/<string:slr_id>/', endpoint='account-slr')
+

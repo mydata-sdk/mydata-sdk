@@ -1803,6 +1803,9 @@ definitions:
       Api-Key:
         type: string
         description: ApiKey
+      account_id:
+        type: string
+        description: Account ID
 
   newAccount:
     type: object
