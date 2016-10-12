@@ -31,6 +31,10 @@ account_id = ""
 particular_id = ""
 contacts_id = ""
 
+
+predefined_account_username = "testUser"
+predefined_account_password = "Hello"
+
 username = "example_username-" + str(uuid4())
 password = "example_password"
 
@@ -231,24 +235,30 @@ label = "# \n# Create Account and Authenticate \n###############################
 print(label)
 request_statuses.append(label)
 
-#
-# Create Account
-title = "Create Account"
-print(title)
-try:
-    account = post(host=account_host, endpoint="/api/accounts/", headers=headers, data=account_template)
-except Exception as exp:
-    print(title + ": " + repr(exp))
-    request_response = title + ": " + repr(exp)
-    request_statuses.append(request_response)
-    raise
+if not predefined_account_username and  not predefined_account_password:
+    #
+    # Create Account
+    title = "Create Account"
+    print(title)
+    try:
+        account = post(host=account_host, endpoint="/api/accounts/", headers=headers, data=account_template)
+    except Exception as exp:
+        print(title + ": " + repr(exp))
+        request_response = title + ": " + repr(exp)
+        request_statuses.append(request_response)
+        raise
+    else:
+        request_response = title + ": " + account[0] + ": " + json.dumps(account[1])
+        print('request_response: ' + request_response)
+        request_statuses.append(request_response)
+        account_id = str(account[1]['data'].get("id", "None"))
+        print ("Response " + account[0] + ": " + json.dumps(account[1]))
+        print ("Account ID: " + account_id)
+
 else:
-    request_response = title + ": " + account[0] + ": " + json.dumps(account[1])
-    print('request_response: ' + request_response)
-    request_statuses.append(request_response)
-    account_id = str(account[1]['data'].get("id", "None"))
-    print ("Response " + account[0] + ": " + json.dumps(account[1]))
-    print ("Account ID: " + account_id)
+    print("Using predefined account")
+    username = predefined_account_username
+    password = predefined_account_password
 
 #
 # Authenticate
@@ -267,6 +277,7 @@ else:
     print('request_response: ' + request_response)
     request_statuses.append(request_response)
     apikey = str(api_auth[1].get("Api-Key", "None"))
+    account_id = str(api_auth[1].get("account_id", "None"))
     headers['Api-Key'] = apikey
     print ("Response " + api_auth[0] + ": " + json.dumps(api_auth[1]))
     print ("apikey: " + apikey)
@@ -446,7 +457,7 @@ else:
     request_statuses.append(request_response)
     email_id = str(entries[1]['data'][0].get("id", "None"))
     print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
-    print ("contacts_id: " + email_id)
+    print ("email_id: " + email_id)
 
 
 print ("------------------------------------")
@@ -462,7 +473,7 @@ except Exception as exp:
 else:
     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
-    print ("contacts_id: " + str(entry[1]['data'].get("id", "None")))
+    print ("email_id: " + str(entry[1]['data'].get("id", "None")))
 
 
 print ("------------------------------------")
@@ -521,7 +532,7 @@ else:
     request_statuses.append(request_response)
     telephones_id = str(entries[1]['data'][0].get("id", "None"))
     print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
-    print ("contacts_id: " + email_id)
+    print ("telephones_id: " + telephones_id)
 
 
 print ("------------------------------------")
@@ -537,7 +548,7 @@ except Exception as exp:
 else:
     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
-    print ("contacts_id: " + str(entry[1]['data'].get("id", "None")))
+    print ("telephones_id: " + str(entry[1]['data'].get("id", "None")))
 
 
 print ("------------------------------------")
@@ -597,7 +608,7 @@ else:
     request_statuses.append(request_response)
     settings_id = str(entries[1]['data'][0].get("id", "None"))
     print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
-    print ("contacts_id: " + email_id)
+    print ("settings_id: " + settings_id)
 
 
 print ("------------------------------------")
@@ -657,7 +668,7 @@ else:
 #     request_statuses.append(request_response)
 #     event_log_id = str(entries[1]['data'][0].get("id", "None"))
 #     print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
-#     print ("contacts_id: " + email_id)
+#     print ("event_log_id: " + event_log_id)
 #
 #
 # print ("------------------------------------")
@@ -674,6 +685,48 @@ else:
 #     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
 #     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
 #     print ("event_log_id: " + str(entry[1]['data'].get("id", "None")))
+
+
+##################################
+# Service Link Records
+##################################
+label = "# \n# Service Link Records \n#################################"
+print(label)
+request_statuses.append(label)
+
+print ("------------------------------------")
+title = "Service Link Records"
+print(title)
+try:
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    slr_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + new_entry[0] + ": " + json.dumps(new_entry[1]))
+    print ("slr_id: " + slr_id)
+
+
+print ("------------------------------------")
+title = "One Service Link Record"
+print(title)
+try:
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelink/" + slr_id + "/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("slr_id: " + str(entry[1]['data'].get("id", "None")))
 
 
 
