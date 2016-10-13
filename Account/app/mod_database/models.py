@@ -2766,7 +2766,7 @@ class ConsentStatusRecord():
                     "consentRecordId, " \
                     "issued_at, " \
                     "prevRecordId" \
-                    ") VALUES (%s, %s, %s, %s, %s, %s)"
+                    ") VALUES (%s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
             str(self.consent_status_record_id),

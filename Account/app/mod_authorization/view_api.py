@@ -297,6 +297,7 @@ class ConsentSignAndStore(Resource):
         # Source CSR
         try:
             source_csr_entry = ConsentStatusRecord(
+                consent_status_record_id=source_csr_record_id,
                 status=source_csr_consent_status,
                 consent_status_record=source_csr_signed,
                 consent_record_id=source_csr_cr_id,
@@ -311,6 +312,7 @@ class ConsentSignAndStore(Resource):
         # Sink CSR
         try:
             sink_csr_entry = ConsentStatusRecord(
+                consent_status_record_id=sink_csr_record_id,
                 status=sink_csr_consent_status,
                 consent_status_record=sink_csr_signed,
                 consent_record_id=sink_csr_cr_id,
