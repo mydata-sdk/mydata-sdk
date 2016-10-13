@@ -2628,6 +2628,7 @@ class ConsentRecord():
 class ConsentStatusRecord():
     id = None
     status = None
+    consent_status_record_id = None
     consent_status_record = None
     consent_records_id = None
     consent_record_id = None
@@ -2636,9 +2637,11 @@ class ConsentStatusRecord():
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", status="", consent_status_record="", consent_records_id="", consent_record_id="", issued_at="", prev_record_id="", deleted=0, table_name="MyDataAccount.ConsentStatusRecords"):
+    def __init__(self, id="", consent_status_record_id="", status="", consent_status_record="", consent_records_id="", consent_record_id="", issued_at="", prev_record_id="", deleted=0, table_name="MyDataAccount.ConsentStatusRecords"):
         if id is not None:
             self.id = id
+        if consent_status_record_id is not None:
+            self.consent_status_record_id = consent_status_record_id
         if status is not None:
             self.status = status
         if consent_status_record is not None:
@@ -2667,6 +2670,14 @@ class ConsentStatusRecord():
     @id.setter
     def id(self, value):
         self.id = value
+
+    @property
+    def consent_status_record_id(self):
+        return self.consent_status_record_id
+
+    @consent_status_record_id.setter
+    def consent_status_record_id(self, value):
+        self.consent_status_record_id = value
 
     @property
     def status(self):
@@ -2748,6 +2759,7 @@ class ConsentStatusRecord():
     def to_db(self, cursor=""):
 
         sql_query = "INSERT INTO " + self.table_name + " (" \
+                    "consentStatusRecordId, " \
                     "consentStatus, " \
                     "consentStatusRecord, " \
                     "ConsentRecords_id, " \
@@ -2757,6 +2769,7 @@ class ConsentStatusRecord():
                     ") VALUES (%s, %s, %s, %s, %s, %s)"
 
         arguments = (
+            str(self.consent_status_record_id),
             str(self.status),
             str(self.consent_status_record),
             str(self.consent_records_id),
@@ -2781,15 +2794,16 @@ class ConsentStatusRecord():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, consentStatus, consentStatusRecord, ConsentRecords_id, consentRecordId, " \
-                    "issued_at, prevRecordId " \
+        sql_query = "SELECT id, consentStatusRecordId, consentStatus, consentStatusRecord, ConsentRecords_id, " \
+                    "consentRecordId, issued_at, prevRecordId " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND consentStatus LIKE %s AND consentStatusRecord LIKE %s AND " \
-                    "ConsentRecords_id LIKE %s AND consentRecordId LIKE %s AND issued_at LIKE %s AND " \
-                    "prevRecordId LIKE %s;"
+                    "WHERE id LIKE %s AND consentStatusRecordId LIKE %s AND consentStatus LIKE %s " \
+                    "AND consentStatusRecord LIKE %s AND  ConsentRecords_id LIKE %s AND " \
+                    "consentRecordId LIKE %s AND issued_at LIKE %s AND prevRecordId LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
+            '%' + str(self.consent_status_record_id) + '%',
             '%' + str(self.status) + '%',
             '%' + str(self.consent_status_record) + '%',
             '%' + str(self.consent_records_id) + '%',
@@ -2809,6 +2823,7 @@ class ConsentStatusRecord():
                 raise IndexError("DB query returned no results")
             if len(data[0]):
                 self.id = data[0][0]
+                self.consent_status_record_id = data[0][1]
                 self.status = data[0][1]
                 self.consent_status_record = data[0][2]
                 self.consent_records_id = data[0][3]
@@ -2817,6 +2832,7 @@ class ConsentStatusRecord():
                 self.prev_record_id = data[0][6]
             else:
                 self.id = data[0]
+                self.consent_status_record_id = data[0][1]
                 self.status = data[1]
                 self.consent_status_record = data[2]
                 self.consent_records_id = data[3]
