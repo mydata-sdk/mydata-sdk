@@ -838,7 +838,7 @@ print(label)
 request_statuses.append(label)
 
 print ("------------------------------------")
-title = "Consent Records"
+title = "Consent Status Records"
 print(title)
 try:
     entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/" + slr_id + "/consents/" + cr_id + "/statuses/", headers=headers)
