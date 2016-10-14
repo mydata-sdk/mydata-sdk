@@ -177,7 +177,13 @@ def post(host=None, endpoint=None, headers=None, data=None):
 
     req = requests.post(url, headers=headers, json=data)
     status_code = str(req.status_code)
-    response_data = json.loads(req.text)
+    print ("Response status: " + str(req.status_code))
+    try:
+        response_data = json.loads(req.text)
+    except Exception as exp:
+        print(repr(exp))
+        print("req.text: " + repr(req.text))
+        response_data = repr(req.text)
 
     return status_code, response_data
 
@@ -199,7 +205,13 @@ def patch(host=None, endpoint=None, headers=None, data=None):
 
     req = requests.patch(url, headers=headers, json=data)
     status_code = str(req.status_code)
-    response_data = json.loads(req.text)
+    print ("Response status: " + str(req.status_code))
+    try:
+        response_data = json.loads(req.text)
+    except Exception as exp:
+        print(repr(exp))
+        print("req.text: " + repr(req.text))
+        response_data = repr(req.text)
 
     return status_code, response_data
 
@@ -221,7 +233,13 @@ def get(host=None, endpoint=None, headers=None, username=None, password=None):
     else:
         req = requests.get(url, headers=headers)
     status_code = str(req.status_code)
-    response_data = json.loads(req.text)
+    print ("Response status: " + str(req.status_code))
+    try:
+        response_data = json.loads(req.text)
+    except Exception as exp:
+        print(repr(exp))
+        print("req.text: " + repr(req.text))
+        response_data = repr(req.text)
 
     return status_code, response_data
 
@@ -773,7 +791,7 @@ else:
 ##################################
 # Consent Records
 ##################################
-label = "# \n# Service Link Status Records \n#################################"
+label = "# \n# Consent Records \n#################################"
 print(label)
 request_statuses.append(label)
 
@@ -810,6 +828,49 @@ else:
     request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
     print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
     print ("cr_id: " + str(entry[1]['data'].get("id", "None")))
+
+
+##################################
+# Consent Status Records
+##################################
+label = "# \n# Consent Status Records \n#################################"
+print(label)
+request_statuses.append(label)
+
+print ("------------------------------------")
+title = "Consent Records"
+print(title)
+try:
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/" + slr_id + "/consents/" + cr_id + "/statuses/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    csr_id = str(entries[1]['data'][0].get("id", "None"))
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
+    print ("csr_id: " + csr_id)
+
+
+print ("------------------------------------")
+title = "One Consent Status Record"
+print(title)
+try:
+    entry = get(host=account_host, endpoint="/api/accounts/" + account_id + "/servicelinks/" + slr_id + "/consents/" + cr_id + "/statuses/" + csr_id + "/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_statuses.append(title + ": " + entry[0] + ": " + json.dumps(entry[1]))
+    request_statuses.append("csr_id: " + str(entry[1]['data'].get("id", "None")))
+    print ("Response " + entry[0] + ": " + json.dumps(entry[1]))
+    print ("csr_id: " + str(entry[1]['data'].get("id", "None")))
 
 
 

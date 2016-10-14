@@ -20,8 +20,8 @@ from app import db, api, login_manager, app
 # Import services
 from app.helpers import get_custom_logger, ApiError
 from app.mod_api_auth.controllers import get_account_id_by_api_key
-from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id, get_slr_ids_by_account_id, \
-    get_slsr_ids_by_slr_id, get_cr_ids_by_slr_id
+from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id, get_slr_ids, \
+    get_slsr_ids, get_cr_ids, get_csr_ids
 
 # create logger with 'spam_application'
 from app.mod_database.models import Particulars, Contacts, Email, Telephone, Settings, EventLog, ServiceLinkRecord, \
@@ -110,6 +110,7 @@ def get_particular(account_id=None, id=None, cursor=None):
             raise
 
     try:
+        logger.info("Creating Particulars object")
         db_entry_object = Particulars(account_id=account_id, id=id)
     except Exception as exp:
         error_title = "Failed to create Particulars object"
@@ -1515,7 +1516,7 @@ def get_slrs(account_id=None):
 
     # Get primary keys for slr
     try:
-        cursor, id_list = get_slr_ids_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
+        cursor, id_list = get_slr_ids(cursor=cursor, account_id=account_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
@@ -1562,11 +1563,16 @@ def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
     # Check if slr can be found with account_id and slr_id
     try:
         slr = get_slr(account_id=account_id, slr_id=slr_id)
+    except StandardError as exp:
+        logger.error(repr(exp))
+        raise
     except Exception as exp:
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
         raise StandardError(title)
+    else:
+        logger.info("Found SLR: " + repr(slr))
 
     try:
         db_entry_object = ServiceLinkStatusRecord(service_link_status_record_id=slsr_id, service_link_record_id=slr_id)
@@ -1579,6 +1585,7 @@ def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
 
     # Get slsr from DB
     try:
+        logger.info("Get slsr from DB")
         cursor = db_entry_object.from_db(cursor=cursor)
     except Exception as exp:
         error_title = "Failed to fetch slsr from DB"
@@ -1606,11 +1613,17 @@ def get_slsrs(account_id=None, slr_id=None):
     # Check if slr can be found with account_id and slr_id
     try:
         slr = get_slr(account_id=account_id, slr_id=slr_id)
+    except StandardError as exp:
+        logger.error(repr(exp))
+        raise
     except Exception as exp:
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
         raise StandardError(title)
+    else:
+        logger.info("HEP")
+        logger.info("Found SLR: " + repr(slr))
 
     # Get table name
     logger.info("Create slsr")
@@ -1629,7 +1642,7 @@ def get_slsrs(account_id=None, slr_id=None):
 
     # Get primary keys for slsr
     try:
-        cursor, id_list = get_slsr_ids_by_slr_id(cursor=cursor, slr_id=slr_id, table_name=table_name)
+        cursor, id_list = get_slsr_ids(cursor=cursor, slr_id=slr_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
@@ -1675,12 +1688,18 @@ def get_cr(account_id=None, slr_id=None, cr_id=None, cursor=None):
 
     # Check if slr can be found with account_id and slr_id
     try:
+        logger.info("Check if slr can be found with account_id and slr_id")
         slr = get_slr(account_id=account_id, slr_id=slr_id)
+    except StandardError as exp:
+        logger.error(repr(exp))
+        raise
     except Exception as exp:
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
         raise StandardError(title)
+    else:
+        logger.info("Found: " + repr(slr))
 
     try:
         db_entry_object = ConsentRecord(consent_id=cr_id, service_link_record_id=slr_id)
@@ -1720,11 +1739,16 @@ def get_crs(account_id=None, slr_id=None):
     # Check if slr can be found with account_id and slr_id
     try:
         slr = get_slr(account_id=account_id, slr_id=slr_id)
+    except StandardError as exp:
+        logger.error(repr(exp))
+        raise
     except Exception as exp:
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
         raise StandardError(title)
+    else:
+        logger.info("Found SLR: " + repr(slr))
 
     # Get table name
     logger.info("Create cr")
@@ -1743,10 +1767,13 @@ def get_crs(account_id=None, slr_id=None):
 
     # Get primary keys for crs
     try:
-        cursor, id_list = get_cr_ids_by_slr_id(cursor=cursor, slr_id=slr_id, table_name=table_name)
+        logger.info("Get primary keys for crs")
+        cursor, id_list = get_cr_ids(cursor=cursor, slr_id=slr_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
+    else:
+        logger.info("primary keys for crs: " + repr(id_list))
 
     # Get crs from database
     logger.info("Get crs from database")
@@ -1801,32 +1828,33 @@ def get_csr(account_id=None, slr_id=None, cr_id=None, csr_id=None, cursor=None):
         title = "No CR with: " + json.dumps(func_data)
         logger.error(title)
         raise StandardError(title)
+    else:
+        logger.info("Found: " + repr(cr))
 
     try:
-        # TODO: DB Change required
         db_entry_object = ConsentStatusRecord(consent_record_id=cr_id, consent_status_record_id=csr_id)
     except Exception as exp:
-        error_title = "Failed to create cr object"
+        error_title = "Failed to create csr object"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.debug("cr object created: " + db_entry_object.log_entry)
+        logger.debug("csr object created: " + db_entry_object.log_entry)
 
-    # Get cr from DB
+    # Get csr from DB
     try:
         cursor = db_entry_object.from_db(cursor=cursor)
     except Exception as exp:
-        error_title = "Failed to fetch cr from DB"
+        error_title = "Failed to fetch csr from DB"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.info("cr fetched")
-        logger.info("cr fetched from db: " + db_entry_object.log_entry)
+        logger.info("csr fetched")
+        logger.info("csr fetched from db: " + db_entry_object.log_entry)
 
     return db_entry_object.to_api_dict
 
 
-def get_csrs(account_id=None, slr_id=None):
+def get_csrs(account_id=None, slr_id=None, cr_id=None):
     """
     Get all csr -entries related to service link record
     :param account_id:
@@ -1837,19 +1865,26 @@ def get_csrs(account_id=None, slr_id=None):
         raise AttributeError("Provide account_id as parameter")
     if slr_id is None:
         raise AttributeError("Provide slr_id as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
 
-    # Check if slr can be found with account_id and slr_id
+    # Check if cr can be found with account_id, slr_id and cr_id
     try:
-        slr = get_slr(account_id=account_id, slr_id=slr_id)
+        cr = get_cr(account_id=account_id, slr_id=slr_id, cr_id=cr_id)
+    except StandardError as exp:
+        logger.error(repr(exp))
+        raise
     except Exception as exp:
-        func_data = {'account_id': account_id, 'slr_id': slr_id}
-        title = "No SLR with: " + json.dumps(func_data)
+        func_data = {'account_id': account_id, 'slr_id': slr_id, 'cr_id': cr_id}
+        title = "No CR with: " + json.dumps(func_data)
         logger.error(title)
         raise StandardError(title)
+    else:
+        logger.info("Found: " + repr(cr))
 
     # Get table name
-    logger.info("Create cr")
-    db_entry_object = ConsentRecord()
+    logger.info("Create csr")
+    db_entry_object = ConsentStatusRecord()
     logger.info(db_entry_object.log_entry)
     logger.info("Get table name")
     table_name = db_entry_object.table_name
@@ -1862,22 +1897,22 @@ def get_csrs(account_id=None, slr_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for crs
+    # Get primary keys for csrs
     try:
-        cursor, id_list = get_cr_ids_by_slr_id(cursor=cursor, slr_id=slr_id, table_name=table_name)
+        cursor, id_list = get_csr_ids(cursor=cursor, cr_id=cr_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
 
-    # Get crs from database
-    logger.info("Get crs from database")
+    # Get csrs from database
+    logger.info("Get csrs from database")
     db_entry_list = []
     for id in id_list:
         # TODO: try-except needed?
-        logger.info("Getting cr with account_id: " + str(account_id) + " slr_id: " + str(slr_id) + " cr_id: " + str(id))
-        db_entry_dict = get_cr(account_id=account_id, slr_id=slr_id, cr_id=id)
+        logger.info("Getting csr with account_id: " + str(account_id) + " slr_id: " + str(slr_id) + " cr_id: " + str(cr_id) + " csr_id: " + str(id))
+        db_entry_dict = get_csr(account_id=account_id, slr_id=slr_id, cr_id=cr_id, csr_id=id)
         db_entry_list.append(db_entry_dict)
-        logger.info("cr object added to list: " + json.dumps(db_entry_dict))
+        logger.info("csr object added to list: " + json.dumps(db_entry_dict))
 
     return db_entry_list
 

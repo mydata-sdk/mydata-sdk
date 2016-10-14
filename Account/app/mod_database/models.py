@@ -2744,7 +2744,7 @@ class ConsentStatusRecord():
     def to_api_dict(self):
         dictionary = {}
         dictionary['type'] = "ConsentStatusRecord"
-        dictionary['id'] = str(self.consent_record_id)
+        dictionary['id'] = str(self.consent_status_record_id)
         dictionary['attributes'] = self.to_dict_external
         return dictionary
 

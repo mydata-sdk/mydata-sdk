@@ -249,6 +249,8 @@ class ConsentSignAndStore(Resource):
             error_title = "Failed to create Source's Service Link Record object"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("source_slr_entry: " + source_slr_entry.log_entry)
 
         # Sink SLR
         try:
@@ -261,6 +263,8 @@ class ConsentSignAndStore(Resource):
             error_title = "Failed to create Sink's Service Link Record object"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("sink_slr_entry: " + sink_slr_entry.log_entry)
 
         # Source CR
         try:
@@ -277,6 +281,8 @@ class ConsentSignAndStore(Resource):
             error_title = "Failed to create Source's Consent Record object"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("source_cr_entry: " + source_cr_entry.log_entry)
 
         # Sink CR
         try:
@@ -293,6 +299,8 @@ class ConsentSignAndStore(Resource):
             error_title = "Failed to create Sink's Consent Record object"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("sink_cr_entry: " + sink_cr_entry.log_entry)
 
         # Source CSR
         try:
@@ -308,6 +316,8 @@ class ConsentSignAndStore(Resource):
             error_title = "Failed to create Source's Consent Status Record object"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("source_csr_entry: " + source_csr_entry.log_entry)
 
         # Sink CSR
         try:
@@ -323,6 +333,8 @@ class ConsentSignAndStore(Resource):
             error_title = "Failed to create Sink's Consent Status Record object"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("sink_csr_entry: " + sink_csr_entry.log_entry)
 
         # Store CRs and CSRs
         try:
