@@ -22,7 +22,8 @@ from app.helpers import get_custom_logger, make_json_response, ApiError
 from app.mod_account.controllers import get_particulars, get_particular, verify_account_id_match, \
     update_particular, get_contacts, add_contact, get_contact, update_contact, get_emails, add_email, get_email, \
     update_email, get_telephone, update_telephone, get_telephones, add_telephone, get_settings, add_setting, get_setting, \
-    update_setting, get_event_log, get_event_logs, get_slrs, get_slr, get_slsrs, get_slsr, get_cr, get_crs, get_csrs
+    update_setting, get_event_log, get_event_logs, get_slrs, get_slr, get_slsrs, get_slsr, get_cr, get_crs, get_csrs, \
+    get_csr
 from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
     EmailsSchema, EmailsSchemaForUpdate, TelephonesSchema, TelephonesSchemaForUpdate, SettingsSchema, \
     SettingsSchemaForUpdate
@@ -2503,7 +2504,7 @@ class AccountConsentStatusRecord(Resource):
         # Get ConsentStatusRecord
         try:
             logger.info("Fetching ConsentStatusRecord")
-            db_entries = get_cr(account_id=account_id, slr_id=slr_id, cr_id=cr_id)
+            db_entries = get_csr(account_id=account_id, slr_id=slr_id, cr_id=cr_id, csr_id=csr_id)
         except StandardError as exp:
             error_title = "ConsentStatusRecord not accessible"
             logger.error(error_title + repr(exp))

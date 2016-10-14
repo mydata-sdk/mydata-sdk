@@ -1607,6 +1607,14 @@ class EventLog():
                 self.created = data[0][3]
                 self.account_id = data[4]
 
+            try:
+                event_copy = self.event
+                logger.info("event to dict")
+                self.event = json.loads(self.event)
+            except Exception as exp:
+                logger.info("Could not event consent_status_record to dict. Using original")
+                self.event = event_copy
+
             return cursor
 
 
@@ -2073,6 +2081,15 @@ class ServiceLinkRecord():
                 self.service_id = data[4]
                 self.surrogate_id = data[5]
                 self.operator_id = data[6]
+
+            try:
+                slr_copy = self.service_link_record
+                logger.info("service_link_record to dict")
+                self.service_link_record = json.loads(self.service_link_record)
+            except Exception as exp:
+                logger.info("Could not convert service_link_record to dict. Using original")
+                self.service_link_record = slr_copy
+
             return cursor
 
 
@@ -2294,6 +2311,14 @@ class ServiceLinkStatusRecord():
                 self.issued_at = data[5]
                 self.prev_record_id = data[6]
                 self.service_link_status_record_id = data[7]
+
+            try:
+                slsr_copy = self.service_link_status_record
+                logger.info("service_link_status_record to dict")
+                self.service_link_status_record = json.loads(self.service_link_status_record)
+            except Exception as exp:
+                logger.info("Could not convert service_link_status_record to dict. Using original")
+                self.service_link_status_record = slsr_copy
 
             return cursor
 
@@ -2617,10 +2642,12 @@ class ConsentRecord():
                 self.role = data[8]
 
             try:
+                cr_copy = self.consent_record
+                logger.info("consent_record to dict")
                 self.consent_record = json.loads(self.consent_record)
             except Exception as exp:
-                logger.debug('Could not load json from consent_record: ' + repr(exp))
-                raise
+                logger.info("Could not convert consent_record to dict. Using original")
+                self.consent_record = cr_copy
 
             return cursor
 
@@ -2824,21 +2851,29 @@ class ConsentStatusRecord():
             if len(data[0]):
                 self.id = data[0][0]
                 self.consent_status_record_id = data[0][1]
-                self.status = data[0][1]
-                self.consent_status_record = data[0][2]
-                self.consent_records_id = data[0][3]
-                self.consent_record_id = data[0][4]
-                self.issued_at = data[0][5]
-                self.prev_record_id = data[0][6]
+                self.status = data[0][2]
+                self.consent_status_record = data[0][3]
+                self.consent_records_id = data[0][4]
+                self.consent_record_id = data[0][5]
+                self.issued_at = data[0][6]
+                self.prev_record_id = data[0][7]
             else:
                 self.id = data[0]
-                self.consent_status_record_id = data[0][1]
-                self.status = data[1]
-                self.consent_status_record = data[2]
-                self.consent_records_id = data[3]
-                self.consent_record_id = data[4]
-                self.issued_at = data[5]
-                self.prev_record_id = data[6]
+                self.consent_status_record_id = data[1]
+                self.status = data[2]
+                self.consent_status_record = data[3]
+                self.consent_records_id = data[4]
+                self.consent_record_id = data[5]
+                self.issued_at = data[6]
+                self.prev_record_id = data[7]
+
+            try:
+                csr_copy = self.consent_status_record
+                logger.info("consent_status_record to dict")
+                self.consent_status_record = json.loads(self.consent_status_record)
+            except Exception as exp:
+                logger.info("Could not convert consent_status_record to dict. Using original")
+                self.consent_status_record = csr_copy
 
             return cursor
 
