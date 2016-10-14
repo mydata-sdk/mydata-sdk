@@ -200,7 +200,7 @@ class ConsentSignAndStore(Resource):
 
         # Sign Source CR
         try:
-            source_cr_signed, source_cr_issued = sign_cr(account_id=account_id, payload=source_cr_payload, endpoint=endpoint)
+            source_cr_signed = sign_cr(account_id=account_id, payload=source_cr_payload, endpoint=endpoint)
         except Exception as exp:
             logger.error("Could not sign Source's CR: " + repr(exp))
             raise
@@ -209,7 +209,7 @@ class ConsentSignAndStore(Resource):
 
         # Sign Source CSR
         try:
-            source_csr_signed, source_csr_issued = sign_csr(account_id=account_id, payload=source_csr_payload, endpoint=endpoint)
+            source_csr_signed = sign_csr(account_id=account_id, payload=source_csr_payload, endpoint=endpoint)
         except Exception as exp:
             logger.error("Could not sign Source's CSR: " + repr(exp))
             raise

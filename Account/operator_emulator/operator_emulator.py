@@ -48,8 +48,22 @@ source_csr_id = "SOURCE-CSR-" + str(uuid4())
 sink_csr_id = "SINK-CSR-" + str(uuid4())
 
 rs_id = "RS-ID-" + str(uuid4())
-not_before = str(time.time())
-not_after = str(time.time() + (60*60*24*7))
+
+epoch = int(time.time())
+
+source_slr_iat = str(epoch)
+sink_slr_iat = str(epoch)
+source_slsr_iat = str(epoch)
+sink_slsr_iat = str(epoch)
+cr_not_before = str(epoch)
+cr_not_after = str(epoch + (60*60*24*7))
+csr_not_before = str(epoch)
+csr_not_after = str(epoch + (60*60*24*7))
+source_cr_iat = str(epoch)
+sink_cr_iat = str(epoch)
+source_csr_iat = str(epoch)
+sink_csr_iat = str(epoch)
+
 distribution_id = "DISTRIBUTION-ID-" + str(uuid4())
 dataset_id = "DATASET-ID-" + str(uuid4())
 
@@ -215,9 +229,9 @@ consent_record_payload = {
                 "surrogate_id": source_surrogate_id,
                 "rs_id": rs_id,
                 "slr_id": source_slr_id,
-                "issued": "timestamp",
-                "not_before": not_before,
-                "not_after": not_after,
+                "issued": source_cr_iat,
+                "not_before": cr_not_before,
+                "not_after": cr_not_after,
                 "issued_at": operator_id,
                 "subject_id": source_service_id
               },
@@ -251,7 +265,7 @@ consent_record_payload = {
               "account_id": source_surrogate_id,
               "cr_id": source_cr_id,
               "consent_status": "Active",
-              "iat": "timestamp",
+              "iat": source_csr_iat,
               "prev_record_id": "Null"
             }
           }
@@ -266,9 +280,9 @@ consent_record_payload = {
                 "surrogate_id": sink_surrogate_id,
                 "rs_id": rs_id,
                 "slr_id": sink_slr_id,
-                "issued": "timestamp",
-                "not_before": not_before,
-                "not_after": not_after,
+                "issued": sink_cr_iat,
+                "not_before": cr_not_before,
+                "not_after": cr_not_after,
                 "issued_at": operator_id,
                 "subject_id": sink_service_id
               },
@@ -291,7 +305,7 @@ consent_record_payload = {
               "account_id": sink_surrogate_id,
               "cr_id": sink_cr_id,
               "consent_status": "Active",
-              "iat": "timestamp",
+              "iat": sink_csr_iat,
               "prev_record_id": "Null"
             }
           }
