@@ -14,7 +14,7 @@ IS_SINK = True
 {% if IS_SOURCE is defined %}
 IS_SOURCE = {{ IS_SOURCE }}
 {% else %}
-IS_SOURCE = False
+IS_SOURCE = True
 {% endif %}
 
 # Name of host to connect to. Default: use the local host via a UNIX socket (where applicable)

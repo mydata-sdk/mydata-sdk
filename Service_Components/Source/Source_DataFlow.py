@@ -2,9 +2,10 @@
 __author__ = 'alpaloma'
 
 from DetailedHTTPException import error_handler
-from flask import Blueprint
+from flask import Blueprint, request
 from flask_restful import Resource, Api
-
+import logging
+debug_log = logging.getLogger("debug")
 api_Source_blueprint = Blueprint("api_Source_blueprint", __name__)
 api = Api()
 api.init_app(api_Source_blueprint)
@@ -28,7 +29,7 @@ class Status(Resource):
 class DataRequest(Resource):
     @error_handler
     def get(self):
-
+        debug_log.info(request.headers)
         # Validate Request
         # Validate Token
         # Check that related Consent Record exists with the same rs_id

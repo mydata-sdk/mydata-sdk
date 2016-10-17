@@ -6,26 +6,22 @@ info:
 host: "example.source.example"
 basePath: "/api/1.2/dc"
 paths:
-  /datarequest:
-    post:
+  /*:
+    get:
       tags:
       - "Source"
-      description: "End point that initializes data connection flow "
+      description: "End point that receives data request from sink. Contains PoP in Authorization field in Header"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
       - in: "header"
-        name: "authorization_token"
+        name: "PoP-token"
         description: "Authorization Token"
         required: true
         type: string
-      - in: "header"
-        name: "signature"
-        description: "Signature for the request"
-        required: true
-        type: string
+
       responses:
         200:
           description: "Returns 200"

@@ -131,7 +131,7 @@ class Install_CR(Resource):
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CR failed",},
                                         title="Failure in CR verifying",
-                                        status=451)
+                                        status=403)
 
         sq.task("Verify CSR integrity")
         # SLR includes CR keys which means we need to get key from stored SLR and use it to verify this
@@ -142,7 +142,7 @@ class Install_CR(Resource):
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR failed",},
                                         title="Failure in CSR verifying",
-                                        status=451)
+                                        status=403)
 
         sq.task("Verify Status Record")
 
@@ -160,7 +160,7 @@ class Install_CR(Resource):
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR cr_id == CR cr_id failed",},
                                         title="Failure in CSR verifying",
-                                        status=451)
+                                        status=403)
         # 2) CSR has link to previous CSR
         prev_csr_id_refers_to_null_as_it_should = crt.get_prev_record_id() == "null"
         if prev_csr_id_refers_to_null_as_it_should:
@@ -168,7 +168,7 @@ class Install_CR(Resource):
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR previous_id == 'null' failed",},
                                         title="Failure in CSR verifying",
-                                        status=451)
+                                        status=403)
 
         verify_is_success = crt.verify_cr(slrt.get_cr_keys())
         if verify_is_success:

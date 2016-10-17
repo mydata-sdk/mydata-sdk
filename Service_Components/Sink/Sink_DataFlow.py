@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+from signed_requests.signed_request_auth import SignedRequest
+
 __author__ = 'alpaloma'
 from flask import Blueprint, current_app, request
 from helpers import Helpers
+import requests
 from DetailedHTTPException import error_handler
 from flask_restful import Resource, Api
 import logging
+from jwcrypto import jwk
 debug_log = logging.getLogger("debug")
 api_Sink_blueprint = Blueprint("api_Sink_blueprint", __name__)
 api = Api()
@@ -67,6 +71,7 @@ class DataFlow(Resource):
         our_key = self.helpers.get_key()
         our_key_pub = our_key["pub"]
         aud = self.helpers.validate_authorization_token(cr_id, surrogate_id, our_key_pub)
+        # Most verifying and checking below is done in the validate_authorization_token function by jwcrypto
         # Fetch Authorisation Token related to CR from data storage by rs_id (cr_id?)
         # Check Integrity ( Signed by operator, Operator's public key can be found from SLR)
         # Check "Issued" timestamp
@@ -76,7 +81,7 @@ class DataFlow(Resource):
         # Check that "sub" contains correct public key(Our key.)
 
         # OPT: Token expired
-        # Get new Authorization token, start again from validation.
+        # Get new Authorization token, start again from validation. # TODO: Make these steps work as functions that call the next step.
 
         # Check URL patterns in "aud" field
         # Check that fetched distribution urls can be found from "aud" field
@@ -87,13 +92,19 @@ class DataFlow(Resource):
         # With these two steps Sink has verified that it's allowed to make request.
 
         # Construct request
+
         # Select request URL from "aud" field
         # Add Authorisation Token to request
         # Request constructed.
-
         # Sign request
         # Fetch private key pair of public key specified in Authorisation Token's "sub" field.
-        our_key_full = our_key["key"]
+        our_key_full = jwk.JWK()
+        our_key_full.import_key(**our_key["key"])
+
+
+        req = requests.get("http://localhost:7000"+current_app.config["SERVICE_ROOT_PATH"]+"/source_flow"+"/datarequest",
+                           auth=SignedRequest(token=aud, key=our_key_full, header='{"alg": "RS256"}'))
+
         # Sign with fetched private key
         # Add signature to request
         # Request signed.
