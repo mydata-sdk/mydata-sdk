@@ -135,9 +135,9 @@ class ConsentFormHandler(Resource):
         # Generate common_cr for both sink and source.
         sq.task("Generate common CR")
 
-        issued = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        not_before = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        not_after = datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
+        issued = time.time() #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        not_before = time.time() #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ") # TODO: This and not after are Optional, who says when to put them?
+        not_after = time.time()+current_app.config["NOT_AFTER_INTERVAL"] #datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
         operator_id = current_app.config["OPERATOR_ID"]
 
         common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source,
@@ -147,7 +147,8 @@ class ConsentFormHandler(Resource):
                                                       not_before,
                                                       not_after,
                                                       source_srv_id,
-                                                      operator_id)
+                                                      operator_id,
+                                                      "source")
 
         common_cr_sink = self.Helpers.gen_cr_common(surrogate_id_sink,
                                                     _consent_form["source"]["rs_id"],
@@ -156,7 +157,8 @@ class ConsentFormHandler(Resource):
                                                     not_before,
                                                     not_after,
                                                     sink_srv_id,
-                                                    operator_id)
+                                                    operator_id,
+                                                    "sink")
 
         sq.task("Generate ki_cr")
         ki_cr = self.Helpers.Gen_ki_cr(self)
@@ -168,7 +170,7 @@ class ConsentFormHandler(Resource):
         source_cr = self.Helpers.gen_cr_source(common_cr_source, _consent_form,
                                           Operator_public_key)
 
-        sink_cr["cr"]["role_specific_part"]["resource_set_description"] = source_cr["cr"]["role_specific_part"]["resource_set_description"]
+        sink_cr["cr"]["common_part"]["rs_description"] = source_cr["cr"]["common_part"]["rs_description"]
 
         debug_log.info(sink_cr)
         debug_log.info(source_cr)

@@ -359,7 +359,7 @@ class Helpers:
         ##
         return True
 
-    def gen_cr_common(self, sur_id, rs_ID, slr_id, issued, not_before, not_after, subject_id, issued_at):
+    def gen_cr_common(self, sur_id, rs_ID, slr_id, issued, not_before, not_after, subject_id, operator_id, role):
         ##
         # Return common part of CR
         # Some of these fields are filled in consent_form.py
@@ -370,11 +370,12 @@ class Helpers:
             "surrogate_id": sur_id,
             "rs_id": rs_ID,
             "slr_id": slr_id,
-            "issued": issued,
-            "not_before": not_before,
-            "not_after": not_after,
-            "issued_at": issued_at,
+            "iat": issued,
+            "nbf": not_before,
+            "exp": not_after,
+            "operator": operator_id,
             "subject_id": subject_id,  # TODO: Should this really be in common_cr?
+            "role": role
         }
 
         return common_cr
@@ -390,15 +391,14 @@ class Helpers:
          for dataset in consent_form["sink"]["dataset"]]  # 1
 
         _rules = list(set(_rules))  # Remove duplicates
-
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
                 "role": "Sink",
                 "usage_rules": _rules
             },
-            "ki_cr": {}, # TODO: Rename ki_cr
-            "extensions": {}
+            "consent_receipt_part": {"ki_cr": {}},
+            "extension_part":{"extensions": {}}
         }
         }
 
@@ -406,12 +406,9 @@ class Helpers:
 
     def gen_cr_source(self, common_CR, consent_form, Operator_public_key):
         common_CR["subject_id"] = consent_form["source"]["service_id"]
-        _tmpl = {"cr": {
-            "common_part": common_CR,
-            "role_specific_part": {
-                "role": "Source",
-                "auth_token_issuer_key": Operator_public_key,
-                "resource_set_description": {
+        rs_description = \
+            {
+            "rs_description": {
                     "resource_set":
                         {
                             "rs_id": consent_form["source"]["rs_id"],
@@ -424,19 +421,26 @@ class Helpers:
                         }
 
                 }
+            }
+        common_CR.update(rs_description)
+        _tmpl = {"cr": {
+            "common_part": common_CR,
+            "role_specific_part": {
+                "role": "Source",
+                "auth_token_issuer_key": Operator_public_key,
             },
-            "ki_cr": {},
-            "extensions": {}
+            "consent_receipt_part": {"ki_cr": {}},
+            "extension_part": {"extensions": {}}
         }
         }
-        _tmpl["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"] = []
+        _tmpl["cr"]["common_part"]["rs_description"]["resource_set"]["dataset"] = []
 
         for dataset in consent_form["source"]["dataset"]:
             dt_tmp = {
                 "dataset_id": dataset["dataset_id"],
                 "distribution_id": dataset["distribution"]["distribution_id"]
             }
-            _tmpl["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"].append(dt_tmp)
+            _tmpl["cr"]["common_part"]["rs_description"]["resource_set"]["dataset"].append(dt_tmp)
 
         return _tmpl
 
