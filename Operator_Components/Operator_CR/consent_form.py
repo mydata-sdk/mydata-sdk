@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
+import time
+
 __author__ = 'alpaloma'
 import logging
 import traceback
@@ -37,8 +40,6 @@ class ConsentFormHandler(Resource):
 
         self.Helpers = Helpers(current_app.config)
 
-
-
     @error_handler
     def get(self, account_id):
         '''get
@@ -49,14 +50,44 @@ class ConsentFormHandler(Resource):
 
         sq.task("Fetch services")
         sink = getService(service_ids["sink"])
-        _consent_form["sink"]["service_id"] = sink["name"]
+        _consent_form["sink"]["service_id"] = sink["serviceId"]
+        purposes = _consent_form["sink"]["dataset"][0]["purposes"] # TODO replace this once Service registry stops being stupid.
+        _consent_form["sink"]["dataset"] = [] # Clear out template.
+        for dataset in sink["serviceDescription"]["serviceDataDescription"][0]["dataset"]:
+            item = {
+                "dataset_id": dataset["datasetId"],
+                "title": dataset["title"],
+                "description": dataset["description"],
+                "keyword": dataset["keyword"],
+                "publisher": dataset["publisher"],
+                "purposes": purposes
+            }
+
+            _consent_form["sink"]["dataset"].append(item)
+
+
         source = getService(service_ids["source"])
-        _consent_form["source"]["service_id"] = source["name"]
+        _consent_form["source"]["service_id"] = source["serviceId"]
+        _consent_form["source"]["dataset"] = [] # Clear out template.
+        for dataset in source["serviceDescription"]["serviceDataDescription"][0]["dataset"]:
+            item = {
+                "dataset_id": dataset["datasetId"],
+                "title": dataset["title"],
+                "description": dataset["description"],
+                "keyword": dataset["keyword"],
+                "publisher": dataset["publisher"],
+                "distribution": {
+                    "distribution_id": dataset["distribution"][0]["distributionId"],
+                    "access_url": dataset["distribution"][0]["accessURL"],
+                }
+            }
+            _consent_form["source"]["dataset"].append(item)
+
 
         sq.task("Generate RS_ID")
 
 
-        rs_id = self.Helpers.gen_rs_id(source["name"])
+        rs_id = self.Helpers.gen_rs_id(source["serviceInstance"][0]["domain"])
         sq.task("Store RS_ID")
         _consent_form["source"]["rs_id"] = rs_id
 
@@ -103,8 +134,31 @@ class ConsentFormHandler(Resource):
 
         # Generate common_cr for both sink and source.
         sq.task("Generate common CR")
-        common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source, _consent_form["source"]["rs_id"], slr_id_source)
-        common_cr_sink = self.Helpers.gen_cr_common(surrogate_id_sink, _consent_form["source"]["rs_id"], slr_id_sink)
+
+        issued = time.time() #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        not_before = time.time() #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ") # TODO: This and not after are Optional, who says when to put them?
+        not_after = time.time()+current_app.config["NOT_AFTER_INTERVAL"] #datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
+        operator_id = current_app.config["OPERATOR_ID"]
+
+        common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source,
+                                                      _consent_form["source"]["rs_id"],
+                                                      slr_id_source,
+                                                      issued,
+                                                      not_before,
+                                                      not_after,
+                                                      source_srv_id,
+                                                      operator_id,
+                                                      "source")
+
+        common_cr_sink = self.Helpers.gen_cr_common(surrogate_id_sink,
+                                                    _consent_form["source"]["rs_id"],
+                                                    slr_id_sink,
+                                                    issued,
+                                                    not_before,
+                                                    not_after,
+                                                    sink_srv_id,
+                                                    operator_id,
+                                                    "sink")
 
         sq.task("Generate ki_cr")
         ki_cr = self.Helpers.Gen_ki_cr(self)
@@ -115,6 +169,9 @@ class ConsentFormHandler(Resource):
         sq.task("Generate CR for source")
         source_cr = self.Helpers.gen_cr_source(common_cr_source, _consent_form,
                                           Operator_public_key)
+
+        sink_cr["cr"]["common_part"]["rs_description"] = source_cr["cr"]["common_part"]["rs_description"]
+
         debug_log.info(sink_cr)
         debug_log.info(source_cr)
         sq.task("Generate CSR's")

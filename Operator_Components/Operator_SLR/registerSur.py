@@ -115,9 +115,7 @@ class RegisterSur(Resource):
             debug_log.info(type(query))
             debug_log.info(query)
             dict_query = loads(query)
-            line = '{"service_id": "2", "account_id": "2"}'
             debug_log.debug("{}  {}".format(type(query), query))
-
             account_id = dict_query["account_id"]
             self.payload["service_id"] = dict_query["service_id"]
             # Check Surrogate_ID exists.

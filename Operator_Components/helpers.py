@@ -344,12 +344,12 @@ class Helpers:
             db.close()
             return None
 
-    def gen_rs_id(self, source_name):
+    def gen_rs_id(self, source_URI):
         ##
         # Something to check state here?
         # Also store RS_ID in DB around here.
         ##
-        rs_id = "{}_{}".format(source_name, str(guid()))
+        rs_id = "{}||{}".format(source_URI, str(guid()))
         self.storeRS_ID(rs_id)
         return rs_id
 
@@ -359,9 +359,10 @@ class Helpers:
         ##
         return True
 
-    def gen_cr_common(self, sur_id, rs_ID, slr_id):
+    def gen_cr_common(self, sur_id, rs_ID, slr_id, issued, not_before, not_after, subject_id, operator_id, role):
         ##
         # Return common part of CR
+        # Some of these fields are filled in consent_form.py
         ##
         common_cr = {
             "version_number": "String",
@@ -369,11 +370,12 @@ class Helpers:
             "surrogate_id": sur_id,
             "rs_id": rs_ID,
             "slr_id": slr_id,
-            "issued": "String",
-            "not_before": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z "),
-            "not_after": datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z "),
-            "issued_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z "),
-            "subject_id": "String"  # TODO: Should this really be in common_cr?
+            "iat": issued,
+            "nbf": not_before,
+            "exp": not_after,
+            "operator": operator_id,
+            "subject_id": subject_id,  # TODO: Should this really be in common_cr?
+            "role": role
         }
 
         return common_cr
@@ -389,15 +391,14 @@ class Helpers:
          for dataset in consent_form["sink"]["dataset"]]  # 1
 
         _rules = list(set(_rules))  # Remove duplicates
-
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
                 "role": "Sink",
                 "usage_rules": _rules
             },
-            "ki_cr": {}, # TODO: Rename ki_cr
-            "extensions": {}
+            "consent_receipt_part": {"ki_cr": {}},
+            "extension_part":{"extensions": {}}
         }
         }
 
@@ -405,29 +406,42 @@ class Helpers:
 
     def gen_cr_source(self, common_CR, consent_form, Operator_public_key):
         common_CR["subject_id"] = consent_form["source"]["service_id"]
+        rs_description = \
+            {
+            "rs_description": {
+                    "resource_set":
+                        {
+                            "rs_id": consent_form["source"]["rs_id"],
+                            "dataset": [
+                                {
+                                    "dataset_id": "String",
+                                    "distribution_id": "String"
+                                }
+                            ]
+                        }
+
+                }
+            }
+        common_CR.update(rs_description)
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
                 "role": "Source",
                 "auth_token_issuer_key": Operator_public_key,
-                "resource_set_description": {
-                    "resource_set":
-                        {
-                            "rs_id": "String",
-                            "dataset": [
-                                {
-                                    "dataset_id": "String",
-                                    "distribution_id": "String"
-                                 }
-                                ]
-                        }
-
-                    }
             },
-            "ki_cr": {},
-            "extensions": {}
+            "consent_receipt_part": {"ki_cr": {}},
+            "extension_part": {"extensions": {}}
         }
         }
+        _tmpl["cr"]["common_part"]["rs_description"]["resource_set"]["dataset"] = []
+
+        for dataset in consent_form["source"]["dataset"]:
+            dt_tmp = {
+                "dataset_id": dataset["dataset_id"],
+                "distribution_id": dataset["distribution"]["distribution_id"]
+            }
+            _tmpl["cr"]["common_part"]["rs_description"]["resource_set"]["dataset"].append(dt_tmp)
+
         return _tmpl
 
     def Gen_ki_cr(self, everything):
@@ -463,14 +477,14 @@ class Helpers:
         header = {"typ": "JWT",
                   "alg": "HS256"}
         # Claims
-        payload = {"iss": slrt.get_operator_key(),  # Operator_Key
-                   "sub": slrt.get_sink_key(),  # Service_Components(Sink) Key
-                   "aud": slrt.get_dataset(),  # Hard to build real
+        payload = {"iss": dumps(slrt.get_operator_key()),  # Operator_Key
+                   "sub": dumps(slrt.get_sink_key()),  # Service_Components(Sink) Key
+                   "aud": slrt.get_dataset(),  # Hard to build real # TODO: src domain here!
                    # TODO: Logic to determine exp time
-                   "exp": datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z "), # 30 days in seconds
+                   "exp": time.time()+2592000,  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
-                   "nbf": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z "),  # The time before which token MUST NOT be accepted
-                   "iat": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z "),  # The time which the JWT was issued
+                   "nbf": time.time(),  # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted
+                   "iat": time.time(), #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
                    "jti": str(guid()),  # JWT id claim provides a unique identifier for the JWT
                    "rs_id": slrt.get_rs_id(),  # Resource set id that was assigned in the linked Consent Record
                    }

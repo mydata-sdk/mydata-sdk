@@ -131,7 +131,7 @@ class Install_CR(Resource):
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CR failed",},
                                         title="Failure in CR verifying",
-                                        status=451)
+                                        status=403)
 
         sq.task("Verify CSR integrity")
         # SLR includes CR keys which means we need to get key from stored SLR and use it to verify this
@@ -142,7 +142,7 @@ class Install_CR(Resource):
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR failed",},
                                         title="Failure in CSR verifying",
-                                        status=451)
+                                        status=403)
 
         sq.task("Verify Status Record")
 
@@ -160,7 +160,7 @@ class Install_CR(Resource):
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR cr_id == CR cr_id failed",},
                                         title="Failure in CSR verifying",
-                                        status=451)
+                                        status=403)
         # 2) CSR has link to previous CSR
         prev_csr_id_refers_to_null_as_it_should = crt.get_prev_record_id() == "null"
         if prev_csr_id_refers_to_null_as_it_should:
@@ -168,7 +168,7 @@ class Install_CR(Resource):
         else:
             raise DetailedHTTPException(detail={"msg": "Verifying CSR previous_id == 'null' failed",},
                                         title="Failure in CSR verifying",
-                                        status=451)
+                                        status=403)
 
         verify_is_success = crt.verify_cr(slrt.get_cr_keys())
         if verify_is_success:
@@ -187,15 +187,15 @@ class Install_CR(Resource):
             "cr_id": crt.get_cr_id_from_cr(),
             "surrogate_id": surr_id,
             "slr_id": crt.get_slr_id(),
-            "json": crt.get_CR_payload()  # possibly store the base64 representation
+            "json": crt.cr["cr"]  # possibly store the base64 representation
         }
         self.helpers.storeCR_JSON(store_dict)
 
-        store_dict["json"] = crt.get_CSR_payload()
+        store_dict["json"] = crt.cr["csr"]
         self.helpers.storeCSR_JSON(store_dict)
         if role == "Sink":
             debug_log.info("Requesting auth_token")
-            get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, self.db_path)
+            get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, current_app.config)
         return {"status": 200, "msg": "OK"}, 200
 
 

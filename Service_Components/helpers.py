@@ -2,18 +2,21 @@
 import importlib
 import logging
 import pkgutil
-from json import dumps
-
+import urllib
+from json import dumps, load, dump
+import time
+from datetime import datetime
 from flask import Blueprint
 from flask_restful import Api
-
-debug_log = logging.getLogger("debug")
 import jsonschema
 import db_handler
-from sqlite3 import OperationalError, IntegrityError
+from sqlite3 import IntegrityError
 from DetailedHTTPException import  DetailedHTTPException
 
-def validate_json(schema, json): # "json" here needs to be python dict.
+debug_log = logging.getLogger("debug")
+
+
+def validate_json(schema, json):  # "json" here needs to be python dict.
     errors = []
     validator = jsonschema.Draft4Validator(schema)
     validator.check_schema(schema)
@@ -21,7 +24,6 @@ def validate_json(schema, json): # "json" here needs to be python dict.
         debug_log.warning("Validation error found: {}".format(repr(error)))
         errors.append(repr(error))
     return errors
-
 
 
 class Helpers:
@@ -33,6 +35,29 @@ class Helpers:
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
         self.port = app_config["MYSQL_PORT"]
+        self.service_id = app_config["SERVICE_ID"]
+
+    def get_key(self):
+        keysize = self.keysize
+        cert_key_path = self.cert_key_path
+        gen3 = {"generate": "RSA", "size": keysize, "kid": self.service_id}
+        service_key = jwk.JWK(**gen3)
+        try:
+            with open(cert_key_path, "r") as cert_file:
+                service_key2 = jwk.JWK(**loads(load(cert_file)))
+                service_key = service_key2
+        except Exception as e:
+            debug_log.error(e)
+            with open(cert_key_path, "w+") as cert_file:
+                dump(service_key.export(), cert_file, indent=2)
+        public_key = loads(service_key.export_public())
+        full_key = loads(service_key.export())
+        protti = {"alg": "RS256"}
+        headeri = {"kid": self.service_id, "jwk": public_key}
+        return {"pub": public_key,
+                "key": full_key,
+                "prot": protti,
+                "header": headeri}
 
     def query_db(self, query, args=()):
         '''
@@ -87,15 +112,13 @@ class Helpers:
         """
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info(DictionaryToStore)
         for key in DictionaryToStore:
-            debug_log.info(key)
             try:
                 cursor.execute("INSERT INTO token_storage (cr_id,token) \
                     VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
             except IntegrityError as e:  # Rewrite incase we get new token.
-                cursor.execute("UPDATE token_storage SET token=%s WHERE cr_id=%s ;", (dumps(DictionaryToStore[key]), key))
+                cursor.execute("UPDATE token_storage SET token=? WHERE cr_id=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
         db.close()
 
@@ -136,6 +159,83 @@ class Helpers:
         else:
             raise Exception("Invalid code")
 
+    def get_cr_json(self, cr_id):
+        # TODO: query_db is not really optimal when making two separate queries in row.
+        cr = self.query_db("select * from cr_storage where cr_id = %s;", (cr_id,))
+        csr = self.query_db("select * from csr_storage where cr_id = %s;", (cr_id,))
+        if cr is None or csr is None:
+            raise IndexError("CR and CSR couldn't be found with given id ({})".format(cr_id))
+        cr_from_db = loads(cr)
+        csr_from_db = loads(csr)
+        combined = {"cr": cr_from_db, "csr": csr_from_db}
+        return combined
+    def validate_cr(self, cr_id, surrogate_id):
+        """
+        Lookup and validate ConsentRecord based on given CR_ID
+        :param cr_id:
+        :return: CR if found and validated.
+        """
+        combined = self.get_cr_json(cr_id)
+        debug_log.info(dumps(combined, indent=2))
+        # Using CR tool we get nice helper functions.
+        tool = CR_tool()
+        tool.cr = combined
+        # To fetch key from SLR we need surrogate_id.
+        # We get this as parameter so as further check we verify its same as in cr.
+        surrogate_id_from_cr = tool.get_surrogate_id()
+        debug_log.info("Surrogate_id as parameter was ({}) and from CR ({})".format(surrogate_id, surrogate_id_from_cr))
+        if surrogate_id_from_cr != surrogate_id:
+            raise NameError("User surrogate_id doesn't match surrogate_id in consent record.")
+        # Now we fetch the SLR and put it to SLR_Tool
+        slr_tool = SLR_tool()
+        slr = self.get_slr(surrogate_id)
+        slr_tool.slr = slr
+        # Fetch key from SLR.
+        keys = slr_tool.get_cr_keys()
+
+        # Verify the CR with the keys from SLR
+        # Check integrity (signature)
+
+        cr_verified = tool.verify_cr(keys)
+        csr_verified = tool.verify_csr(keys)
+        if not (cr_verified and csr_verified):
+            raise ValueError("CR and CSR verification failed.")
+        debug_log.info("Verified cr/csr ({}) for surrogate_id ({}) ".format(cr_id, surrogate_id))
+
+        combined_decrypted = dumps({"cr": tool.get_CR_payload(), "csr": tool.get_CSR_payload()}, indent=2)
+        debug_log.info(combined_decrypted)
+        # Check that state is "Active"
+        state = tool.get_state()
+        if state != "Active":
+            raise ValueError("CR state is not 'Active' but ({})".format(state))
+
+        # Check "Issued" timestamp
+        time_now = datetime.utcnow()
+        issued_in_cr = tool.get_issued()
+        issued = datetime.strptime(issued_in_cr, "%Y-%m-%dT%H:%M:%SZ")
+        if time_now<issued:
+            raise EnvironmentError("This CR is issued in the future!")
+        debug_log.info("Issued timestamp is valid.")
+
+        # Check "Not Before" timestamp
+        not_before_in_cr = tool.get_not_before()
+        not_before = datetime.strptime(not_before_in_cr, "%Y-%m-%dT%H:%M:%SZ")
+        if time_now<not_before:
+            raise EnvironmentError("This CR will be available in the future, not yet.")
+        debug_log.info("Not Before timestamp is valid.")
+
+        # Check "Not After" timestamp
+        not_after_in_cr = tool.get_not_after()
+        not_after = datetime.strptime(not_after_in_cr, "%Y-%m-%dT%H:%M:%SZ")
+        if time_now>not_after:
+            raise EnvironmentError("This CR is expired.")
+        debug_log.info("Not After timestamp is valid.")
+        # CR validated.
+
+        debug_log.info("CR has been validated.")
+        return loads(combined_decrypted)
+
+
     def verifyCode(self, code):
         """
         Verify that code is found in database
@@ -169,6 +269,16 @@ class Helpers:
         storage_row = self.query_db("select * from storage where surrogate_id = %s;", (surrogate_id,))
         slr_from_db = loads(storage_row)
         return slr_from_db
+
+    def get_token(self, cr_id):
+        """
+        Fetch token for given cr_id from the database
+        :param cr_id: cr_id
+        :return: Return Token made for given cr_id or None
+        """
+        storage_row = self.query_db("select * from token_storage where cr_id = %s;", (cr_id,))
+        token_from_db = loads(loads(storage_row))
+        return token_from_db
 
     def storeCR_JSON(self, DictionaryToStore):
         """
@@ -221,6 +331,53 @@ class Helpers:
             db.rollback()
             raise DetailedHTTPException(detail={"msg": "Adding CSR to the database has failed.",},
                                         title="Failure in CSR storage", exception=e)
+
+    def validate_request_from_ui(self, cr, data_set_id, rs_id):
+        debug_log.info(cr)
+        debug_log.info(type(cr))
+        # The rs_id is urlencoded, do the same to one fetched from cr
+        rs_id_in_cr = urllib.quote_plus(cr["cr"]["common_part"]["rs_id"])
+
+        # Check that rs_description field contains rs_id
+        debug_log.info("rs_id in cr({}) and from ui({})".format(rs_id_in_cr, rs_id))
+        if(rs_id != rs_id_in_cr):
+            raise ValueError("Given rs_id doesn't match CR")
+        debug_log.info("RS_ID checked successfully")
+        # Check that rs_description field contains data_set_id (Optional?)
+        distribution_ids = []
+        if data_set_id is not None:
+            datasets = cr["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"]
+            for dataset in datasets:
+                if dataset["dataset_id"] == data_set_id:
+                    distribution_ids.append(dataset["distribution_id"])
+        else:
+            datasets = cr["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"]
+            for dataset in datasets:
+                distribution_ids.append(dataset["distribution_id"])
+
+        debug_log.info(distribution_ids)
+        # Request from UI validated.
+        debug_log.info("Request from UI validated.")
+        return distribution_ids
+
+    def validate_authorization_token(self, cr_id, surrogate_id, our_key):
+        slr = self.get_slr(surrogate_id)
+        slr_tool = SLR_tool()
+        slr_tool.slr = slr
+        key = slr_tool.get_operator_key()
+        token = self.get_token(cr_id)
+        debug_log.info("Fetched key and token.")
+        debug_log.info(key)
+        debug_log.info(token)
+        tt = Token_tool()
+        tt.token = token
+        tt.key = key
+        aud = tt.verify_token(our_key)
+        debug_log.info(aud)
+        return aud
+
+
+
 
 
 def register_blueprints(app, package_name, package_path):
@@ -423,8 +580,20 @@ class CR_tool:
     def get_slr_id(self):
         return self.get_CR_payload()["common_part"]["slr_id"]
 
+    def get_issued(self):
+        return self.get_CR_payload()["common_part"]["issued"]
+
+    def get_not_before(self):
+        return self.get_CR_payload()["common_part"]["not_before"]
+
+    def get_not_after(self):
+        return self.get_CR_payload()["common_part"]["not_after"]
+
     def get_rs_id(self):
         return self.get_CR_payload()["common_part"]["rs_id"]
+
+    def get_state(self):
+        return self.get_CSR_payload()["consent_status"]
 
     def get_subject_id(self):
         return self.get_CR_payload()["common_part"]["subject_id"]
@@ -472,3 +641,56 @@ class CR_tool:
 # print(crt.get_cr_id())
 # print(crt.get_usage_rules())
 # print(crt.get_surrogate_id())
+from jwcrypto import jwt
+from jwcrypto.jwt import JWTExpired
+class Token_tool:
+    def __init__(self):
+        #  Replace token.
+        self.token = {"auth_token": "eyJhbGciOiJSUzI1NiJ9.eyJhdWQiOlt7ImRhdGFzZXRfaWQiOiJTdHJpbmciLCJkaXN0cmlidXRpb25faWQiOiJTdHJpbmcifV0sImV4cCI6IjIwMTYtMTEtMDhUMTM6MzA6MjUgIiwiaWF0IjoiMjAxNi0xMC0wOVQxMzozMDoyNSAiLCJpc3MiOnsiZSI6IkFRQUIiLCJraWQiOiJBQ0MtSUQtUkFORE9NIiwia3R5IjoiUlNBIiwibiI6InRtaGxhUFV3SmdvNHlTVE1yVEdGRnliVnhLMjh1REd0SlNGRGRHazNiYXhUV21nZkswQzZETXF3NWxxcC1FWFRNVFJmSXFNYmRNY0RtVU5ueUpwUTF3In0sImp0aSI6Ijc5ZmI3NDg0LTE2YjYtNDEzYy04ZGI0LWZlMjcwYjg4Y2UxNiIsIm5iZiI6IjIwMTYtMTAtMDlUMTM6MzA6MjUgIiwicnNfaWQiOiJodHRwOi8vc2VydmljZV9jb21wb25lbnRzOjcwMDB8fDljMWYxNTdkLWM4MWEtNGY1Ni1hZmYxLTc2MWZjNTVhNDBkOSIsInN1YiI6eyJlIjoiQVFBQiIsImtpZCI6IlNSVk1HTlQtUlNBLTUxMiIsImt0eSI6IlJTQSIsIm4iOiJ5R2dzUDljV01pUFBtZ09RMEp0WVN3Nnp3dURvdThBR0F5RHV0djVwTHc1aXZ6NnhvTGhaTS1pUVdGN0VzckVHdFNyUU55WUxzMlZzLUpxbW50UGpIUSJ9fQ.s1KOu1Q_ifNEnmBQ6QcmNxd0Oy1Fxp-z_4hsCI5fNfOa5vtWai68_OKN_NoUjtqUCy-CJcLHnGGoxTh_vHcjtg"}
+        #  Replace key.
+        self.key = None
+
+    def decrypt_payload(self, payload):
+        key = jwk.JWK()
+        key.import_key(**self.key)
+        token = jwt.JWT()
+        # This step actually verifies the signature, the format and timestamps.
+        try:
+            token.deserialize(self.token["auth_token"], key)
+        except JWTExpired as e:
+            debug_log.exception(e)
+            # TODO: get new auth token and start again.
+            raise e
+        claims = token.claims
+        #payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
+        #content = decode(payload.encode('utf-8'))
+        debug_log.info(claims)
+        #payload = loads(loads(content.decode('utf-8')))
+        return loads(claims)
+    def get_token(self):
+        debug_log.info(self.token)
+        debug_log.info(type(self.token))
+        decrypted_token = self.decrypt_payload(self.token["auth_token"])
+        debug_log.info(dumps(decrypted_token, indent=2))
+        return decrypted_token
+
+    def verify_token(self, our_key):
+        debug_log.info(our_key)
+        debug_log.info(type(our_key))
+
+        if self.key is None:
+            raise UnboundLocalError("Set objects key variable to Operator key before use.")
+        token = self.get_token()
+        sub_key = token["sub"]
+        sub_key = loads(sub_key)
+        debug_log.info(type(sub_key))
+        debug_log.info(sub_key)
+        debug_log.info(our_key)
+        if cmp(sub_key, our_key) != 0:
+            raise ValueError("JWK's didn't match.")
+
+        # TODO: Figure out beter way to return aud
+        return token["aud"]
+
+#tt = Token_tool()
+#print(tt.decrypt_payload(tt.token["auth_token"]))

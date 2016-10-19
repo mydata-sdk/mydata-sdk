@@ -6,28 +6,26 @@ info:
 host: "example.source.example"
 basePath: "/api/1.2/dc"
 paths:
-  /datarequest:
-    post:
+  /*:
+    get:
       tags:
       - "Source"
-      description: "End point that initializes data connection flow "
+      description: "End point that receives data request from sink. Contains PoP in Authorization field in Header"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
       - in: "header"
-        name: "authorization_token"
+        name: "PoP-token"
         description: "Authorization Token"
         required: true
         type: string
-      - in: "header"
-        name: "signature"
-        description: "Signature for the request"
+      - in: "query"
+        name: "rs_id"
+        description: "Resource Set ID"
         required: true
         type: string
- #       schema:
-#          $ref: "#/definitions/DataRequestParams"
 
       responses:
         200:
@@ -36,7 +34,6 @@ paths:
           description: "Internal server error"
           schema:
             $ref: "#/definitions/errors"
-
 
 definitions:
   errors:
@@ -57,5 +54,3 @@ definitions:
         source:
           type: string
           description: Source URI
-
-

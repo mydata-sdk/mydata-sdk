@@ -5,9 +5,17 @@ TIMEOUT = 8
 
 KEYSIZE = 512
 
+{% if IS_SINK is defined %}
+IS_SINK = {{ IS_SINK }}
+{% else %}
+IS_SINK = True
+{% endif %}
 
-
-
+{% if IS_SOURCE is defined %}
+IS_SOURCE = {{ IS_SOURCE }}
+{% else %}
+IS_SOURCE = True
+{% endif %}
 
 # Name of host to connect to. Default: use the local host via a UNIX socket (where applicable)
 {% if MYSQL_HOST is defined %}
@@ -103,6 +111,11 @@ OPERATOR_URL = {{ OPERATOR_URL }}
 OPERATOR_URL = "http://localhost:5000"
 {% endif %}
 
+{% if SERVICE_ID is defined %}
+SERVICE_ID = {{ SERVICE_ID }}
+{% else %}
+SERVICE_ID = "SRVMGMNT-CHANGE_ME"
+{% endif %}
 
 {% if SERVICE_ROOT_PATH is defined %}
 SERVICE_ROOT_PATH = {{ SERVICE_ROOT_PATH }}
