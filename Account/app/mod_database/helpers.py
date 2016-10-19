@@ -314,16 +314,17 @@ def get_primary_keys_by_account_id(cursor=None, account_id=None, table_name=None
         raise
     else:
         logger.debug("Got data: " + repr(data))
-        logger.debug("Got data[0]: " + repr(data[0]))
-        data_list = list(data[0])
-        logger.info("Got data_list: " + repr(data_list))
 
         if len(data) == 0:
             logger.error("IndexError('DB query returned no results')")
             raise IndexError("DB query returned no results")
 
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
         for i in range(len(data_list)):
-            data_list[i] = int(data_list[i])
+            data_list[i] = str(data_list[i])
 
         id_list = data_list
         logger.info("Got id_list: " + repr(id_list))
@@ -395,13 +396,14 @@ def get_slsr_ids(cursor=None, slr_id=None, table_name=None):
         raise
     else:
         logger.debug("Got data: " + repr(data))
-        logger.debug("Got data[0]: " + repr(data[0]))
-        data_list = list(data[0])
-        logger.info("Got data_list: " + repr(data_list))
 
         if len(data) == 0:
             logger.error("IndexError('DB query returned no results')")
             raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
 
         for i in range(len(data_list)):
             data_list[i] = str(data_list[i])
@@ -435,13 +437,14 @@ def get_cr_ids(cursor=None, slr_id=None, table_name=None):
         raise
     else:
         logger.debug("Got data: " + repr(data))
-        logger.debug("Got data[0]: " + repr(data[0]))
-        data_list = list(data[0])
-        logger.info("Got data_list: " + repr(data_list))
 
         if len(data) == 0:
             logger.error("IndexError('DB query returned no results')")
             raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
 
         for i in range(len(data_list)):
             data_list[i] = str(data_list[i])
@@ -475,13 +478,14 @@ def get_csr_ids(cursor=None, cr_id=None, table_name=None):
         raise
     else:
         logger.debug("Got data: " + repr(data))
-        logger.debug("Got data[0]: " + repr(data[0]))
-        data_list = list(data[0])
-        logger.info("Got data_list: " + repr(data_list))
 
         if len(data) == 0:
             logger.error("IndexError('DB query returned no results')")
             raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
 
         for i in range(len(data_list)):
             data_list[i] = str(data_list[i])

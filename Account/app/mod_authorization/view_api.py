@@ -160,6 +160,7 @@ class ConsentSignAndStore(Resource):
                 source_csr_prev_record_id = source_csr_payload['prev_record_id']
                 source_csr_record_id = source_csr_payload['record_id']
                 source_csr_consent_status = source_csr_payload['consent_status']
+                source_csr_issued = source_csr_payload['iat']
             except Exception as exp:
                 error_title = "Could not fetch IDs from Source CSR payload"
                 raise
@@ -183,6 +184,7 @@ class ConsentSignAndStore(Resource):
                 sink_csr_prev_record_id = sink_csr_payload['prev_record_id']
                 sink_csr_record_id = sink_csr_payload['record_id']
                 sink_csr_consent_status = sink_csr_payload['consent_status']
+                sink_csr_issued = sink_csr_payload['iat']
             except Exception as exp:
                 error_title = "Could not fetch IDs from Sink CSR payload"
                 raise
@@ -218,7 +220,7 @@ class ConsentSignAndStore(Resource):
 
         # Sign Sink CR
         try:
-            sink_cr_signed, sink_cr_issued = sign_cr(account_id=account_id, payload=sink_cr_payload, endpoint=endpoint)
+            sink_cr_signed = sign_cr(account_id=account_id, payload=sink_cr_payload, endpoint=endpoint)
         except Exception as exp:
             logger.error("Could not sign Source's CR: " + repr(exp))
             raise
@@ -227,7 +229,7 @@ class ConsentSignAndStore(Resource):
 
         # Sign Sink CSR
         try:
-            sink_csr_signed, sink_csr_issued = sign_csr(account_id=account_id, payload=sink_csr_payload, endpoint=endpoint)
+            sink_csr_signed = sign_csr(account_id=account_id, payload=sink_csr_payload, endpoint=endpoint)
         except Exception as exp:
             logger.error("Could not sign Sink's CSR: " + repr(exp))
             raise
