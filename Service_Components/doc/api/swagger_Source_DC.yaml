@@ -21,6 +21,11 @@ paths:
         description: "Authorization Token"
         required: true
         type: string
+      - in: "query"
+        name: "rs_id"
+        description: "Resource Set ID"
+        required: true
+        type: string
 
       responses:
         200:
@@ -49,5 +54,3 @@ definitions:
         source:
           type: string
           description: Source URI
-
-

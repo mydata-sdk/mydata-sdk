@@ -479,7 +479,7 @@ class Helpers:
         # Claims
         payload = {"iss": dumps(slrt.get_operator_key()),  # Operator_Key
                    "sub": dumps(slrt.get_sink_key()),  # Service_Components(Sink) Key
-                   "aud": slrt.get_dataset(),  # Hard to build real
+                   "aud": slrt.get_dataset(),  # Hard to build real # TODO: src domain here!
                    # TODO: Logic to determine exp time
                    "exp": time.time()+2592000,  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
