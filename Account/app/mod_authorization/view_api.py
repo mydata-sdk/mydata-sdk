@@ -143,11 +143,11 @@ class ConsentSignAndStore(Resource):
             # Source CR
             try:
                 source_cr_cr_id = source_cr_payload['common_part']['cr_id']
-                source_cr_rs_id = source_cr_payload['common_part']['rs_id']
+                source_cr_rs_id = source_cr_payload['common_part']['rs_description']['resource_set']['rs_id']
                 source_cr_slr_id = source_cr_payload['common_part']['slr_id']
                 source_cr_subject_id = source_cr_payload['common_part']['subject_id']
                 source_cr_surrogate_id = source_cr_payload['common_part']['surrogate_id']
-                source_cr_role = source_cr_payload['role_specific_part']['role']
+                source_cr_role = source_cr_payload['common_part']['role']
             except Exception as exp:
                 error_title = "Could not fetch IDs from Source CR payload"
                 raise
@@ -155,7 +155,7 @@ class ConsentSignAndStore(Resource):
 
             # Source CSR
             try:
-                source_csr_surrogate_id = source_csr_payload['account_id']
+                source_csr_surrogate_id = source_csr_payload['surrogate_id']
                 source_csr_cr_id = source_csr_payload['cr_id']
                 source_csr_prev_record_id = source_csr_payload['prev_record_id']
                 source_csr_record_id = source_csr_payload['record_id']
@@ -168,18 +168,18 @@ class ConsentSignAndStore(Resource):
             # Sink CR
             try:
                 sink_cr_cr_id = sink_cr_payload['common_part']['cr_id']
-                sink_cr_rs_id = sink_cr_payload['common_part']['rs_id']
+                sink_cr_rs_id = sink_cr_payload['common_part']['rs_description']['resource_set']['rs_id']
                 sink_cr_slr_id = sink_cr_payload['common_part']['slr_id']
                 sink_cr_subject_id = sink_cr_payload['common_part']['subject_id']
                 sink_cr_surrogate_id = sink_cr_payload['common_part']['surrogate_id']
-                sink_cr_role = sink_cr_payload['role_specific_part']['role']
+                sink_cr_role = sink_cr_payload['common_part']['role']
             except Exception as exp:
                 error_title = "Could not fetch IDs from Sink CR payload"
                 raise
 
             # Sink CSR
             try:
-                sink_csr_surrogate_id = sink_csr_payload['account_id']
+                sink_csr_surrogate_id = sink_csr_payload['surrogate_id']
                 sink_csr_cr_id = sink_csr_payload['cr_id']
                 sink_csr_prev_record_id = sink_csr_payload['prev_record_id']
                 sink_csr_record_id = sink_csr_payload['record_id']
