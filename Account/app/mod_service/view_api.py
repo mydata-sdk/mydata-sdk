@@ -331,7 +331,7 @@ class ServiceLinkVerify(Resource):
 
         # Sign Ssr
         try:
-            ssr_signed, ssr_iat = sign_ssr(account_id=account_id, ssr_payload=ssr_payload, endpoint=str(endpoint))
+            ssr_signed = sign_ssr(account_id=account_id, ssr_payload=ssr_payload, endpoint=str(endpoint))
         except Exception as exp:
             logger.error("Could not sign Ssr")
             logger.debug("Could not sign Ssr: " + repr(exp))
@@ -354,12 +354,13 @@ class ServiceLinkVerify(Resource):
             raise ApiError(code=500, title="Failed to create Service Link Record object", detail=repr(exp), source=endpoint)
 
         try:
+            # TODO: timestamp
             ssr_entry = ServiceLinkStatusRecord(
                 service_link_status_record_id=ssr_id,
                 status=ssr_status,
                 service_link_status_record=ssr_signed,
                 service_link_record_id=slr_id_from_ssr,
-                issued_at=ssr_iat,
+                issued_at="",
                 prev_record_id=prev_ssr_id
             )
         except Exception as exp:

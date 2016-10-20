@@ -62,24 +62,6 @@ def sign_slr(account_id=None, slr_payload=None, endpoint="sign_slr(account_id, s
     else:
         logger.info("Account owner's public key added to cr_keys")
 
-    # Fill timestamp to created in slr
-    try:
-        timestamp_to_fill = get_utc_time()
-    except Exception as exp:
-        logger.error("Could not get UTC time: " + repr(exp))
-        raise ApiError(code=500, title="Could not get UTC time", detail=repr(exp), source=endpoint)
-    else:
-        logger.info("timestamp_to_fill: " + timestamp_to_fill)
-
-    timestamp_to_fill = int(time())
-    try:
-        slr_payload['created'] = timestamp_to_fill
-    except Exception as exp:
-        logger.error("Could not fill timestamp to created in slr: " + repr(exp))
-        raise ApiError(code=500, title="Failed to fill timestamp to created in slr", detail=repr(exp), source=endpoint)
-    else:
-        logger.info("Timestamp filled to created in slr")
-
     # Sign slr
     slr_signed = {}
     try:
@@ -103,23 +85,6 @@ def sign_ssr(account_id=None, ssr_payload=None, endpoint="sign_ssr(account_id, s
 
     logger.info("Signing Service Link Status Record")
 
-    # Fill timestamp to created in slr
-    try:
-        timestamp_to_fill = get_utc_time()
-    except Exception as exp:
-        logger.error("Could not get UTC time: " + repr(exp))
-        raise ApiError(code=500, title="Could not get UTC time", detail=repr(exp), source=endpoint)
-    else:
-        logger.info("timestamp_to_fill: " + timestamp_to_fill)
-
-    try:
-        ssr_payload['iat'] = timestamp_to_fill
-    except Exception as exp:
-        logger.error("Could not fill timestamp to iat in ssr_payload: " + repr(exp))
-        raise ApiError(code=500, title="Failed to fill timestamp to iat in ssr_payload", detail=repr(exp), source=endpoint)
-    else:
-        logger.info("Timestamp filled to created in ssr_payload")
-
     # Sign ssr
     ssr_signed = {}
     try:
@@ -129,7 +94,7 @@ def sign_ssr(account_id=None, ssr_payload=None, endpoint="sign_ssr(account_id, s
         raise ApiError(code=500, title="Failed to create Service Link Record", detail=repr(exp), source=endpoint)
     else:
         logger.info('Service Link Status Record created and signed')
-        return ssr_signed, timestamp_to_fill
+        return ssr_signed
     finally:
         logger.debug("ssr_payload: " + json.dumps(ssr_payload))
         logger.debug("ssr_signed: " + ssr_signed)
