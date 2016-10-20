@@ -873,6 +873,30 @@ else:
     print ("csr_id: " + str(entry[1]['data'].get("id", "None")))
 
 
+##################################
+# Export Account
+##################################
+label = "# \n# Account Export \n#################################"
+print(label)
+request_statuses.append(label)
+
+print ("------------------------------------")
+title = "Account Export"
+print(title)
+try:
+    entries = get(host=account_host, endpoint="/api/accounts/" + account_id + "/export/", headers=headers)
+except Exception as exp:
+    print(title + ": " + repr(exp))
+    request_response = title + ": " + repr(exp)
+    request_statuses.append(request_response)
+    raise
+else:
+    request_response = title + ": " + entries[0] + ": " + json.dumps(entries[1])
+    print('request_response: ' + request_response)
+    request_statuses.append(request_response)
+    print ("Response " + entries[0] + ": " + json.dumps(entries[1]))
+
+
 
 #################################
 #################################
