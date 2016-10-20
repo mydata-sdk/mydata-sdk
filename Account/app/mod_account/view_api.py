@@ -2567,7 +2567,7 @@ class AccountConsentStatusRecord(Resource):
 
 # Register resources
 api.add_resource(Accounts, '/api/accounts/', '/', endpoint='/api/accounts/')
-api.add_resource(ExportAccount, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
+api.add_resource(AccountExport, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
 api.add_resource(AccountParticulars, '/api/accounts/<string:account_id>/particulars/', endpoint='account-particulars')
 api.add_resource(AccountParticular, '/api/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')
 api.add_resource(AccountContacts, '/api/accounts/<string:account_id>/contacts/', endpoint='account-contacts')
