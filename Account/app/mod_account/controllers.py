@@ -1921,18 +1921,16 @@ def export_account(account_id=None):
     """
     Export Account
     :param account_id:
-    :return: List of Particular dicts
+    :return: List of dicts
     """
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
 
-    # Get table name
-    logger.info("Create db_entry_object")
-    db_entry_object = Particulars()
-    logger.info(db_entry_object.log_entry)
-    logger.info("Get table name")
-    table_name = db_entry_object.table_name
-    logger.info("Got table name: " + str(table_name))
+    export = {
+        "type": "Account",
+        "id": account_id,
+        "attributes": {}
+    }
 
     # Get DB cursor
     try:
@@ -1941,24 +1939,19 @@ def export_account(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for particulars
+    title = "Service Link Records"
     try:
-        cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
+        logger.info(title)
+        entries = get_slrs(account_id=account_id)
+        export["attributes"]["ServiceLinkRecords"] = entries
     except Exception as exp:
-        logger.error('Could not get primary key list: ' + repr(exp))
-        raise
+        error_title = "Export of " + title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title)
+    else:
+        logger.info(title + ": " + entries)
 
-    # Get Particulars from database
-    logger.info("Get Particulars from database")
-    db_entry_list = []
-    for id in id_list:
-        # TODO: try-except needed?
-        logger.info("Getting particulars with particular_id: " + str(id))
-        db_entry_dict = get_particular(account_id=account_id, id=id)
-        db_entry_list.append(db_entry_dict)
-        logger.info("Particulars object added to list: " + json.dumps(db_entry_dict))
-
-    return db_entry_list
+    return export
 
 
 

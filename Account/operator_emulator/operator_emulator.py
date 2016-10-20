@@ -452,6 +452,7 @@ try:
 except Exception as exp:
     error_title = "Source SLR filed"
     print(error_title + ": " + repr(exp))
+    raise
 else:
     request_statuses.append("Source SLR: " + source_slr[0])
     print ("Response: " + source_slr[0])
@@ -465,6 +466,7 @@ try:
 except Exception as exp:
     error_title = "Sink SLR filed"
     print(error_title + ": " + repr(exp))
+    raise
 else:
     request_statuses.append("Sink SLR: " + sink_slr[0])
     print ("Response: " + sink_slr[0])
@@ -479,6 +481,7 @@ try:
 except Exception as exp:
     error_title = "Source SLR verification filed"
     print(error_title + ": " + repr(exp))
+    raise
 else:
     request_statuses.append("Source SLR verify: " + source_slr_verified[0])
     print ("Response: " + source_slr_verified[0])
@@ -492,6 +495,7 @@ try:
 except Exception as exp:
     error_title = "Sink SLR verification filed"
     print(error_title + ": " + repr(exp))
+    raise
 else:
     request_statuses.append("Sink SLR verify: " + sink_slr_verified[0])
     print ("Response: " + sink_slr_verified[0])
@@ -506,6 +510,7 @@ try:
 except Exception as exp:
     error_title = "Consenting failed"
     print(error_title + ": " + repr(exp))
+    raise
 else:
     request_statuses.append("Get Surrogate Source: " + sur[0])
     print ("Response: " + sur[0])
@@ -520,6 +525,7 @@ try:
 except Exception as exp:
     error_title = "Consenting failed"
     print(error_title + ": " + repr(exp))
+    raise
 else:
     request_statuses.append("Get Surrogate Sink: " + sur[0])
     print ("Response: " + sur[0])
@@ -534,6 +540,7 @@ try:
 except Exception as exp:
     error_title = "Consenting failed"
     print(error_title + ": " + repr(exp))
+    raise
 else:
     request_statuses.append("Give Consent: " + consenting[0])
     print ("Response: " + consenting[0])

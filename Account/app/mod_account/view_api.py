@@ -275,7 +275,7 @@ class AccountExport(Resource):
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
-        return make_json_response(data=response_data_dict, status_code=201)
+        return make_json_response(data=response_data_dict, status_code=200)
 
 
 class AccountParticulars(Resource):
