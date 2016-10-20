@@ -2,7 +2,7 @@
 import json
 import argparse
 from requests import get, post
-
+from uuid import uuid4
 # TODO: Maybe these should be given as parameters
 Service_ID_Source   = "57f3a57b0cf2fcf22eea33a2"  # MyLocation
 Service_ID_Sink     = "57f3a57b0cf2fcf22eea33a3"  # PHR
@@ -12,23 +12,36 @@ Service_ID_Sink     = "57f3a57b0cf2fcf22eea33a3"  # PHR
 # Sends JSON-payloads to Account that create three new accounts.
 # Needed in order to start_ui_flow() -function to work.
 def initialize(operator_url):
+    username = "example_username-" + str(uuid4())
+    password = "example_password"
+
     print ("\n##### CREATE USER ACCOUNTS #####")
     print("NOTE: Throws an error if run for second time as you cannot "
           "create more accounts with same unique usernames. "
           "(Will be fixed in later releases.)\n\n"
          )
     resp = post(operator_url + 'api/accounts/',
-                json={"firstName": "Erkki", "lastName": "Esimerkki", "dateOfBirth": "31-05-2016",
-                      "email": "erkki.esimerkki@examlpe.org", "username": "testUffser", "password": "Hello",
-                      "acceptTermsOfService": "True"})
+                json={"data": {
+        "type": "Account",
+        "attributes": {
+            'firstName': 'ExampleFirstName',
+            'lastName': 'ExampleLastName',
+            'dateOfBirth': '2010-05-14',
+            'email': username + '@examlpe.org',
+            'username': username,
+            'password': password,
+            'acceptTermsOfService': 'True'
+        }
+    }
+})
     print(resp.status_code, resp.reason, resp.text, resp.url)
     print(json.dumps(json.loads(resp.text), indent=2))
-    post(operator_url + 'api/accounts/',
-         json={"firstName": "Iso", "lastName": "Pasi", "dateOfBirth": "31-05-2016", "email": "iso.pasi@examlpe.org",
-               "username": "pasi", "password": "0nk0va", "acceptTermsOfService": "True"})
-    post(operator_url + 'api/accounts/', json={"firstName": "Dude", "lastName": "Dudeson", "dateOfBirth": "31-05-2016",
-                                               "email": "dude.dudeson@examlpe.org", "username": "mydata",
-                                               "password": "Hello", "acceptTermsOfService": "True"})
+    # post(operator_url + 'api/accounts/',
+    #      json={"firstName": "Iso", "lastName": "Pasi", "dateOfBirth": "31-05-2016", "email": "iso.pasi@examlpe.org",
+    #            "username": "pasi", "password": "0nk0va", "acceptTermsOfService": "True"})
+    # post(operator_url + 'api/accounts/', json={"firstName": "Dude", "lastName": "Dudeson", "dateOfBirth": "31-05-2016",
+    #                                            "email": "dude.dudeson@examlpe.org", "username": "mydata",
+    #                                            "password": "Hello", "acceptTermsOfService": "True"})
     return
 
 

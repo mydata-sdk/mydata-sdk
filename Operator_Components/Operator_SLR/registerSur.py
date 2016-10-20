@@ -4,7 +4,7 @@ import logging
 import traceback
 from json import loads, dumps, load, dump
 from uuid import uuid4 as guid
-
+import time
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import ServiceRegistryHandler, Sequences
 from flask import request, Blueprint, current_app
@@ -83,7 +83,7 @@ class RegisterSur(Resource):
                 "token_key": "",
                 "operator_key": loads(operator_key.export_public()),
                 "cr_keys": "",
-                "created": ""  # time.time(),
+                "created": time.time(),
             }
         debug_log.info(dumps(self.payload, indent=3))
 
