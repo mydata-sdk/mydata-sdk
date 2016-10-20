@@ -9,7 +9,21 @@ from app import db, app
 # create logger with 'spam_application'
 from app.helpers import get_custom_logger
 
-logger = get_custom_logger('mod_database_helpers')
+logger = get_custom_logger(__name__)
+
+
+def log_query(sql_query=None, arguments=None):
+    if sql_query is None:
+        raise AttributeError("Provide sql_query as parameter")
+    if arguments is None:
+        raise AttributeError("Provide arguments as parameter")
+
+    logger.debug('sql_query: ' + repr(sql_query))
+
+    for index in range(len(arguments)):
+        logger.debug("arguments[" + str(index) + "]: " + str(arguments[index]))
+
+    logger.debug('SQL query to execute: ' + repr(sql_query % arguments))
 
 
 def get_db_cursor():
@@ -69,15 +83,13 @@ def execute_sql_insert_2(cursor, sql_query, arguments):
 
     last_id = ""
 
-    logger.debug('sql_query: ' + str(sql_query))
-
-    for index in range(len(arguments)):
-        logger.debug("arguments[" + str(index) + "]: " + str(arguments[index]))
+    log_query(sql_query=sql_query, arguments=arguments)
 
     try:
         # Should be done like here: http://stackoverflow.com/questions/3617052/escape-string-python-for-mysql/27575399#27575399
         cursor.execute(sql_query, (arguments))
-
+        logger.debug("Executed SQL query: " + str(cursor._last_executed))
+        logger.debug("Affected rows: " + str(cursor.rowcount))
     except Exception as exp:
         logger.debug('Error in SQL query execution: ' + repr(exp))
         raise
@@ -91,6 +103,34 @@ def execute_sql_insert_2(cursor, sql_query, arguments):
         logger.debug('cursor.lastrowid: ' + last_id)
 
         return cursor, last_id
+
+
+def execute_sql_update(cursor, sql_query, arguments):
+    """
+    :param arguments:
+    :param cursor:
+    :param sql_query:
+    :return: cursor:
+
+    INSERT to MySQL
+    """
+
+    logger.debug('sql_query: ' + str(sql_query))
+
+    for index in range(len(arguments)):
+        logger.debug("arguments[" + str(index) + "]: " + str(arguments[index]))
+
+    try:
+        # Should be done like here: http://stackoverflow.com/questions/3617052/escape-string-python-for-mysql/27575399#27575399
+        cursor.execute(sql_query, (arguments))
+        logger.debug("Executed SQL query: " + str(cursor._last_executed))
+        logger.debug("Affected rows SQL query: " + str(cursor.rowcount))
+    except Exception as exp:
+        logger.debug('Error in SQL query execution: ' + repr(exp))
+        raise
+    else:
+        logger.debug('db entry updated')
+        return cursor
 
 
 def execute_sql_select(cursor=None, sql_query=None):
@@ -135,12 +175,13 @@ def execute_sql_select_2(cursor=None, sql_query=None, arguments=None):
     SELECT from MySQL
     """
 
-    if app.config["SUPER_DEBUG"]:
-        logger.debug('sql_query: ' + repr(sql_query))
+    log_query(sql_query=sql_query, arguments=arguments)
 
     try:
-        cursor.execute(sql_query, (arguments))
 
+        cursor.execute(sql_query, (arguments))
+        logger.debug("Executed SQL query: " + str(cursor._last_executed))
+        logger.debug("Affected rows: " + str(cursor.rowcount))
     except Exception as exp:
         logger.debug('Error in SQL query execution: ' + repr(exp))
         raise
@@ -151,8 +192,7 @@ def execute_sql_select_2(cursor=None, sql_query=None, arguments=None):
         logger.debug('cursor.fetchall() failed: ' + repr(exp))
         data = 'No content'
 
-    if app.config["SUPER_DEBUG"]:
-        logger.debug('data ' + repr(data))
+    logger.debug('data ' + repr(data))
 
     return cursor, data
 
@@ -211,8 +251,9 @@ def drop_table_content():
     sql_query = "SELECT Concat('TRUNCATE TABLE ',table_schema,'.',TABLE_NAME, ';') " \
                 "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
 
-    sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
-                "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
+    # sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
+    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
+    # TODO: Remove two upper rows
 
     try:
         cursor.execute(sql_query)
@@ -248,3 +289,215 @@ def drop_table_content():
             cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
 
             return True
+
+
+def get_primary_keys_by_account_id(cursor=None, account_id=None, table_name=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT id " \
+                "FROM " + table_name + " " \
+                "WHERE Accounts_id LIKE %s;"
+
+    arguments = (
+        '%' + str(account_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i])
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
+
+
+def get_slr_ids(cursor=None, account_id=None, table_name=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT serviceLinkRecordId " \
+                "FROM " + table_name + " " \
+                "WHERE Accounts_id LIKE %s;"
+
+    arguments = (
+        '%' + str(account_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+        #logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data)
+        logger.info("Got data_list: " + repr(data_list))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i][0])
+        logger.info("Formatted data_list: " + repr(data_list))
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
+
+
+def get_slsr_ids(cursor=None, slr_id=None, table_name=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT serviceLinkStatusRecordId " \
+                "FROM " + table_name + " " \
+                "WHERE serviceLinkRecordId LIKE %s;"
+
+    arguments = (
+        '%' + str(slr_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i])
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
+
+
+def get_cr_ids(cursor=None, slr_id=None, table_name=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT consentRecordId " \
+                "FROM " + table_name + " " \
+                "WHERE serviceLinkRecordId LIKE %s;"
+
+    arguments = (
+        '%' + str(slr_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i])
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
+
+
+def get_csr_ids(cursor=None, cr_id=None, table_name=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT consentStatusRecordId " \
+                "FROM " + table_name + " " \
+                "WHERE consentRecordId LIKE %s;"
+
+    arguments = (
+        '%' + str(cr_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i])
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
+
+
+
+
+
+
+

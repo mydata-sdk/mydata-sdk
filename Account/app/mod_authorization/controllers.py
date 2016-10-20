@@ -48,23 +48,6 @@ def sign_cr(account_id=None, payload=None, endpoint="sign_slr(account_id, payloa
     else:
         logger.info("Account owner's public key and kid fetched")
 
-    # Fill timestamp to created in slr
-    try:
-        timestamp_to_fill = get_utc_time()
-    except Exception as exp:
-        logger.error("Could not get UTC time: " + repr(exp))
-        raise ApiError(code=500, title="Could not get UTC time", detail=repr(exp), source=endpoint)
-    else:
-        logger.info("timestamp_to_fill: " + timestamp_to_fill)
-
-    try:
-        payload['common_part']['issued'] = timestamp_to_fill
-    except Exception as exp:
-        logger.error("Could not fill timestamp to created in cr: " + repr(exp))
-        raise ApiError(code=500, title="Failed to fill timestamp to created in cr", detail=repr(exp), source=endpoint)
-    else:
-        logger.info("Timestamp filled to issued in cr")
-
     # Sign cr
     try:
         cr_signed = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(payload))
@@ -74,7 +57,7 @@ def sign_cr(account_id=None, payload=None, endpoint="sign_slr(account_id, payloa
     else:
         logger.info('Service Link Record created and signed')
         logger.debug('cr_signed: ' + cr_signed)
-        return cr_signed, timestamp_to_fill
+        return cr_signed
 
 
 def sign_csr(account_id=None, payload=None, endpoint="sign_csr(account_id, payload, endpoint)"):
@@ -85,23 +68,6 @@ def sign_csr(account_id=None, payload=None, endpoint="sign_csr(account_id, paylo
 
     logger.info("Signing Service Link Status Record")
 
-    # Fill timestamp to created in slr
-    try:
-        timestamp_to_fill = get_utc_time()
-    except Exception as exp:
-        logger.error("Could not get UTC time: " + repr(exp))
-        raise ApiError(code=500, title="Could not get UTC time", detail=repr(exp), source=endpoint)
-    else:
-        logger.info("timestamp_to_fill: " + timestamp_to_fill)
-
-    try:
-        payload['iat'] = timestamp_to_fill
-    except Exception as exp:
-        logger.error("Could not fill timestamp to iat in csr_payload: " + repr(exp))
-        raise ApiError(code=500, title="Failed to fill timestamp to iat in csr_payload", detail=repr(exp), source=endpoint)
-    else:
-        logger.info("Timestamp filled to created in csr_payload")
-
     # Sign csr
     try:
         csr_signed = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(payload))
@@ -111,7 +77,7 @@ def sign_csr(account_id=None, payload=None, endpoint="sign_csr(account_id, paylo
     else:
         logger.info('SConsent Status Record created and signed')
         logger.debug('csr_signed: ' + csr_signed)
-        return csr_signed, timestamp_to_fill
+        return csr_signed
 
 
 def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry=None, source_csr_entry=None, sink_cr_entry=None, sink_csr_entry=None, endpoint="store_cr_and_csr()"):
