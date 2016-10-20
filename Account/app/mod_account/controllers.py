@@ -1919,7 +1919,7 @@ def get_csrs(account_id=None, slr_id=None, cr_id=None):
 
 def export_account(account_id=None):
     """
-    Export Account
+    Export Account as JSON presentation
     :param account_id:
     :return: List of dicts
     """
