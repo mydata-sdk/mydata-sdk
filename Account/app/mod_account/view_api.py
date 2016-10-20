@@ -23,7 +23,7 @@ from app.mod_account.controllers import get_particulars, get_particular, verify_
     update_particular, get_contacts, add_contact, get_contact, update_contact, get_emails, add_email, get_email, \
     update_email, get_telephone, update_telephone, get_telephones, add_telephone, get_settings, add_setting, get_setting, \
     update_setting, get_event_log, get_event_logs, get_slrs, get_slr, get_slsrs, get_slsr, get_cr, get_crs, get_csrs, \
-    get_csr
+    get_csr, export_account
 from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
     EmailsSchema, EmailsSchemaForUpdate, TelephonesSchema, TelephonesSchemaForUpdate, SettingsSchema, \
     SettingsSchemaForUpdate
@@ -219,20 +219,53 @@ class Accounts(Resource):
         return make_json_response(data=response_data_dict, status_code=201)
 
 
-class ExportAccount(Resource):
+class AccountExport(Resource):
     @requires_api_auth_user
     def get(self, account_id):
-        logger.info("ExportAccount")
+        logger.info("AccountExport")
         try:
             endpoint = str(api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Get Account Export
+        try:
+            logger.info("Exporting Account")
+            db_entries = export_account(account_id=account_id)
+        except Exception as exp:
+            error_title = "Account Export failed"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Account Export Succeed")
+
         # Response data container
         try:
+            db_entry_list = db_entries
             response_data = {}
-            response_data['data'] = {}
-            response_data['data']['type'] = "AccountExport"
+            response_data['data'] = db_entry_list
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
@@ -287,7 +320,6 @@ class AccountParticulars(Resource):
         else:
             logger.info("Particulars Fetched")
             logger.info("Particulars: ")
-
 
         # Response data container
         try:
