@@ -253,7 +253,7 @@ label = "# \n# Create Account and Authenticate \n###############################
 print(label)
 request_statuses.append(label)
 
-if not predefined_account_username and  not predefined_account_password:
+if not predefined_account_username and not predefined_account_password:
     #
     # Create Account
     title = "Create Account"

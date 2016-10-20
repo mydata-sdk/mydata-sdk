@@ -1917,9 +1917,41 @@ def get_csrs(account_id=None, slr_id=None, cr_id=None):
     return db_entry_list
 
 
+def export_account(account_id=None):
+    """
+    Export Account
+    :param account_id:
+    :return: List of dicts
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
 
+    export = {
+        "type": "Account",
+        "id": account_id,
+        "attributes": {}
+    }
 
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
 
+    title = "Service Link Records"
+    try:
+        logger.info(title)
+        entries = get_slrs(account_id=account_id)
+        export["attributes"]["ServiceLinkRecords"] = entries
+    except Exception as exp:
+        error_title = "Export of " + title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title)
+    else:
+        logger.info(title + ": " + entries)
+
+    return export
 
 
 
