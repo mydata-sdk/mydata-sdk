@@ -301,6 +301,14 @@ class ServiceLinkVerify(Resource):
         else:
             logger.debug("Got prev_ssr_id: " + str(prev_ssr_id))
 
+        # Get iat
+        try:
+            ssr_iat = int(ssr_payload['iat'])
+        except Exception as exp:
+            raise ApiError(code=400, title="Could not fetch iat from ssr_payload", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("Got iat: " + str(prev_ssr_id))
+
         #
         # Get code
         try:
@@ -354,13 +362,12 @@ class ServiceLinkVerify(Resource):
             raise ApiError(code=500, title="Failed to create Service Link Record object", detail=repr(exp), source=endpoint)
 
         try:
-            # TODO: timestamp
             ssr_entry = ServiceLinkStatusRecord(
                 service_link_status_record_id=ssr_id,
                 status=ssr_status,
                 service_link_status_record=ssr_signed,
                 service_link_record_id=slr_id_from_ssr,
-                issued_at="",
+                issued_at=ssr_iat,
                 prev_record_id=prev_ssr_id
             )
         except Exception as exp:

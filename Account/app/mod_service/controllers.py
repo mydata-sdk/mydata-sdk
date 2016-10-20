@@ -126,7 +126,7 @@ def store_slr_and_ssr(slr_entry=None, ssr_entry=None, endpoint="sign_ssr(account
 
         db.connection.commit()
     except Exception as exp:
-        logger.debug('commit failed: ' + repr(exp))
+        logger.debug('Slr and Ssr commit failed: ' + repr(exp))
         db.connection.rollback()
         logger.debug('--> rollback')
         raise ApiError(code=500, title="Failed to store slr and ssr", detail=repr(exp), source=endpoint)
