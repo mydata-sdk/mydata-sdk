@@ -1570,7 +1570,7 @@ def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found SLR: " + repr(slr))
 
@@ -1620,7 +1620,7 @@ def get_slsrs(account_id=None, slr_id=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("HEP")
         logger.info("Found SLR: " + repr(slr))
@@ -1697,7 +1697,7 @@ def get_cr(account_id=None, slr_id=None, cr_id=None, cursor=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found: " + repr(slr))
 
@@ -1746,7 +1746,7 @@ def get_crs(account_id=None, slr_id=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found SLR: " + repr(slr))
 
@@ -1827,7 +1827,7 @@ def get_csr(account_id=None, slr_id=None, cr_id=None, csr_id=None, cursor=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id, 'cr_id': cr_id}
         title = "No CR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found: " + repr(cr))
 
@@ -1878,7 +1878,7 @@ def get_csrs(account_id=None, slr_id=None, cr_id=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id, 'cr_id': cr_id}
         title = "No CR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found: " + repr(cr))
 
@@ -1917,6 +1917,11 @@ def get_csrs(account_id=None, slr_id=None, cr_id=None):
     return db_entry_list
 
 
+##################################
+##################################
+# Account Export
+##################################
+##################################
 def export_account(account_id=None):
     """
     Export Account as JSON presentation
@@ -1932,6 +1937,8 @@ def export_account(account_id=None):
         "attributes": {}
     }
 
+    export_attributes = {}
+
     # Get DB cursor
     try:
         cursor = get_db_cursor()
@@ -1939,17 +1946,156 @@ def export_account(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
+    ##################################
+    # Service Link Records
+    ##################################
     title = "Service Link Records"
     try:
         logger.info(title)
         entries = get_slrs(account_id=account_id)
-        export["attributes"]["ServiceLinkRecords"] = entries
+        export_attributes["serviceLinkRecords"] = entries
+    except IndexError as exp:
+        error_title = "Export of " + title + " failed. No entries in database."
+        logger.error(error_title + ': ' + repr(exp))
+        export_attributes["serviceLinkRecords"] = {}
     except Exception as exp:
         error_title = "Export of " + title + " failed"
         logger.error(error_title + ': ' + repr(exp))
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
-        logger.info(title + ": " + entries)
+        logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    # Particulars
+    ##################################
+    title = "Particulars"
+    try:
+        logger.info(title)
+        entries = get_particulars(account_id=account_id)
+        export_attributes["particulars"] = entries
+    except IndexError as exp:
+        error_title = "Export of " + title + " failed. No entries in database."
+        logger.error(error_title + ': ' + repr(exp))
+        export_attributes["particulars"] = {}
+    except Exception as exp:
+        error_title = "Export of " + title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title + ": " + repr(exp))
+    else:
+        logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    # Contacts
+    ##################################
+    title = "Contacts"
+    try:
+        logger.info(title)
+        entries = get_contacts(account_id=account_id)
+        export_attributes["contacts"] = entries
+    except IndexError as exp:
+        error_title = "Export of " + title + " failed. No entries in database."
+        logger.error(error_title + ': ' + repr(exp))
+        export_attributes["contacts"] = {}
+    except Exception as exp:
+        error_title = "Export of " + title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title + ": " + repr(exp))
+    else:
+        logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    # Emails
+    ##################################
+    title = "Emails"
+    try:
+        logger.info(title)
+        entries = get_emails(account_id=account_id)
+        export_attributes["emails"] = entries
+    except IndexError as exp:
+        error_title = "Export of " + title + " failed. No entries in database."
+        logger.error(error_title + ': ' + repr(exp))
+        export_attributes["emails"] = {}
+    except Exception as exp:
+        error_title = "Export of " + title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title + ": " + repr(exp))
+    else:
+        logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    # Telephones
+    ##################################
+    title = "Telephones"
+    try:
+        logger.info(title)
+        entries = get_telephones(account_id=account_id)
+        export_attributes["telephones"] = entries
+    except IndexError as exp:
+        error_title = "Export of " + title + " failed. No entries in database."
+        logger.error(error_title + ': ' + repr(exp))
+        export_attributes["telephones"] = {}
+    except Exception as exp:
+        error_title = "Export of " + title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title + ": " + repr(exp))
+    else:
+        logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    # Settings
+    ##################################
+    title = "Settings"
+    try:
+        logger.info(title)
+        entries = get_settings(account_id=account_id)
+        export_attributes["settings"] = entries
+    except IndexError as exp:
+        error_title = "Export of " + title + " failed. No entries in database."
+        logger.error(error_title + ': ' + repr(exp))
+        export_attributes["settings"] = {}
+    except Exception as exp:
+        error_title = "Export of " + title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title + ": " + repr(exp))
+    else:
+        logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    # Event logs
+    ##################################
+    title = "Event logs"
+    try:
+        logger.info(title)
+        entries = get_event_logs(account_id=account_id)
+        export_attributes["logs"] = {}
+        export_attributes["logs"]["events"] = entries
+    except IndexError as exp:
+        error_title = "Export of " + title + " failed. No entries in database."
+        logger.error(error_title + ': ' + repr(exp))
+        export_attributes["logs"] = {}
+        export_attributes["logs"]["events"] = {}
+    except Exception as exp:
+        error_title = "Export of " + title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title + ": " + repr(exp))
+    else:
+        logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    ##################################
+    ##################################
+    # Preparing return content
+    ##################################
+    title = "export['attributes'] = export_attributes"
+    try:
+        logger.info(title)
+        export["attributes"] = export_attributes
+    except Exception as exp:
+        error_title = title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title + ": " + repr(exp))
+    else:
+        logger.info("Content of export: " + json.dumps(export))
 
     return export
 
