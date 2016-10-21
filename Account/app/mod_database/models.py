@@ -229,7 +229,7 @@ class LocalIdentity():
 
         arguments = (
             str(self.username),
-            str(self.accounts_id),
+            int(self.accounts_id),
             str(self.pwd_id),
         )
 
@@ -498,7 +498,7 @@ class OneTimeCookie():
 
         arguments = (
             str(self.cookie),
-            str(self.identity_id),
+            int(self.identity_id),
         )
 
         try:
@@ -629,7 +629,7 @@ class Salt():
 
         arguments = (
             str(self.salt),
-            str(self.identity_id),
+            int(self.identity_id),
         )
 
         try:
@@ -810,7 +810,7 @@ class Particulars():
             str(self.lastname),
             str(self.date_of_birth),
             str(self.img_url),
-            str(self.account_id),
+            int(self.account_id),
         )
 
         try:
@@ -1016,7 +1016,7 @@ class Email():
             str(self.email),
             str(self.type),
             str(self.prime),
-            str(self.account_id),
+            int(self.account_id),
         )
 
         try:
@@ -1203,7 +1203,7 @@ class Telephone():
             str(self.tel),
             str(self.type),
             str(self.prime),
-            str(self.account_id),
+            int(self.account_id),
         )
 
         try:
@@ -1375,7 +1375,7 @@ class Settings():
         arguments = (
             str(self.key),
             str(self.value),
-            str(self.account_id),
+            int(self.account_id),
         )
 
         try:
@@ -1559,8 +1559,8 @@ class EventLog():
         arguments = (
             str(self.actor),
             str(self.event),
-            str(self.created),
-            str(self.account_id),
+            int(self.created),
+            int(self.account_id),
         )
 
         try:
@@ -1793,7 +1793,7 @@ class Contacts():
             str(self.country),
             str(self.type),
             str(self.prime),
-            str(self.account_id),
+            int(self.account_id),
         )
 
         try:
@@ -2024,7 +2024,7 @@ class ServiceLinkRecord():
             str(self.service_id),
             str(self.surrogate_id),
             str(self.operator_id),
-            str(self.account_id),
+            int(self.account_id),
         )
 
         try:
@@ -2246,7 +2246,7 @@ class ServiceLinkStatusRecord():
             str(self.service_link_status_record),
             int(self.service_link_records_id),
             str(self.service_link_record_id),
-            str(self.issued_at),
+            int(self.issued_at),
             str(self.prev_record_id),
         )
 
@@ -2576,7 +2576,7 @@ class ConsentRecord():
             str(self.resource_set_id),
             str(self.service_link_record_id),
             str(self.subject_id),
-            str(self.service_link_records_id),
+            int(self.service_link_records_id),
             str(self.role),
         )
 
@@ -2799,9 +2799,9 @@ class ConsentStatusRecord():
             str(self.consent_status_record_id),
             str(self.status),
             str(self.consent_status_record),
-            str(self.consent_records_id),
+            int(self.consent_records_id),
             str(self.consent_record_id),
-            str(self.issued_at),
+            int(self.issued_at),
             str(self.prev_record_id),
         )
 
