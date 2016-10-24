@@ -179,7 +179,7 @@ class AccountManagerHandler:
                         "account_id": account_id,
                         "slr_id": payload["link_id"],
                         "sl_status": "Active",
-                        "iat": "",
+                        "iat": int(time.time()),
                         "prev_record_id": "NULL"
                     },
                     "type": "ServiceLinkStatusRecord"
@@ -380,7 +380,7 @@ class Helpers:
 
         return common_cr
 
-    def gen_cr_sink(self, common_CR, consent_form):
+    def gen_cr_sink(self, common_CR, consent_form, source_cr_id):
         _rules = []
         common_CR["subject_id"] = consent_form["sink"]["service_id"]
 
@@ -394,7 +394,7 @@ class Helpers:
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
-                "role": "Sink",
+                "source_cr_id": source_cr_id,
                 "usage_rules": _rules
             },
             "consent_receipt_part": {"ki_cr": {}},
@@ -426,7 +426,6 @@ class Helpers:
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
-                "role": "Source",
                 "auth_token_issuer_key": Operator_public_key,
             },
             "consent_receipt_part": {"ki_cr": {}},
@@ -450,10 +449,10 @@ class Helpers:
     def gen_csr(self, account_id, consent_record_id, consent_status, previous_record_id):
         _tmpl = {
             "record_id": str(guid()),
-            "account_id": account_id,
+            "surrogate_id": account_id,
             "cr_id": consent_record_id,
             "consent_status": consent_status,  # "Active/Disabled/Withdrawn",
-            "iat": "",
+            "iat": int(time.time()),
             "prev_record_id": previous_record_id,
         }
         return _tmpl
@@ -481,10 +480,10 @@ class Helpers:
                    "sub": dumps(slrt.get_sink_key()),  # Service_Components(Sink) Key
                    "aud": slrt.get_dataset(),  # Hard to build real # TODO: src domain here!
                    # TODO: Logic to determine exp time
-                   "exp": time.time()+2592000,  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
+                   "exp": int(time.time()+2592000),  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
-                   "nbf": time.time(),  # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted
-                   "iat": time.time(), #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
+                   "nbf": int(time.time()),  # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted
+                   "iat": int(time.time()), #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
                    "jti": str(guid()),  # JWT id claim provides a unique identifier for the JWT
                    "rs_id": slrt.get_rs_id(),  # Resource set id that was assigned in the linked Consent Record
                    }

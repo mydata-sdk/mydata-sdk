@@ -135,9 +135,9 @@ class ConsentFormHandler(Resource):
         # Generate common_cr for both sink and source.
         sq.task("Generate common CR")
 
-        issued = time.time() #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        not_before = time.time() #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ") # TODO: This and not after are Optional, who says when to put them?
-        not_after = time.time()+current_app.config["NOT_AFTER_INTERVAL"] #datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
+        issued = int(time.time()) #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        not_before = int(time.time()) #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ") # TODO: This and not after are Optional, who says when to put them?
+        not_after = int(time.time()+current_app.config["NOT_AFTER_INTERVAL"]) #datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
         operator_id = current_app.config["OPERATOR_ID"]
 
         common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source,
@@ -148,7 +148,7 @@ class ConsentFormHandler(Resource):
                                                       not_after,
                                                       source_srv_id,
                                                       operator_id,
-                                                      "source")
+                                                      "Source")
 
         common_cr_sink = self.Helpers.gen_cr_common(surrogate_id_sink,
                                                     _consent_form["source"]["rs_id"],
@@ -158,13 +158,13 @@ class ConsentFormHandler(Resource):
                                                     not_after,
                                                     sink_srv_id,
                                                     operator_id,
-                                                    "sink")
+                                                    "Sink")
 
         sq.task("Generate ki_cr")
         ki_cr = self.Helpers.Gen_ki_cr(self)
 
         sq.task("Generate CR for sink")
-        sink_cr = self.Helpers.gen_cr_sink(common_cr_sink, _consent_form)
+        sink_cr = self.Helpers.gen_cr_sink(common_cr_sink, _consent_form, common_cr_source["cr_id"])
 
         sq.task("Generate CR for source")
         source_cr = self.Helpers.gen_cr_source(common_cr_source, _consent_form,

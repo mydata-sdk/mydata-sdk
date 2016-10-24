@@ -83,7 +83,7 @@ class RegisterSur(Resource):
                 "token_key": "",
                 "operator_key": loads(operator_key.export_public()),
                 "cr_keys": "",
-                "created": time.time(),
+                "created": int(time.time()),
             }
         debug_log.info(dumps(self.payload, indent=3))
 

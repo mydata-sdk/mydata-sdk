@@ -20,8 +20,7 @@ def initialize(operator_url):
           "create more accounts with same unique usernames. "
           "(Will be fixed in later releases.)\n\n"
          )
-    resp = post(operator_url + 'api/accounts/',
-                json={"data": {
+    user_data = {"data": {
         "type": "Account",
         "attributes": {
             'firstName': 'ExampleFirstName',
@@ -33,7 +32,29 @@ def initialize(operator_url):
             'acceptTermsOfService': 'True'
         }
     }
-})
+}
+    resp = post(operator_url + 'api/accounts/',
+                json=user_data)
+    print(resp.status_code, resp.reason, resp.text, resp.url)
+    print(json.dumps(json.loads(resp.text), indent=2))
+
+    user_data["data"]["attributes"]["firstName"] = "Iso"
+    user_data["data"]["attributes"]["lastName"] = "Pasi"
+    user_data["data"]["attributes"]["email"] = "iso.pasi@example.org"
+    user_data["data"]["attributes"]["username"] = "pasi"
+    user_data["data"]["attributes"]["password"] = "0nk0va"
+    resp = post(operator_url + 'api/accounts/',
+                json=user_data)
+    print(resp.status_code, resp.reason, resp.text, resp.url)
+    print(json.dumps(json.loads(resp.text), indent=2))
+
+    user_data["data"]["attributes"]["firstName"] = "Dude"
+    user_data["data"]["attributes"]["lastName"] = "Dudeson"
+    user_data["data"]["attributes"]["email"] = "dude.dudeson@example.org"
+    user_data["data"]["attributes"]["username"] = "mydata"
+    user_data["data"]["attributes"]["password"] = "Hello"
+    resp = post(operator_url + 'api/accounts/',
+                json=user_data)
     print(resp.status_code, resp.reason, resp.text, resp.url)
     print(json.dumps(json.loads(resp.text), indent=2))
     # post(operator_url + 'api/accounts/',

@@ -210,23 +210,23 @@ class Helpers:
             raise ValueError("CR state is not 'Active' but ({})".format(state))
 
         # Check "Issued" timestamp
-        time_now = datetime.utcnow()
-        issued_in_cr = tool.get_issued()
-        issued = datetime.strptime(issued_in_cr, "%Y-%m-%dT%H:%M:%SZ")
+        time_now = int(time.time())
+        issued = tool.get_issued()
+        #issued = datetime.strptime(issued_in_cr, "%Y-%m-%dT%H:%M:%SZ")
         if time_now<issued:
             raise EnvironmentError("This CR is issued in the future!")
         debug_log.info("Issued timestamp is valid.")
 
         # Check "Not Before" timestamp
-        not_before_in_cr = tool.get_not_before()
-        not_before = datetime.strptime(not_before_in_cr, "%Y-%m-%dT%H:%M:%SZ")
+        not_before = tool.get_not_before()
+        #not_before = datetime.strptime(not_before_in_cr, "%Y-%m-%dT%H:%M:%SZ")
         if time_now<not_before:
             raise EnvironmentError("This CR will be available in the future, not yet.")
         debug_log.info("Not Before timestamp is valid.")
 
         # Check "Not After" timestamp
-        not_after_in_cr = tool.get_not_after()
-        not_after = datetime.strptime(not_after_in_cr, "%Y-%m-%dT%H:%M:%SZ")
+        not_after = tool.get_not_after()
+        #not_after = datetime.strptime(not_after_in_cr, "%Y-%m-%dT%H:%M:%SZ")
         if time_now>not_after:
             raise EnvironmentError("This CR is expired.")
         debug_log.info("Not After timestamp is valid.")
@@ -346,12 +346,12 @@ class Helpers:
         # Check that rs_description field contains data_set_id (Optional?)
         distribution_ids = []
         if data_set_id is not None:
-            datasets = cr["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"]
+            datasets = cr["common_part"]["rs_description"]["resource_set"]["dataset"]
             for dataset in datasets:
                 if dataset["dataset_id"] == data_set_id:
                     distribution_ids.append(dataset["distribution_id"])
         else:
-            datasets = cr["cr"]["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"]
+            datasets = cr["cr"]["common_part"]["rs_description"]["resource_set"]["dataset"]
             for dataset in datasets:
                 distribution_ids.append(dataset["distribution_id"])
 
@@ -475,6 +475,7 @@ class SLR_tool:
         payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         content = decode(payload.encode())
         payload = loads(loads(content.decode("utf-8")))
+        debug_log.info(payload)
         return payload
 
     def get_SLR_payload(self):
@@ -581,13 +582,13 @@ class CR_tool:
         return self.get_CR_payload()["common_part"]["slr_id"]
 
     def get_issued(self):
-        return self.get_CR_payload()["common_part"]["issued"]
+        return self.get_CR_payload()["common_part"]["iat"]
 
     def get_not_before(self):
-        return self.get_CR_payload()["common_part"]["not_before"]
+        return self.get_CR_payload()["common_part"]["nbf"]
 
     def get_not_after(self):
-        return self.get_CR_payload()["common_part"]["not_after"]
+        return self.get_CR_payload()["common_part"]["exp"]
 
     def get_rs_id(self):
         return self.get_CR_payload()["common_part"]["rs_id"]
@@ -602,7 +603,7 @@ class CR_tool:
         return self.get_CR_payload()["common_part"]["surrogate_id"]
 
     def get_role(self):
-        return self.get_CR_payload()["role_specific_part"]["role"]
+        return self.get_CR_payload()["common_part"]["role"]
 
     def verify_cr(self, keys):
         for key in keys:
