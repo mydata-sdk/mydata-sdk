@@ -37,7 +37,8 @@ from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jw
     verify_jws_signature_with_jwk
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
-from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data
+from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
+    get_last_cr_status_id
 from app.mod_authorization.models import NewConsent
 
 mod_authorization_api = Blueprint('authorization_api', __name__, template_folder='templates')
@@ -494,22 +495,22 @@ class LastCrStatusId(Resource):
         finally:
             logger.debug("sink_cr_id: " + repr(cr_id))
 
-        # Init Sink's Consent Record Object
+        # Get last Consent Status Record ID
         try:
-            cr_entry = ConsentRecord(consent_id=cr_id)
+            cr_status_id = get_last_cr_status_id(cr_id=cr_id)
         except Exception as exp:
             error_title = "Failed to create Sink's Consent Record object"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
-            logger.debug("sink_cr_entry: " + cr_entry.log_entry)
+            logger.debug("cr_status_id: " + str(cr_status_id))
 
         # Response data container
         try:
             response_data = {}
             response_data['data'] = {}
-
-            response_data['data']['ConsentRecord'] = cr_entry.to_api_dict
+            response_data['data']['ConsentRecord'] = {}
+            response_data['data']['ConsentRecord']["id"] = cr_status_id
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
