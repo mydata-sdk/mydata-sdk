@@ -467,6 +467,29 @@ def get_auth_token_data(host=None, headers=None, cr_id=None):
 
     return status_code, response_data
 
+
+# Get Authorization token data
+def get_last_cr_status(host=None, headers=None, cr_id=None):
+    if host is None:
+        raise AttributeError("Provide host as parameter")
+    if headers is None:
+        raise AttributeError("Provide headers as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+
+    endpoint = "/api/consent/" + str(cr_id) + "/statuses/last/id/"
+    url = host + endpoint
+
+    print("Request")
+    print("Endpoint: " + endpoint)
+
+    req = requests.get(url, headers=headers)
+    status_code = str(req.status_code)
+    print("status_code:" + status_code)
+    response_data = json.loads(req.text)
+
+    return status_code, response_data
+
 # Source SLR sign
 print ("------------------------------------")
 print("Source SLR")
@@ -585,6 +608,21 @@ else:
     print ("Response: " + token[0])
     print (json.dumps(token[1], indent=3))
 
+
+# Get last CR Status ID
+print ("------------------------------------")
+print("Get last CR Status ID")
+
+try:
+    token = get_last_cr_status(host=account_host, cr_id=source_cr_id, headers=headers)
+except Exception as exp:
+    error_title = "Could not get last CR Status ID"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("CR Status ID: " + token[0])
+    print ("Response: " + token[0])
+    print (json.dumps(token[1], indent=3))
 
 
 print ("------------------------------------")

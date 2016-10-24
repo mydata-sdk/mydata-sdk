@@ -471,8 +471,60 @@ class AuthorizationTokenData(Resource):
         return make_json_response(data=response_data_dict, status_code=201)
 
 
+class LastCrStatusId(Resource):
+    @requires_api_auth_sdk
+    def get(self, cr_id):
+
+        try:
+            endpoint = str(api.url_for(self, cr_id=cr_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers")
+            logger.debug("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+
+        try:
+            cr_id = str(cr_id)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported cr_id", detail=repr(exp), source=endpoint)
+        finally:
+            logger.debug("sink_cr_id: " + repr(cr_id))
+
+        # Init Sink's Consent Record Object
+        try:
+            cr_entry = ConsentRecord(consent_id=cr_id)
+        except Exception as exp:
+            error_title = "Failed to create Sink's Consent Record object"
+            logger.error(error_title + ": " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("sink_cr_entry: " + cr_entry.log_entry)
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = {}
+
+            response_data['data']['ConsentRecord'] = cr_entry.to_api_dict
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=201)
+
+
 
 
 # Register resources
 api.add_resource(ConsentSignAndStore, '/api/account/<string:account_id>/servicelink/<string:source_slr_id>/<string:sink_slr_id>/consent/', endpoint='mydata-authorization')
 api.add_resource(AuthorizationTokenData, '/api/consent/<string:sink_cr_id>/authorizationtoken/', endpoint='mydata-authorizationtoken')
+api.add_resource(LastCrStatusId, '/api/consent/<string:cr_id>/statuses/last/id/', endpoint='mydata-last-cr-id')
