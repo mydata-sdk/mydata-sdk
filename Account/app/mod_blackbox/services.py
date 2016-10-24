@@ -578,7 +578,7 @@ def jws_sign(account_id=None, account_kid=None, jws_object=None, jwk_object=None
         raise AttributeError("Provide alg as parameter")
 
     try:
-        unprotected_header = {'kid': account_kid, 'jwk': json.loads(jwk_public_json)}
+        unprotected_header = {'kid': account_kid}
         protected_header = {'alg': alg}
         unprotected_header_json = json.dumps(unprotected_header)
         protected_header_json = json.dumps(protected_header)
