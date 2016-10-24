@@ -1668,6 +1668,30 @@ def get_record_ids(cursor=None, account_id=None):
     return record_id_container
 
 
+def get_records(cursor=None, record_ids=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if record_ids is None:
+        raise AttributeError("Provide record_ids as parameter")
+    if not isinstance(record_ids, dict):
+        raise AttributeError("record_ids MUST be dict")
+
+    logger.debug("Type of record_ids: " + repr(type(record_ids)))
+
+    record_container = {}
+
+    logger.info("Getting Records")
+    logger.info("record_ids: " + repr(record_ids))
+    record_ids = dict(record_ids)
+
+    # logger.info("Get Service Link Records")
+    # for slr in record_ids.iteritems():
+    #     logger.debug("slr: " + repr(slr))
+    #     logger.info("Looping through Service Link Record with ID: " + json.dumps(slr))
+
+    return record_container
+
+
 def get_slrs_and_subcomponents(account_id=None):
     """
     Get all slr -entries with sub elements (slsr, cr, csr) related to account
@@ -1696,6 +1720,18 @@ def get_slrs_and_subcomponents(account_id=None):
         raise
 
     # TODO: Get Actual records from db
+    logger.info("################")
+    logger.info("################")
+    logger.info("################")
+    try:
+        record_container = get_records(cursor=cursor, record_ids=record_id_container)
+    except Exception as exp:
+        logger.error('Could not get record collection: ' + repr(exp))
+        raise
+
+    logger.info("################")
+    logger.info("################")
+    logger.info("################")
 
     return_container["record_id_container"] = record_id_container
     return_container["record_container"] = record_container
