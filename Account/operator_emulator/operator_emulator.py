@@ -444,6 +444,29 @@ def give_consent(host=None, account_id=None, source_slr_id=None, sink_slr_id=Non
 
     return status_code, response_data
 
+
+# Get Authorization token data
+def get_auth_token_data(host=None, headers=None, cr_id=None):
+    if host is None:
+        raise AttributeError("Provide host as parameter")
+    if headers is None:
+        raise AttributeError("Provide headers as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+
+    endpoint = "/api/consent/" + str(cr_id) + "/authorizationtoken/"
+    url = host + endpoint
+
+    print("Request")
+    print("Endpoint: " + endpoint)
+
+    req = requests.get(url, headers=headers)
+    status_code = str(req.status_code)
+    print("status_code:" + status_code)
+    response_data = json.loads(req.text)
+
+    return status_code, response_data
+
 # Source SLR sign
 print ("------------------------------------")
 print("Source SLR")
@@ -545,6 +568,23 @@ else:
     request_statuses.append("Give Consent: " + consenting[0])
     print ("Response: " + consenting[0])
     print (json.dumps(consenting[1], indent=3))
+
+
+# Get Authorization token
+print ("------------------------------------")
+print("Get Authorization token")
+
+try:
+    token = get_auth_token_data(host=account_host, cr_id=sink_cr_id, headers=headers)
+except Exception as exp:
+    error_title = "Could not get Authorization token"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("Authorization token: " + token[0])
+    print ("Response: " + token[0])
+    print (json.dumps(token[1], indent=3))
+
 
 
 print ("------------------------------------")
