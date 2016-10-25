@@ -249,7 +249,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
         error_title = "Failed to fetch Sink's CR from DB"
         logger.error(error_title + ": " + repr(exp))
         raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
-    finally:
+    else:
         logger.debug("sink_cr_object: " + sink_cr_object.log_entry)
 
     # Get required id's from Sink's CR
@@ -260,7 +260,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
         error_title = "Failed to get id's from Sink's CR"
         logger.error(error_title + ": " + repr(exp))
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-    finally:
+    else:
         logger.debug("sink_rs_id: " + sink_rs_id)
 
     # Init Source's Consent Record Object
@@ -270,19 +270,18 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
         error_title = "Failed to create Source's Consent Record object"
         logger.error(error_title + ": " + repr(exp))
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-    finally:
+    else:
         logger.debug("source_cr_entry: " + source_cr_entry.log_entry)
 
     # Get Source's Consent Record from DB
-    source_cr = {}
     try:
         cursor = source_cr_entry.from_db(cursor=cursor)
-        source_cr = source_cr_entry.consent_record
+        source_cr = source_cr_entry.to_api_dict
     except Exception as exp:
         error_title = "Failed to fetch Source's CR from DB"
         logger.error(error_title + ": " + repr(exp))
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-    finally:
+    else:
         logger.debug("source_cr_entry: " + source_cr_entry.log_entry)
         logger.debug("source_cr: " + json.dumps(source_cr))
 
@@ -293,20 +292,19 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
         error_title = "Failed to create Source's Service Link Record object"
         logger.error(error_title + ": " + repr(exp))
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-    finally:
+    else:
         logger.debug("source_cr_entry: " + source_cr_entry.log_entry)
 
     # Get Source's Consent Record from DB
-    sink_slr = {}
     try:
         cursor = sink_slr_entry.from_db(cursor=cursor)
-        sink_slr = sink_slr_entry.service_link_record
+        sink_slr = sink_slr_entry.to_api_dict
     except Exception as exp:
         error_title = "Failed to fetch Sink's SLR from DB"
         logger.error(error_title + ": " + repr(exp))
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-    finally:
+    else:
         logger.debug("sink_slr_entry: " + sink_slr_entry.log_entry)
         logger.debug("sink_slr: " + json.dumps(sink_slr))
 
-    return source_cr, json.loads(sink_slr)
+    return source_cr, sink_slr

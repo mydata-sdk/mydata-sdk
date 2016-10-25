@@ -1534,6 +1534,222 @@ def get_slrs(account_id=None):
     return db_entry_list
 
 
+def get_record_ids(cursor=None, account_id=None):
+    """
+    Fetches IDs for all record structures
+    :param cursor:
+    :param account_id:
+    :return:
+    """
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Containers
+    record_id_container = {}
+    table_names = {
+        "slr": "",
+        "slsr": "",
+        "cr": "",
+        "csr": ""
+    }
+
+    # Get table names
+    try:
+        logger.info("Table names")
+        # SLR
+        db_entry_object = ServiceLinkRecord()
+        table_names["slr"] = db_entry_object.table_name
+        # SLSR
+        db_entry_object = ServiceLinkStatusRecord()
+        table_names["slsr"] = db_entry_object.table_name
+        # CR
+        db_entry_object = ConsentRecord()
+        table_names["cr"] = db_entry_object.table_name
+        # CSR
+        db_entry_object = ConsentStatusRecord()
+        table_names["csr"] = db_entry_object.table_name
+        #
+        logger.info("Table names: " + json.dumps(table_names))
+    except Exception as exp:
+        logger.error('Could not get database table names: ' + repr(exp))
+        raise
+
+    # Get primary keys for Service Link Records
+    try:
+        logger.info("Getting SLR IDs")
+        cursor, slr_id_list = get_slr_ids(cursor=cursor, account_id=account_id, table_name=table_names["slr"])
+    except Exception as exp:
+        logger.error('Could not get slr primary key list: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got following SLR IDs: " + json.dumps(slr_id_list))
+
+    # Get primary keys for Service Link Status Records and Consent Records
+    for slr_id in slr_id_list:
+        logger.debug("Looping through slr_id_list: " + json.dumps(slr_id_list))
+        # Add Service Link Record IDs to record_container
+        try:
+            logger.info("Adding SLR IDs")
+            record_id_container[slr_id] = {"serviceLinkStatusRecords": {}, "consentRecords": {}}
+        except Exception as exp:
+            logger.error('Could not add slr_id: ' + str(slr_id) + ' to record_id_container: ' + repr(exp))
+            raise
+        else:
+            logger.debug("Added SLR ID: " + str(slr_id))
+
+        # Get Service Link Status Record IDs
+        try:
+            logger.info("Getting SLSR IDs")
+            cursor, slsr_id_list = get_slsr_ids(cursor=cursor, slr_id=slr_id, table_name=table_names["slsr"])
+        except Exception as exp:
+            logger.error('Could not get slsr primary key list: ' + repr(exp))
+            raise
+        else:
+            logger.debug("Got following SLSR IDs: " + json.dumps(slsr_id_list))
+
+        # Add Service Link Status Record IDs to record_container
+        for slsr_id in slsr_id_list:
+            logger.debug("Looping through slsr_id_list: " + json.dumps(slsr_id_list))
+            try:
+                logger.info("Adding SLSR IDs")
+                record_id_container[slr_id]["serviceLinkStatusRecords"][slsr_id] = {}
+            except Exception as exp:
+                logger.error('Could not add slsr_id: ' + str(slsr_id) + ' to record_id_container: ' + repr(exp))
+                raise
+            else:
+                logger.debug("Added SLSR ID: " + str(slsr_id))
+
+        # Get Consent Record IDs
+        try:
+            logger.info("Getting CR IDs")
+            cursor, cr_id_list = get_cr_ids(cursor=cursor, slr_id=slr_id, table_name=table_names["cr"])
+        except Exception as exp:
+            logger.error('Could not get cr primary key list: ' + repr(exp))
+            raise
+        else:
+            logger.debug("Got following CR IDs: " + json.dumps(cr_id_list))
+
+        # Add Consent Record IDs to record_container
+        for cr_id in cr_id_list:
+            logger.debug("Looping through cr_id_list: " + json.dumps(cr_id_list))
+            try:
+                logger.info("Adding CR IDs")
+                record_id_container[slr_id]["consentRecords"][cr_id] = {"consentStatusRecords": {}}
+            except Exception as exp:
+                logger.error('Could not add cr_id: ' + str(cr_id) + ' to record_id_container: ' + repr(exp))
+                raise
+            else:
+                logger.debug("Added CR ID: " + str(cr_id))
+
+            # Get Consent Status Record IDs
+            try:
+                logger.info("Getting CSR IDs")
+                cursor, csr_id_list = get_csr_ids(cursor=cursor, cr_id=cr_id, table_name=table_names["csr"])
+            except Exception as exp:
+                logger.error('Could not get csr primary key list: ' + repr(exp))
+                raise
+            else:
+                logger.debug("Got following CSR IDs: " + json.dumps(csr_id_list))
+
+            # Add Consent Status Record IDs to record_container
+            for csr_id in csr_id_list:
+                logger.debug("Looping through csr_id_list: " + json.dumps(csr_id_list))
+                try:
+                    logger.info("Adding CSR IDs")
+                    record_id_container[slr_id]["consentRecords"][cr_id]["consentStatusRecords"][csr_id] = {}
+                except Exception as exp:
+                    logger.error('Could not add csr_id: ' + str(csr_id) + ' to record_id_container: ' + repr(exp))
+                    raise
+                else:
+                    logger.debug("Added CSR ID: " + str(csr_id))
+
+    return record_id_container
+
+
+def get_records(cursor=None, record_ids=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if record_ids is None:
+        raise AttributeError("Provide record_ids as parameter")
+    if not isinstance(record_ids, dict):
+        raise AttributeError("record_ids MUST be dict")
+
+    logger.debug("Type of record_ids: " + repr(type(record_ids)))
+
+    record_container = {}
+
+    logger.info("Getting Records")
+    logger.info("record_ids: " + repr(record_ids))
+    record_ids = dict(record_ids)
+
+    # logger.info("Get Service Link Records")
+    # for slr in record_ids.iteritems():
+    #     logger.debug("slr: " + repr(slr))
+    #     logger.info("Looping through Service Link Record with ID: " + json.dumps(slr))
+
+    return record_container
+
+
+def get_slrs_and_subcomponents(account_id=None):
+    """
+    Get all slr -entries with sub elements (slsr, cr, csr) related to account
+    :param account_id:
+    :return: List of dicts
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Containers
+    return_container = {}
+    record_id_container = {}
+    record_container = {}
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    try:
+        record_id_container = get_record_ids(cursor=cursor, account_id=account_id)
+    except Exception as exp:
+        logger.error('Could not get record id collection: ' + repr(exp))
+        raise
+
+    # TODO: Get Actual records from db
+    logger.info("################")
+    logger.info("################")
+    logger.info("################")
+    try:
+        record_container = get_records(cursor=cursor, record_ids=record_id_container)
+    except Exception as exp:
+        logger.error('Could not get record collection: ' + repr(exp))
+        raise
+
+    logger.info("################")
+    logger.info("################")
+    logger.info("################")
+
+    return_container["record_id_container"] = record_id_container
+    return_container["record_container"] = record_container
+
+
+    # Get slrs from database
+    # logger.info("Get slrs from database")
+    # db_entry_list = []
+    # for id in id_list:
+    #     # TODO: try-except needed?
+    #     logger.info("Getting slr with slr_id: " + str(id))
+    #     db_entry_dict = get_slr(account_id=account_id, slr_id=id)
+    #     db_entry_list.append(db_entry_dict)
+    #     logger.info("slr object added to list: " + json.dumps(db_entry_dict))
+
+    return return_container
+
+
 ##################################
 ###################################
 # Service Link Status Records
@@ -1570,7 +1786,7 @@ def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found SLR: " + repr(slr))
 
@@ -1620,7 +1836,7 @@ def get_slsrs(account_id=None, slr_id=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("HEP")
         logger.info("Found SLR: " + repr(slr))
@@ -1697,7 +1913,7 @@ def get_cr(account_id=None, slr_id=None, cr_id=None, cursor=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found: " + repr(slr))
 
@@ -1746,7 +1962,7 @@ def get_crs(account_id=None, slr_id=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found SLR: " + repr(slr))
 
@@ -1827,7 +2043,7 @@ def get_csr(account_id=None, slr_id=None, cr_id=None, csr_id=None, cursor=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id, 'cr_id': cr_id}
         title = "No CR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found: " + repr(cr))
 
@@ -1878,7 +2094,7 @@ def get_csrs(account_id=None, slr_id=None, cr_id=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id, 'cr_id': cr_id}
         title = "No CR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
         logger.info("Found: " + repr(cr))
 
@@ -1917,9 +2133,14 @@ def get_csrs(account_id=None, slr_id=None, cr_id=None):
     return db_entry_list
 
 
+##################################
+##################################
+# Account Export
+##################################
+##################################
 def export_account(account_id=None):
     """
-    Export Account
+    Export Account as JSON presentation
     :param account_id:
     :return: List of dicts
     """
@@ -1932,6 +2153,8 @@ def export_account(account_id=None):
         "attributes": {}
     }
 
+    export_attributes = {}
+
     # Get DB cursor
     try:
         cursor = get_db_cursor()
@@ -1939,17 +2162,156 @@ def export_account(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
+    ##################################
+    # Service Link Records
+    ##################################
     title = "Service Link Records"
     try:
         logger.info(title)
-        entries = get_slrs(account_id=account_id)
-        export["attributes"]["ServiceLinkRecords"] = entries
+        entries = get_slrs_and_subcomponents(account_id=account_id)
+        export_attributes["serviceLinkRecords"] = entries
+    except IndexError as exp:
+        error_title = "Export of " + title + " failed. No entries in database."
+        logger.error(error_title + ': ' + repr(exp))
+        export_attributes["serviceLinkRecords"] = {}
     except Exception as exp:
         error_title = "Export of " + title + " failed"
         logger.error(error_title + ': ' + repr(exp))
-        raise StandardError(title)
+        raise StandardError(title + ": " + repr(exp))
     else:
-        logger.info(title + ": " + entries)
+        logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    # Particulars
+    ##################################
+    # title = "Particulars"
+    # try:
+    #     logger.info(title)
+    #     entries = get_particulars(account_id=account_id)
+    #     export_attributes["particulars"] = entries
+    # except IndexError as exp:
+    #     error_title = "Export of " + title + " failed. No entries in database."
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     export_attributes["particulars"] = {}
+    # except Exception as exp:
+    #     error_title = "Export of " + title + " failed"
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     raise StandardError(title + ": " + repr(exp))
+    # else:
+    #     logger.info(title + ": " + json.dumps(entries))
+    #
+    # ##################################
+    # # Contacts
+    # ##################################
+    # title = "Contacts"
+    # try:
+    #     logger.info(title)
+    #     entries = get_contacts(account_id=account_id)
+    #     export_attributes["contacts"] = entries
+    # except IndexError as exp:
+    #     error_title = "Export of " + title + " failed. No entries in database."
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     export_attributes["contacts"] = {}
+    # except Exception as exp:
+    #     error_title = "Export of " + title + " failed"
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     raise StandardError(title + ": " + repr(exp))
+    # else:
+    #     logger.info(title + ": " + json.dumps(entries))
+    #
+    # ##################################
+    # # Emails
+    # ##################################
+    # title = "Emails"
+    # try:
+    #     logger.info(title)
+    #     entries = get_emails(account_id=account_id)
+    #     export_attributes["emails"] = entries
+    # except IndexError as exp:
+    #     error_title = "Export of " + title + " failed. No entries in database."
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     export_attributes["emails"] = {}
+    # except Exception as exp:
+    #     error_title = "Export of " + title + " failed"
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     raise StandardError(title + ": " + repr(exp))
+    # else:
+    #     logger.info(title + ": " + json.dumps(entries))
+    #
+    # ##################################
+    # # Telephones
+    # ##################################
+    # title = "Telephones"
+    # try:
+    #     logger.info(title)
+    #     entries = get_telephones(account_id=account_id)
+    #     export_attributes["telephones"] = entries
+    # except IndexError as exp:
+    #     error_title = "Export of " + title + " failed. No entries in database."
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     export_attributes["telephones"] = {}
+    # except Exception as exp:
+    #     error_title = "Export of " + title + " failed"
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     raise StandardError(title + ": " + repr(exp))
+    # else:
+    #     logger.info(title + ": " + json.dumps(entries))
+    #
+    # ##################################
+    # # Settings
+    # ##################################
+    # title = "Settings"
+    # try:
+    #     logger.info(title)
+    #     entries = get_settings(account_id=account_id)
+    #     export_attributes["settings"] = entries
+    # except IndexError as exp:
+    #     error_title = "Export of " + title + " failed. No entries in database."
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     export_attributes["settings"] = {}
+    # except Exception as exp:
+    #     error_title = "Export of " + title + " failed"
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     raise StandardError(title + ": " + repr(exp))
+    # else:
+    #     logger.info(title + ": " + json.dumps(entries))
+    #
+    # ##################################
+    # # Event logs
+    # ##################################
+    # title = "Event logs"
+    # try:
+    #     logger.info(title)
+    #     entries = get_event_logs(account_id=account_id)
+    #     export_attributes["logs"] = {}
+    #     export_attributes["logs"]["events"] = entries
+    # except IndexError as exp:
+    #     error_title = "Export of " + title + " failed. No entries in database."
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     export_attributes["logs"] = {}
+    #     export_attributes["logs"]["events"] = {}
+    # except Exception as exp:
+    #     error_title = "Export of " + title + " failed"
+    #     logger.error(error_title + ': ' + repr(exp))
+    #     raise StandardError(title + ": " + repr(exp))
+    # else:
+    #     logger.info(title + ": " + json.dumps(entries))
+
+    ##################################
+    ##################################
+    ##################################
+    # Preparing return content
+    ##################################
+    title = "export['attributes'] = export_attributes"
+    try:
+        logger.info(title)
+        export["attributes"] = export_attributes
+    except Exception as exp:
+        error_title = title + " failed"
+        logger.error(error_title + ': ' + repr(exp))
+        raise StandardError(title + ": " + repr(exp))
+    else:
+        logger.info("Content of export: " + json.dumps(export))
 
     return export
 
