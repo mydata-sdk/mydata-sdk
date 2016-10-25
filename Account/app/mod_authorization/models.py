@@ -138,3 +138,7 @@ class NewConsentData(Schema):
 class NewConsent(Schema):
     data = fields.Nested(nested=NewConsentData, required=True)
 
+
+class NewConsentStatus(Schema):
+    data = fields.Nested(nested=ConsentStatusPayload, required=True)
+

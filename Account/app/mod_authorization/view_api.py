@@ -39,7 +39,7 @@ from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
     get_last_cr_status, add_csr
-from app.mod_authorization.models import NewConsent
+from app.mod_authorization.models import NewConsent, NewConsentStatus
 
 mod_authorization_api = Blueprint('authorization_api', __name__, template_folder='templates')
 
@@ -575,10 +575,14 @@ class AddCrStatus(Resource):
         # Create new Consent Status Record
         try:
             new_csr_object = add_csr(cr_id=cr_id, csr_payload=csr_payload)
-        except Exception as exp:
+        except ApiError as exp:
             error_title = "Failed to add new Consent Status Record for Consent"
             logger.error(error_title + ": " + repr(exp))
             raise
+        except Exception as exp:
+            error_title = "Failed to add new Consent Status Record for Consent"
+            logger.error(error_title + ": " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
             logger.debug("new_csr_object: " + new_csr_object.log_entry)
 

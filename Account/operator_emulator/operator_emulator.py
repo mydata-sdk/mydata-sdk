@@ -46,6 +46,7 @@ sink_cr_id = "SINK-CR-" + str(uuid4())
 
 source_csr_id = "SOURCE-CSR-" + str(uuid4())
 sink_csr_id = "SINK-CSR-" + str(uuid4())
+source_csr_id_new = "SOURCE-CSR-NEW-" + str(uuid4())
 
 rs_id = "RS-ID-" + str(uuid4())
 
@@ -335,6 +336,20 @@ consent_record_payload = {
       }
     }
 
+source_change_cr_status_payload = {
+    "consentStatusRecordPayload": {
+        "type": "ConsentStatusRecord",
+        "attributes": {
+          "record_id": source_csr_id_new,
+          "surrogate_id": source_surrogate_id,
+          "cr_id": source_cr_id,
+          "consent_status": "Disabled",
+          "iat": source_csr_iat,
+          "prev_record_id": source_csr_id
+        }
+      }
+    }
+
 
 def slr_sign(host=None, account_id=None, headers=None, data=None):
     if host is None:
@@ -490,6 +505,32 @@ def get_last_cr_status(host=None, headers=None, cr_id=None):
 
     return status_code, response_data
 
+
+def change_consent_status(host=None, account_id=None, cr_id=None, headers=None, data=None):
+    if host is None:
+        raise AttributeError("Provide host as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if headers is None:
+        raise AttributeError("Provide headers as parameter")
+    if data is None:
+        raise AttributeError("Provide consent_data as parameter")
+
+    endpoint = "/api/consent/" + str(cr_id) + "/status/"
+    url = host + endpoint
+
+    print("Request")
+    print("Endpoint: " + endpoint)
+    print("Payload: " + json.dumps(data, indent=3))
+
+    req = requests.post(url, headers=headers, json=data)
+    status_code = str(req.status_code)
+    response_data = json.loads(req.text)
+
+    return status_code, response_data
+
 # Source SLR sign
 print ("------------------------------------")
 print("Source SLR")
@@ -621,6 +662,22 @@ except Exception as exp:
     raise
 else:
     request_statuses.append("Last CR Status: " + token[0])
+    print ("Response: " + token[0])
+    print (json.dumps(token[1], indent=3))
+
+
+# Change CR Status
+print ("------------------------------------")
+print("Change CR Status")
+
+try:
+    token = change_consent_status(host=account_host, cr_id=source_cr_id, headers=headers, data=source_change_cr_status_payload)
+except Exception as exp:
+    error_title = "Could not change CR Status"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("Change CR Status: " + token[0])
     print ("Response: " + token[0])
     print (json.dumps(token[1], indent=3))
 
