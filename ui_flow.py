@@ -73,8 +73,22 @@ def initialize(operator_url):
 def start_ui_flow(operator_url):
     print("\n##### MAKE TWO SERVICE LINKS #####")
     slr_flow1 = get(operator_url + "api/1.2/slr/account/2/service/"+Service_ID_Sink)
+    if not slr_flow1.ok:
+        print("Creation of first SLR failed with status ({}) reason ({}) and the following content:\n{}".format(
+            slr_flow1.status_code,
+            slr_flow1.reason,
+            json.dumps(json.loads(slr_flow1.content), indent=2)
+        ))
+        raise Exception("SLR flow failed.")
     print(slr_flow1.url, slr_flow1.reason, slr_flow1.status_code, slr_flow1.text)
     slr_flow2 = get(operator_url + "api/1.2/slr/account/2/service/"+Service_ID_Source)
+    if not slr_flow2.ok:
+        print("Creation of second SLR failed with status ({}) reason ({}) and the following content:\n{}".format(
+            slr_flow2.status_code,
+            slr_flow2.reason,
+            json.dumps(json.loads(slr_flow2.content), indent=2)
+        ))
+        raise Exception("SLR flow failed.")
     print(slr_flow2.url, slr_flow2.reason, slr_flow2.status_code, slr_flow2.text)
 
     # This format needs to be specified, even if done with url params instead.
@@ -82,11 +96,25 @@ def start_ui_flow(operator_url):
 
     print("\n##### GIVE CONSENT #####")
     req = get(operator_url + "api/1.2/cr/consent_form/account/2?sink={}&source={}".format(Service_ID_Sink, Service_ID_Source))
+    if not req.ok:
+        print("Fetching consent form consent failed with status ({}) reason ({}) and the following content:\n{}".format(
+            req.status_code,
+            req.reason,
+            json.dumps(json.loads(req.content), indent=2)
+        ))
+        raise Exception("Consent flow failed.")
+
 
     print(req.url, req.reason, req.status_code, req.text)
     js = json.loads(req.text)
-
     req = post(operator_url + "api/1.2/cr/consent_form/account/2", json=js)
+    if not req.ok:
+        print("Granting consent failed with status ({}) reason ({}) and the following content:\n{}".format(
+            req.status_code,
+            req.reason,
+            json.dumps(json.loads(req.content), indent=2)
+        ))
+        raise Exception("Consent flow failed.")
 
     print(req.url, req.reason, req.status_code)
     print("\n")

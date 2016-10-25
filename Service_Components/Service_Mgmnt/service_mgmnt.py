@@ -299,14 +299,14 @@ class StoreSLR(Resource):
         try:
             sq.task("Create empty JSW object")
             jwssa = jws.JWS()
-            debug_log.info("SLR R:\n", loads(dumps(slr)))
-            debug_log.info(slr["header"]["jwk"])
+            debug_log.info("SLR R:\n"+(dumps(slr)))
+            #debug_log.info(slr["header"]["jwk"])
 
             sq.task("Deserialize slr to JWS object created before")
             jwssa.deserialize(dumps(slr))
 
-            sq.task("Load JWK used to sign JWS from the slr headers into an object")
-            sign_key = jwk.JWK(**slr["header"]["jwk"])
+            sq.task("Load JWK used to sign JWS from the slr payload's cr_keys field into an object")
+            sign_key = jwk.JWK(**payload["cr_keys"][0])
 
             sq.task("Verify SLR was signed using the key shipped with it")
             debug_log.info(verifyJWS(slr))
@@ -318,8 +318,7 @@ class StoreSLR(Resource):
 
         try:
             sq.task("Fix possible serialization errors in JWS")
-            faulty_JSON = loads(jwssa.serialize(
-                compact=False))  # For some reason serialization messes up "header" from "header": {} to "header": "{}"
+            faulty_JSON = loads(jwssa.serialize(compact=False))  # For some reason serialization messes up "header" from "header": {} to "header": "{}"
             faulty_JSON["header"] = faulty_JSON["header"]
 
             sq.task("Add our signature in the JWS")

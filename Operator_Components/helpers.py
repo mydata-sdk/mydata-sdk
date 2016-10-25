@@ -194,6 +194,8 @@ class AccountManagerHandler:
                 }
             }
         }
+        debug_log.info("Template sent to Account Manager:")
+        debug_log.info(dumps(templa, indent=2))
         req = post(self.url + self.endpoint["verify_slr"].replace("{account_id}", account_id), json=templa, headers={'Api-Key': self.token}, timeout=self.timeout)
         return req
 
@@ -264,7 +266,30 @@ class Helpers:
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
         self.port = app_config["MYSQL_PORT"]
+        self.operator_id = app_config["OPERATOR_ID"]
+        self.not_after_interval = app_config["NOT_AFTER_INTERVAL"]
 
+    def get_key(self):
+        keysize = self.keysize
+        cert_key_path = self.cert_key_path
+        gen3 = {"generate": "RSA", "size": keysize, "kid": self.operator_id}
+        operator_key = jwk.JWK(**gen3)
+        try:
+            with open(cert_key_path, "r") as cert_file:
+                operator_key2 = jwk.JWK(**loads(load(cert_file)))
+                operator_key = operator_key2
+        except Exception as e:
+            debug_log.error(e)
+            with open(cert_key_path, "w+") as cert_file:
+                dump(operator_key.export(), cert_file, indent=2)
+        public_key = loads(operator_key.export_public())
+        full_key = loads(operator_key.export())
+        protti = {"alg": "RS256"}
+        headeri = {"kid": self.operator_id, "jwk": public_key}
+        return {"pub": public_key,
+                "key": full_key,
+                "prot": protti,
+                "header": headeri}
 
     def validate_rs_id(self, rs_id):
         ##
@@ -404,7 +429,7 @@ class Helpers:
 
         return _tmpl
 
-    def gen_cr_source(self, common_CR, consent_form, Operator_public_key):
+    def gen_cr_source(self, common_CR, consent_form, Operator_public_key): # TODO: Operator_public key is now fetched with function.
         common_CR["subject_id"] = consent_form["source"]["service_id"]
         rs_description = \
             {
@@ -426,7 +451,7 @@ class Helpers:
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
-                "auth_token_issuer_key": Operator_public_key,
+                "auth_token_issuer_key": self.get_key()["pub"],
             },
             "consent_receipt_part": {"ki_cr": {}},
             "extension_part": {"extensions": {}}
@@ -476,16 +501,16 @@ class Helpers:
         header = {"typ": "JWT",
                   "alg": "HS256"}
         # Claims
-        payload = {"iss": dumps(slrt.get_operator_key()),  # Operator_Key
-                   "sub": dumps(slrt.get_sink_key()),  # Service_Components(Sink) Key
+        payload = {"iss": self.operator_id,  # Operator ID,
+                   "cnf": {"kid": slrt.get_source_cr_id()},
                    "aud": slrt.get_dataset(),  # Hard to build real # TODO: src domain here!
                    # TODO: Logic to determine exp time
-                   "exp": int(time.time()+2592000),  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
+                   "exp": int(time.time()+self.not_after_interval),  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
                    "nbf": int(time.time()),  # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted
                    "iat": int(time.time()), #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
                    "jti": str(guid()),  # JWT id claim provides a unique identifier for the JWT
-                   "rs_id": slrt.get_rs_id(),  # Resource set id that was assigned in the linked Consent Record
+                   "pi_id": slrt.get_source_cr_id(),  # Resource set id that was assigned in the linked Consent Record
                    }
         debug_log.debug(dumps(payload, indent=2))
         key = operator_key
@@ -572,12 +597,13 @@ class SLR_tool:
         return payload
 
     def get_SLR_payload(self):
-        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["payload"]
+        debug_log.info(dumps(self.slr, indent=2))
+        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_link_record"]["payload"]
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_CR_payload(self):
-        base64_payload =  self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["payload"]
+        base64_payload =  self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["consent_record"]["payload"]
         payload = self.decrypt_payload(base64_payload)
         return payload
 
@@ -593,6 +619,9 @@ class SLR_tool:
     def get_rs_id(self):
         return self.get_CR_payload()["common_part"]["rs_id"]
 
+    def get_source_cr_id(self):
+        return self.get_CR_payload()["common_part"]["cr_id"]
+
     def get_surrogate_id(self):
         return self.get_CR_payload()["common_part"]["surrogate_id"]
 
@@ -600,6 +629,6 @@ class SLR_tool:
         return self.get_SLR_payload()["token_key"]["key"]
 
     def get_dataset(self):
-        return self.get_CR_payload()["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"]
+        return self.get_CR_payload()["common_part"]["rs_description"]["resource_set"]["dataset"]
 
 

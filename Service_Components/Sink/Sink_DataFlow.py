@@ -5,6 +5,7 @@ __author__ = 'alpaloma'
 from flask import Blueprint, current_app, request
 from helpers import Helpers
 import requests
+from json import dumps
 from DetailedHTTPException import error_handler
 from flask_restful import Resource, Api
 import logging
@@ -103,7 +104,7 @@ class DataFlow(Resource):
 
 
         req = requests.get("http://localhost:7000"+current_app.config["SERVICE_ROOT_PATH"]+"/source_flow"+"/datarequest",
-                           auth=SignedRequest(token=aud, key=our_key_full, header='{"alg": "RS256"}'))
+                           auth=SignedRequest(token=aud, key=our_key_full, protected=dumps(our_key["prot"])))
 
         # Sign with fetched private key
         # Add signature to request

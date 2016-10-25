@@ -675,23 +675,25 @@ class Token_tool:
         debug_log.info(dumps(decrypted_token, indent=2))
         return decrypted_token
 
-    def verify_token(self, our_key):
+    def verify_token(self, our_key): # TODO: Get some clarification what we want to verify now that sub field doesn't contain key.
         debug_log.info(our_key)
         debug_log.info(type(our_key))
 
         if self.key is None:
             raise UnboundLocalError("Set objects key variable to Operator key before use.")
         token = self.get_token()
-        sub_key = token["sub"]
-        sub_key = loads(sub_key)
-        debug_log.info(type(sub_key))
-        debug_log.info(sub_key)
-        debug_log.info(our_key)
-        if cmp(sub_key, our_key) != 0:
+        debug_log.info("Fetched token:")
+        debug_log.info(token)
+        kid = token["cnf"]["kid"]
+        source_cr_id = token["pi_id"]
+        debug_log.info(type(source_cr_id))
+        debug_log.info(source_cr_id)
+        #debug_log.info(our_key)
+        if cmp(source_cr_id, kid) != 0:
             raise ValueError("JWK's didn't match.")
 
         # TODO: Figure out beter way to return aud
-        return token["aud"]
+        return token
 
 #tt = Token_tool()
 #print(tt.decrypt_payload(tt.token["auth_token"]))

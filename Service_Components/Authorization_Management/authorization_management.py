@@ -95,6 +95,8 @@ class Install_CR(Resource):
         sq.task("Verify CR format and mandatory fields")
         if role == "Source":
             debug_log.info("Source CR")
+            debug_log.info(dumps(crt.get_CR_payload(), indent=2))
+            debug_log.info(type(crt.get_CR_payload()))
             errors = validate_json(source_cr_schema, crt.get_CR_payload())
             for e in errors:
                 raise DetailedHTTPException(detail={"msg": "Validating Source CR format and fields failed",

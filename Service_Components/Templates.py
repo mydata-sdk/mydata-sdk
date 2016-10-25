@@ -105,7 +105,8 @@ source_cr_schema = {
       "type": "object",
       "properties": {
         "auth_token_issuer_key": {
-          "type": "string"
+          "type": "object",
+          "properties": {}
         }
       },
       "required": [
