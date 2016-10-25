@@ -303,6 +303,45 @@ paths:
             $ref: '#/definitions/errors'
 
 
+  /consent/{cr_id}/statuses/last/:
+    get:
+      security:
+        - internalApiKeyAuth: []
+      description: "Get last Status Record of Consent"
+
+      parameters:
+        - name: cr_id
+          in: path
+          type: string
+          description: "Consent Record ID"
+          required: true
+
+      tags:
+        - Consent
+        - Authorizationtoken
+
+      responses:
+        '200':
+          description: 'Last Status Record of Consent'
+          schema:
+            $ref: '#/definitions/ConsentStatusRecordResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errors'
+        '500':
+          description: Internal Server error
+          schema:
+            $ref: '#/definitions/errors'
+
 
 definitions:
 
@@ -375,6 +414,9 @@ definitions:
       type:
         type: string
         description: "Resource type: 'ServiceLinkRecord'"
+      id:
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
         properties:
@@ -388,6 +430,9 @@ definitions:
       type:
         type: string
         description: "Resource type: 'ServiceLinkStatusRecord'"
+      id:
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
         properties:
@@ -514,6 +559,9 @@ definitions:
       type:
         type: string
         description: "Resource type: 'ConsentRecord'"
+      id:
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
         properties:
@@ -527,6 +575,9 @@ definitions:
       type:
         type: string
         description: "Resource type: 'ConsentStatusRecord'"
+      id:
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
         properties:
@@ -575,3 +626,10 @@ definitions:
                   $ref: '#/definitions/ConsentRecord'
               consentStatusRecord:
                 $ref: '#/definitions/ConsentStatusRecord'
+
+
+  ConsentStatusRecordResponse:
+    type: object
+    properties:
+      data:
+       $ref: '#/definitions/ConsentStatusRecord'

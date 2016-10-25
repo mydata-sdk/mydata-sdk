@@ -21,7 +21,7 @@ from app import db, api, login_manager, app
 # Import services
 from app.helpers import get_custom_logger, ApiError, get_utc_time
 from app.mod_blackbox.controllers import get_account_public_key, generate_and_sign_jws
-from app.mod_database.helpers import get_db_cursor, get_last_csr, get_last_csr_id
+from app.mod_database.helpers import get_db_cursor, get_last_csr_id
 
 # create logger with 'spam_application'
 from app.mod_database.models import SurrogateId, ConsentRecord, ServiceLinkRecord, ConsentStatusRecord
@@ -275,7 +275,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
     # Get Source's Consent Record from DB
     try:
         cursor = source_cr_entry.from_db(cursor=cursor)
-        source_cr = source_cr_entry.to_api_dict
+        source_cr = source_cr_entry.to_record_dict
     except Exception as exp:
         error_title = "Failed to fetch Source's CR from DB"
         logger.error(error_title + ": " + repr(exp))
@@ -297,7 +297,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
     # Get Source's Consent Record from DB
     try:
         cursor = sink_slr_entry.from_db(cursor=cursor)
-        sink_slr = sink_slr_entry.to_api_dict
+        sink_slr = sink_slr_entry.to_record_dict
     except Exception as exp:
         error_title = "Failed to fetch Sink's SLR from DB"
         logger.error(error_title + ": " + repr(exp))
@@ -309,7 +309,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
     return source_cr, sink_slr
 
 
-def get_last_cr_status_id(cr_id=None, endpoint="get_last_cr_status_id()"):
+def get_last_cr_status(cr_id=None, endpoint="get_last_cr_status()"):
     if cr_id is None:
         raise AttributeError("Provide cr_id as parameter")
 
@@ -320,17 +320,11 @@ def get_last_cr_status_id(cr_id=None, endpoint="get_last_cr_status_id()"):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
 
-    # Get table name
-    logger.info("Create csr")
-    db_entry_object = ConsentStatusRecord()
-    logger.info(db_entry_object.log_entry)
-    logger.info("Get table name")
-    table_name = db_entry_object.table_name
-    logger.info("Got table name: " + str(table_name))
-
     # Init Consent Record Object
     try:
+        logger.info("Create ConsentRecord object")
         cr_entry = ConsentRecord(consent_id=cr_id)
+        logger.info(cr_entry.log_entry)
     except Exception as exp:
         error_title = "Failed to create Consent Record object"
         logger.error(error_title + ": " + repr(exp))
@@ -362,25 +356,229 @@ def get_last_cr_status_id(cr_id=None, endpoint="get_last_cr_status_id()"):
     else:
         logger.debug("cr_entry_id: " + str(cr_entry_id))
 
-    # Get primary keys for csrs
-    # TODO: Jatka tästä
+    # Create Consent Status Record object
     try:
-        cursor, id_list = get_last_csr_id(cursor=cursor, cr_id=cr_id, table_name=table_name)
+        csr_entry = ConsentStatusRecord()
     except Exception as exp:
-        logger.error('Could not get primary key list: ' + repr(exp))
+        error_title = "Failed to create Consent Status Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("csr_entry: " + csr_entry.log_entry)
+
+    # Get database table name for Consent Status Record
+    try:
+        logger.info("Get Consent Status Record table name")
+        csr_table_name = csr_entry.table_name
+    except Exception as exp:
+        error_title = "Failed to get Consent Status Record table name"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Got Consent Status Record table name: " + str(csr_table_name))
+
+    # Get Consent Status Record ID
+    try:
+        cursor, csr_id = get_last_csr_id(cursor=cursor, cr_id=cr_id, table_name=csr_table_name)
+    except IndexError as exp:
+        error_title = "Consent Status Record not found from DB with given Consent Record ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to get last Consent Status Record ID from database"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("csr_id: " + str(csr_id))
+
+    # Append ID to Consent Status Record Object
+    try:
+        logger.info("Append ID to Consent Status Record object: " + csr_entry.log_entry)
+        csr_entry.consent_status_record_id = csr_id
+    except Exception as exp:
+        error_title = "Failed to append ID to Consent Status Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Appended ID to Consent Status Record object: " + csr_entry.log_entry)
+
+    # Get Consent Status Record from DB
+    try:
+        cursor = csr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "Consent Record not found from DB with given ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to fetch Consent Record from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("csr_entry: " + csr_entry.log_entry)
+
+    return csr_entry
+
+
+def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if csr_payload is None:
+        raise AttributeError("Provide csr_payload as parameter")
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+
+    # IDs from CSR payload
+    try:
+        csr_surrogate_id = csr_payload['surrogate_id']
+        csr_cr_id = csr_payload['cr_id']
+        csr_prev_record_id = csr_payload['prev_record_id']
+        csr_record_id = csr_payload['record_id']
+        csr_consent_status = csr_payload['consent_status']
+        csr_issued = csr_payload['iat']
+    except Exception as exp:
+        error_title = "Could not fetch IDs from CSR payload"
+        logger.error(error_title)
+        raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+    ######
+    # Sign
+    ####
+    # Sign CSR
+    try:
+        csr_signed = sign_csr(account_id=account_id, payload=csr_payload, endpoint=endpoint)
+    except Exception as exp:
+        logger.error("Could not sign Source's CSR: " + repr(exp))
         raise
+    else:
+        logger.info("Source CR signed")
 
-    # Get csrs from database
-    # logger.info("Get csrs from database")
-    # db_entry_list = []
-    # for id in id_list:
-    #     # TODO: try-except needed?
-    #     logger.info("Getting csr with cr_id: " + str(cr_id) + " csr_id: " + str(id))
-    #     db_entry_dict = get_csr(account_id=account_id, slr_id=slr_id, cr_id=cr_id, csr_id=id)
-    #     db_entry_list.append(db_entry_dict)
-    #     logger.info("csr object added to list: " + json.dumps(db_entry_dict))
+    #########
+    # Store #
+    #########
+    # CSR
+    try:
+        source_csr_entry = ConsentStatusRecord(
+            consent_status_record_id=csr_record_id,
+            status=csr_consent_status,
+            consent_status_record=csr_signed,
+            consent_record_id=csr_cr_id,
+            issued_at=csr_issued,
+            prev_record_id=csr_prev_record_id
+        )
+    except Exception as exp:
+        error_title = "Failed to create Source's Consent Status Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("source_csr_entry: " + source_csr_entry.log_entry)
 
-    return cr_id
+    #####
+    #####
+    #####
+    #####
+    # Init Consent Record Object
+    try:
+        logger.info("Create ConsentRecord object")
+        cr_entry = ConsentRecord(consent_id=cr_id)
+        logger.info(cr_entry.log_entry)
+    except Exception as exp:
+        error_title = "Failed to create Consent Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("sink_cr_entry: " + cr_entry.log_entry)
+
+    # Get Consent Record from DB
+    try:
+        cursor = cr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "Consent Record not found from DB with given ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to fetch Consent Record from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("cr_entry: " + cr_entry.log_entry)
+
+    # Get primary key of Consent Record database entry
+    try:
+        cr_entry_primary_key = cr_entry.id
+    except Exception as exp:
+        error_title = "Failed to get primary key of Consent Record database entry"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("cr_entry_primary_key: " + str(cr_entry_primary_key))
+
+    # Create Consent Status Record object
+    try:
+        csr_entry = ConsentStatusRecord()
+    except Exception as exp:
+        error_title = "Failed to create Consent Status Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("csr_entry: " + csr_entry.log_entry)
+
+    # Get database table name for Consent Status Record
+    try:
+        logger.info("Get Consent Status Record table name")
+        csr_table_name = csr_entry.table_name
+    except Exception as exp:
+        error_title = "Failed to get Consent Status Record table name"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Got Consent Status Record table name: " + str(csr_table_name))
+
+    # Get Consent Status Record ID
+    try:
+        cursor, csr_id = get_last_csr_id(cursor=cursor, cr_id=cr_id, table_name=csr_table_name)
+    except IndexError as exp:
+        error_title = "Consent Status Record not found from DB with given Consent Record ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to get last Consent Status Record ID from database"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("csr_id: " + str(csr_id))
+
+    # Append ID to Consent Status Record Object
+    try:
+        logger.info("Append ID to Consent Status Record object: " + csr_entry.log_entry)
+        csr_entry.consent_status_record_id = csr_id
+    except Exception as exp:
+        error_title = "Failed to append ID to Consent Status Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Appended ID to Consent Status Record object: " + csr_entry.log_entry)
+
+    # Get Consent Status Record from DB
+    try:
+        cursor = csr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "Consent Record not found from DB with given ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to fetch Consent Record from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("csr_entry: " + csr_entry.log_entry)
+
+    return csr_entry
+
 
 
 

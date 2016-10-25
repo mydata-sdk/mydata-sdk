@@ -38,7 +38,7 @@ from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jw
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
-    get_last_cr_status_id
+    get_last_cr_status, add_csr
 from app.mod_authorization.models import NewConsent
 
 mod_authorization_api = Blueprint('authorization_api', __name__, template_folder='templates')
@@ -417,7 +417,7 @@ class AuthorizationTokenData(Resource):
             sink_cr_id = str(sink_cr_id)
         except Exception as exp:
             raise ApiError(code=400, title="Unsupported sink_cr_id", detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("sink_cr_id: " + repr(sink_cr_id))
 
         # Init Sink's Consent Record Object
@@ -427,7 +427,7 @@ class AuthorizationTokenData(Resource):
             error_title = "Failed to create Sink's Consent Record object"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("sink_cr_entry: " + sink_cr_entry.log_entry)
 
         source_cr = {}
@@ -439,7 +439,7 @@ class AuthorizationTokenData(Resource):
             logger.error(error_title + ": " + repr(exp))
             #raise
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("source_cr: " + json.dumps(source_cr))
             logger.debug("sink_slr: " + json.dumps(sink_slr))
 
@@ -469,10 +469,10 @@ class AuthorizationTokenData(Resource):
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
-        return make_json_response(data=response_data_dict, status_code=201)
+        return make_json_response(data=response_data_dict, status_code=200)
 
 
-class LastCrStatusId(Resource):
+class LastCrStatus(Resource):
     @requires_api_auth_sdk
     def get(self, cr_id):
 
@@ -492,25 +492,100 @@ class LastCrStatusId(Resource):
             cr_id = str(cr_id)
         except Exception as exp:
             raise ApiError(code=400, title="Unsupported cr_id", detail=repr(exp), source=endpoint)
-        finally:
-            logger.debug("sink_cr_id: " + repr(cr_id))
-
-        # Get last Consent Status Record ID
-        try:
-            cr_status_id = get_last_cr_status_id(cr_id=cr_id)
-        except Exception as exp:
-            error_title = "Failed to create Sink's Consent Record object"
-            logger.error(error_title + ": " + repr(exp))
-            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
-            logger.debug("cr_status_id: " + str(cr_status_id))
+            logger.debug("cr_id: " + repr(cr_id))
+
+        # Get last Consent Status Record
+        try:
+            last_csr_object = get_last_cr_status(cr_id=cr_id)
+        except Exception as exp:
+            error_title = "Failed to get last Consent Status Record of Consent"
+            logger.error(error_title + ": " + repr(exp))
+            raise
+        else:
+            logger.debug("last_cr_status_object: " + last_csr_object.log_entry)
 
         # Response data container
         try:
             response_data = {}
-            response_data['data'] = {}
-            response_data['data']['ConsentRecord'] = {}
-            response_data['data']['ConsentRecord']["id"] = cr_status_id
+            response_data['data'] = last_csr_object.to_record_dict
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class AddCrStatus(Resource):
+    @requires_api_auth_sdk
+    def post(self, cr_id):
+
+        try:
+            endpoint = str(api.url_for(self, cr_id=cr_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers")
+            logger.debug("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+
+        try:
+            cr_id = str(cr_id)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported cr_id", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("cr_id: " + repr(cr_id))
+
+        # load JSON
+        json_data = request.get_json()
+        if not json_data:
+            error_detail = {'0': 'Set application/json as Content-Type', '1': 'Provide json payload'}
+            raise ApiError(code=400, title="No input data provided", detail=error_detail, source=endpoint)
+        else:
+            logger.debug("json_data: " + json.dumps(json_data))
+
+        # Validate payload content
+        schema = NewConsentStatus()
+        schema_validation_result = schema.load(json_data)
+
+        # Check validation errors
+        if schema_validation_result.errors:
+            logger.error("Invalid payload")
+            raise ApiError(code=400, title="Invalid payload", detail=dict(schema_validation_result.errors), source=endpoint)
+        else:
+            logger.debug("JSON validation -> OK")
+
+        # Payload
+        # Consent Status Record
+        try:
+            csr_payload = json_data['data']['source']['consentStatusRecordPayload']['attributes']
+        except Exception as exp:
+            raise ApiError(code=400, title="Could not fetch source_csr_payload from json", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("Got csr_payload: " + json.dumps(csr_payload))
+
+        # Create new Consent Status Record
+        try:
+            new_csr_object = add_csr(cr_id=cr_id, csr_payload=csr_payload)
+        except Exception as exp:
+            error_title = "Failed to add new Consent Status Record for Consent"
+            logger.error(error_title + ": " + repr(exp))
+            raise
+        else:
+            logger.debug("new_csr_object: " + new_csr_object.log_entry)
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = new_csr_object.to_record_dict
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
@@ -528,4 +603,5 @@ class LastCrStatusId(Resource):
 # Register resources
 api.add_resource(ConsentSignAndStore, '/api/account/<string:account_id>/servicelink/<string:source_slr_id>/<string:sink_slr_id>/consent/', endpoint='mydata-authorization')
 api.add_resource(AuthorizationTokenData, '/api/consent/<string:sink_cr_id>/authorizationtoken/', endpoint='mydata-authorizationtoken')
-api.add_resource(LastCrStatusId, '/api/consent/<string:cr_id>/statuses/last/id/', endpoint='mydata-last-cr-id')
+api.add_resource(LastCrStatus, '/api/consent/<string:cr_id>/status/last/', endpoint='mydata-last-cr')
+api.add_resource(AddCrStatus, '/api/consent/<string:cr_id>/status/', endpoint='mydata-add-csr')

@@ -1995,6 +1995,20 @@ class ServiceLinkRecord():
         return dictionary
 
     @property
+    def to_record_dict_external(self):
+        dictionary = {}
+        dictionary["slr"] = self.service_link_record
+        return dictionary
+
+    @property
+    def to_record_dict(self):
+        dictionary = {}
+        dictionary['type'] = "ServiceLinkRecord"
+        dictionary['id'] = str(self.service_link_record_id)
+        dictionary['attributes'] = self.to_record_dict_external
+        return dictionary
+
+    @property
     def to_json(self):
         return json.dumps(self.to_dict)
 
@@ -2214,6 +2228,20 @@ class ServiceLinkStatusRecord():
         dictionary['type'] = "ServiceLinkStatusRecord"
         dictionary['id'] = str(self.service_link_status_record_id)
         dictionary['attributes'] = self.to_dict_external
+        return dictionary
+
+    @property
+    def to_record_dict_external(self):
+        dictionary = {}
+        dictionary["slsr"] = self.service_link_status_record
+        return dictionary
+
+    @property
+    def to_record_dict(self):
+        dictionary = {}
+        dictionary['type'] = "ServiceLinkStatusRecord"
+        dictionary['id'] = str(self.service_link_status_record_id)
+        dictionary['attributes'] = self.to_record_dict_external
         return dictionary
 
     @property
@@ -2549,6 +2577,20 @@ class ConsentRecord():
         return dictionary
 
     @property
+    def to_record_dict_external(self):
+        dictionary = {}
+        dictionary["cr"] = self.consent_record
+        return dictionary
+
+    @property
+    def to_record_dict(self):
+        dictionary = {}
+        dictionary['type'] = "ConsentRecord"
+        dictionary['id'] = str(self.consent_id)
+        dictionary['attributes'] = self.to_record_dict_external
+        return dictionary
+
+    @property
     def to_json(self):
         return json.dumps(self.to_dict)
 
@@ -2773,6 +2815,20 @@ class ConsentStatusRecord():
         dictionary['type'] = "ConsentStatusRecord"
         dictionary['id'] = str(self.consent_status_record_id)
         dictionary['attributes'] = self.to_dict_external
+        return dictionary
+
+    @property
+    def to_record_dict_external(self):
+        dictionary = {}
+        dictionary["csr"] = self.consent_status_record
+        return dictionary
+
+    @property
+    def to_record_dict(self):
+        dictionary = {}
+        dictionary['type'] = "ConsentStatusRecord"
+        dictionary['id'] = str(self.consent_status_record_id)
+        dictionary['attributes'] = self.to_record_dict_external
         return dictionary
 
     @property

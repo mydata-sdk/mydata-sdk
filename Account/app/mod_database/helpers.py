@@ -506,7 +506,9 @@ def get_last_csr_id(cursor=None, cr_id=None, table_name=None):
 
     sql_query = "SELECT consentStatusRecordId " \
                 "FROM " + table_name + " " \
-                "WHERE consentRecordId LIKE %s;"
+                "WHERE consentRecordId LIKE %s " \
+                "ORDER BY issued_at DESC " \
+                "LIMIT 1;"
 
     arguments = (
         '%' + str(cr_id) + '%',
@@ -528,13 +530,10 @@ def get_last_csr_id(cursor=None, cr_id=None, table_name=None):
         data_list = list(data[0])
         logger.info("Got data_list: " + repr(data_list))
 
-        for i in range(len(data_list)):
-            data_list[i] = str(data_list[i])
+        entry_id = str(data_list[0])
+        logger.info("Got entry_id: " + repr(entry_id))
 
-        id_list = data_list
-        logger.info("Got id_list: " + repr(id_list))
-
-        return cursor, id_list
+        return cursor, entry_id
 
 
 

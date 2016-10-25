@@ -477,7 +477,7 @@ def get_last_cr_status(host=None, headers=None, cr_id=None):
     if cr_id is None:
         raise AttributeError("Provide cr_id as parameter")
 
-    endpoint = "/api/consent/" + str(cr_id) + "/statuses/last/id/"
+    endpoint = "/api/consent/" + str(cr_id) + "/status/last/"
     url = host + endpoint
 
     print("Request")
@@ -609,18 +609,18 @@ else:
     print (json.dumps(token[1], indent=3))
 
 
-# Get last CR Status ID
+# Get last CR Status
 print ("------------------------------------")
-print("Get last CR Status ID")
+print("Get last CR Status")
 
 try:
     token = get_last_cr_status(host=account_host, cr_id=source_cr_id, headers=headers)
 except Exception as exp:
-    error_title = "Could not get last CR Status ID"
+    error_title = "Could not get last CR Status"
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("CR Status ID: " + token[0])
+    request_statuses.append("Last CR Status: " + token[0])
     print ("Response: " + token[0])
     print (json.dumps(token[1], indent=3))
 
