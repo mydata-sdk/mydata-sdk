@@ -457,30 +457,11 @@ def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
     else:
         logger.info("Source CR signed")
 
-    #########
-    # Store #
-    #########
-    # CSR
-    try:
-        source_csr_entry = ConsentStatusRecord(
-            consent_status_record_id=csr_record_id,
-            status=csr_consent_status,
-            consent_status_record=csr_signed,
-            consent_record_id=csr_cr_id,
-            issued_at=csr_issued,
-            prev_record_id=csr_prev_record_id
-        )
-    except Exception as exp:
-        error_title = "Failed to create Source's Consent Status Record object"
-        logger.error(error_title + ": " + repr(exp))
-        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-    else:
-        logger.info("source_csr_entry: " + source_csr_entry.log_entry)
-
-    #####
-    #####
-    #####
-    #####
+    ###########
+    # Entries #
+    ###########
+    # Existing Consent Record
+    ###
     # Init Consent Record Object
     try:
         logger.info("Create ConsentRecord object")
@@ -516,6 +497,35 @@ def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
     else:
         logger.debug("cr_entry_primary_key: " + str(cr_entry_primary_key))
+
+    # CSR
+    try:
+        source_csr_entry = ConsentStatusRecord(
+            consent_status_record_id=csr_record_id,
+            status=csr_consent_status,
+            consent_status_record=csr_signed,
+            consent_record_id=csr_cr_id,
+            issued_at=csr_issued,
+            prev_record_id=csr_prev_record_id
+        )
+    except Exception as exp:
+        error_title = "Failed to create Source's Consent Status Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("source_csr_entry: " + source_csr_entry.log_entry)
+
+
+    ###########
+    # Store #
+    ###########
+    # CSR
+
+    #####
+    #####
+    #####
+    #####
+
 
     # Create Consent Status Record object
     try:
