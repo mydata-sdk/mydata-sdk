@@ -49,14 +49,24 @@ def sign_cr(account_id=None, payload=None, endpoint="sign_slr(account_id, payloa
 
     # Sign cr
     try:
-        cr_signed = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(payload))
+        cr_signed_json = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(payload))
     except Exception as exp:
         logger.error('Could not create Consent Record: ' + repr(exp))
         raise ApiError(code=500, title="Failed to create Consent Record", detail=repr(exp), source=endpoint)
     else:
-        logger.info('Service Link Record created and signed')
-        logger.debug('cr_signed: ' + cr_signed)
-        return cr_signed
+        logger.info('Consent Record created and signed')
+        logger.debug('cr_signed_json: ' + cr_signed_json)
+        try:
+            logger.info("Converting signed CR from json to dict")
+            cr_signed_dict = json.loads(cr_signed_json)
+        except Exception as exp:
+            logger.error('Could not convert signed CSR from json to dict: ' + repr(exp))
+            raise ApiError(code=500, title="Failed to convert signed CSR from json to dict", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Converted signed CR from json to dict')
+            logger.debug('cr_signed_dict: ' + json.dumps(cr_signed_dict))
+
+        return cr_signed_dict
 
 
 def sign_csr(account_id=None, payload=None, endpoint="sign_csr(account_id, payload, endpoint)"):
@@ -69,14 +79,24 @@ def sign_csr(account_id=None, payload=None, endpoint="sign_csr(account_id, paylo
 
     # Sign csr
     try:
-        csr_signed = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(payload))
+        csr_signed_json = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(payload))
     except Exception as exp:
         logger.error('Could not create Consent Status Record: ' + repr(exp))
         raise ApiError(code=500, title="Failed to create Consent Status Record", detail=repr(exp), source=endpoint)
     else:
-        logger.info('SConsent Status Record created and signed')
-        logger.debug('csr_signed: ' + csr_signed)
-        return csr_signed
+        logger.info('Consent Status Record created and signed')
+        logger.debug('csr_signed_json: ' + csr_signed_json)
+        try:
+            logger.info("Converting signed CSR from json to dict")
+            csr_signed_dict = json.loads(csr_signed_json)
+        except Exception as exp:
+            logger.error('Could not convert signed CSR from json to dict: ' + repr(exp))
+            raise ApiError(code=500, title="Failed to convert signed CSR from json to dict", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Converted signed CSR from json to dict')
+            logger.debug('csr_signed_dict: ' + json.dumps(csr_signed_dict))
+
+        return csr_signed_dict
 
 
 def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry=None, source_csr_entry=None, sink_cr_entry=None, sink_csr_entry=None, endpoint="store_cr_and_csr()"):
@@ -216,12 +236,12 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             # TODO: Change to_dict -> to_record_dict_external
             data = {
                 'source': {
-                    'CR': source_cr_entry.to_dict,
-                    'CSR': source_csr_entry.to_dict
+                    'cr': source_cr_entry.to_record_dict,
+                    'csr': source_csr_entry.to_record_dict
                 },
                 'sink': {
-                    'CR': sink_cr_entry.to_dict,
-                    'CSR': sink_csr_entry.to_dict
+                    'cr': sink_cr_entry.to_record_dict,
+                    'csr': sink_csr_entry.to_record_dict
                 }
             }
         except Exception as exp:
@@ -276,14 +296,12 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
     # Get Source's Consent Record from DB
     try:
         cursor = source_cr_entry.from_db(cursor=cursor)
-        source_cr = source_cr_entry.to_record_dict
     except Exception as exp:
         error_title = "Failed to fetch Source's CR from DB"
         logger.error(error_title + ": " + repr(exp))
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
     else:
         logger.debug("source_cr_entry: " + source_cr_entry.log_entry)
-        logger.debug("source_cr: " + json.dumps(source_cr))
 
     # Init Sink's Service Link Record Object
     try:
@@ -298,16 +316,14 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
     # Get Source's Consent Record from DB
     try:
         cursor = sink_slr_entry.from_db(cursor=cursor)
-        sink_slr = sink_slr_entry.to_record_dict
     except Exception as exp:
         error_title = "Failed to fetch Sink's SLR from DB"
         logger.error(error_title + ": " + repr(exp))
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
     else:
         logger.debug("sink_slr_entry: " + sink_slr_entry.log_entry)
-        logger.debug("sink_slr: " + json.dumps(sink_slr))
 
-    return source_cr, sink_slr
+    return source_cr_entry, sink_slr_entry
 
 
 def get_last_cr_status(cr_id=None, endpoint="get_last_cr_status()"):
@@ -462,6 +478,7 @@ def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
     ####
     # Sign CSR
     try:
+        # TODO: ACCOUNT ID
         csr_signed = sign_csr(account_id=1, payload=csr_payload, endpoint=endpoint)
     except Exception as exp:
         logger.error("Could not sign Source's CSR: " + repr(exp))

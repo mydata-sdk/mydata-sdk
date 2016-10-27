@@ -2688,7 +2688,8 @@ class ConsentRecord():
                 logger.info("consent_record to dict")
                 self.consent_record = json.loads(self.consent_record)
             except Exception as exp:
-                logger.info("Could not convert consent_record to dict. Using original")
+                attribute_type = type(self.consent_record)
+                logger.error("Could not convert consent_record to dict. Type of attribute: " + repr(attribute_type) + " Using original: " + repr(exp))
                 self.consent_record = cr_copy
 
             return cursor
@@ -2928,7 +2929,8 @@ class ConsentStatusRecord():
                 logger.info("consent_status_record to dict")
                 self.consent_status_record = json.loads(self.consent_status_record)
             except Exception as exp:
-                logger.info("Could not convert consent_status_record to dict. Using original")
+                attribute_type = type(self.consent_status_record)
+                logger.error("Could not convert consent_status_record to dict. Type of attribute: " + repr(attribute_type) + " Using original: " + repr(exp))
                 self.consent_status_record = csr_copy
 
             return cursor

@@ -17,6 +17,8 @@ from uuid import uuid4
 
 import requests
 import time
+
+import sys
 from requests.auth import HTTPBasicAuth
 import json
 
@@ -648,36 +650,36 @@ else:
     print (json.dumps(token[1], indent=3))
 
 
-# Get last CR Status
-print ("------------------------------------")
-print("Get last CR Status")
-
-try:
-    token = get_last_cr_status(host=account_host, cr_id=source_cr_id, headers=headers)
-except Exception as exp:
-    error_title = "Could not get last CR Status"
-    print(error_title + ": " + repr(exp))
-    raise
-else:
-    request_statuses.append("Last CR Status: " + token[0])
-    print ("Response: " + token[0])
-    print (json.dumps(token[1], indent=3))
-
-
-# Change CR Status
-print ("------------------------------------")
-print("Change CR Status")
-
-try:
-    token = change_consent_status(host=account_host, cr_id=source_cr_id, headers=headers, data=source_change_cr_status_payload)
-except Exception as exp:
-    error_title = "Could not change CR Status"
-    print(error_title + ": " + repr(exp))
-    raise
-else:
-    request_statuses.append("Change CR Status: " + token[0])
-    print ("Response: " + token[0])
-    print (json.dumps(token[1], indent=3))
+# # Get last CR Status
+# print ("------------------------------------")
+# print("Get last CR Status")
+#
+# try:
+#     token = get_last_cr_status(host=account_host, cr_id=source_cr_id, headers=headers)
+# except Exception as exp:
+#     error_title = "Could not get last CR Status"
+#     print(error_title + ": " + repr(exp))
+#     raise
+# else:
+#     request_statuses.append("Last CR Status: " + token[0])
+#     print ("Response: " + token[0])
+#     print (json.dumps(token[1], indent=3))
+#
+# #
+# # Change CR Status
+# print ("------------------------------------")
+# print("Change CR Status")
+#
+# try:
+#     token = change_consent_status(host=account_host, cr_id=source_cr_id, headers=headers, data=source_change_cr_status_payload)
+# except Exception as exp:
+#     error_title = "Could not change CR Status"
+#     print(error_title + ": " + repr(exp))
+#     raise
+# else:
+#     request_statuses.append("Change CR Status: " + token[0])
+#     print ("Response: " + token[0])
+#     print (json.dumps(token[1], indent=3))
 
 
 print ("------------------------------------")

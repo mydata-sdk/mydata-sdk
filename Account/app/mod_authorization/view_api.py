@@ -367,33 +367,33 @@ class ConsentSignAndStore(Resource):
             response_data['data']['source']['consentRecord'] = {}
             response_data['data']['source']['consentRecord']['type'] = "ConsentRecord"
             response_data['data']['source']['consentRecord']['attributes'] = {}
-            response_data['data']['source']['consentRecord']['attributes']['cr'] = json.loads(source_cr_signed)
+            response_data['data']['source']['consentRecord']['attributes']['cr'] = source_cr_entry.to_record_dict
 
             response_data['data']['source']['consentStatusRecord'] = {}
             response_data['data']['source']['consentStatusRecord']['type'] = "ConsentStatusRecord"
             response_data['data']['source']['consentStatusRecord']['attributes'] = {}
-            response_data['data']['source']['consentStatusRecord']['attributes']['csr'] = json.loads(source_csr_signed)
+            response_data['data']['source']['consentStatusRecord']['attributes']['csr'] = source_csr_entry.to_record_dict
 
             response_data['data']['sink'] = {}
             response_data['data']['sink']['consentRecord'] = {}
             response_data['data']['sink']['consentRecord']['type'] = "ConsentRecord"
             response_data['data']['sink']['consentRecord']['attributes'] = {}
-            response_data['data']['sink']['consentRecord']['attributes']['cr'] = json.loads(sink_cr_signed)
+            response_data['data']['sink']['consentRecord']['attributes']['cr'] = sink_cr_entry.to_record_dict
 
             response_data['data']['sink']['consentStatusRecord'] = {}
             response_data['data']['sink']['consentStatusRecord']['type'] = "ConsentStatusRecord"
             response_data['data']['sink']['consentStatusRecord']['attributes'] = {}
-            response_data['data']['sink']['consentStatusRecord']['attributes']['csr'] = json.loads(sink_csr_signed)
+            response_data['data']['sink']['consentStatusRecord']['attributes']['csr'] = sink_csr_entry.to_record_dict
 
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
         else:
             logger.info('Response data ready')
-            logger.debug('response_data: ' + repr(response_data))
+            logger.debug('response_data: ' + json.dumps(response_data))
 
         response_data_dict = dict(response_data)
-        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
 
 
@@ -430,18 +430,15 @@ class AuthorizationTokenData(Resource):
         else:
             logger.debug("sink_cr_entry: " + sink_cr_entry.log_entry)
 
-        source_cr = {}
-        sink_slr = {}
         try:
             source_cr, sink_slr = get_auth_token_data(sink_cr_object=sink_cr_entry)
         except Exception as exp:
             error_title = "Failed to get Authorization token data"
             logger.error(error_title + ": " + repr(exp))
-            #raise
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
-            logger.debug("source_cr: " + json.dumps(source_cr))
-            logger.debug("sink_slr: " + json.dumps(sink_slr))
+            logger.debug("source_cr: " + source_cr.log_entry)
+            logger.debug("sink_slr: " + sink_slr.log_entry)
 
 
         # Response data container
@@ -453,22 +450,22 @@ class AuthorizationTokenData(Resource):
             response_data['data']['source']['consentRecord'] = {}
             response_data['data']['source']['consentRecord']['type'] = "ConsentRecord"
             response_data['data']['source']['consentRecord']['attributes'] = {}
-            response_data['data']['source']['consentRecord']['attributes']['cr'] = source_cr
+            response_data['data']['source']['consentRecord']['attributes']['cr'] = source_cr.to_record_dict
 
             response_data['data']['sink'] = {}
             response_data['data']['sink']['serviceLinkRecord'] = {}
             response_data['data']['sink']['serviceLinkRecord']['type'] = "ServiceLinkRecord"
             response_data['data']['sink']['serviceLinkRecord']['attributes'] = {}
-            response_data['data']['sink']['serviceLinkRecord']['attributes']['slr'] = sink_slr
+            response_data['data']['sink']['serviceLinkRecord']['attributes']['slr'] = sink_slr.to_record_dict
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
         else:
             logger.info('Response data ready')
-            logger.debug('response_data: ' + repr(response_data))
+            logger.debug('response_data: ' + json.dumps(response_data))
 
         response_data_dict = dict(response_data)
-        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
 
 
@@ -514,10 +511,10 @@ class LastCrStatus(Resource):
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
         else:
             logger.info('Response data ready')
-            logger.debug('response_data: ' + repr(response_data))
+            logger.debug('response_data: ' + json.dumps(response_data))
 
         response_data_dict = dict(response_data)
-        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
 
 
@@ -596,10 +593,10 @@ class AddCrStatus(Resource):
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
         else:
             logger.info('Response data ready')
-            logger.debug('response_data: ' + repr(response_data))
+            logger.debug('response_data: ' + json.dumps(response_data))
 
         response_data_dict = dict(response_data)
-        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
 
 
