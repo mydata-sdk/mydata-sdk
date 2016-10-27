@@ -9,7 +9,7 @@ from sqlite3 import IntegrityError
 from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
 from flask_restful import Api
-
+from Templates import ServiceRegistryHandler
 import db_handler as db_handler
 
 debug_log = logging.getLogger("debug")
@@ -501,9 +501,10 @@ class Helpers:
         header = {"typ": "JWT",
                   "alg": "HS256"}
         # Claims
+        srv_handler = ServiceRegistryHandler()
         payload = {"iss": self.operator_id,  # Operator ID,
                    "cnf": {"kid": slrt.get_source_cr_id()},
-                   "aud": slrt.get_dataset(),  # Hard to build real # TODO: src domain here!
+                   "aud": srv_handler.getService_url(slrt.get_source_service_id()), # Hard to build real # TODO: src domain here!
                    # TODO: Logic to determine exp time
                    "exp": int(time.time()+self.not_after_interval),  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
@@ -631,4 +632,7 @@ class SLR_tool:
     def get_dataset(self):
         return self.get_CR_payload()["common_part"]["rs_description"]["resource_set"]["dataset"]
 
-
+    def get_source_service_id(self):
+        return self.get_CR_payload()["common_part"]["subject_id"]
+    def get_sink_service_id(self):
+        return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
