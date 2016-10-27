@@ -566,21 +566,22 @@ class AddCrStatus(Resource):
         # Payload
         # Consent Status Record
         try:
-            csr_payload = json_data['data']['source']['consentStatusRecordPayload']['attributes']
+            csr_payload = json_data['data']['attributes']
         except Exception as exp:
             raise ApiError(code=400, title="Could not fetch source_csr_payload from json", detail=repr(exp), source=endpoint)
         else:
             logger.debug("Got csr_payload: " + json.dumps(csr_payload))
 
+        #
         # Create new Consent Status Record
         try:
-            new_csr_object = add_csr(cr_id=cr_id, csr_payload=csr_payload)
+            new_csr_object = add_csr(cr_id=cr_id, csr_payload=csr_payload, endpoint=endpoint)
         except ApiError as exp:
             error_title = "Failed to add new Consent Status Record for Consent"
             logger.error(error_title + ": " + repr(exp))
             raise
         except Exception as exp:
-            error_title = "Failed to add new Consent Status Record for Consent"
+            error_title = "Unexpected error. Failed to add new Consent Status Record for Consent"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:

@@ -429,7 +429,6 @@ def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
     ######
     # Base information
     ####
-
     # Get DB cursor
     try:
         cursor = get_db_cursor()
@@ -457,9 +456,6 @@ def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
         raise ApiError(code=400, title=error_title, source=endpoint)
     else:
         logger.info("Identical IDs: cr_id from URI: " + str(cr_id) + ", cr_id from payload: " + str(csr_cr_id))
-
-
-    # Sign CSR
 
     ######
     # Sign
@@ -521,9 +517,9 @@ def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
             status=csr_consent_status,
             consent_status_record=csr_signed,
             consent_record_id=csr_cr_id,
-            issued_at=csr_issued,
+            issued_at=int(csr_issued),
             prev_record_id=csr_prev_record_id,
-            consent_records_id=cr_entry_primary_key
+            consent_records_id=int(cr_entry_primary_key)
         )
     except Exception as exp:
         error_title = "Failed to create Source's Consent Status Record object"
@@ -531,7 +527,6 @@ def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
     else:
         logger.info("csr_entry: " + csr_entry.log_entry)
-
 
     ###########
     # Store #

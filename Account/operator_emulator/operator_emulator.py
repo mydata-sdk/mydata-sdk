@@ -337,7 +337,7 @@ consent_record_payload = {
     }
 
 source_change_cr_status_payload = {
-    "consentStatusRecordPayload": {
+    "data": {
         "type": "ConsentStatusRecord",
         "attributes": {
           "record_id": source_csr_id_new,
@@ -506,11 +506,9 @@ def get_last_cr_status(host=None, headers=None, cr_id=None):
     return status_code, response_data
 
 
-def change_consent_status(host=None, account_id=None, cr_id=None, headers=None, data=None):
+def change_consent_status(host=None, cr_id=None, headers=None, data=None):
     if host is None:
         raise AttributeError("Provide host as parameter")
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
     if cr_id is None:
         raise AttributeError("Provide cr_id as parameter")
     if headers is None:
