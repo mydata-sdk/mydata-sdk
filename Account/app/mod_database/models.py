@@ -1009,7 +1009,7 @@ class Email():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (email, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (email, entryType, prime, Accounts_id) " \
                     "VALUES (%s, %s, %s, %s)"
 
         arguments = (
@@ -1032,7 +1032,7 @@ class Email():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        sql_query = "SELECT id, email, typeEnum, prime, Accounts_id " \
+        sql_query = "SELECT id, email, entryType, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
@@ -1067,7 +1067,7 @@ class Email():
 
     def update_db(self, cursor=""):
 
-        sql_query = "UPDATE " + self.table_name + " SET email=%s, typeEnum=%s, prime=%s " \
+        sql_query = "UPDATE " + self.table_name + " SET email=%s, entryType=%s, prime=%s " \
                                                   "WHERE id=%s AND Accounts_id=%s"
 
         arguments = (
@@ -1196,7 +1196,7 @@ class Telephone():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (tel, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (tel, entryType, prime, Accounts_id) " \
                     "VALUES (%s, %s, %s, %s)"
 
         arguments = (
@@ -1221,7 +1221,7 @@ class Telephone():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, tel, typeEnum, prime, Accounts_id " \
+        sql_query = "SELECT id, tel, entryType, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
@@ -1256,7 +1256,7 @@ class Telephone():
 
     def update_db(self, cursor=""):
 
-        sql_query = "UPDATE " + self.table_name + " SET tel=%s, typeEnum=%s, prime=%s " \
+        sql_query = "UPDATE " + self.table_name + " SET tel=%s, entryType=%s, prime=%s " \
                                                   "WHERE id=%s AND Accounts_id=%s"
 
         arguments = (
@@ -1627,7 +1627,7 @@ class Contacts():
     city = None
     state = None
     country = None
-    typeEnum = None
+    entryType = None
     prime = None
     account_id = None
     table_name = ""
@@ -1781,7 +1781,7 @@ class Contacts():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (address1, address2, postalCode, city, state, country, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (address1, address2, postalCode, city, state, country, entryType, prime, Accounts_id) " \
                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
@@ -1808,7 +1808,7 @@ class Contacts():
     def update_db(self, cursor=""):
 
         sql_query = "UPDATE " + self.table_name + " SET address1=%s, address2=%s, postalCode=%s, city=%s, state=%s, " \
-                                                  "country=%s, typeEnum=%s, prime=%s " \
+                                                  "country=%s, entryType=%s, prime=%s " \
                                                   "WHERE id=%s AND Accounts_id=%s"
 
         arguments = (
@@ -1837,7 +1837,7 @@ class Contacts():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        sql_query = "SELECT id, address1, address2, postalCode, city, state, country, typeEnum, prime, Accounts_id " \
+        sql_query = "SELECT id, address1, address2, postalCode, city, state, country, entryType, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
