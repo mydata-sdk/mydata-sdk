@@ -78,6 +78,7 @@ class Helpers:
             else:
                 return None
         except Exception as e:
+            debug_log.info("query_db failed with error:")
             debug_log.exception(e)
             debug_log.info(cur)
             db.close()
@@ -92,8 +93,10 @@ class Helpers:
         """
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
+        debug_log.info("Storing dictionary:")
         debug_log.info(DictionaryToStore)
         for key in DictionaryToStore:
+            debug_log.info("Storing key:")
             debug_log.info(key)
             try:
                 cursor.execute("INSERT INTO storage (surrogate_id,json) \
@@ -135,7 +138,7 @@ class Helpers:
         cursor.execute("INSERT INTO codes (ID,code) \
             VALUES (%s, %s)", (code_key, code_value))
         db.commit()
-        debug_log.info("{}  {}".format(code_key, code_value))
+        debug_log.info("Storing code(key,value): {}, {}".format(code_key, code_value))
         db.close()
 
     def add_surrogate_id_to_code(self, code, surrogate_id):
@@ -176,6 +179,7 @@ class Helpers:
         :return: CR if found and validated.
         """
         combined = self.get_cr_json(cr_id)
+        debug_log.info("Constructing cr/csr structure for CR_Tool:")
         debug_log.info(dumps(combined, indent=2))
         # Using CR tool we get nice helper functions.
         tool = CR_tool()
@@ -203,6 +207,7 @@ class Helpers:
         debug_log.info("Verified cr/csr ({}) for surrogate_id ({}) ".format(cr_id, surrogate_id))
 
         combined_decrypted = dumps({"cr": tool.get_CR_payload(), "csr": tool.get_CSR_payload()}, indent=2)
+        debug_log.info("Decrypted cr/csr structure is:")
         debug_log.info(combined_decrypted)
         # Check that state is "Active"
         state = tool.get_state()
@@ -293,6 +298,7 @@ class Helpers:
         json = DictionaryToStore["json"]
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
+        debug_log.info("Storing following CR structure:")
         debug_log.info(DictionaryToStore)
         # debug_log.info(key)
         try:
@@ -319,6 +325,7 @@ class Helpers:
         json = DictionaryToStore["json"]
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
+        debug_log.info("Storing following csr structure:")
         debug_log.info(DictionaryToStore)
         # debug_log.info(key)
         try:
@@ -333,8 +340,10 @@ class Helpers:
                                         title="Failure in CSR storage", exception=e)
 
     def validate_request_from_ui(self, cr, data_set_id, rs_id):
-        debug_log.info(cr)
+        debug_log.info("CR passed to validate_request_from_ui:")
         debug_log.info(type(cr))
+        debug_log.info(cr)
+
         # The rs_id is urlencoded, do the same to one fetched from cr
         rs_id_in_cr = urllib.quote_plus(cr["cr"]["common_part"]["rs_id"])
 
@@ -354,7 +363,7 @@ class Helpers:
             datasets = cr["cr"]["common_part"]["rs_description"]["resource_set"]["dataset"]
             for dataset in datasets:
                 distribution_ids.append(dataset["distribution_id"])
-
+        debug_log.info("Got following distribution ids")
         debug_log.info(distribution_ids)
         # Request from UI validated.
         debug_log.info("Request from UI validated.")
@@ -366,9 +375,7 @@ class Helpers:
         slr_tool.slr = slr
         key = slr_tool.get_operator_key()
         token = self.get_token(cr_id)
-        debug_log.info("Fetched key and token.")
-        debug_log.info(key)
-        debug_log.info(token)
+        debug_log.info("Fetched key({}) and token({}).".format(key, token))
         tt = Token_tool()
         tt.token = token
         tt.key = key
@@ -475,16 +482,19 @@ class SLR_tool:
         payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         content = decode(payload.encode())
         payload = loads(loads(content.decode("utf-8")))
+        debug_log.info("Decrypted payload is:")
         debug_log.info(payload)
         return payload
 
     def get_SLR_payload(self):
         base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["payload"]
+        debug_log.info("Decrypting SLR payload:")
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_SLSR_payload(self):
-        base64_payload =  self.slr["data"]["slsr"]["attributes"]["slsr"]["payload"]
+        base64_payload =  self.slr["data"]["ssr"]["attributes"]["ssr"]["payload"]
+        debug_log.info("Decrypting SSR payload:")
         payload = self.decrypt_payload(base64_payload)
         return payload
 
@@ -662,30 +672,31 @@ class Token_tool:
             debug_log.exception(e)
             # TODO: get new auth token and start again.
             raise e
-        claims = token.claims
+        claims = loads(token.claims)
         #payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         #content = decode(payload.encode('utf-8'))
-        debug_log.info(claims)
+        debug_log.info("Decrypted following claims from token:")
+        debug_log.info(dumps(claims, indent=2))
         #payload = loads(loads(content.decode('utf-8')))
-        return loads(claims)
+        return claims
     def get_token(self):
-        debug_log.info(self.token)
-        debug_log.info(type(self.token))
+        debug_log.info("Fetching token..")
         decrypted_token = self.decrypt_payload(self.token["auth_token"])
+        debug_log.info("Got following token:")
         debug_log.info(dumps(decrypted_token, indent=2))
         return decrypted_token
 
     def verify_token(self, our_key): # TODO: Get some clarification what we want to verify now that sub field doesn't contain key.
+        debug_log.info("Verifying token..\nOur key is:")
         debug_log.info(our_key)
         debug_log.info(type(our_key))
 
         if self.key is None:
-            raise UnboundLocalError("Set objects key variable to Operator key before use.")
+            raise UnboundLocalError("Set Token_tool objects key variable to Operator key before use.")
         token = self.get_token()
-        debug_log.info("Fetched token:")
-        debug_log.info(token)
         kid = token["cnf"]["kid"]
         source_cr_id = token["pi_id"]
+        debug_log.info("Source CR id is:")
         debug_log.info(type(source_cr_id))
         debug_log.info(source_cr_id)
         #debug_log.info(our_key)
