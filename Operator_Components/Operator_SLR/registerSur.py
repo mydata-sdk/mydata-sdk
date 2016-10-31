@@ -46,7 +46,7 @@ class RegisterSur(Resource):
         self.Helpers = Helpers(self.app.config)
 
         account_id = "ACC-ID-RANDOM"
-        operator_key = self.Helpers.get_key()
+        self.operator_key = self.Helpers.get_key()
         self.request_timeout = self.app.config["TIMEOUT"]
 
         self.payload = \
@@ -58,7 +58,7 @@ class RegisterSur(Resource):
                 "surrogate_id": "",
                 "token_key": "",
                 "token_issuer_keys": [""],
-                "operator_key": operator_key["pub"],
+                "operator_key": self.operator_key["pub"],
                 "cr_keys": "",
                 "created": int(time.time()),
             }
@@ -102,6 +102,9 @@ class RegisterSur(Resource):
                 raise DetailedHTTPException(exception=e,
                                             detail={"msg": "Received Invalid JSON that may not contain surrogate_id",
                                                     "json": js})
+            sq.task("Fetch and fill token_issuer_keys")
+            # TODO: Token keys separetely when the time is right.
+            self.payload["token_issuer_keys"][0] = self.Helpers.get_key()["pub"]
 
             # Create template
             self.payload["link_id"] = str(guid())
