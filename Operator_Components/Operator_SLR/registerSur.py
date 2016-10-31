@@ -43,52 +43,26 @@ class RegisterSur(Resource):
     def __init__(self):
         super(RegisterSur, self).__init__()
         self.app = current_app
-        #print(current_app.config)
-        keysize = current_app.config["KEYSIZE"]
-        cert_key_path = current_app.config["CERT_KEY_PATH"]
-        self.request_timeout = current_app.config["TIMEOUT"]
-
-        SUPER_DEBUG = True
+        self.Helpers = Helpers(self.app.config)
 
         account_id = "ACC-ID-RANDOM"
-        user_account_id = account_id + "_" + str(guid())
-
-        # Keys need to come from somewhere else instead of being generated each time.
-        gen = {"generate": "EC", "cvr": "P-256", "kid": user_account_id}
-        gen3 = {"generate": "RSA", "size": keysize, "kid": account_id}
-        operator_key = jwk.JWK(**gen3)
-        try:
-            with open(cert_key_path, "r") as cert_file:
-                operator_key2 = jwk.JWK(**loads(load(cert_file)))
-                operator_key = operator_key2
-        except Exception as e:
-            print(e)
-            with open(cert_key_path, "w+") as cert_file:
-                dump(operator_key.export(), cert_file, indent=2)
-
-        # Template to send the key to key server
-        template = {account_id: {"cr_keys": loads(operator_key.export_public()),
-                                 "token_keys": loads(operator_key.export_public())
-                                 }
-                    }
-        # post("http://localhost:6666/key", json=template)
+        operator_key = self.Helpers.get_key()
+        self.request_timeout = self.app.config["TIMEOUT"]
 
         self.payload = \
             {
                 "version": "1.2",
                 "link_id": "",
                 "operator_id": account_id,
-                "service_id": "SRV-SH14W4S3",  # How do we know this?
+                "service_id": "",
                 "surrogate_id": "",
                 "token_key": "",
-                "operator_key": loads(operator_key.export_public()),
+                "token_issuer_keys": [""],
+                "operator_key": operator_key["pub"],
                 "cr_keys": "",
                 "created": int(time.time()),
             }
         debug_log.info(dumps(self.payload, indent=3))
-
-        protti = {"alg": "RS256"}
-        headeri = {"kid": user_account_id, "jwk": loads(operator_key.export_public())}
         self.service_registry_handler = ServiceRegistryHandler()
         self.am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
         self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
@@ -99,7 +73,7 @@ class RegisterSur(Resource):
         except Exception as e:
             debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
 
-        self.Helpers = Helpers(current_app.config)
+
         self.query_db = self.Helpers.query_db
 
 
@@ -134,7 +108,7 @@ class RegisterSur(Resource):
             # TODO: Currently you can generate endlessly new slr even if one exists already
             sq.task("Fill template for Account Mgmnt")
             template = {"code": js["code"],
-                        "data":{
+                        "data": {
                             "slr": {
                                 "type": "ServiceLinkRecord",
                                 "attributes": self.payload,

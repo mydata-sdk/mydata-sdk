@@ -138,7 +138,7 @@ class ConsentFormHandler(Resource):
         issued = int(time.time()) #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         not_before = int(time.time()) #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ") # TODO: This and not after are Optional, who says when to put them?
         not_after = int(time.time()+current_app.config["NOT_AFTER_INTERVAL"]) #datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
-        operator_id = current_app.config["OPERATOR_ID"]
+        operator_id = current_app.config["UID"]
 
         common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source,
                                                       _consent_form["source"]["rs_id"],

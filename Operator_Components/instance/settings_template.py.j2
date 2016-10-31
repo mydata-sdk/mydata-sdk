@@ -4,10 +4,10 @@ from kombu import Exchange, Queue
 TIMEOUT = 8
 KEYSIZE = 512
 
-{% if OPERATOR_ID is defined %}
-OPERATOR_ID = {{ OPERATOR_ID }}
+{% if UID is defined %}
+UID = {{ UID }}
 {% else %}
-OPERATOR_ID = 'Operator112'
+UID = 'Operator112'
 {% endif %}
 
 {% if NOT_AFTER_INTERVAL is defined %}

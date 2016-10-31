@@ -266,7 +266,7 @@ class Helpers:
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
         self.port = app_config["MYSQL_PORT"]
-        self.operator_id = app_config["OPERATOR_ID"]
+        self.operator_id = app_config["UID"]
         self.not_after_interval = app_config["NOT_AFTER_INTERVAL"]
 
     def get_key(self):

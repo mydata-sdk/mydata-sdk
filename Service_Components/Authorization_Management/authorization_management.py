@@ -41,16 +41,6 @@ Using the code we link surrogate id to MyData Account and service confirming the
 
 '''
 
-Service_ID = "SRVMGNT-IDK3Y"
-gen = {"generate": "EC", "cvr": "P-256", "kid": Service_ID}
-gen2 = {"generate": "EC", "cvr": "P-256", "kid": Service_ID}
-service_key = jwk.JWK(**gen)
-token_key = jwk.JWK(**gen)
-
-templ = {Service_ID: {"cr_keys": loads(token_key.export_public())}}
-protti = {"alg": "ES256"}
-headeri = {"kid": Service_ID, "jwk": loads(service_key.export_public())}
-
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
 
