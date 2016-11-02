@@ -49,6 +49,7 @@ sink_cr_id = "SINK-CR-" + str(uuid4())
 source_csr_id = "SOURCE-CSR-" + str(uuid4())
 sink_csr_id = "SINK-CSR-" + str(uuid4())
 source_csr_id_new = "SOURCE-CSR-NEW-" + str(uuid4())
+source_csr_id_new_2 = "SOURCE-CSR-NEW2-" + str(uuid4())
 
 rs_id = "RS-ID-" + str(uuid4())
 
@@ -352,6 +353,20 @@ source_change_cr_status_payload = {
       }
     }
 
+source_change_cr_status_payload_2 = {
+    "data": {
+        "type": "ConsentStatusRecord",
+        "attributes": {
+          "record_id": source_csr_id_new_2,
+          "surrogate_id": source_surrogate_id,
+          "cr_id": source_cr_id,
+          "consent_status": "Active",
+          "iat": source_csr_iat,
+          "prev_record_id": source_csr_id_new
+        }
+      }
+    }
+
 
 def slr_sign(host=None, account_id=None, headers=None, data=None):
     if host is None:
@@ -485,7 +500,7 @@ def get_auth_token_data(host=None, headers=None, cr_id=None):
     return status_code, response_data
 
 
-# Get Authorization token data
+# Get last CR status
 def get_last_cr_status(host=None, headers=None, cr_id=None):
     if host is None:
         raise AttributeError("Provide host as parameter")
@@ -495,6 +510,32 @@ def get_last_cr_status(host=None, headers=None, cr_id=None):
         raise AttributeError("Provide cr_id as parameter")
 
     endpoint = "/api/consent/" + str(cr_id) + "/status/last/"
+    url = host + endpoint
+
+    print("Request")
+    print("Endpoint: " + endpoint)
+
+    req = requests.get(url, headers=headers)
+    status_code = str(req.status_code)
+    print("status_code:" + status_code)
+    response_data = json.loads(req.text)
+
+    return status_code, response_data
+
+
+# Get Missing CR statuses
+def get_cr_statuses(host=None, headers=None, cr_id=None, last_csr_id=None):
+    if host is None:
+        raise AttributeError("Provide host as parameter")
+    if headers is None:
+        raise AttributeError("Provide headers as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if last_csr_id is None:
+        endpoint = "/api/consent/" + str(cr_id) + "/status/"
+    else:
+        endpoint = "/api/consent/" + str(cr_id) + "/status/?csr_id=" + last_csr_id
+
     url = host + endpoint
 
     print("Request")
@@ -650,36 +691,84 @@ else:
     print (json.dumps(token[1], indent=3))
 
 
-# # Get last CR Status
-# print ("------------------------------------")
-# print("Get last CR Status")
+# Get last CR Status
+print ("------------------------------------")
+print("Get last CR Status")
+
+try:
+    last_cr = get_last_cr_status(host=account_host, cr_id=source_cr_id, headers=headers)
+except Exception as exp:
+    error_title = "Could not get last CR Status"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("Last CR Status: " + last_cr[0] + " | " + json.dumps(last_cr[1]))
+    print ("Response: " + last_cr[0])
+    print (json.dumps(last_cr[1], indent=3))
+
 #
-# try:
-#     token = get_last_cr_status(host=account_host, cr_id=source_cr_id, headers=headers)
-# except Exception as exp:
-#     error_title = "Could not get last CR Status"
-#     print(error_title + ": " + repr(exp))
-#     raise
-# else:
-#     request_statuses.append("Last CR Status: " + token[0])
-#     print ("Response: " + token[0])
-#     print (json.dumps(token[1], indent=3))
+# Change CR Status
+print ("------------------------------------")
+print("Change CR Status")
+
+try:
+    new_cr = change_consent_status(host=account_host, cr_id=source_cr_id, headers=headers, data=source_change_cr_status_payload)
+except Exception as exp:
+    error_title = "Could not change CR Status"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("Change CR Status: " + new_cr[0])
+    print ("Response: " + new_cr[0])
+    print (json.dumps(new_cr[1], indent=3))
+
 #
-# #
-# # Change CR Status
-# print ("------------------------------------")
-# print("Change CR Status")
-#
-# try:
-#     token = change_consent_status(host=account_host, cr_id=source_cr_id, headers=headers, data=source_change_cr_status_payload)
-# except Exception as exp:
-#     error_title = "Could not change CR Status"
-#     print(error_title + ": " + repr(exp))
-#     raise
-# else:
-#     request_statuses.append("Change CR Status: " + token[0])
-#     print ("Response: " + token[0])
-#     print (json.dumps(token[1], indent=3))
+# Change CR Status again
+print ("------------------------------------")
+print("Change CR Status")
+
+try:
+    new_cr = change_consent_status(host=account_host, cr_id=source_cr_id, headers=headers, data=source_change_cr_status_payload_2)
+except Exception as exp:
+    error_title = "Could not change CR Status"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("Change CR Status: " + new_cr[0])
+    print ("Response: " + new_cr[0])
+    print (json.dumps(new_cr[1], indent=3))
+
+
+# Get new last CR Status
+print ("------------------------------------")
+print("Get new last CR Status")
+
+try:
+    last_cr = get_last_cr_status(host=account_host, cr_id=source_cr_id, headers=headers)
+except Exception as exp:
+    error_title = "Could not get new last CR Status"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("New last CR Status: " + last_cr[0] + " | " + json.dumps(last_cr[1]))
+    print ("Response: " + last_cr[0])
+    print (json.dumps(last_cr[1], indent=3))
+
+
+# Get missing CR Statuses
+print ("------------------------------------")
+print("Get missing CR Statuses")
+
+try:
+    last_cr = get_cr_statuses(host=account_host, cr_id=source_cr_id, last_csr_id=source_csr_id_new, headers=headers)
+except Exception as exp:
+    error_title = "Could not get missing CR Statuses"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("Missing CR Statuses: " + last_cr[0] + " | " + json.dumps(last_cr[1]))
+    print ("Response: " + last_cr[0])
+    print (json.dumps(last_cr[1], indent=3))
 
 
 print ("------------------------------------")

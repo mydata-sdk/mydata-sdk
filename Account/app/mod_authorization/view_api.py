@@ -38,7 +38,7 @@ from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jw
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
-    get_last_cr_status, add_csr
+    get_last_cr_status, add_csr, get_csrs
 from app.mod_authorization.models import NewConsent, NewConsentStatus
 
 mod_authorization_api = Blueprint('authorization_api', __name__, template_folder='templates')
@@ -539,10 +539,10 @@ class LastCrStatus(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
-class AddCrStatus(Resource):
+class CrStatus(Resource):
     @requires_api_auth_sdk
     def post(self, cr_id):
-
+        logger.info("CrStatus")
         try:
             endpoint = str(api.url_for(self, cr_id=cr_id))
         except Exception as exp:
@@ -620,11 +620,77 @@ class AddCrStatus(Resource):
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
 
+    @requires_api_auth_sdk
+    def get(self, cr_id):
+        logger.info("CrStatus")
+        try:
+            endpoint = str(api.url_for(self, cr_id=cr_id))
+        except Exception as exp:
+            endpoint = str(__name__)
 
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            cr_id = str(cr_id)
+        except Exception as exp:
+            error_title = "Unsupported cr_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("cr_id: " + cr_id)
+
+        # Get last CSR ID from query parameters
+        try:
+            logger.info("Get last CSR ID from query parameters")
+            last_csr_id = request.args.get('csr_id', None)
+        except Exception as exp:
+            error_title = "Unexpected error when getting last CSR ID from query parameters"
+            logger.error(error_title + " " + repr(exp))
+            raise ApiError(code=403, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("last_csr_id: " + repr(last_csr_id))
+
+        # Get ConsentStatusRecords
+        try:
+            logger.info("Fetching ConsentStatusRecords")
+            db_entries = get_csrs(cr_id=cr_id, last_csr_id=last_csr_id)
+        except StandardError as exp:
+            error_title = "ConsentStatusRecords not accessible"
+            logger.error(error_title + ": " + repr(exp))
+            raise ApiError(code=403, title=error_title, detail=repr(exp), source=endpoint)
+        except Exception as exp:
+            error_title = "No ConsentStatusRecords found"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("ConsentStatusRecords Fetched")
+
+        # Response data container
+        try:
+            db_entry_list = db_entries
+            response_data = {}
+            response_data['data'] = db_entry_list
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
 
 
 # Register resources
 api.add_resource(ConsentSignAndStore, '/api/account/<string:account_id>/servicelink/<string:source_slr_id>/<string:sink_slr_id>/consent/', endpoint='mydata-authorization')
 api.add_resource(AuthorizationTokenData, '/api/consent/<string:sink_cr_id>/authorizationtoken/', endpoint='mydata-authorizationtoken')
 api.add_resource(LastCrStatus, '/api/consent/<string:cr_id>/status/last/', endpoint='mydata-last-cr')
-api.add_resource(AddCrStatus, '/api/consent/<string:cr_id>/status/', endpoint='mydata-add-csr')
+api.add_resource(CrStatus, '/api/consent/<string:cr_id>/status/', endpoint='mydata-csr')

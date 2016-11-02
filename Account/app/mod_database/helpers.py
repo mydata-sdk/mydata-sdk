@@ -484,15 +484,14 @@ def get_csr_ids(cursor=None, cr_id=None, table_name=None):
             raise IndexError("DB query returned no results")
 
         logger.debug("Got data[0]: " + repr(data[0]))
-        data_list = list(data[0])
+        data_list = list(data)
         logger.info("Got data_list: " + repr(data_list))
 
         for i in range(len(data_list)):
-            data_list[i] = str(data_list[i])
+            data_list[i] = str(data_list[i][-1])
 
         id_list = data_list
         logger.info("Got id_list: " + repr(id_list))
-
         return cursor, id_list
 
 
@@ -507,7 +506,7 @@ def get_last_csr_id(cursor=None, cr_id=None, table_name=None):
     sql_query = "SELECT consentStatusRecordId " \
                 "FROM " + table_name + " " \
                 "WHERE consentRecordId LIKE %s " \
-                "ORDER BY issued_at DESC " \
+                "ORDER BY id DESC " \
                 "LIMIT 1;"
 
     arguments = (
