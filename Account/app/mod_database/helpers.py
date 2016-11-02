@@ -455,21 +455,30 @@ def get_cr_ids(cursor=None, slr_id=None, table_name=None):
         return cursor, id_list
 
 
-def get_csr_ids(cursor=None, cr_id=None, table_name=None):
+def get_csr_ids(cursor=None, cr_id=None, csr_primary_key=None, table_name=None):
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
     if cr_id is None:
         raise AttributeError("Provide cr_id as parameter")
     if table_name is None:
         raise AttributeError("Provide table_name as parameter")
+    if csr_primary_key is None:
+        sql_query = "SELECT consentStatusRecordId " \
+                    "FROM " + table_name + " " \
+                    "WHERE consentRecordId LIKE %s;"
 
-    sql_query = "SELECT consentStatusRecordId " \
-                "FROM " + table_name + " " \
-                "WHERE consentRecordId LIKE %s;"
+        arguments = (
+            '%' + str(cr_id) + '%',
+        )
+    else:
+        sql_query = "SELECT consentStatusRecordId " \
+                    "FROM " + table_name + " " \
+                    "WHERE consentRecordId LIKE %s AND id > %s;"
 
-    arguments = (
-        '%' + str(cr_id) + '%',
-    )
+        arguments = (
+            '%' + str(cr_id) + '%',
+            int(csr_primary_key),
+        )
 
     try:
         cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)

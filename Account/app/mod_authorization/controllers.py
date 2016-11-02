@@ -642,20 +642,6 @@ def get_csrs(cr_id=None, last_csr_id=None):
     """
     if cr_id is None:
         raise AttributeError("Provide cr_id as parameter")
-    if last_csr_id is None:
-        logger.info("No limiting CSR ID provided")
-    else:
-        csr_limit_id = last_csr_id
-        logger.info("csr_limit_id: " + str(csr_limit_id))
-    # TODO: JATKA
-
-    # Get table name
-    logger.info("Create csr")
-    db_entry_object = ConsentStatusRecord()
-    logger.info(db_entry_object.log_entry)
-    logger.info("Get table name")
-    table_name = db_entry_object.table_name
-    logger.info("Got table name: " + str(table_name))
 
     # Get DB cursor
     try:
@@ -664,9 +650,58 @@ def get_csrs(cr_id=None, last_csr_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
+    # Get CSR limit if necessary
+    if last_csr_id is None:
+        logger.info("No limiting CSR ID provided")
+        csr_primary_key = None
+    else:
+        csr_limit_id = last_csr_id
+        logger.info("csr_limit_id: " + str(csr_limit_id))
+
+        # Get primary key of limiting CSR
+        try:
+            logger.info("Create CSR object")
+            csr_entry = ConsentStatusRecord(consent_record_id=cr_id, consent_status_record_id=last_csr_id)
+        except Exception as exp:
+            error_title = "Failed to create csr object"
+            logger.error(error_title + ": " + repr(exp))
+            raise
+        else:
+            logger.debug("csr object created: " + csr_entry.log_entry)
+
+        # Get csr from DB
+        try:
+            cursor = csr_entry.from_db(cursor=cursor)
+        except Exception as exp:
+            error_title = "Failed to fetch csr from DB"
+            logger.error(error_title + ": " + repr(exp))
+            raise
+        else:
+            logger.info("csr fetched")
+            logger.info("csr fetched from db: " + csr_entry.log_entry)
+
+        # Get primary key of Consent Record database entry
+        try:
+            logger.info("Get primary key of Consent Record database entry")
+            csr_primary_key = csr_entry.id
+        except Exception as exp:
+            error_title = "Failed to get primary key of Consent Record database entry"
+            logger.error(error_title + ": " + repr(exp))
+            raise
+
+        logger.debug("csr_primary_key: " + str(csr_primary_key))
+
     # Get primary keys for csrs
     try:
-        cursor, id_list = get_csr_ids(cursor=cursor, cr_id=cr_id, table_name=table_name)
+        # Get table name
+        logger.info("Create csr")
+        db_entry_object = ConsentStatusRecord()
+        logger.info(db_entry_object.log_entry)
+        logger.info("Get table name")
+        table_name = db_entry_object.table_name
+        logger.info("Got table name: " + str(table_name))
+
+        cursor, id_list = get_csr_ids(cursor=cursor, cr_id=cr_id, csr_primary_key=csr_primary_key, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
