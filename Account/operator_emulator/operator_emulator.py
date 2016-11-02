@@ -718,7 +718,7 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Change CR Status: " + new_cr[0])
+    request_statuses.append("Change CR Status: " + new_cr[0] + " | " + json.dumps(new_cr[1]))
     print ("Response: " + new_cr[0])
     print (json.dumps(new_cr[1], indent=3))
 
@@ -734,7 +734,7 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Change CR Status: " + new_cr[0])
+    request_statuses.append("Change CR Status: " + new_cr[0] + " | " + json.dumps(new_cr[1]))
     print ("Response: " + new_cr[0])
     print (json.dumps(new_cr[1], indent=3))
 
