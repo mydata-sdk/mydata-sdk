@@ -209,6 +209,7 @@ class ConsentSignAndStore(Resource):
             raise
         else:
             logger.info("Source CR signed")
+            logger.debug("source_cr_signed: " + json.dumps(source_cr_signed))
 
         # Sign Source CSR
         try:
@@ -217,7 +218,8 @@ class ConsentSignAndStore(Resource):
             logger.error("Could not sign Source's CSR: " + repr(exp))
             raise
         else:
-            logger.info("Source CR signed")
+            logger.info("Source CSR signed")
+            logger.debug("source_csr_signed: " + json.dumps(source_csr_signed))
 
         # Sign Sink CR
         try:
@@ -227,6 +229,7 @@ class ConsentSignAndStore(Resource):
             raise
         else:
             logger.info("Sink's CR signed")
+            logger.debug("sink_cr_signed: " + json.dumps(sink_cr_signed))
 
         # Sign Sink CSR
         try:
@@ -236,13 +239,16 @@ class ConsentSignAndStore(Resource):
             raise
         else:
             logger.info("Sink's CSR signed")
+            logger.debug("sink_csr_signed: " + json.dumps(sink_csr_signed))
 
         #########
         # Store #
         #########
 
+        logger.info("Creating objects to store")
         # Source SLR
         try:
+            logger.info("Creating Source SLR")
             source_slr_entry = ServiceLinkRecord(
                 surrogate_id=source_cr_surrogate_id,
                 account_id=account_id,
@@ -253,10 +259,12 @@ class ConsentSignAndStore(Resource):
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
+            logger.info("source_slr_entry created")
             logger.info("source_slr_entry: " + source_slr_entry.log_entry)
 
         # Sink SLR
         try:
+            logger.info("Creating Sink SLR")
             sink_slr_entry = ServiceLinkRecord(
                 surrogate_id=sink_cr_surrogate_id,
                 account_id=account_id,
@@ -267,10 +275,12 @@ class ConsentSignAndStore(Resource):
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
+            logger.info("sink_slr_entry created")
             logger.info("sink_slr_entry: " + sink_slr_entry.log_entry)
 
         # Source CR
         try:
+            logger.info("Creating Source CR")
             source_cr_entry = ConsentRecord(
                 consent_record=source_cr_signed,
                 consent_id=source_cr_cr_id,
@@ -285,10 +295,12 @@ class ConsentSignAndStore(Resource):
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
+            logger.info("source_cr_entry created")
             logger.info("source_cr_entry: " + source_cr_entry.log_entry)
 
         # Sink CR
         try:
+            logger.info("Creating Sink CR")
             sink_cr_entry = ConsentRecord(
                 consent_record=sink_cr_signed,
                 consent_id=sink_cr_cr_id,
@@ -303,10 +315,12 @@ class ConsentSignAndStore(Resource):
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
+            logger.info("sink_cr_entry created")
             logger.info("sink_cr_entry: " + sink_cr_entry.log_entry)
 
         # Source CSR
         try:
+            logger.info("Creating Source CSR")
             source_csr_entry = ConsentStatusRecord(
                 consent_status_record_id=source_csr_record_id,
                 status=source_csr_consent_status,
@@ -320,10 +334,12 @@ class ConsentSignAndStore(Resource):
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
+            logger.info("source_csr_entry created")
             logger.info("source_csr_entry: " + source_csr_entry.log_entry)
 
         # Sink CSR
         try:
+            logger.info("Creating Sink CSR")
             sink_csr_entry = ConsentStatusRecord(
                 consent_status_record_id=sink_csr_record_id,
                 status=sink_csr_consent_status,
@@ -337,10 +353,12 @@ class ConsentSignAndStore(Resource):
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
+            logger.info("sink_csr_entry created")
             logger.info("sink_csr_entry: " + sink_csr_entry.log_entry)
 
         # Store CRs and CSRs
         try:
+            logger.info("About to store Consent Records and Consent Status Records")
             db_meta = store_cr_and_csr(
                 source_slr_entry=source_slr_entry,
                 sink_slr_entry=sink_slr_entry,
