@@ -129,7 +129,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to fetch Source's SLR from DB"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("source_slr_entry: " + source_slr_entry.log_entry)
 
         # Get Sink's SLR from DB
@@ -140,7 +140,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to fetch Sink's SLR from DB"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("sink_slr_entry: " + sink_slr_entry.log_entry)
 
         # Get Source's SLR ID
@@ -151,7 +151,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to fetch Source's Service Link Record ID"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("source_cr_entry: " + source_cr_entry.log_entry)
 
         # Get Sink's SLR ID
@@ -162,7 +162,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to fetch Sink's Service Link Record ID"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("sink_cr_entry: " + sink_cr_entry.log_entry)
 
         # Store Source CR
@@ -173,7 +173,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to store Source's Consent Record"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("source_cr_entry: " + source_cr_entry.log_entry)
 
         # Link Source's CSR with it's CR
@@ -184,7 +184,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to link Source's CSR with it's CR"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug(source_csr_entry.log_entry)
 
         # Store Source CSR
@@ -195,7 +195,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to store Source's Consent Status Record"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("source_csr_entry: " + source_csr_entry.log_entry)
 
         # Store Sink CR
@@ -206,7 +206,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to store Sink's Consent Record"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("sink_cr_entry: " + sink_cr_entry.log_entry)
 
         # Link Sink's CSR with it's CR
@@ -217,7 +217,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to link Sink's CSR with it's CR"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("sink_csr_entry: " + sink_csr_entry.log_entry)
 
         # Store Sink CSR
@@ -228,7 +228,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             error_title = "Failed to store Sink's Consent Status Record"
             logger.error(error_title + ": " + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        finally:
+        else:
             logger.debug("sink_csr_entry: " + sink_csr_entry.log_entry)
 
         # Commit
@@ -241,24 +241,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
         raise
     else:
         logger.info("CR's and CSR's commited")
-
-        try:
-            # TODO: Change to_dict -> to_record_dict_external
-            data = {
-                'source': {
-                    'cr': source_cr_entry.to_record_dict,
-                    'csr': source_csr_entry.to_record_dict
-                },
-                'sink': {
-                    'cr': sink_cr_entry.to_record_dict,
-                    'csr': sink_csr_entry.to_record_dict
-                }
-            }
-        except Exception as exp:
-            logger.error("Could not construct data object: "+ repr(exp))
-            data = {}
-        else:
-            return data
+        return source_cr_entry, source_csr_entry, sink_cr_entry, sink_csr_entry
 
 
 def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
@@ -274,6 +257,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
 
     # Get Sink's CR from DB
     try:
+        logger.info("Get Sink's CR from DB")
         cursor = sink_cr_object.from_db(cursor=cursor)
     except Exception as exp:
         error_title = "Failed to fetch Sink's CR from DB"
@@ -284,6 +268,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
 
     # Get required id's from Sink's CR
     try:
+        logger.info("Get required id's from Sink's CR")
         sink_rs_id = str(sink_cr_object.resource_set_id)
         sink_slr_primary_key = str(sink_cr_object.service_link_records_id)
     except Exception as exp:
@@ -295,6 +280,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
 
     # Init Source's Consent Record Object
     try:
+        logger.info("Init Source's Consent Record Object")
         source_cr_entry = ConsentRecord(resource_set_id=sink_rs_id, role="Source")
     except Exception as exp:
         error_title = "Failed to create Source's Consent Record object"
@@ -305,6 +291,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
 
     # Get Source's Consent Record from DB
     try:
+        logger.info("Get Source's Consent Record from DB")
         cursor = source_cr_entry.from_db(cursor=cursor)
     except Exception as exp:
         error_title = "Failed to fetch Source's CR from DB"
@@ -315,6 +302,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
 
     # Init Sink's Service Link Record Object
     try:
+        logger.info("Init Sink's Service Link Record Object")
         sink_slr_entry = ServiceLinkRecord(id=sink_slr_primary_key)
     except Exception as exp:
         error_title = "Failed to create Source's Service Link Record object"
@@ -325,6 +313,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
 
     # Get Source's Consent Record from DB
     try:
+        logger.info("Get Source's Consent Record from DB")
         cursor = sink_slr_entry.from_db(cursor=cursor)
     except Exception as exp:
         error_title = "Failed to fetch Sink's SLR from DB"

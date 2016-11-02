@@ -65,16 +65,25 @@ def sign_slr(account_id=None, slr_payload=None, endpoint="sign_slr(account_id, s
     # Sign slr
     slr_signed = {}
     try:
-        slr_signed = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(slr_payload))
+        slr_signed_json = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(slr_payload))
     except Exception as exp:
         logger.error('Could not create Service Link Record: ' + repr(exp))
         raise ApiError(code=500, title="Failed to create Service Link Record", detail=repr(exp), source=endpoint)
     else:
         logger.info('Service Link Record created and signed')
-        return slr_signed
-    finally:
         logger.debug("slr_payload: " + json.dumps(slr_payload))
-        logger.debug("slr_signed: " + slr_signed)
+        logger.debug("slr_signed_json: " + slr_signed_json)
+        try:
+            logger.info("Converting signed CSR from json to dict")
+            slr_signed_dict = json.loads(slr_signed_json)
+        except Exception as exp:
+            logger.error('Could not convert signed SLR from json to dict: ' + repr(exp))
+            raise ApiError(code=500, title="Failed to convert signed SLR from json to dict", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Converted signed SLR from json to dict')
+            logger.debug('slr_signed_dict: ' + json.dumps(slr_signed_dict))
+
+        return slr_signed_dict
 
 
 def sign_ssr(account_id=None, ssr_payload=None, endpoint="sign_ssr(account_id, slr_payload, endpoint)"):
@@ -88,16 +97,25 @@ def sign_ssr(account_id=None, ssr_payload=None, endpoint="sign_ssr(account_id, s
     # Sign ssr
     ssr_signed = {}
     try:
-        ssr_signed = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(ssr_payload))
+        ssr_signed_json = generate_and_sign_jws(account_id=account_id, jws_payload=json.dumps(ssr_payload))
     except Exception as exp:
         logger.error('Could not create Service Link Status Record: ' + repr(exp))
         raise ApiError(code=500, title="Failed to create Service Link Record", detail=repr(exp), source=endpoint)
     else:
         logger.info('Service Link Status Record created and signed')
-        return ssr_signed
-    finally:
         logger.debug("ssr_payload: " + json.dumps(ssr_payload))
-        logger.debug("ssr_signed: " + ssr_signed)
+        logger.debug("ssr_signed_json: " + ssr_signed_json)
+        try:
+            logger.info("Converting signed CSR from json to dict")
+            ssr_signed_dict = json.loads(ssr_signed_json)
+        except Exception as exp:
+            logger.error('Could not convert signed SLR from json to dict: ' + repr(exp))
+            raise ApiError(code=500, title="Failed to convert signed SLR from json to dict", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Converted signed SLR from json to dict')
+            logger.debug('ssr_signed_dict: ' + json.dumps(ssr_signed_dict))
+
+        return ssr_signed_dict
 
 
 def store_slr_and_ssr(slr_entry=None, ssr_entry=None, endpoint="sign_ssr(account_id, slr_payload, endpoint)"):
@@ -122,7 +140,7 @@ def store_slr_and_ssr(slr_entry=None, ssr_entry=None, endpoint="sign_ssr(account
 
         cursor = ssr_entry.to_db(cursor=cursor)
 
-        data = {'slr_id': slr_id, 'ssr_id': ssr_entry.id}
+        #data = {'slr_id': slr_id, 'ssr_id': ssr_entry.id}
 
         db.connection.commit()
     except Exception as exp:
@@ -132,10 +150,9 @@ def store_slr_and_ssr(slr_entry=None, ssr_entry=None, endpoint="sign_ssr(account
         raise ApiError(code=500, title="Failed to store slr and ssr", detail=repr(exp), source=endpoint)
     else:
         logger.debug('Slr and Ssr commited')
-        return data
-    finally:
         logger.debug("slr_entry: " + slr_entry.log_entry)
         logger.debug("ssr_entry: " + ssr_entry.log_entry)
+        return slr_entry, ssr_entry
 
 
 def get_surrogate_id_by_account_and_service(account_id=None, service_id=None, endpoint="(get_surrogate_id_by_account_and_Service)"):

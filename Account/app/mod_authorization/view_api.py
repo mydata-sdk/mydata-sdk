@@ -359,7 +359,7 @@ class ConsentSignAndStore(Resource):
         # Store CRs and CSRs
         try:
             logger.info("About to store Consent Records and Consent Status Records")
-            db_meta = store_cr_and_csr(
+            stored_source_cr_entry, stored_source_csr_entry, stored_sink_cr_entry, stored_sink_csr_entry = store_cr_and_csr(
                 source_slr_entry=source_slr_entry,
                 sink_slr_entry=sink_slr_entry,
                 source_cr_entry=source_cr_entry,
@@ -374,7 +374,10 @@ class ConsentSignAndStore(Resource):
             raise
         else:
             logger.info("Stored Consent Record and Consent Status Record")
-            logger.debug("DB Meta: " + json.dumps(db_meta))
+            logger.info("Source CR: " + stored_source_cr_entry.log_entry)
+            logger.info("Source CSR: " + stored_source_csr_entry.log_entry)
+            logger.info("Sink CR: " + stored_sink_cr_entry.log_entry)
+            logger.info("Sink CSR: " + stored_sink_csr_entry.log_entry)
 
         # Response data container
         try:
@@ -385,23 +388,23 @@ class ConsentSignAndStore(Resource):
             response_data['data']['source']['consentRecord'] = {}
             response_data['data']['source']['consentRecord']['type'] = "ConsentRecord"
             response_data['data']['source']['consentRecord']['attributes'] = {}
-            response_data['data']['source']['consentRecord']['attributes']['cr'] = source_cr_entry.to_record_dict
+            response_data['data']['source']['consentRecord']['attributes']['cr'] = stored_source_cr_entry.to_record_dict
 
             response_data['data']['source']['consentStatusRecord'] = {}
             response_data['data']['source']['consentStatusRecord']['type'] = "ConsentStatusRecord"
             response_data['data']['source']['consentStatusRecord']['attributes'] = {}
-            response_data['data']['source']['consentStatusRecord']['attributes']['csr'] = source_csr_entry.to_record_dict
+            response_data['data']['source']['consentStatusRecord']['attributes']['csr'] = stored_source_csr_entry.to_record_dict
 
             response_data['data']['sink'] = {}
             response_data['data']['sink']['consentRecord'] = {}
             response_data['data']['sink']['consentRecord']['type'] = "ConsentRecord"
             response_data['data']['sink']['consentRecord']['attributes'] = {}
-            response_data['data']['sink']['consentRecord']['attributes']['cr'] = sink_cr_entry.to_record_dict
+            response_data['data']['sink']['consentRecord']['attributes']['cr'] = stored_sink_cr_entry.to_record_dict
 
             response_data['data']['sink']['consentStatusRecord'] = {}
             response_data['data']['sink']['consentStatusRecord']['type'] = "ConsentStatusRecord"
             response_data['data']['sink']['consentStatusRecord']['attributes'] = {}
-            response_data['data']['sink']['consentStatusRecord']['attributes']['csr'] = sink_csr_entry.to_record_dict
+            response_data['data']['sink']['consentStatusRecord']['attributes']['csr'] = stored_sink_csr_entry.to_record_dict
 
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))

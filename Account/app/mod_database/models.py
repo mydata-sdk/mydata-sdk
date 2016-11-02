@@ -2033,7 +2033,7 @@ class ServiceLinkRecord():
                     ") VALUES (%s, %s, %s, %s, %s, %s)"
 
         arguments = (
-            str(self.service_link_record),
+            json.dumps(self.service_link_record),
             str(self.service_link_record_id),
             str(self.service_id),
             str(self.surrogate_id),
@@ -2101,7 +2101,8 @@ class ServiceLinkRecord():
                 logger.info("service_link_record to dict")
                 self.service_link_record = json.loads(self.service_link_record)
             except Exception as exp:
-                logger.info("Could not convert service_link_record to dict. Using original")
+                attribute_type = type(self.service_link_record)
+                logger.info("Could not convert service_link_record to dict. Type of attribute: " + repr(attribute_type) + " Using original" + repr(attribute_type) + " Using original: " + repr(exp))
                 self.service_link_record = slr_copy
 
             return cursor
@@ -2271,7 +2272,7 @@ class ServiceLinkStatusRecord():
         arguments = (
             str(self.service_link_status_record_id),
             str(self.status),
-            str(self.service_link_status_record),
+            json.dumps(self.service_link_status_record),
             int(self.service_link_records_id),
             str(self.service_link_record_id),
             int(self.issued_at),
@@ -2345,7 +2346,8 @@ class ServiceLinkStatusRecord():
                 logger.info("service_link_status_record to dict")
                 self.service_link_status_record = json.loads(self.service_link_status_record)
             except Exception as exp:
-                logger.info("Could not convert service_link_status_record to dict. Using original")
+                attribute_type = type(self.service_link_status_record)
+                logger.info("Could not convert service_link_status_record to dict. Type of attribute: " + repr(attribute_type) + " Using original" + repr(attribute_type) + " Using original: " + repr(exp))
                 self.service_link_status_record = slsr_copy
 
             return cursor
@@ -2612,7 +2614,7 @@ class ConsentRecord():
                     ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
-            str(self.consent_record),
+            json.dumps(self.consent_record),
             str(self.surrogate_id),
             str(self.consent_id),
             str(self.resource_set_id),
@@ -2855,7 +2857,7 @@ class ConsentStatusRecord():
         arguments = (
             str(self.consent_status_record_id),
             str(self.status),
-            str(self.consent_status_record),
+            json.dumps(self.consent_status_record),
             int(self.consent_records_id),
             str(self.consent_record_id),
             int(self.issued_at),
