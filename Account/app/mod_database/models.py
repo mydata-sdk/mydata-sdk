@@ -1009,7 +1009,7 @@ class Email():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (email, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (email, entryType, prime, Accounts_id) " \
                     "VALUES (%s, %s, %s, %s)"
 
         arguments = (
@@ -1032,7 +1032,7 @@ class Email():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        sql_query = "SELECT id, email, typeEnum, prime, Accounts_id " \
+        sql_query = "SELECT id, email, entryType, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
@@ -1067,7 +1067,7 @@ class Email():
 
     def update_db(self, cursor=""):
 
-        sql_query = "UPDATE " + self.table_name + " SET email=%s, typeEnum=%s, prime=%s " \
+        sql_query = "UPDATE " + self.table_name + " SET email=%s, entryType=%s, prime=%s " \
                                                   "WHERE id=%s AND Accounts_id=%s"
 
         arguments = (
@@ -1196,7 +1196,7 @@ class Telephone():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (tel, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (tel, entryType, prime, Accounts_id) " \
                     "VALUES (%s, %s, %s, %s)"
 
         arguments = (
@@ -1221,7 +1221,7 @@ class Telephone():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, tel, typeEnum, prime, Accounts_id " \
+        sql_query = "SELECT id, tel, entryType, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
@@ -1256,7 +1256,7 @@ class Telephone():
 
     def update_db(self, cursor=""):
 
-        sql_query = "UPDATE " + self.table_name + " SET tel=%s, typeEnum=%s, prime=%s " \
+        sql_query = "UPDATE " + self.table_name + " SET tel=%s, entryType=%s, prime=%s " \
                                                   "WHERE id=%s AND Accounts_id=%s"
 
         arguments = (
@@ -1627,7 +1627,7 @@ class Contacts():
     city = None
     state = None
     country = None
-    typeEnum = None
+    entryType = None
     prime = None
     account_id = None
     table_name = ""
@@ -1781,7 +1781,7 @@ class Contacts():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (address1, address2, postalCode, city, state, country, typeEnum, prime, Accounts_id) " \
+        sql_query = "INSERT INTO " + self.table_name + " (address1, address2, postalCode, city, state, country, entryType, prime, Accounts_id) " \
                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
@@ -1808,7 +1808,7 @@ class Contacts():
     def update_db(self, cursor=""):
 
         sql_query = "UPDATE " + self.table_name + " SET address1=%s, address2=%s, postalCode=%s, city=%s, state=%s, " \
-                                                  "country=%s, typeEnum=%s, prime=%s " \
+                                                  "country=%s, entryType=%s, prime=%s " \
                                                   "WHERE id=%s AND Accounts_id=%s"
 
         arguments = (
@@ -1837,7 +1837,7 @@ class Contacts():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        sql_query = "SELECT id, address1, address2, postalCode, city, state, country, typeEnum, prime, Accounts_id " \
+        sql_query = "SELECT id, address1, address2, postalCode, city, state, country, entryType, prime, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
@@ -1995,6 +1995,20 @@ class ServiceLinkRecord():
         return dictionary
 
     @property
+    def to_record_dict_external(self):
+        dictionary = {}
+        dictionary["slr"] = self.service_link_record
+        return dictionary
+
+    @property
+    def to_record_dict(self):
+        dictionary = {}
+        dictionary['type'] = "ServiceLinkRecord"
+        dictionary['id'] = str(self.service_link_record_id)
+        dictionary['attributes'] = self.to_record_dict_external
+        return dictionary
+
+    @property
     def to_json(self):
         return json.dumps(self.to_dict)
 
@@ -2019,7 +2033,7 @@ class ServiceLinkRecord():
                     ") VALUES (%s, %s, %s, %s, %s, %s)"
 
         arguments = (
-            str(self.service_link_record),
+            json.dumps(self.service_link_record),
             str(self.service_link_record_id),
             str(self.service_id),
             str(self.surrogate_id),
@@ -2087,7 +2101,8 @@ class ServiceLinkRecord():
                 logger.info("service_link_record to dict")
                 self.service_link_record = json.loads(self.service_link_record)
             except Exception as exp:
-                logger.info("Could not convert service_link_record to dict. Using original")
+                attribute_type = type(self.service_link_record)
+                logger.info("Could not convert service_link_record to dict. Type of attribute: " + repr(attribute_type) + " Using original" + repr(attribute_type) + " Using original: " + repr(exp))
                 self.service_link_record = slr_copy
 
             return cursor
@@ -2217,6 +2232,20 @@ class ServiceLinkStatusRecord():
         return dictionary
 
     @property
+    def to_record_dict_external(self):
+        dictionary = {}
+        dictionary["slsr"] = self.service_link_status_record
+        return dictionary
+
+    @property
+    def to_record_dict(self):
+        dictionary = {}
+        dictionary['type'] = "ServiceLinkStatusRecord"
+        dictionary['id'] = str(self.service_link_status_record_id)
+        dictionary['attributes'] = self.to_record_dict_external
+        return dictionary
+
+    @property
     def to_json(self):
         return json.dumps(self.to_dict)
 
@@ -2243,7 +2272,7 @@ class ServiceLinkStatusRecord():
         arguments = (
             str(self.service_link_status_record_id),
             str(self.status),
-            str(self.service_link_status_record),
+            json.dumps(self.service_link_status_record),
             int(self.service_link_records_id),
             str(self.service_link_record_id),
             int(self.issued_at),
@@ -2317,7 +2346,8 @@ class ServiceLinkStatusRecord():
                 logger.info("service_link_status_record to dict")
                 self.service_link_status_record = json.loads(self.service_link_status_record)
             except Exception as exp:
-                logger.info("Could not convert service_link_status_record to dict. Using original")
+                attribute_type = type(self.service_link_status_record)
+                logger.info("Could not convert service_link_status_record to dict. Type of attribute: " + repr(attribute_type) + " Using original" + repr(attribute_type) + " Using original: " + repr(exp))
                 self.service_link_status_record = slsr_copy
 
             return cursor
@@ -2549,6 +2579,20 @@ class ConsentRecord():
         return dictionary
 
     @property
+    def to_record_dict_external(self):
+        dictionary = {}
+        dictionary["cr"] = self.consent_record
+        return dictionary
+
+    @property
+    def to_record_dict(self):
+        dictionary = {}
+        dictionary['type'] = "ConsentRecord"
+        dictionary['id'] = str(self.consent_id)
+        dictionary['attributes'] = self.to_record_dict_external
+        return dictionary
+
+    @property
     def to_json(self):
         return json.dumps(self.to_dict)
 
@@ -2570,7 +2614,7 @@ class ConsentRecord():
                     ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
-            str(self.consent_record),
+            json.dumps(self.consent_record),
             str(self.surrogate_id),
             str(self.consent_id),
             str(self.resource_set_id),
@@ -2646,7 +2690,8 @@ class ConsentRecord():
                 logger.info("consent_record to dict")
                 self.consent_record = json.loads(self.consent_record)
             except Exception as exp:
-                logger.info("Could not convert consent_record to dict. Using original")
+                attribute_type = type(self.consent_record)
+                logger.error("Could not convert consent_record to dict. Type of attribute: " + repr(attribute_type) + " Using original: " + repr(exp))
                 self.consent_record = cr_copy
 
             return cursor
@@ -2776,6 +2821,20 @@ class ConsentStatusRecord():
         return dictionary
 
     @property
+    def to_record_dict_external(self):
+        dictionary = {}
+        dictionary["csr"] = self.consent_status_record
+        return dictionary
+
+    @property
+    def to_record_dict(self):
+        dictionary = {}
+        dictionary['type'] = "ConsentStatusRecord"
+        dictionary['id'] = str(self.consent_status_record_id)
+        dictionary['attributes'] = self.to_record_dict_external
+        return dictionary
+
+    @property
     def to_json(self):
         return json.dumps(self.to_dict)
 
@@ -2798,7 +2857,7 @@ class ConsentStatusRecord():
         arguments = (
             str(self.consent_status_record_id),
             str(self.status),
-            str(self.consent_status_record),
+            json.dumps(self.consent_status_record),
             int(self.consent_records_id),
             str(self.consent_record_id),
             int(self.issued_at),
@@ -2872,7 +2931,8 @@ class ConsentStatusRecord():
                 logger.info("consent_status_record to dict")
                 self.consent_status_record = json.loads(self.consent_status_record)
             except Exception as exp:
-                logger.info("Could not convert consent_status_record to dict. Using original")
+                attribute_type = type(self.consent_status_record)
+                logger.error("Could not convert consent_status_record to dict. Type of attribute: " + repr(attribute_type) + " Using original: " + repr(exp))
                 self.consent_status_record = csr_copy
 
             return cursor

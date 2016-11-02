@@ -455,7 +455,56 @@ def get_cr_ids(cursor=None, slr_id=None, table_name=None):
         return cursor, id_list
 
 
-def get_csr_ids(cursor=None, cr_id=None, table_name=None):
+def get_csr_ids(cursor=None, cr_id=None, csr_primary_key=None, table_name=None):
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+    if csr_primary_key is None:
+        sql_query = "SELECT consentStatusRecordId " \
+                    "FROM " + table_name + " " \
+                    "WHERE consentRecordId LIKE %s;"
+
+        arguments = (
+            '%' + str(cr_id) + '%',
+        )
+    else:
+        sql_query = "SELECT consentStatusRecordId " \
+                    "FROM " + table_name + " " \
+                    "WHERE consentRecordId LIKE %s AND id > %s;"
+
+        arguments = (
+            '%' + str(cr_id) + '%',
+            int(csr_primary_key),
+        )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data)
+        logger.info("Got data_list: " + repr(data_list))
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i][-1])
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+        return cursor, id_list
+
+
+def get_last_csr_id(cursor=None, cr_id=None, table_name=None):
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
     if cr_id is None:
@@ -465,7 +514,9 @@ def get_csr_ids(cursor=None, cr_id=None, table_name=None):
 
     sql_query = "SELECT consentStatusRecordId " \
                 "FROM " + table_name + " " \
-                "WHERE consentRecordId LIKE %s;"
+                "WHERE consentRecordId LIKE %s " \
+                "ORDER BY id DESC " \
+                "LIMIT 1;"
 
     arguments = (
         '%' + str(cr_id) + '%',
@@ -487,13 +538,10 @@ def get_csr_ids(cursor=None, cr_id=None, table_name=None):
         data_list = list(data[0])
         logger.info("Got data_list: " + repr(data_list))
 
-        for i in range(len(data_list)):
-            data_list[i] = str(data_list[i])
+        entry_id = str(data_list[0])
+        logger.info("Got entry_id: " + repr(entry_id))
 
-        id_list = data_list
-        logger.info("Got id_list: " + repr(id_list))
-
-        return cursor, id_list
+        return cursor, entry_id
 
 
 
