@@ -1487,7 +1487,7 @@ def get_slr(account_id=None, slr_id=None, cursor=None):
         logger.info("slr fetched")
         logger.info("slr fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object.to_record_dict
 
 
 def get_slrs(account_id=None):
@@ -1811,7 +1811,7 @@ def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
         logger.info("slsr fetched")
         logger.info("slsr fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object.to_record_dict
 
 
 def get_slsrs(account_id=None, slr_id=None):
@@ -1937,7 +1937,7 @@ def get_cr(account_id=None, slr_id=None, cr_id=None, cursor=None):
         logger.info("cr fetched")
         logger.info("cr fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object.to_record_dict
 
 
 def get_crs(account_id=None, slr_id=None):
@@ -2067,7 +2067,7 @@ def get_csr(account_id=None, slr_id=None, cr_id=None, csr_id=None, cursor=None):
         logger.info("csr fetched")
         logger.info("csr fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object.to_record_dict
 
 
 def get_csrs(account_id=None, slr_id=None, cr_id=None):

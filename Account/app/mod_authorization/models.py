@@ -15,13 +15,15 @@ __status__ = "Development"
 from marshmallow import Schema, fields
 from marshmallow.validate import Equal, OneOf
 
+STATUS_LIST = ["Active", "Disabled", "Withdrawn"]  # List that contains status entries
+
 
 # Consent Status Records
 class ConsentStatusAttributes(Schema):
     record_id = fields.Str(required=True)
     surrogate_id = fields.Str(required=True)
     cr_id = fields.Str(required=True)
-    consent_status = fields.Str(required=True)
+    consent_status = fields.Str(required=True, validate=OneOf(STATUS_LIST))
     iat = fields.Int(required=True)
     prev_record_id = fields.Str(required=True)
 
@@ -47,7 +49,7 @@ class ResourceSetDescription(Schema):
 
 
 class SourceCommonConsentAttributes(Schema):
-    version_number = fields.Str(required=True)
+    version = fields.Str(required=True)
     cr_id = fields.Str(required=True)
     surrogate_id = fields.Str(required=True)
     rs_description = fields.Nested(nested=ResourceSetDescription, required=True)
@@ -61,7 +63,7 @@ class SourceCommonConsentAttributes(Schema):
 
 
 class SinkCommonConsentAttributes(Schema):
-    version_number = fields.Str(required=True)
+    version = fields.Str(required=True)
     cr_id = fields.Str(required=True)
     surrogate_id = fields.Str(required=True)
     rs_description = fields.Nested(nested=ResourceSetDescription, required=True)
@@ -75,7 +77,8 @@ class SinkCommonConsentAttributes(Schema):
 
 
 class SourceRoleSpecificAttributes(Schema):
-    auth_token_issuer_key = fields.Dict(required=True)
+    pop_key = fields.Dict(required=True)
+    token_issuer_key = fields.Dict(required=True)
 
 
 # class UsageRules(Schema):
@@ -137,4 +140,8 @@ class NewConsentData(Schema):
 
 class NewConsent(Schema):
     data = fields.Nested(nested=NewConsentData, required=True)
+
+
+class NewConsentStatus(Schema):
+    data = fields.Nested(nested=ConsentStatusPayload, required=True)
 
