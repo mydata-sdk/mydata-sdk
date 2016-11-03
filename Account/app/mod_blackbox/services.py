@@ -474,11 +474,10 @@ def jws_generate(payload=None):
     if payload is None:
         raise AttributeError("Provide payload as parameter")
 
-    payload_json = json.dumps(payload)
-    logger.debug('payload_json: ' + payload_json)
+    logger.debug('payload: ' + payload)
 
     try:
-        jws_object = jws.JWS(payload=payload_json)
+        jws_object = jws.JWS(payload=payload)
     except Exception as exp:
         exp = append_description_to_exception(exp=exp, description='Could not generate JWS object with payload')
         logger.error('Could not generate JWS object with payload: ' + repr(exp))

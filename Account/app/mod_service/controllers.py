@@ -48,7 +48,6 @@ def sign_slr(account_id=None, slr_payload=None, endpoint="sign_slr(account_id, s
         raise ApiError(code=500, title="Failed to get account owner's public key", detail=repr(exp), source=endpoint)
     else:
         logger.info("Account owner's public key and kid fetched")
-    finally:
         logger.debug("account_public_key: " + account_public_key_log_entry)
 
     # Fill Account key to cr_keys
@@ -169,7 +168,6 @@ def get_surrogate_id_by_account_and_service(account_id=None, service_id=None, en
         raise
     else:
         logger.info("SurrogateId object created")
-    finally:
         logger.debug("sur_id_obj: " + sur_id_obj.log_entry)
 
     # Get DB cursor
@@ -186,8 +184,6 @@ def get_surrogate_id_by_account_and_service(account_id=None, service_id=None, en
         raise
     else:
         logger.debug("Got sur_id_obj:" + json.dumps(sur_id_obj.to_dict))
-        return sur_id_obj.to_dict
-    finally:
         logger.debug("sur_id_obj: " + sur_id_obj.log_entry)
-
+        return sur_id_obj.to_dict
 
