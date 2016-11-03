@@ -49,7 +49,7 @@ class ResourceSetDescription(Schema):
 
 
 class SourceCommonConsentAttributes(Schema):
-    version_number = fields.Str(required=True)
+    version = fields.Str(required=True)
     cr_id = fields.Str(required=True)
     surrogate_id = fields.Str(required=True)
     rs_description = fields.Nested(nested=ResourceSetDescription, required=True)
@@ -63,7 +63,7 @@ class SourceCommonConsentAttributes(Schema):
 
 
 class SinkCommonConsentAttributes(Schema):
-    version_number = fields.Str(required=True)
+    version = fields.Str(required=True)
     cr_id = fields.Str(required=True)
     surrogate_id = fields.Str(required=True)
     rs_description = fields.Nested(nested=ResourceSetDescription, required=True)
@@ -77,7 +77,8 @@ class SinkCommonConsentAttributes(Schema):
 
 
 class SourceRoleSpecificAttributes(Schema):
-    auth_token_issuer_key = fields.Dict(required=True)
+    pop_key = fields.Dict(required=True)
+    token_issuer_key = fields.Dict(required=True)
 
 
 # class UsageRules(Schema):
