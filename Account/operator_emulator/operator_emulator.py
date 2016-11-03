@@ -82,15 +82,6 @@ source_slr_payload = {
             "operator_id": operator_id,
             "service_id": source_service_id,
             "surrogate_id": source_surrogate_id,
-            "token_key": {
-              "key": {
-                "y": "FFuMENxef5suGtcBz4PWXt_KvRUHdURU5kH7EI5GZj8",
-                "x": "5IxIntzP7SPShzbGVW6dVYQlMsJ9kg9rjrE5Z3B6fmg",
-                "kid": "SRVMGNT-IDK3Y",
-                "crv": "P-256",
-                "kty": "EC"
-              }
-            },
             "operator_key": {
               "key": {
                 "y": "FFuMENxef5suGtcBz4PWXt_KvRUHdURU5kH7EI5GZj8",
@@ -101,7 +92,7 @@ source_slr_payload = {
               }
             },
             "cr_keys": "",
-            "created": source_slr_iat
+            "iat": source_slr_iat
           }
         },
         "surrogate_id": {
@@ -126,15 +117,6 @@ sink_slr_payload = {
             "operator_id": operator_id,
             "service_id": sink_service_id,
             "surrogate_id": sink_surrogate_id,
-            "token_key": {
-              "key": {
-                "y": "FFuMENxef5suGtcBz4PWXt_KvRUHdURU5kH7EI5GZj8",
-                "x": "5IxIntzP7SPShzbGVW6dVYQlMsJ9kg9rjrE5Z3B6fmg",
-                "kid": "SRVMGNT-IDK3Y",
-                "crv": "P-256",
-                "kty": "EC"
-              }
-            },
             "operator_key": {
               "key": {
                 "y": "FFuMENxef5suGtcBz4PWXt_KvRUHdURU5kH7EI5GZj8",
@@ -145,7 +127,7 @@ sink_slr_payload = {
               }
             },
             "cr_keys": "",
-            "created": sink_slr_iat
+            "iat": sink_slr_iat
           }
         },
         "surrogate_id": {
@@ -171,7 +153,7 @@ source_ssr_payload = {
         "ssr": {
           "attributes": {
             "record_id": source_ssr_id,
-            "account_id": source_surrogate_id,
+            "surrogate_id": source_surrogate_id,
             "slr_id": source_slr_id,
             "sl_status": "Active",
             "iat": source_slsr_iat,
@@ -202,7 +184,7 @@ sink_ssr_payload = {
         "ssr": {
           "attributes": {
             "record_id": sink_ssr_id,
-            "account_id": sink_surrogate_id,
+            "surrogate_id": sink_surrogate_id,
             "slr_id": sink_slr_id,
             "sl_status": "Active",
             "iat": sink_slsr_iat,
@@ -228,7 +210,7 @@ consent_record_payload = {
             "type": "ConsentRecord",
             "attributes": {
               "common_part": {
-                "version_number": "1.2.1",
+                "version": "1.2",
                 "cr_id": source_cr_id,
                 "surrogate_id": source_surrogate_id,
                 "rs_description": {
@@ -255,7 +237,24 @@ consent_record_payload = {
                 "role": "Source"
               },
               "role_specific_part": {
-                "auth_token_issuer_key": {}
+                "pop_key": {
+                  "key": {
+                    "y": "FFuMENxef5suGtcBz4PWXt_KvRUHdURU5kH7EI5GZj8",
+                    "x": "5IxIntzP7SPShzbGVW6dVYQlMsJ9kg9rjrE5Z3B6fmg",
+                    "kid": "SRVMGNT-IDK3Y",
+                    "crv": "P-256",
+                    "kty": "EC"
+                  }
+                },
+                "token_issuer_key": {
+                  "key": {
+                    "y": "FFuMENxef5suGtcBz4PWXt_KvRUHdURU5kH7EI5GZj8",
+                    "x": "5IxIntzP7SPShzbGVW6dVYQlMsJ9kg9rjrE5Z3B6fmg",
+                    "kid": "SRVMGNT-IDK3Y",
+                    "crv": "P-256",
+                    "kty": "EC"
+                  }
+                }
               },
               "consent_receipt_part": {
                 "ki_cr": {}
@@ -282,7 +281,7 @@ consent_record_payload = {
             "type": "ConsentRecord",
             "attributes": {
               "common_part": {
-                "version_number": "1.2.1",
+                "version": "1.2",
                 "cr_id": sink_cr_id,
                 "surrogate_id": sink_surrogate_id,
                 "rs_description": {
