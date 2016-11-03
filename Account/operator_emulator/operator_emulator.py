@@ -585,20 +585,6 @@ else:
     print ("Response: " + source_slr[0])
     print (json.dumps(source_slr[1], indent=3))
 
-# Sink SLR sign
-print ("------------------------------------")
-print("Sink SLR")
-try:
-    sink_slr = slr_sign(host=account_host, account_id=account_id, headers=headers, data=sink_slr_payload)
-except Exception as exp:
-    error_title = "Sink SLR filed"
-    print(error_title + ": " + repr(exp))
-    raise
-else:
-    request_statuses.append("Sink SLR: " + sink_slr[0])
-    print ("Response: " + sink_slr[0])
-    print (json.dumps(sink_slr[1], indent=3))
-
 
 # Source SLR verify
 print ("------------------------------------")
@@ -613,6 +599,21 @@ else:
     request_statuses.append("Source SLR verify: " + source_slr_verified[0])
     print ("Response: " + source_slr_verified[0])
     print (json.dumps(source_slr_verified[1], indent=3))
+
+
+# Sink SLR sign
+print ("------------------------------------")
+print("Sink SLR")
+try:
+    sink_slr = slr_sign(host=account_host, account_id=account_id, headers=headers, data=sink_slr_payload)
+except Exception as exp:
+    error_title = "Sink SLR filed"
+    print(error_title + ": " + repr(exp))
+    raise
+else:
+    request_statuses.append("Sink SLR: " + sink_slr[0])
+    print ("Response: " + sink_slr[0])
+    print (json.dumps(sink_slr[1], indent=3))
 
 # Sink SLR verify
 print ("------------------------------------")
@@ -705,7 +706,7 @@ else:
     print ("Response: " + last_cr[0])
     print (json.dumps(last_cr[1], indent=3))
 
-#
+
 # Change CR Status
 print ("------------------------------------")
 print("Change CR Status")
