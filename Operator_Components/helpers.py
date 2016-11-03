@@ -9,7 +9,7 @@ from sqlite3 import IntegrityError
 from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
 from flask_restful import Api
-
+from Templates import ServiceRegistryHandler
 import db_handler as db_handler
 
 debug_log = logging.getLogger("debug")
@@ -175,11 +175,13 @@ class AccountManagerHandler:
                 },
                 "ssr": {
                     "attributes": {
+                        "version": "1.2",
+                        "surrogate_id": payload["surrogate_id"],
                         "record_id": str(guid()),
                         "account_id": account_id,
                         "slr_id": payload["link_id"],
                         "sl_status": "Active",
-                        "iat": "",
+                        "iat": int(time.time()),
                         "prev_record_id": "NULL"
                     },
                     "type": "ServiceLinkStatusRecord"
@@ -194,6 +196,8 @@ class AccountManagerHandler:
                 }
             }
         }
+        debug_log.info("Template sent to Account Manager:")
+        debug_log.info(dumps(templa, indent=2))
         req = post(self.url + self.endpoint["verify_slr"].replace("{account_id}", account_id), json=templa, headers={'Api-Key': self.token}, timeout=self.timeout)
         return req
 
@@ -264,13 +268,72 @@ class Helpers:
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
         self.port = app_config["MYSQL_PORT"]
+        self.operator_id = app_config["UID"]
+        self.not_after_interval = app_config["NOT_AFTER_INTERVAL"]
 
+    def get_key(self):
+        keysize = self.keysize
+        cert_key_path = self.cert_key_path
+        gen3 = {"generate": "RSA", "size": keysize, "kid": self.operator_id}
+        operator_key = jwk.JWK(**gen3)
+        try:
+            with open(cert_key_path, "r") as cert_file:
+                operator_key2 = jwk.JWK(**loads(load(cert_file)))
+                operator_key = operator_key2
+        except Exception as e:
+            debug_log.error(e)
+            with open(cert_key_path, "w+") as cert_file:
+                dump(operator_key.export(), cert_file, indent=2)
+        public_key = loads(operator_key.export_public())
+        full_key = loads(operator_key.export())
+        protti = {"alg": "RS256"}
+        headeri = {"kid": self.operator_id, "jwk": public_key}
+        return {"pub": public_key,
+                "key": full_key,
+                "prot": protti,
+                "header": headeri}
 
     def validate_rs_id(self, rs_id):
         ##
         # Validate here the RS_ID
         ##
         return self.change_rs_id_status(rs_id, True)
+
+    # TODO: This should return list, now returns single object.
+    def get_service_keys(self, surrogate_id):
+        """
+
+        """
+        storage_rows = self.query_db_multiple("select * from service_keys_tbl where surrogate_id = %s;", (surrogate_id,))
+        list_of_keys = []
+        for item in storage_rows:
+            list_of_keys.append(item[2])
+
+        debug_log.info("Found keys:\n {}".format(list_of_keys))
+        return list_of_keys
+
+    def get_service_key(self, surrogate_id, kid):
+        """
+
+        """
+        storage_row = self.query_db_multiple("select * from service_keys_tbl where surrogate_id = %s and kid = %s;", (surrogate_id, kid,), one=True)
+        # Third item in this tuple should be the key JSON {token_key: {}, pop_key:{}}
+        key_json_from_db = loads(storage_row[2])
+
+        return key_json_from_db
+
+    def store_service_key_json(self, kid, surrogate_id, key_json):
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+        cursor = db.cursor()
+        try:
+            cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json) \
+                VALUES (%s, %s, %s);", (kid, surrogate_id, dumps(key_json)))
+            db.commit()
+        except:
+            cursor.execute("UPDATE service_keys_tbl SET key_json=%s WHERE kid=%s ;", (dumps(key_json), kid))
+            db.commit()
+        debug_log.info("Stored key_json({}) for surrogate_id({}) into DB".format(key_json, surrogate_id))
+        cursor.close()
 
     def storeRS_ID(self, rs_id):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
@@ -327,23 +390,51 @@ class Helpers:
         :param args: Arguments to inject into the query
         :return: Single hit for the given query
         '''
+
+        result = self.query_db_multiple(query, args=args, one=True)
+        if result is not None:
+            return result[1]
+        else:
+            return None
+
+    def query_db_multiple(self, query, args=(), one=False):
+        '''
+        Simple queries to DB
+        :param query: SQL query
+        :param args: Arguments to inject into the query
+        :return: all hits for the given query
+        '''
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cur = cursor.execute(query, args)
-        try:
-            rv = cursor.fetchone()  # Returns tuple
-            debug_log.info(rv)
-            if rv is not None:
+        if one:
+            try:
+                rv = cursor.fetchone()  # Returns tuple
+                debug_log.info(rv)
+                if rv is not None:
+                    db.close()
+                    return rv  # The second value in the tuple.
+                else:
+                    return None
+            except Exception as e:
+                debug_log.exception(e)
+                debug_log.info(cur)
                 db.close()
-                return rv[1]  # The second value in the tuple.
-            else:
                 return None
-        except Exception as e:
-            debug_log.exception(e)
-            debug_log.info(cur)
-            db.close()
-            return None
-
+        else:
+            try:
+                rv = cursor.fetchall()  # Returns tuple
+                debug_log.info(rv)
+                if rv is not None:
+                    db.close()
+                    return rv  # This should be list of tuples [(1,2,3), (3,4,5)...]
+                else:
+                    return None
+            except Exception as e:
+                debug_log.exception(e)
+                debug_log.info(cur)
+                db.close()
+                return None
     def gen_rs_id(self, source_URI):
         ##
         # Something to check state here?
@@ -365,7 +456,7 @@ class Helpers:
         # Some of these fields are filled in consent_form.py
         ##
         common_cr = {
-            "version_number": "String",
+            "version": "1.2",
             "cr_id": str(guid()),
             "surrogate_id": sur_id,
             "rs_id": rs_ID,
@@ -380,7 +471,7 @@ class Helpers:
 
         return common_cr
 
-    def gen_cr_sink(self, common_CR, consent_form):
+    def gen_cr_sink(self, common_CR, consent_form, source_cr_id):
         _rules = []
         common_CR["subject_id"] = consent_form["sink"]["service_id"]
 
@@ -394,7 +485,7 @@ class Helpers:
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
-                "role": "Sink",
+                "source_cr_id": source_cr_id,
                 "usage_rules": _rules
             },
             "consent_receipt_part": {"ki_cr": {}},
@@ -404,7 +495,7 @@ class Helpers:
 
         return _tmpl
 
-    def gen_cr_source(self, common_CR, consent_form, Operator_public_key):
+    def gen_cr_source(self, common_CR, consent_form, sink_pop_key): # TODO: Operator_public key is now fetched with function.
         common_CR["subject_id"] = consent_form["source"]["service_id"]
         rs_description = \
             {
@@ -426,8 +517,8 @@ class Helpers:
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
-                "role": "Source",
-                "auth_token_issuer_key": Operator_public_key,
+                "pop_key": sink_pop_key,
+                "token_issuer_key": self.get_key()["pub"],
             },
             "consent_receipt_part": {"ki_cr": {}},
             "extension_part": {"extensions": {}}
@@ -450,10 +541,10 @@ class Helpers:
     def gen_csr(self, account_id, consent_record_id, consent_status, previous_record_id):
         _tmpl = {
             "record_id": str(guid()),
-            "account_id": account_id,
+            "surrogate_id": account_id,
             "cr_id": consent_record_id,
             "consent_status": consent_status,  # "Active/Disabled/Withdrawn",
-            "iat": "",
+            "iat": int(time.time()),
             "prev_record_id": previous_record_id,
         }
         return _tmpl
@@ -477,16 +568,16 @@ class Helpers:
         header = {"typ": "JWT",
                   "alg": "HS256"}
         # Claims
-        payload = {"iss": dumps(slrt.get_operator_key()),  # Operator_Key
-                   "sub": dumps(slrt.get_sink_key()),  # Service_Components(Sink) Key
-                   "aud": slrt.get_dataset(),  # Hard to build real # TODO: src domain here!
-                   # TODO: Logic to determine exp time
-                   "exp": time.time()+2592000,  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
+        srv_handler = ServiceRegistryHandler()
+        payload = {"iss": self.operator_id,  # Operator ID,
+                   "cnf": {"kid": slrt.get_source_cr_id()},
+                   "aud": srv_handler.getService_url(slrt.get_source_service_id()),
+                   "exp": int(time.time()+self.not_after_interval),  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
-                   "nbf": time.time(),  # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted
-                   "iat": time.time(), #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
+                   "nbf": int(time.time()),  # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted
+                   "iat": int(time.time()), #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
                    "jti": str(guid()),  # JWT id claim provides a unique identifier for the JWT
-                   "rs_id": slrt.get_rs_id(),  # Resource set id that was assigned in the linked Consent Record
+                   "pi_id": slrt.get_source_cr_id(),  # Resource set id that was assigned in the linked Consent Record
                    }
         debug_log.debug(dumps(payload, indent=2))
         key = operator_key
@@ -569,16 +660,17 @@ class SLR_tool:
     def decrypt_payload(self, payload):
         payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         content = decode(payload.encode())
-        payload = loads(loads(content.decode("utf-8")))
+        payload = loads(content.decode("utf-8"))
         return payload
 
     def get_SLR_payload(self):
-        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["payload"]
+        debug_log.info(dumps(self.slr, indent=2))
+        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["slr"]["payload"]
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_CR_payload(self):
-        base64_payload =  self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["payload"]
+        base64_payload =  self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["cr"]["payload"]
         payload = self.decrypt_payload(base64_payload)
         return payload
 
@@ -594,6 +686,9 @@ class SLR_tool:
     def get_rs_id(self):
         return self.get_CR_payload()["common_part"]["rs_id"]
 
+    def get_source_cr_id(self):
+        return self.get_CR_payload()["common_part"]["cr_id"]
+
     def get_surrogate_id(self):
         return self.get_CR_payload()["common_part"]["surrogate_id"]
 
@@ -601,6 +696,9 @@ class SLR_tool:
         return self.get_SLR_payload()["token_key"]["key"]
 
     def get_dataset(self):
-        return self.get_CR_payload()["role_specific_part"]["resource_set_description"]["resource_set"]["dataset"]
+        return self.get_CR_payload()["common_part"]["rs_description"]["resource_set"]["dataset"]
 
-
+    def get_source_service_id(self):
+        return self.get_CR_payload()["common_part"]["subject_id"]
+    def get_sink_service_id(self):
+        return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
