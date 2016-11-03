@@ -5,7 +5,7 @@ import time
 __author__ = 'alpaloma'
 import logging
 import traceback
-from json import dumps
+from json import dumps, loads
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import ServiceRegistryHandler, Consent_form_Out, Sequences
@@ -132,6 +132,10 @@ class ConsentFormHandler(Resource):
         slr_id_source, surrogate_id_source = source_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"],\
                                              source_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"] # One for Sink, one for Source
 
+        sink_keys = self.Helpers.get_service_keys(surrogate_id_sink)
+        sink_key = loads(sink_keys[0])
+        debug_log.info("Sink keys:\n{}".format(dumps(sink_key, indent=2)))
+        sink_pop_key = sink_key["pop_key"]
         # Generate common_cr for both sink and source.
         sq.task("Generate common CR")
 
@@ -168,7 +172,7 @@ class ConsentFormHandler(Resource):
 
         sq.task("Generate CR for source")
         source_cr = self.Helpers.gen_cr_source(common_cr_source, _consent_form,
-                                          Operator_public_key)
+                                          sink_pop_key)
 
         sink_cr["cr"]["common_part"]["rs_description"] = source_cr["cr"]["common_part"]["rs_description"]
 

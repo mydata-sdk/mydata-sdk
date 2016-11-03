@@ -56,11 +56,9 @@ class RegisterSur(Resource):
                 "operator_id": account_id,
                 "service_id": "",
                 "surrogate_id": "",
-                "token_key": "",
-                "token_issuer_keys": [""],
                 "operator_key": self.operator_key["pub"],
                 "cr_keys": "",
-                "created": int(time.time()),
+                "iat": int(time.time()), # TODO: set to iat when Account version used supports it
             }
         debug_log.info(dumps(self.payload, indent=3))
         self.service_registry_handler = ServiceRegistryHandler()
@@ -96,15 +94,23 @@ class RegisterSur(Resource):
             # Fill token_key
             try:
                 sq.task("Verify surrogate_id and token_key exist")
+                token_key = js["token_key"]
                 self.payload["surrogate_id"] = js["surrogate_id"]
-                self.payload["token_key"] = {"key": js["token_key"]}
+                #self.payload["token_key"] = {"key": token_key}
+
+                sq.task("Store surrogate_id and keys for CR steps later on.")
+                key_template = {"token_key": token_key,
+                                "pop_key": token_key} # TODO: Get pop_key here?
+
+                self.Helpers.store_service_key_json(kid=token_key["kid"], surrogate_id=js["surrogate_id"], key_json=key_template)
             except Exception as e:
+                debug_log.exception(e)
                 raise DetailedHTTPException(exception=e,
                                             detail={"msg": "Received Invalid JSON that may not contain surrogate_id",
                                                     "json": js})
-            sq.task("Fetch and fill token_issuer_keys")
+            #sq.task("Fetch and fill token_issuer_keys")
             # TODO: Token keys separetely when the time is right.
-            self.payload["token_issuer_keys"][0] = self.Helpers.get_key()["pub"]
+            #self.payload["token_issuer_keys"][0] = self.Helpers.get_key()["pub"]
 
             # Create template
             self.payload["link_id"] = str(guid())

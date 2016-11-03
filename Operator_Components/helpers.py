@@ -297,6 +297,42 @@ class Helpers:
         ##
         return self.change_rs_id_status(rs_id, True)
 
+    # TODO: This should return list, now returns single object.
+    def get_service_keys(self, surrogate_id):
+        """
+
+        """
+        storage_rows = self.query_db_multiple("select * from service_keys_tbl where surrogate_id = %s;", (surrogate_id,))
+        list_of_keys = []
+        for item in storage_rows:
+            list_of_keys.append(item[2])
+
+        debug_log.info("Found keys:\n {}".format(list_of_keys))
+        return list_of_keys
+
+    def get_service_key(self, surrogate_id, kid):
+        """
+
+        """
+        storage_row = self.query_db_multiple("select * from service_keys_tbl where surrogate_id = %s and kid = %s;", (surrogate_id, kid,), one=True)
+        # Third item in this tuple should be the key JSON {token_key: {}, pop_key:{}}
+        key_json_from_db = loads(storage_row[2])
+
+        return key_json_from_db
+
+    def store_service_key_json(self, kid, surrogate_id, key_json):
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+        cursor = db.cursor()
+        try:
+            cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json) \
+                VALUES (%s, %s, %s);", (kid, surrogate_id, dumps(key_json)))
+            db.commit()
+        except:
+            cursor.execute("UPDATE service_keys_tbl SET key_json=%s WHERE kid=%s ;", (dumps(key_json), kid))
+            db.commit()
+        debug_log.info("Stored key_json({}) for surrogate_id({}) into DB".format(key_json, surrogate_id))
+        cursor.close()
+
     def storeRS_ID(self, rs_id):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
@@ -352,23 +388,51 @@ class Helpers:
         :param args: Arguments to inject into the query
         :return: Single hit for the given query
         '''
+
+        result = self.query_db_multiple(query, args=args, one=True)
+        if result is not None:
+            return result[1]
+        else:
+            return None
+
+    def query_db_multiple(self, query, args=(), one=False):
+        '''
+        Simple queries to DB
+        :param query: SQL query
+        :param args: Arguments to inject into the query
+        :return: all hits for the given query
+        '''
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cur = cursor.execute(query, args)
-        try:
-            rv = cursor.fetchone()  # Returns tuple
-            debug_log.info(rv)
-            if rv is not None:
+        if one:
+            try:
+                rv = cursor.fetchone()  # Returns tuple
+                debug_log.info(rv)
+                if rv is not None:
+                    db.close()
+                    return rv  # The second value in the tuple.
+                else:
+                    return None
+            except Exception as e:
+                debug_log.exception(e)
+                debug_log.info(cur)
                 db.close()
-                return rv[1]  # The second value in the tuple.
-            else:
                 return None
-        except Exception as e:
-            debug_log.exception(e)
-            debug_log.info(cur)
-            db.close()
-            return None
-
+        else:
+            try:
+                rv = cursor.fetchall()  # Returns tuple
+                debug_log.info(rv)
+                if rv is not None:
+                    db.close()
+                    return rv  # This should be list of tuples [(1,2,3), (3,4,5)...]
+                else:
+                    return None
+            except Exception as e:
+                debug_log.exception(e)
+                debug_log.info(cur)
+                db.close()
+                return None
     def gen_rs_id(self, source_URI):
         ##
         # Something to check state here?
@@ -429,7 +493,7 @@ class Helpers:
 
         return _tmpl
 
-    def gen_cr_source(self, common_CR, consent_form, Operator_public_key): # TODO: Operator_public key is now fetched with function.
+    def gen_cr_source(self, common_CR, consent_form, sink_pop_key): # TODO: Operator_public key is now fetched with function.
         common_CR["subject_id"] = consent_form["source"]["service_id"]
         rs_description = \
             {
@@ -451,6 +515,7 @@ class Helpers:
         _tmpl = {"cr": {
             "common_part": common_CR,
             "role_specific_part": {
+                "pop_key": sink_pop_key,
                 "auth_token_issuer_key": self.get_key()["pub"],
             },
             "consent_receipt_part": {"ki_cr": {}},
@@ -504,8 +569,7 @@ class Helpers:
         srv_handler = ServiceRegistryHandler()
         payload = {"iss": self.operator_id,  # Operator ID,
                    "cnf": {"kid": slrt.get_source_cr_id()},
-                   "aud": srv_handler.getService_url(slrt.get_source_service_id()), # Hard to build real # TODO: src domain here!
-                   # TODO: Logic to determine exp time
+                   "aud": srv_handler.getService_url(slrt.get_source_service_id()),
                    "exp": int(time.time()+self.not_after_interval),  # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
                    "nbf": int(time.time()),  # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time before which token MUST NOT be accepted

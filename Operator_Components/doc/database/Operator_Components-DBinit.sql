@@ -58,6 +58,21 @@ CREATE TABLE IF NOT EXISTS `db_Operator`.`session_store` (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
+-- -----------------------------------------------------
+-- Table `db_Operator`.`keys_tbl`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `db_Operator`.`service_keys_tbl` ;
+
+CREATE TABLE IF NOT EXISTS `db_Operator`.`service_keys_tbl` (
+  `kid` LONGTEXT NOT NULL,
+  `surrogate_id` LONGTEXT NOT NULL,
+  `key_json` LONGTEXT NOT NULL,
+  PRIMARY KEY (`kid`(255)))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+
+
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
