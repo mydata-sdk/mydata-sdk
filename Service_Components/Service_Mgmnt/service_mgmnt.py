@@ -255,7 +255,7 @@ class StoreSLR(Resource):
             content = decode(payload.encode())
 
             sq.task("Load decoded payload as python dict")
-            payload = loads(loads(content.decode("utf-8")))  # TODO: Figure out why we get str out of loads the first time?
+            payload = loads(content.decode("utf-8"))
             debug_log.info("Decoded SLR payload:")
             debug_log.info(type(payload))
             debug_log.info(dumps(payload, indent=2))

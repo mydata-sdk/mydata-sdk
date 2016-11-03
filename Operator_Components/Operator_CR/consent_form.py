@@ -144,6 +144,7 @@ class ConsentFormHandler(Resource):
         not_after = int(time.time()+current_app.config["NOT_AFTER_INTERVAL"]) #datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
         operator_id = current_app.config["UID"]
 
+
         common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source,
                                                       _consent_form["source"]["rs_id"],
                                                       slr_id_source,

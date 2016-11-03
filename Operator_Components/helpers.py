@@ -175,6 +175,8 @@ class AccountManagerHandler:
                 },
                 "ssr": {
                     "attributes": {
+                        "version": "1.2",
+                        "surrogate_id": payload["surrogate_id"],
                         "record_id": str(guid()),
                         "account_id": account_id,
                         "slr_id": payload["link_id"],
@@ -454,7 +456,7 @@ class Helpers:
         # Some of these fields are filled in consent_form.py
         ##
         common_cr = {
-            "version_number": "String",
+            "version": "1.2",
             "cr_id": str(guid()),
             "surrogate_id": sur_id,
             "rs_id": rs_ID,
@@ -516,7 +518,7 @@ class Helpers:
             "common_part": common_CR,
             "role_specific_part": {
                 "pop_key": sink_pop_key,
-                "auth_token_issuer_key": self.get_key()["pub"],
+                "token_issuer_key": self.get_key()["pub"],
             },
             "consent_receipt_part": {"ki_cr": {}},
             "extension_part": {"extensions": {}}
@@ -658,17 +660,17 @@ class SLR_tool:
     def decrypt_payload(self, payload):
         payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         content = decode(payload.encode())
-        payload = loads(loads(content.decode("utf-8")))
+        payload = loads(content.decode("utf-8"))
         return payload
 
     def get_SLR_payload(self):
         debug_log.info(dumps(self.slr, indent=2))
-        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_link_record"]["payload"]
+        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["slr"]["payload"]
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_CR_payload(self):
-        base64_payload =  self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["consent_record"]["payload"]
+        base64_payload =  self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["cr"]["payload"]
         payload = self.decrypt_payload(base64_payload)
         return payload
 

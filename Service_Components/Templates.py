@@ -18,7 +18,7 @@ source_cr_schema = {
     "common_part": {
       "type": "object",
       "properties": {
-        "version_number": {
+        "version": {
           "type": "string"
         },
         "cr_id": {
@@ -88,7 +88,7 @@ source_cr_schema = {
         }
       },
       "required": [
-        "version_number",
+        "version",
         "cr_id",
         "surrogate_id",
         "rs_description",
@@ -110,7 +110,7 @@ source_cr_schema = {
         }
       },
       "required": [
-        "auth_token_issuer_key"
+        "token_issuer_key"
       ]
     },
     "consent_receipt_part": {
@@ -153,7 +153,7 @@ sink_cr_schema = {
     "common_part": {
       "type": "object",
       "properties": {
-        "version_number": {
+        "version": {
           "type": "string"
         },
         "cr_id": {
@@ -223,7 +223,7 @@ sink_cr_schema = {
         }
       },
       "required": [
-        "version_number",
+        "version",
         "cr_id",
         "surrogate_id",
         "rs_description",

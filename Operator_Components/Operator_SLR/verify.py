@@ -136,7 +136,7 @@ class VerifySLR(Resource):
         content = decode(payload.encode())
 
         sq.task("Load decoded payload as python dict")
-        payload = loads(loads(content.decode("utf-8")))  # TODO: Figure out why we get str out of loads the first time?
+        payload = loads(content.decode("utf-8"))  # TODO: Figure out why we get str out of loads the first time?
         debug_log.info(payload)
         debug_log.info(type(payload))
 

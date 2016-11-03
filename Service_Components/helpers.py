@@ -481,19 +481,19 @@ class SLR_tool:
     def decrypt_payload(self, payload):
         payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         content = decode(payload.encode())
-        payload = loads(loads(content.decode("utf-8")))
+        payload = loads(content.decode("utf-8"))
         debug_log.info("Decrypted payload is:")
         debug_log.info(payload)
         return payload
 
     def get_SLR_payload(self):
-        base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["payload"]
+        base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["attributes"]["slr"]["payload"]
         debug_log.info("Decrypting SLR payload:")
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_SLSR_payload(self):
-        base64_payload =  self.slr["data"]["ssr"]["attributes"]["ssr"]["payload"]
+        base64_payload =  self.slr["data"]["ssr"]["attributes"]["ssr"]["attributes"]["slsr"]["payload"]
         debug_log.info("Decrypting SSR payload:")
         payload = self.decrypt_payload(base64_payload)
         return payload
@@ -560,16 +560,18 @@ class CR_tool:
         payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         #print("After Fix :", payload)
         content = decode(payload.encode())
-        payload = loads(loads(content.decode("utf-8")))
+        payload = loads(content.decode("utf-8"))
+        debug_log.info("Decrypted payload is:")
+        debug_log.info(payload)
         return payload
 
     def get_CR_payload(self):
-        base64_payload = self.cr["cr"]["payload"]
+        base64_payload = self.cr["cr"]["attributes"]["cr"]["payload"]
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_CSR_payload(self):
-        base64_payload = self.cr["csr"]["payload"]
+        base64_payload = self.cr["csr"]["attributes"]["csr"]["payload"]
         payload = self.decrypt_payload(base64_payload)
         return payload
 
@@ -616,10 +618,11 @@ class CR_tool:
         return self.get_CR_payload()["common_part"]["role"]
 
     def verify_cr(self, keys):
+        debug_log.info("CR in object:\n{}".format(dumps(self.cr, indent=2)))
         for key in keys:
             cr_jwk = jwk.JWK(**key)
             cr_jws = jws.JWS()
-            cr_jws.deserialize(dumps(self.cr["cr"]))
+            cr_jws.deserialize(dumps(self.cr["cr"]["attributes"]["cr"]))
 
             try:
                 cr_jws.verify(cr_jwk)
@@ -635,7 +638,7 @@ class CR_tool:
         for key in keys:
             cr_jwk = jwk.JWK(**key)
             csr_jws = jws.JWS()
-            csr_jws.deserialize(dumps(self.cr["csr"]))
+            csr_jws.deserialize(dumps(self.cr["csr"]["attributes"]["csr"]))
             try:
                 csr_jws.verify(cr_jwk)
                 return True
