@@ -382,7 +382,7 @@ def slr_sign(host=None, account_id=None, headers=None, data=None):
 
     print("Request")
     print("Endpoint: " + endpoint)
-    print("Payload: " + json.dumps(data, indent=3))
+    print("Payload: " + json.dumps(data))
 
     req = requests.post(url, headers=headers, json=data)
     status_code = str(req.status_code)
@@ -416,7 +416,7 @@ def slr_verify(host=None, account_id=None, headers=None, slr_to_verify=None, dat
 
     print("Request")
     print("Endpoint: " + endpoint)
-    print("Payload: " + json.dumps(data, indent=3))
+    print("Payload: " + json.dumps(data))
 
     req = requests.post(url, headers=headers, json=data)
     status_code = str(req.status_code)
@@ -467,7 +467,7 @@ def give_consent(host=None, account_id=None, source_slr_id=None, sink_slr_id=Non
 
     print("Request")
     print("Endpoint: " + endpoint)
-    print("Payload: " + json.dumps(data, indent=3))
+    print("Payload: " + json.dumps(data))
 
     req = requests.post(url, headers=headers, json=data)
     status_code = str(req.status_code)
@@ -563,7 +563,7 @@ def change_consent_status(host=None, cr_id=None, headers=None, data=None):
 
     print("Request")
     print("Endpoint: " + endpoint)
-    print("Payload: " + json.dumps(data, indent=3))
+    print("Payload: " + json.dumps(data))
 
     req = requests.post(url, headers=headers, json=data)
     status_code = str(req.status_code)
@@ -581,9 +581,9 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Source SLR: " + source_slr[0])
+    request_statuses.append("Source SLR: " + source_slr[0] + " | " + json.dumps(source_slr[1]))
     print ("Response: " + source_slr[0])
-    print (json.dumps(source_slr[1], indent=3))
+    print (json.dumps(source_slr[1]))
 
 
 # Source SLR verify
@@ -596,9 +596,9 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Source SLR verify: " + source_slr_verified[0])
+    request_statuses.append("Source SLR verify: " + source_slr_verified[0] + " | " + json.dumps(source_slr_verified[1]))
     print ("Response: " + source_slr_verified[0])
-    print (json.dumps(source_slr_verified[1], indent=3))
+    print (json.dumps(source_slr_verified[1]))
 
 
 # Sink SLR sign
@@ -611,9 +611,9 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Sink SLR: " + sink_slr[0])
+    request_statuses.append("Sink SLR: " + sink_slr[0] + " | " + json.dumps(sink_slr[1]))
     print ("Response: " + sink_slr[0])
-    print (json.dumps(sink_slr[1], indent=3))
+    print (json.dumps(sink_slr[1]))
 
 # Sink SLR verify
 print ("------------------------------------")
@@ -625,9 +625,9 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Sink SLR verify: " + sink_slr_verified[0])
+    request_statuses.append("Sink SLR verify: " + sink_slr_verified[0] + " | " + json.dumps(sink_slr_verified[1]))
     print ("Response: " + sink_slr_verified[0])
-    print (json.dumps(sink_slr_verified[1], indent=3))
+    print (json.dumps(sink_slr_verified[1]))
 
 
 # Surrogate Source
@@ -640,9 +640,9 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Get Surrogate Source: " + sur[0])
+    request_statuses.append("Get Surrogate Source: " + sur[0] + " | " + json.dumps(sur[1]))
     print ("Response: " + sur[0])
-    print (json.dumps(sur[1], indent=3))
+    print (json.dumps(sur[1]))
 
 
 # Surrogate Sink
@@ -655,9 +655,9 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Get Surrogate Sink: " + sur[0])
+    request_statuses.append("Get Surrogate Sink: " + sur[0] + " | " + json.dumps(sur[1]))
     print ("Response: " + sur[0])
-    print (json.dumps(sur[1], indent=3))
+    print (json.dumps(sur[1]))
 
 
 # Give consent
@@ -670,9 +670,9 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Give Consent: " + consenting[0])
+    request_statuses.append("Give Consent: " + consenting[0] + " | " + json.dumps(consenting[1]))
     print ("Response: " + consenting[0])
-    print (json.dumps(consenting[1], indent=3))
+    print (json.dumps(consenting[1]))
 
 
 # Get Authorization token
@@ -686,9 +686,9 @@ except Exception as exp:
     print(error_title + ": " + repr(exp))
     raise
 else:
-    request_statuses.append("Authorization token: " + token[0])
+    request_statuses.append("Authorization token: " + token[0] + " | " + json.dumps(token[1]))
     print ("Response: " + token[0])
-    print (json.dumps(token[1], indent=3))
+    print (json.dumps(token[1]))
 
 
 # Get last CR Status
@@ -704,7 +704,7 @@ except Exception as exp:
 else:
     request_statuses.append("Last CR Status: " + last_cr[0] + " | " + json.dumps(last_cr[1]))
     print ("Response: " + last_cr[0])
-    print (json.dumps(last_cr[1], indent=3))
+    print (json.dumps(last_cr[1]))
 
 
 # Change CR Status
@@ -720,7 +720,7 @@ except Exception as exp:
 else:
     request_statuses.append("Change CR Status: " + new_cr[0] + " | " + json.dumps(new_cr[1]))
     print ("Response: " + new_cr[0])
-    print (json.dumps(new_cr[1], indent=3))
+    print (json.dumps(new_cr[1]))
 
 #
 # Change CR Status again
@@ -736,7 +736,7 @@ except Exception as exp:
 else:
     request_statuses.append("Change CR Status: " + new_cr[0] + " | " + json.dumps(new_cr[1]))
     print ("Response: " + new_cr[0])
-    print (json.dumps(new_cr[1], indent=3))
+    print (json.dumps(new_cr[1]))
 
 
 # Get new last CR Status
@@ -752,7 +752,7 @@ except Exception as exp:
 else:
     request_statuses.append("New last CR Status: " + last_cr[0] + " | " + json.dumps(last_cr[1]))
     print ("Response: " + last_cr[0])
-    print (json.dumps(last_cr[1], indent=3))
+    print (json.dumps(last_cr[1]))
 
 
 # Get missing CR Statuses
@@ -768,7 +768,7 @@ except Exception as exp:
 else:
     request_statuses.append("Missing CR Statuses: " + last_cr[0] + " | " + json.dumps(last_cr[1]))
     print ("Response: " + last_cr[0])
-    print (json.dumps(last_cr[1], indent=3))
+    print (json.dumps(last_cr[1]))
 
 
 print ("------------------------------------")

@@ -392,15 +392,9 @@ class ServiceLinkVerify(Resource):
 
             response_data['data'] = {}
 
-            response_data['data']['slr'] = {}
-            response_data['data']['slr']['type'] = "ServiceLinkRecord"
-            response_data['data']['slr']['attributes'] = {}
-            response_data['data']['slr']['attributes']['slr'] = stored_slr_entry.to_record_dict
+            response_data['data']['slr'] = stored_slr_entry.to_record_dict
 
-            response_data['data']['ssr'] = {}
-            response_data['data']['ssr']['type'] = "ServiceLinkStatusRecord"
-            response_data['data']['ssr']['attributes'] = {}
-            response_data['data']['ssr']['attributes']['ssr'] = stored_ssr_entry.to_record_dict
+            response_data['data']['ssr'] = stored_ssr_entry.to_record_dict
 
             response_data['data']['surrogate_id'] = surrogate_id
         except Exception as exp:
