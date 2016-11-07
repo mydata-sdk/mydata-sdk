@@ -275,6 +275,12 @@ class Helpers:
         slr_from_db = loads(storage_row)
         return slr_from_db
 
+    def get_surrogate_from_cr_id(self, cr_id):
+        storage_row = self.query_db("select cr_id,surrogate_id from cr_storage where cr_id = %s;", (cr_id,))
+        debug_log.info("Found surrogate_id {}".format(storage_row))
+        surrogate_from_db = storage_row
+        return surrogate_from_db
+
     def get_token(self, cr_id):
         """
         Fetch token for given cr_id from the database
@@ -589,6 +595,9 @@ class CR_tool:
 
     def get_usage_rules(self):
         return self.get_CR_payload()["role_specific_part"]["usage_rules"]
+
+    def get_pop_key(self):
+        return self.get_CR_payload()["role_specific_part"]["pop_key"]
 
     def get_slr_id(self):
         return self.get_CR_payload()["common_part"]["slr_id"]

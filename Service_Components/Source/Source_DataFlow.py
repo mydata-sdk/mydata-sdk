@@ -2,9 +2,13 @@
 __author__ = 'alpaloma'
 
 from DetailedHTTPException import error_handler
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from flask_restful import Resource, Api
+from helpers import Helpers
 import logging
+from jwcrypto import jwk
+from json import loads, dumps
+from signed_requests.json_builder import pop_handler
 debug_log = logging.getLogger("debug")
 api_Source_blueprint = Blueprint("api_Source_blueprint", __name__)
 api = Api()
@@ -27,9 +31,38 @@ class Status(Resource):
         return status
 
 class DataRequest(Resource):
+    def __init__(self):
+        super(DataRequest, self).__init__()
+        self.service_url = current_app.config["SERVICE_URL"]
+        self.helpers = Helpers(current_app.config)
+
     @error_handler
     def get(self):
-        debug_log.info(request.headers)
+        authorization = request.headers["Authorization"]
+        debug_log.info(authorization)
+        pop_h = pop_handler(token=authorization.split(" ")[1])
+        decrypted_token = loads(pop_h.get_at())
+        debug_log.info("Token verified state: {}".format(pop_h.verified))
+
+        debug_log.info(type(decrypted_token))
+        debug_log.info(dumps(decrypted_token, indent=2))
+        cr_id = decrypted_token["at"]["pi_id"]
+        debug_log.info("got cr_id {}".format(decrypted_token["at"]["pi_id"]))
+
+        surrogate_id = self.helpers.get_surrogate_from_cr_id(cr_id)
+
+        cr = self.helpers.validate_cr(cr_id, surrogate_id)
+        pop_key = cr["cr"]["role_specific_part"]["pop_key"]
+        pop_key = jwk.JWK(**pop_key)
+        pop_h = pop_handler(token=authorization.split(" ")[1], key=pop_key)
+        decrypted_token = loads(pop_h.get_at())
+        debug_log.info("Token verified state: {}".format(pop_h.verified))
+        if pop_h.verified is False:
+            raise ValueError("Request verification failed.")
+
+
+
+
         # Validate Request
         # Validate Token
         # Check that related Consent Record exists with the same rs_id

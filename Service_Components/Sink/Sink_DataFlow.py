@@ -61,7 +61,7 @@ class DataFlow(Resource):
         # LOOP: for every data_set_id
         for distribution_id in distribution_ids:
             debug_log.info(distribution_id)
-            # Fetch corresponding distrubution point url based on data_set_id
+            # Fetch corresponding distribution point url based on data_set_id
             pass  # TODO: Implement
 
         # Data request urls fetched.
