@@ -80,18 +80,18 @@ class DataRequest(Resource):
             raise ValueError("Request verification failed.")
 
 
-        # Check that related Consent Record exists with the same rs_id
+        # Check that related Consent Record exists with the same rs_id # TODO: Bunch of these comments may be outdated, check them all.
         # Check that auth_token_issuer_key field of CR matches iss-field in Authorization token
         # Check Token's integrity against the signature
         # Check Token's validity period includes time of data request
         # Check Token's "aud" field includes the URI to which the data request was made
         # Token validated.
 
-        # Validate request
+        # Validate request # TODO: Check that we fill this properly, we should though.
         # Check that request was signed with the key in the Token
         # Request validated.
 
-        # Validate related CR
+        # Validate related CR # TODO: Recheck what this should hold and compare what we do.
         # Validate the related Consent Record as defined in MyData Authorisation Specification
         # CR Validated.
 
