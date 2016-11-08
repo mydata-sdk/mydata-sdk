@@ -4,9 +4,9 @@ __author__ = 'alpaloma'
 from DetailedHTTPException import error_handler
 from flask import Blueprint, request, current_app
 from flask_restful import Resource, Api
-from helpers import Helpers
+from helpers import Helpers, Token_tool
 import logging
-from jwcrypto import jwk
+from jwcrypto import jwk, jwt, jws
 from json import loads, dumps
 from signed_requests.json_builder import pop_handler
 debug_log = logging.getLogger("debug")
@@ -41,30 +41,45 @@ class DataRequest(Resource):
         authorization = request.headers["Authorization"]
         debug_log.info(authorization)
         pop_h = pop_handler(token=authorization.split(" ")[1])
-        decrypted_token = loads(pop_h.get_at())
-        debug_log.info("Token verified state: {}".format(pop_h.verified))
+        decrypted_pop_token = loads(pop_h.get_at())
+        debug_log.info("Token verified state should be False here, it is: {}".format(pop_h.verified))
 
-        debug_log.info(type(decrypted_token))
-        debug_log.info(dumps(decrypted_token, indent=2))
-        cr_id = decrypted_token["at"]["pi_id"]
-        debug_log.info("got cr_id {}".format(decrypted_token["at"]["pi_id"]))
+        debug_log.info(type(decrypted_pop_token))
+        debug_log.info(dumps(decrypted_pop_token, indent=2))
+
+
+        token = decrypted_pop_token["at"]["auth_token"]
+        jws_holder = jwt.JWS()
+        jws_holder.deserialize(raw_jws=token)
+        auth_token_payload = loads(jws_holder.__dict__["objects"]["payload"])
+        debug_log.info("We got auth_token_payload: {}".format(auth_token_payload))
+
+        cr_id = auth_token_payload["pi_id"]
+        debug_log.info("We got cr_id {} from auth_token_payload.".format(cr_id))
 
         surrogate_id = self.helpers.get_surrogate_from_cr_id(cr_id)
 
         cr = self.helpers.validate_cr(cr_id, surrogate_id)
         pop_key = cr["cr"]["role_specific_part"]["pop_key"]
         pop_key = jwk.JWK(**pop_key)
+
+
+        token_issuer_key = cr["cr"]["role_specific_part"]["token_issuer_key"]
+        token_issuer_key = jwk.JWK(**token_issuer_key)
+
+        # Validate Token
+        auth_token = jwt.JWT(jwt=token, key=token_issuer_key)
+
+        debug_log.info("Following auth_token claims successfully verified with token_issuer_key: {}".format(auth_token.claims))
+
         pop_h = pop_handler(token=authorization.split(" ")[1], key=pop_key)
-        decrypted_token = loads(pop_h.get_at())
-        debug_log.info("Token verified state: {}".format(pop_h.verified))
+        decrypted_pop_token = loads(pop_h.get_at())
+        debug_log.info("Token verified state should be True here, it is: {}".format(pop_h.verified))
+        # Validate Request
         if pop_h.verified is False:
             raise ValueError("Request verification failed.")
 
 
-
-
-        # Validate Request
-        # Validate Token
         # Check that related Consent Record exists with the same rs_id
         # Check that auth_token_issuer_key field of CR matches iss-field in Authorization token
         # Check Token's integrity against the signature

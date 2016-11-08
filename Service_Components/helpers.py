@@ -387,7 +387,7 @@ class Helpers:
         tt.key = key
         aud = tt.verify_token(our_key)
         debug_log.info(aud)
-        return aud
+        return token
 
 
 
