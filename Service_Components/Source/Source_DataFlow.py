@@ -40,7 +40,7 @@ class DataRequest(Resource):
     def get(self):
         authorization = request.headers["Authorization"]
         debug_log.info(authorization)
-        pop_h = pop_handler(token=authorization.split(" ")[1])
+        pop_h = pop_handler(token=authorization.split(" ")[1]) # TODO: Logic to pick up PoP
         decrypted_pop_token = loads(pop_h.get_at())
         debug_log.info("Token verified state should be False here, it is: {}".format(pop_h.verified))
 
