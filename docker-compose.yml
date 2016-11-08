@@ -22,6 +22,8 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-account
     container_name: account
+    depends_on:
+      - mysql-db
     command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 2
     environment:
       - PYTHONUNBUFFERED='true'
@@ -47,6 +49,8 @@ services:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Operator_Components
     container_name: operator_components
+    depends_on:
+      - redis
     environment:
       - PYTHONUNBUFFERED='true'
       - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
@@ -86,6 +90,8 @@ services:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Service_Components
     container_name: service_components
+    depends_on:
+      - redis
     environment:
       - PYTHONUNBUFFERED='true'
       - DATABASE_PATH="./db_Srv.sqlite"
@@ -120,6 +126,8 @@ services:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Service_Mockup
     container_name: service_mockup
+    depends_on:
+      - redis
     environment:
       - PYTHONUNBUFFERED='true'
       - SERVICE_MGMNT_URL="http://service_components:7000"
@@ -216,13 +224,16 @@ services:
       - mydata_sdk_demo_network
 
   redis:
-    image: redis
+    image: redis:3.2-alpine
     container_name: redis
+    volumes:
+      - redis-data:/data
     networks:
       - mydata_sdk_demo_network
 
 volumes:
   mysql-data:
+  redis-data:
 
 networks:
   mydata_sdk_demo_network:
