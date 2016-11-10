@@ -8,13 +8,14 @@ from helpers import Helpers, Token_tool
 import logging
 from jwcrypto import jwk, jwt, jws
 from json import loads, dumps
+from Templates import Sequences
 from signed_requests.json_builder import pop_handler
 debug_log = logging.getLogger("debug")
 api_Source_blueprint = Blueprint("api_Source_blueprint", __name__)
 api = Api()
 api.init_app(api_Source_blueprint)
 
-
+sq = Sequences("Service_Components Mgmnt (Source)", {})
 # import xmltodict
 # @api.representation('application/xml')
 # def output_xml(data, code, headers=None):
@@ -38,9 +39,11 @@ class DataRequest(Resource):
 
     @error_handler
     def get(self):
+        sq.task("Fetch PoP from authorization header")
         authorization = request.headers["Authorization"]
         debug_log.info(authorization)
         pop_h = pop_handler(token=authorization.split(" ")[1]) # TODO: Logic to pick up PoP
+        sq.task("Fetch at field from PoP")
         decrypted_pop_token = loads(pop_h.get_at())
         debug_log.info("Token verified state should be False here, it is: {}".format(pop_h.verified))
 
@@ -48,6 +51,7 @@ class DataRequest(Resource):
         debug_log.info(dumps(decrypted_pop_token, indent=2))
 
 
+        sq.task("Decrypt auth_token from PoP and get cr_id.")
         token = decrypted_pop_token["at"]["auth_token"]
         jws_holder = jwt.JWS()
         jws_holder.deserialize(raw_jws=token)
@@ -57,8 +61,10 @@ class DataRequest(Resource):
         cr_id = auth_token_payload["pi_id"]
         debug_log.info("We got cr_id {} from auth_token_payload.".format(cr_id))
 
+        sq.task("Fetch surrogate_id with cr_id")
         surrogate_id = self.helpers.get_surrogate_from_cr_id(cr_id)
 
+        sq.task("Verify CR")
         cr = self.helpers.validate_cr(cr_id, surrogate_id)
         pop_key = cr["cr"]["role_specific_part"]["pop_key"]
         pop_key = jwk.JWK(**pop_key)
@@ -67,11 +73,12 @@ class DataRequest(Resource):
         token_issuer_key = cr["cr"]["role_specific_part"]["token_issuer_key"]
         token_issuer_key = jwk.JWK(**token_issuer_key)
 
-        # Validate Token
+        sq.task("Validate auth token")
         auth_token = jwt.JWT(jwt=token, key=token_issuer_key)
 
         debug_log.info("Following auth_token claims successfully verified with token_issuer_key: {}".format(auth_token.claims))
 
+        sq.task("Validate Request(PoP token)")
         pop_h = pop_handler(token=authorization.split(" ")[1], key=pop_key)
         decrypted_pop_token = loads(pop_h.get_at())
         debug_log.info("Token verified state should be True here, it is: {}".format(pop_h.verified))
@@ -95,8 +102,10 @@ class DataRequest(Resource):
         # Validate the related Consent Record as defined in MyData Authorisation Specification
         # CR Validated.
 
-        # OPT: Introspection
-        # GET Consent Record Status (source_cr_id)
+        # OPT: Introspection # TODO: Implement
+            # introspect = is_introspection_necessary()
+
+            # GET Consent Record Status (source_cr_id)
 
         # Process request
         # Return.

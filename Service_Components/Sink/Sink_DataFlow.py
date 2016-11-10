@@ -10,11 +10,13 @@ from DetailedHTTPException import error_handler
 from flask_restful import Resource, Api
 import logging
 from jwcrypto import jwk
+from Templates import Sequences
 debug_log = logging.getLogger("debug")
 api_Sink_blueprint = Blueprint("api_Sink_blueprint", __name__)
 api = Api()
 api.init_app(api_Sink_blueprint)
 
+sq = Sequences("Service_Components Mgmnt (Sink)", {})
 # import xmltodict
 # @api.representation('application/xml')
 # def output_xml(data, code, headers=None):
@@ -44,17 +46,17 @@ class DataFlow(Resource):
         user_id = params["user_id"]
         cr_id = params["cr_id"]
         rs_id = params["rs_id"]
-        # Get data_set_id fromm query param
+        sq.task("Get data_set_id from POST json")
         data_set_id = request.args.get("data_set_id", None)
         debug_log.info("data_set_id is ({}), cr_id is ({}), user_id ({}) and rs_id ({})"
                        .format(data_set_id, cr_id, user_id, rs_id))
-        # Create request
+        sq.task("Create request")
         req = {"we want": "data"}
 
-        # Validate CR
+        sq.task("Validate CR")
         cr = self.helpers.validate_cr(cr_id, surrogate_id=user_id)
 
-        # Validate Request from UI
+        sq.task("Validate Request from UI")
         distribution_ids = self.helpers.validate_request_from_ui(cr, data_set_id, rs_id)
 
         # Fetch data request urls
@@ -67,7 +69,7 @@ class DataFlow(Resource):
         # Data request urls fetched.
         debug_log.info("Data request urls fetched.")
 
-        # Validate Authorisation Token
+        sq.task("Validate Authorisation Token")
         surrogate_id = cr["cr"]["common_part"]["surrogate_id"]
         our_key = self.helpers.get_key()
         our_key_pub = our_key["pub"]
@@ -93,7 +95,7 @@ class DataFlow(Resource):
         # With these two steps Sink has verified that it's allowed to make request.
 
         # Construct request
-
+        sq.task("Construct request")
         # Select request URL from "aud" field
         # Add Authorisation Token to request
         # Request constructed.
@@ -102,7 +104,7 @@ class DataFlow(Resource):
         our_key_full = jwk.JWK()
         our_key_full.import_key(**our_key["key"])
 
-
+        sq.send_to("Service_Components Mgmnt (Source)", "Data Request (PoP stuff)")
         req = requests.get("http://localhost:7000"+current_app.config["SERVICE_ROOT_PATH"]+"/source_flow"+"/datarequest",
                            auth=SignedRequest(token=aud, sign_method=True, sign_path=True, key=our_key_full, protected=dumps(our_key["prot"])))
 
@@ -112,7 +114,6 @@ class DataFlow(Resource):
         # Request created.
 
         # Make Data Request
-
         status = {"status": "running", "service_mode": "Sink"}
         return status
 
