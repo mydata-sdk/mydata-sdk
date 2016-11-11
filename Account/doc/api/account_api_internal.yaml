@@ -398,6 +398,12 @@ paths:
           type: string
           description: "Consent Record ID"
           required: true
+        - name: csr_payload
+          in: body
+          description: "Consent Record payload"
+          required: true
+          schema:
+            $ref: '#/definitions/newConsentStatus'
 
       tags:
         - Consent
