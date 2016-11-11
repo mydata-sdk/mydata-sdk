@@ -80,7 +80,7 @@ class DataRequest(Resource):
 
         sq.task("Validate Request(PoP token)")
         pop_h = pop_handler(token=authorization.split(" ")[1], key=pop_key)
-        decrypted_pop_token = loads(pop_h.get_at())
+        decrypted_pop_token = loads(pop_h.get_at())  # This step affects verified state of object.
         debug_log.info("Token verified state should be True here, it is: {}".format(pop_h.verified))
         # Validate Request
         if pop_h.verified is False:

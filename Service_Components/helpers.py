@@ -328,8 +328,10 @@ class Helpers:
         """
         cr_id = DictionaryToStore["cr_id"]
         csr_id = DictionaryToStore["csr_id"]
+        consent_status = DictionaryToStore["consent_status"]
         rs_id = DictionaryToStore["rs_id"]
         surrogate_id = DictionaryToStore["surrogate_id"]
+        previous_record_id = DictionaryToStore["previous_record_id"]
         slr_id = DictionaryToStore["slr_id"]
         json = DictionaryToStore["json"]
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
@@ -338,8 +340,8 @@ class Helpers:
         debug_log.info(DictionaryToStore)
         # debug_log.info(key)
         try:
-            cursor.execute("INSERT INTO csr_storage (cr_id, csr_id ,surrogate_id, slr_id, rs_id, json) \
-                VALUES (%s, %s, %s, %s, %s, %s)", [cr_id, csr_id,surrogate_id, slr_id, rs_id, dumps(json)])
+            cursor.execute("INSERT INTO csr_storage (cr_id, csr_id, previous_record_id, consent_status, surrogate_id, slr_id, rs_id, json) \
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", [cr_id, csr_id, previous_record_id, consent_status, surrogate_id, slr_id, rs_id, dumps(json)])
             db.commit()
         except IntegrityError as e:
             # db.execute("UPDATE csr_storage SET json=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
@@ -347,6 +349,32 @@ class Helpers:
             db.rollback()
             raise DetailedHTTPException(detail={"msg": "Adding CSR to the database has failed.",},
                                         title="Failure in CSR storage", exception=e)
+
+    def get_active_csr(self, cr_id):
+        csr = self.query_db("select cr_id, json from csr_storage where cr_id = %s and consent_status = 'Active';", (cr_id,))
+        debug_log.info("Active csr is: {}".format(csr))
+        return loads(csr)
+
+    def get_latest_csr(self, cr_id):
+        def get_latest(csr_id):
+            try:
+                newer_csr_id = self.query_db("select cr_id, previous_record_id from csr_storage where csr_id = %s;",
+                                         (csr_id,))
+                if newer_csr_id is None:
+                    return csr_id
+                else:
+                    return get_latest(newer_csr_id)
+            except Exception as e:
+                debug_log.exception(e)
+
+        #If csr we get, is in others previous_record_id then its not the latest.
+        csr_id = self.query_db("select cr_id, csr_id from csr_storage where cr_id = %s;",
+                            (cr_id,))
+        newer_csr_id = self.query_db("select cr_id, previous_record_id from csr_storage where csr_id = %s;",
+                            (csr_id,))
+        latest_csr_id = get_latest(newer_csr_id)
+
+
 
     def validate_request_from_ui(self, cr, data_set_id, rs_id):
         debug_log.info("CR passed to validate_request_from_ui:")
@@ -587,7 +615,10 @@ class CR_tool:
     def get_cr_id_from_csr(self):
         return self.get_CSR_payload()["cr_id"]
     def get_csr_id(self):
-        return self.get_CSR_payload()["record_id"] # Perhaps this could just be csr_id
+        return self.get_CSR_payload()["record_id"]  # Perhaps this could just be csr_id
+
+    def get_consent_status(self):
+        return self.get_CSR_payload()["consent_status"]
 
     def get_prev_record_id(self):
         return self.get_CSR_payload()["prev_record_id"]

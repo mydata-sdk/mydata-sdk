@@ -179,6 +179,8 @@ class Install_CR(Resource):
         store_dict = {
             "rs_id": crt.get_rs_id(),
             "csr_id": crt.get_csr_id(),
+            "consent_status": crt.get_consent_status(),
+            "previous_record_id": crt.get_prev_record_id(),
             "cr_id": crt.get_cr_id_from_cr(),
             "surrogate_id": surr_id,
             "slr_id": crt.get_slr_id(),
