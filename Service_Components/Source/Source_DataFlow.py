@@ -115,3 +115,4 @@ class DataRequest(Resource):
 
 api.add_resource(DataRequest, '/datarequest')
 api.add_resource(Status, '/init')
+

@@ -165,12 +165,14 @@ class Helpers:
     def get_cr_json(self, cr_id):
         # TODO: query_db is not really optimal when making two separate queries in row.
         cr = self.query_db("select * from cr_storage where cr_id = %s;", (cr_id,))
-        csr = self.query_db("select * from csr_storage where cr_id = %s;", (cr_id,))
+        csr = self.query_db("select cr_id, json from csr_storage where cr_id = %s;", (cr_id,))
         if cr is None or csr is None:
             raise IndexError("CR and CSR couldn't be found with given id ({})".format(cr_id))
+        debug_log.info("Found CR ({}) and CSR ({})".format(cr, csr))
         cr_from_db = loads(cr)
         csr_from_db = loads(csr)
         combined = {"cr": cr_from_db, "csr": csr_from_db}
+
         return combined
     def validate_cr(self, cr_id, surrogate_id):
         """
@@ -325,6 +327,7 @@ class Helpers:
         :return: None
         """
         cr_id = DictionaryToStore["cr_id"]
+        csr_id = DictionaryToStore["csr_id"]
         rs_id = DictionaryToStore["rs_id"]
         surrogate_id = DictionaryToStore["surrogate_id"]
         slr_id = DictionaryToStore["slr_id"]
@@ -335,8 +338,8 @@ class Helpers:
         debug_log.info(DictionaryToStore)
         # debug_log.info(key)
         try:
-            cursor.execute("INSERT INTO csr_storage (cr_id, surrogate_id, slr_id, rs_id, json) \
-                VALUES (%s, %s, %s, %s, %s)", [cr_id, surrogate_id, slr_id, rs_id, dumps(json)])
+            cursor.execute("INSERT INTO csr_storage (cr_id, csr_id ,surrogate_id, slr_id, rs_id, json) \
+                VALUES (%s, %s, %s, %s, %s, %s)", [cr_id, csr_id,surrogate_id, slr_id, rs_id, dumps(json)])
             db.commit()
         except IntegrityError as e:
             # db.execute("UPDATE csr_storage SET json=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
@@ -583,6 +586,8 @@ class CR_tool:
 
     def get_cr_id_from_csr(self):
         return self.get_CSR_payload()["cr_id"]
+    def get_csr_id(self):
+        return self.get_CSR_payload()["record_id"] # Perhaps this could just be csr_id
 
     def get_prev_record_id(self):
         return self.get_CSR_payload()["prev_record_id"]
@@ -720,12 +725,5 @@ class Token_tool:
 
 #tt = Token_tool()
 #print(tt.decrypt_payload(tt.token["auth_token"]))
-
-
-'''
-
-
-'''
-
 
 

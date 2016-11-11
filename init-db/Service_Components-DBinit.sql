@@ -56,6 +56,7 @@ DROP TABLE IF EXISTS `db_Srv`.`csr_storage` ;
 
 CREATE TABLE IF NOT EXISTS `db_Srv`.`csr_storage` (
   `cr_id` VARCHAR(255) NOT NULL,
+  `csr_id` VARCHAR(255) NOT NULL,
   `json` LONGTEXT NOT NULL,
   `slr_id` LONGTEXT NOT NULL,
   `surrogate_id` LONGTEXT NOT NULL,
