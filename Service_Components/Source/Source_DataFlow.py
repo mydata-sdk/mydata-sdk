@@ -35,6 +35,7 @@ class DataRequest(Resource):
     def __init__(self):
         super(DataRequest, self).__init__()
         self.service_url = current_app.config["SERVICE_URL"]
+        self.operator_url = current_app.config["OPERATOR_URL"]  # TODO: Where do we really get this?
         self.helpers = Helpers(current_app.config)
 
     @error_handler
@@ -104,7 +105,8 @@ class DataRequest(Resource):
 
         # OPT: Introspection # TODO: Implement
             # introspect = is_introspection_necessary()
-
+        reply = self.helpers.introspection(cr_id, self.operator_url)
+        debug_log.info(reply)
             # GET Consent Record Status (source_cr_id)
 
         # Process request

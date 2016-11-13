@@ -108,7 +108,8 @@ class AccountManagerHandler:
                     "verify_slr":   "api/account/{account_id}/servicelink/verify/",
                     "sign_consent": "api/account/consent/sign/",
                     "consent":      "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
-                    "auth_token":   "api/consent/{sink_cr_id}/authorizationtoken/"}
+                    "auth_token":   "api/consent/{sink_cr_id}/authorizationtoken/",
+                    "last_csr":     "api/consent/{cr_id}/status/last/"}
         req = get(self.url+self.endpoint["token"], auth=(self.username, self.password), timeout=timeout)
 
 
@@ -145,6 +146,29 @@ class AccountManagerHandler:
         else:
             raise DetailedHTTPException(status=req.status_code,
                                         detail={"msg": "Getting surrogate_id from account management failed.", "content": req.content},
+                                        title=req.reason)
+        return templ
+
+    def get_last_csr(self, cr_id):
+        endpoint_url = self.url+self.endpoint["last_csr"].replace("{cr_id}", cr_id)
+        debug_log.debug(""+endpoint_url)
+
+        req = get(self.url+endpoint_url,
+                  headers={'Api-Key': self.token},
+                  timeout=self.timeout)
+        if req.ok:
+            templ = loads(req.text)
+        else:
+            templ = {
+                "data": {"attributes":
+                             {
+                             "csr": {}
+                             }
+                        }
+            }
+            return templ
+            raise DetailedHTTPException(status=req.status_code,
+                                        detail={"msg": "Getting last csr from account management failed.", "content": req.content},
                                         title=req.reason)
         return templ
 

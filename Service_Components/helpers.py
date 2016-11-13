@@ -10,6 +10,7 @@ from flask import Blueprint
 from flask_restful import Api
 import jsonschema
 import db_handler
+from requests import get
 from sqlite3 import IntegrityError
 from DetailedHTTPException import  DetailedHTTPException
 
@@ -355,24 +356,46 @@ class Helpers:
         debug_log.info("Active csr is: {}".format(csr))
         return loads(csr)
 
-    def get_latest_csr(self, cr_id):
-        def get_latest(csr_id):
+    def get_latest_csr_id(self, cr_id):
+
+
+        # Picking first csr_id since its previous record is "null"
+        csr_id = self.query_db("select cr_id, csr_id from csr_storage where cr_id = %s and previous_record_id = 'null';",
+                            (cr_id,))
+        debug_log.info("Picked first CSR_ID in search for latest ({})".format(csr_id))
+        # If first csr_id is in others csr's previous_record_id field then its not the latest.
+        newer_csr_id = self.query_db("select cr_id, csr_id from csr_storage where previous_record_id = %s;",
+                            (csr_id,))
+        debug_log.info("Later CSR_ID is ({})".format(newer_csr_id))
+        # If we don't find newer record but get None, we know we only have one csr in our chain and latest in it is also the first.
+        if newer_csr_id is None:
+            return csr_id
+        # Else we repeat the previous steps in while loop to go trough all records
+        while True:  # TODO: We probably should see to it that this can't get stuck.
             try:
-                newer_csr_id = self.query_db("select cr_id, previous_record_id from csr_storage where csr_id = %s;",
+                newer_csr_id = self.query_db("select cr_id, csr_id from csr_storage where previous_record_id = %s;",
                                          (csr_id,))
                 if newer_csr_id is None:
+                    debug_log.info("Latest CSR in our chain seems to be ({})".format(newer_csr_id))
                     return csr_id
                 else:
-                    return get_latest(newer_csr_id)
+                    csr_id = newer_csr_id
             except Exception as e:
                 debug_log.exception(e)
+                raise e
 
-        #If csr we get, is in others previous_record_id then its not the latest.
-        csr_id = self.query_db("select cr_id, csr_id from csr_storage where cr_id = %s;",
-                            (cr_id,))
-        newer_csr_id = self.query_db("select cr_id, previous_record_id from csr_storage where csr_id = %s;",
-                            (csr_id,))
-        latest_csr_id = get_latest(newer_csr_id)
+    def introspection(self, cr_id, operator_url):
+        # Get our latest csr_id
+        # This is the latest csr we have verifiable chain for.
+        latest_csr_id = self.get_latest_csr_id(cr_id)
+        # Get the cr_id of latest csr_id
+        cr_id = self.query_db("select csr_id, cr_id from csr_storage where csr_id = %s;",
+                                     (latest_csr_id,))
+        # We send it to Operator for inspection.
+        req = get(operator_url+"/api/1.2/cr"+"/introspection/{}".format(cr_id))
+        debug_log.info(req.status_code)
+        debug_log.info(req.content)
+
 
 
 
@@ -407,6 +430,8 @@ class Helpers:
         return distribution_ids
 
     def validate_authorization_token(self, cr_id, surrogate_id, our_key):
+        #debug_log.info("For debugging purposes we check latest csr here, remove this line!")
+        #debug_log.info(self.get_latest_csr(cr_id))
         slr = self.get_slr(surrogate_id)
         slr_tool = SLR_tool()
         slr_tool.slr = slr
