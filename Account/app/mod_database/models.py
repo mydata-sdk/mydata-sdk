@@ -90,7 +90,7 @@ class Account():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (globalIdenttifyer) VALUES (%s)"
+        sql_query = "INSERT INTO " + self.table_name + " (globalIdentifier) VALUES (%s)"
 
         arguments = (
             str(self.global_identifier),
@@ -109,9 +109,9 @@ class Account():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        sql_query = "SELECT id, globalIdenttifyer, activated " \
+        sql_query = "SELECT id, globalIdentifier, activated " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND globalIdenttifyer LIKE %s AND activated LIKE %s;"
+                    "WHERE id LIKE %s AND globalIdentifier LIKE %s AND activated LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
