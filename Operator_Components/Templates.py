@@ -74,10 +74,11 @@ Consent_form_In = {
 from instance.settings import SERVICE_URL
 from requests import get
 class ServiceRegistryHandler:
-    def __init__(self):
+    def __init__(self, domain, endpoint):
         # Here could be some code to setup where ServiceRegistry is located etc
         # TODO: Get this from config or such.
-        self.registry_url = "http://178.62.229.148:8081/api/v1/services/"
+        # self.registry_url = "http://178.62.229.148:8081"+"/api/v1/services/"
+        self.registry_url = domain + endpoint #"/api/v1/services/"
         pass
 
     def getService(self, service_id):

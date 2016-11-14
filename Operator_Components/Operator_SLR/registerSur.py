@@ -61,7 +61,7 @@ class RegisterSur(Resource):
                 "iat": int(time.time()), # TODO: set to iat when Account version used supports it
             }
         debug_log.info(dumps(self.payload, indent=3))
-        self.service_registry_handler = ServiceRegistryHandler()
+        self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"], current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
         self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]

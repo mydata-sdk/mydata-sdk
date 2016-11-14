@@ -316,6 +316,8 @@ class Helpers:
         self.port = app_config["MYSQL_PORT"]
         self.operator_id = app_config["UID"]
         self.not_after_interval = app_config["NOT_AFTER_INTERVAL"]
+        self.service_registry_search_domain = app_config["SERVICE_REGISTRY_SEARCH_DOMAIN"]
+        self.service_registry_search_endpoint = app_config["SERVICE_REGISTRY_SEARCH_ENDPOINT"]
 
     def get_key(self):
         keysize = self.keysize
@@ -618,7 +620,7 @@ class Helpers:
         header = {"typ": "JWT",
                   "alg": "HS256"}
         # Claims
-        srv_handler = ServiceRegistryHandler()
+        srv_handler = ServiceRegistryHandler(self.service_registry_search_domain, self.service_registry_search_endpoint)
         payload = {"iss": self.operator_id,  # Operator ID,
                    "cnf": {"kid": slrt.get_source_cr_id()},
                    "aud": srv_handler.getService_url(slrt.get_source_service_id()),

@@ -357,8 +357,6 @@ class Helpers:
         return loads(csr)
 
     def get_latest_csr_id(self, cr_id):
-
-
         # Picking first csr_id since its previous record is "null"
         csr_id = self.query_db("select cr_id, csr_id from csr_storage where cr_id = %s and previous_record_id = 'null';",
                             (cr_id,))

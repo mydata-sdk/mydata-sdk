@@ -21,9 +21,6 @@ api_CR_blueprint = Blueprint("api_CR_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
 
-SH = ServiceRegistryHandler()
-getService = SH.getService
-
 sq = Sequences("Operator_Components Mgmnt", {})
 Operator_public_key = {}
 class ConsentFormHandler(Resource):
@@ -37,7 +34,8 @@ class ConsentFormHandler(Resource):
             self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
         except Exception as e:
             debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
-
+        self.SH = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"], current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
+        self.getService = self.SH.getService
         self.Helpers = Helpers(current_app.config)
 
     @error_handler
@@ -49,7 +47,7 @@ class ConsentFormHandler(Resource):
         service_ids = request.args
 
         sq.task("Fetch services")
-        sink = getService(service_ids["sink"])
+        sink = self.getService(service_ids["sink"])
         _consent_form["sink"]["service_id"] = sink["serviceId"]
         purposes = _consent_form["sink"]["dataset"][0]["purposes"] # TODO replace this once Service registry stops being stupid.
         _consent_form["sink"]["dataset"] = [] # Clear out template.
@@ -66,7 +64,7 @@ class ConsentFormHandler(Resource):
             _consent_form["sink"]["dataset"].append(item)
 
 
-        source = getService(service_ids["source"])
+        source = self.getService(service_ids["source"])
         _consent_form["source"]["service_id"] = source["serviceId"]
         _consent_form["source"]["dataset"] = [] # Clear out template.
         for dataset in source["serviceDescription"]["serviceDataDescription"][0]["dataset"]:
@@ -202,7 +200,7 @@ class ConsentFormHandler(Resource):
         sq.send_to("Source", "Post CR-Source, CSR-Source")
 
         debug_log.info(dumps(crs_csrs_payload, indent=2))
-        CR_installer.delay(crs_csrs_payload, SH.getService_url(sink_srv_id), SH.getService_url(source_srv_id))
+        CR_installer.delay(crs_csrs_payload, self.SH.getService_url(sink_srv_id), self.SH.getService_url(source_srv_id))
         return {"status": 201, "msg": "CREATED"}, 201
 
 

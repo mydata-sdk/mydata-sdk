@@ -48,7 +48,7 @@ class Start(Resource):
     def __init__(self):
         super(Start, self).__init__()
         self.app = current_app
-        self.service_registry_handler = ServiceRegistryHandler()
+        self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"], current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.request_timeout = current_app.config["TIMEOUT"]
         self.helper = Helpers(current_app.config)
         self.store_session = self.helper.store_session
