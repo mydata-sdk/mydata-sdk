@@ -357,8 +357,6 @@ class Helpers:
         return loads(csr)
 
     def get_latest_csr_id(self, cr_id):
-
-
         # Picking first csr_id since its previous record is "null"
         csr_id = self.query_db("select cr_id, csr_id from csr_storage where cr_id = %s and previous_record_id = 'null';",
                             (cr_id,))
@@ -386,15 +384,24 @@ class Helpers:
 
     def introspection(self, cr_id, operator_url):
         # Get our latest csr_id
-        # This is the latest csr we have verifiable chain for.
-        latest_csr_id = self.get_latest_csr_id(cr_id)
-        # Get the cr_id of latest csr_id
-        cr_id = self.query_db("select csr_id, cr_id from csr_storage where csr_id = %s;",
-                                     (latest_csr_id,))
-        # We send it to Operator for inspection.
+
+        # We send cr_id to Operator for inspection.
         req = get(operator_url+"/api/1.2/cr"+"/introspection/{}".format(cr_id))
         debug_log.info(req.status_code)
         debug_log.info(req.content)
+        if req.ok:
+            csr_id = loads(req.content)["csr_id"]
+            # This is the latest csr we have verifiable chain for.
+            latest_csr_id = self.get_latest_csr_id(cr_id)
+            debug_log.info("Comparing our latest csr_id ({}) to ({})".format(latest_csr_id, csr_id))
+            if csr_id == latest_csr_id:
+                debug_log.info("Verified we have latest csr.")
+                return
+            else:
+                pass
+                # TODO Implement
+        else:
+            raise LookupError("Unable to perform introspect.")
 
 
 

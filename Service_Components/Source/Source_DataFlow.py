@@ -105,9 +105,8 @@ class DataRequest(Resource):
 
         # OPT: Introspection # TODO: Implement
             # introspect = is_introspection_necessary()
-        reply = self.helpers.introspection(cr_id, self.operator_url)
-        debug_log.info(reply)
-            # GET Consent Record Status (source_cr_id)
+        self.helpers.introspection(cr_id, self.operator_url)
+
 
         # Process request
         # Return.
