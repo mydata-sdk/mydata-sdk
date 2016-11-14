@@ -10,6 +10,7 @@ from flask import Blueprint
 from flask_restful import Api
 import jsonschema
 import db_handler
+from requests import get
 from sqlite3 import IntegrityError
 from DetailedHTTPException import  DetailedHTTPException
 
@@ -165,12 +166,14 @@ class Helpers:
     def get_cr_json(self, cr_id):
         # TODO: query_db is not really optimal when making two separate queries in row.
         cr = self.query_db("select * from cr_storage where cr_id = %s;", (cr_id,))
-        csr = self.query_db("select * from csr_storage where cr_id = %s;", (cr_id,))
+        csr = self.query_db("select cr_id, json from csr_storage where cr_id = %s;", (cr_id,))
         if cr is None or csr is None:
             raise IndexError("CR and CSR couldn't be found with given id ({})".format(cr_id))
+        debug_log.info("Found CR ({}) and CSR ({})".format(cr, csr))
         cr_from_db = loads(cr)
         csr_from_db = loads(csr)
         combined = {"cr": cr_from_db, "csr": csr_from_db}
+
         return combined
     def validate_cr(self, cr_id, surrogate_id):
         """
@@ -275,6 +278,12 @@ class Helpers:
         slr_from_db = loads(storage_row)
         return slr_from_db
 
+    def get_surrogate_from_cr_id(self, cr_id):
+        storage_row = self.query_db("select cr_id,surrogate_id from cr_storage where cr_id = %s;", (cr_id,))
+        debug_log.info("Found surrogate_id {}".format(storage_row))
+        surrogate_from_db = storage_row
+        return surrogate_from_db
+
     def get_token(self, cr_id):
         """
         Fetch token for given cr_id from the database
@@ -319,8 +328,11 @@ class Helpers:
         :return: None
         """
         cr_id = DictionaryToStore["cr_id"]
+        csr_id = DictionaryToStore["csr_id"]
+        consent_status = DictionaryToStore["consent_status"]
         rs_id = DictionaryToStore["rs_id"]
         surrogate_id = DictionaryToStore["surrogate_id"]
+        previous_record_id = DictionaryToStore["previous_record_id"]
         slr_id = DictionaryToStore["slr_id"]
         json = DictionaryToStore["json"]
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
@@ -329,8 +341,8 @@ class Helpers:
         debug_log.info(DictionaryToStore)
         # debug_log.info(key)
         try:
-            cursor.execute("INSERT INTO csr_storage (cr_id, surrogate_id, slr_id, rs_id, json) \
-                VALUES (%s, %s, %s, %s, %s)", [cr_id, surrogate_id, slr_id, rs_id, dumps(json)])
+            cursor.execute("INSERT INTO csr_storage (cr_id, csr_id, previous_record_id, consent_status, surrogate_id, slr_id, rs_id, json) \
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", [cr_id, csr_id, previous_record_id, consent_status, surrogate_id, slr_id, rs_id, dumps(json)])
             db.commit()
         except IntegrityError as e:
             # db.execute("UPDATE csr_storage SET json=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])
@@ -338,6 +350,56 @@ class Helpers:
             db.rollback()
             raise DetailedHTTPException(detail={"msg": "Adding CSR to the database has failed.",},
                                         title="Failure in CSR storage", exception=e)
+
+    def get_active_csr(self, cr_id):
+        csr = self.query_db("select cr_id, json from csr_storage where cr_id = %s and consent_status = 'Active';", (cr_id,))
+        debug_log.info("Active csr is: {}".format(csr))
+        return loads(csr)
+
+    def get_latest_csr_id(self, cr_id):
+
+
+        # Picking first csr_id since its previous record is "null"
+        csr_id = self.query_db("select cr_id, csr_id from csr_storage where cr_id = %s and previous_record_id = 'null';",
+                            (cr_id,))
+        debug_log.info("Picked first CSR_ID in search for latest ({})".format(csr_id))
+        # If first csr_id is in others csr's previous_record_id field then its not the latest.
+        newer_csr_id = self.query_db("select cr_id, csr_id from csr_storage where previous_record_id = %s;",
+                            (csr_id,))
+        debug_log.info("Later CSR_ID is ({})".format(newer_csr_id))
+        # If we don't find newer record but get None, we know we only have one csr in our chain and latest in it is also the first.
+        if newer_csr_id is None:
+            return csr_id
+        # Else we repeat the previous steps in while loop to go trough all records
+        while True:  # TODO: We probably should see to it that this can't get stuck.
+            try:
+                newer_csr_id = self.query_db("select cr_id, csr_id from csr_storage where previous_record_id = %s;",
+                                         (csr_id,))
+                if newer_csr_id is None:
+                    debug_log.info("Latest CSR in our chain seems to be ({})".format(newer_csr_id))
+                    return csr_id
+                else:
+                    csr_id = newer_csr_id
+            except Exception as e:
+                debug_log.exception(e)
+                raise e
+
+    def introspection(self, cr_id, operator_url):
+        # Get our latest csr_id
+        # This is the latest csr we have verifiable chain for.
+        latest_csr_id = self.get_latest_csr_id(cr_id)
+        # Get the cr_id of latest csr_id
+        cr_id = self.query_db("select csr_id, cr_id from csr_storage where csr_id = %s;",
+                                     (latest_csr_id,))
+        # We send it to Operator for inspection.
+        req = get(operator_url+"/api/1.2/cr"+"/introspection/{}".format(cr_id))
+        debug_log.info(req.status_code)
+        debug_log.info(req.content)
+
+
+
+
+
 
     def validate_request_from_ui(self, cr, data_set_id, rs_id):
         debug_log.info("CR passed to validate_request_from_ui:")
@@ -370,6 +432,8 @@ class Helpers:
         return distribution_ids
 
     def validate_authorization_token(self, cr_id, surrogate_id, our_key):
+        #debug_log.info("For debugging purposes we check latest csr here, remove this line!")
+        #debug_log.info(self.get_latest_csr(cr_id))
         slr = self.get_slr(surrogate_id)
         slr_tool = SLR_tool()
         slr_tool.slr = slr
@@ -381,7 +445,7 @@ class Helpers:
         tt.key = key
         aud = tt.verify_token(our_key)
         debug_log.info(aud)
-        return aud
+        return token
 
 
 
@@ -487,13 +551,13 @@ class SLR_tool:
         return payload
 
     def get_SLR_payload(self):
-        base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["attributes"]["slr"]["payload"]
+        base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["payload"]
         debug_log.info("Decrypting SLR payload:")
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_SLSR_payload(self):
-        base64_payload =  self.slr["data"]["ssr"]["attributes"]["ssr"]["attributes"]["slsr"]["payload"]
+        base64_payload =  self.slr["data"]["ssr"]["attributes"]["ssr"]["payload"]
         debug_log.info("Decrypting SSR payload:")
         payload = self.decrypt_payload(base64_payload)
         return payload
@@ -577,6 +641,11 @@ class CR_tool:
 
     def get_cr_id_from_csr(self):
         return self.get_CSR_payload()["cr_id"]
+    def get_csr_id(self):
+        return self.get_CSR_payload()["record_id"]  # Perhaps this could just be csr_id
+
+    def get_consent_status(self):
+        return self.get_CSR_payload()["consent_status"]
 
     def get_prev_record_id(self):
         return self.get_CSR_payload()["prev_record_id"]
@@ -589,6 +658,9 @@ class CR_tool:
 
     def get_usage_rules(self):
         return self.get_CR_payload()["role_specific_part"]["usage_rules"]
+
+    def get_pop_key(self):
+        return self.get_CR_payload()["role_specific_part"]["pop_key"]
 
     def get_slr_id(self):
         return self.get_CR_payload()["common_part"]["slr_id"]
@@ -711,3 +783,5 @@ class Token_tool:
 
 #tt = Token_tool()
 #print(tt.decrypt_payload(tt.token["auth_token"]))
+
+

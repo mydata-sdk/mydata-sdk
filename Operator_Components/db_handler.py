@@ -7,7 +7,7 @@ debug_log = logging.getLogger("debug")
 def get_db(host, user, password, database, port):
     db = None
     if db is None:
-        db = MySQLdb.connect(host=host, user=user, passwd=password, db=database, port=port)
+        db = MySQLdb.connect(host=host, user=user, passwd=password, db=database, port=port, sql_mode="TRADITIONAL")
     return db
 
 

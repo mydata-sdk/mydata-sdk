@@ -158,6 +158,7 @@ class Install_CR(Resource):
         if prev_csr_id_refers_to_null_as_it_should:
             debug_log.info("prev_csr_id_referred to null as it should.")
         else:
+            # TODO: Check here that the csr chain is intact. and then continue.
             raise DetailedHTTPException(detail={"msg": "Verifying CSR previous_id == 'null' failed",},
                                         title="Failure in CSR verifying",
                                         status=403)
@@ -170,12 +171,16 @@ class Install_CR(Resource):
             raise DetailedHTTPException(detail={"msg": "Verifying CSR failed",},
                                         title="Failure in CSR verifying")
         # 5) Previous CSR has not been withdrawn
-
         # TODO Implement
+        # If previous_id is null this step can be ignored.
+        # Else fetch previous_id from db and check the status.
 
         sq.task("Store CR and CSR")
         store_dict = {
             "rs_id": crt.get_rs_id(),
+            "csr_id": crt.get_csr_id(),
+            "consent_status": crt.get_consent_status(),
+            "previous_record_id": crt.get_prev_record_id(),
             "cr_id": crt.get_cr_id_from_cr(),
             "surrogate_id": surr_id,
             "slr_id": crt.get_slr_id(),
