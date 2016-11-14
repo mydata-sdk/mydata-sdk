@@ -689,12 +689,12 @@ class SLR_tool:
 
     def get_SLR_payload(self):
         debug_log.info(dumps(self.slr, indent=2))
-        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["slr"]["payload"]
+        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["slr"]["payload"] # TODO: This is a workaround for structure repetition.
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_CR_payload(self):
-        base64_payload =  self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["cr"]["payload"]
+        base64_payload =  self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["cr"]["payload"]  # TODO: This is a workaround for structure repetition.
         payload = self.decrypt_payload(base64_payload)
         return payload
 
