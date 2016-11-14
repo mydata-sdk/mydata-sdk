@@ -399,6 +399,8 @@ class Helpers:
 
 
 
+
+
     def validate_request_from_ui(self, cr, data_set_id, rs_id):
         debug_log.info("CR passed to validate_request_from_ui:")
         debug_log.info(type(cr))
@@ -549,13 +551,13 @@ class SLR_tool:
         return payload
 
     def get_SLR_payload(self):
-        base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["attributes"]["slr"]["payload"]
+        base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["payload"]
         debug_log.info("Decrypting SLR payload:")
         payload = self.decrypt_payload(base64_payload)
         return payload
 
     def get_SLSR_payload(self):
-        base64_payload =  self.slr["data"]["ssr"]["attributes"]["ssr"]["attributes"]["slsr"]["payload"]
+        base64_payload =  self.slr["data"]["ssr"]["attributes"]["ssr"]["payload"]
         debug_log.info("Decrypting SSR payload:")
         payload = self.decrypt_payload(base64_payload)
         return payload

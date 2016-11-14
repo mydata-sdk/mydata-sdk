@@ -724,5 +724,6 @@ class SLR_tool:
 
     def get_source_service_id(self):
         return self.get_CR_payload()["common_part"]["subject_id"]
+
     def get_sink_service_id(self):
         return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
