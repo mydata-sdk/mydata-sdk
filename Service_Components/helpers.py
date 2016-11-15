@@ -426,7 +426,7 @@ class Helpers:
                             "cr_id": decoded_payload["cr_id"],
                             "surrogate_id": decoded_payload["surrogate_id"],
                             "slr_id": slr_id,
-                            "json": decoded_payload  # possibly store the base64 representation
+                            "json": csr  # possibly store the base64 representation
                         }
                         debug_log.info("Storing CSR: \n{}".format(dumps(store_dict, indent=2)))
                         self.storeCSR_JSON(store_dict)
@@ -765,11 +765,13 @@ class CR_tool:
         for key in keys:
             cr_jwk = jwk.JWK(**key)
             csr_jws = jws.JWS()
-            csr_jws.deserialize(dumps(self.cr["csr"]["attributes"]["csr"]))
+            csr = self.cr["csr"]["attributes"]["csr"]
+            csr_jws.deserialize(dumps(csr))
             try:
                 csr_jws.verify(cr_jwk)
                 return True
             except Exception as e:
+                debug_log.exception(e)
                 pass
                 # print(repr(e))
                 # return False

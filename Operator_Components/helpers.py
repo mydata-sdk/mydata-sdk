@@ -551,9 +551,13 @@ class Helpers:
 
         # This iters trough all datasets, iters though all purposes in those data sets, and add title to
         # _rules. It seems to be enough efficient for this purpose.
-        [[_rules.append(purpose["title"]) for purpose in dataset["purposes"]  # 2
-          if purpose["selected"] == True or purpose["required"] == True]  # 3
-         for dataset in consent_form["sink"]["dataset"]]  # 1
+        # [[_rules.append(purpose["title"]) for purpose in dataset["purposes"]  # 2
+        #   if purpose["selected"] == True or purpose["required"] == True]  # 3
+        #  for dataset in consent_form["sink"]["dataset"]]  # 1
+        for dataset in consent_form["sink"]["dataset"]:
+            for purpose in dataset["purposes"]:
+                _rules.append(purpose)
+
 
         _rules = list(set(_rules))  # Remove duplicates
         _tmpl = {"cr": {

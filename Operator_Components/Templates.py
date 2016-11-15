@@ -83,8 +83,10 @@ class ServiceRegistryHandler:
 
     def getService(self, service_id):
         try:
-            service = get(self.registry_url+service_id).json()
-            debug_log.info(service_id)
+            debug_log.info("Making request GET {}{}".format(self.registry_url, service_id))
+            req = get(self.registry_url+service_id)
+            service = req.json()
+            debug_log.info(service)
             service = service[0]
         except Exception as e:
             debug_log.exception(e)

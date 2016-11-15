@@ -58,7 +58,7 @@ class ConsentFormHandler(Resource):
                 "description": dataset["description"],
                 "keyword": dataset["keyword"],
                 "publisher": dataset["publisher"],
-                "purposes": dataset["purposes"]
+                "purposes": dataset["purpose"]
             }
 
             _consent_form["sink"]["dataset"].append(item)
