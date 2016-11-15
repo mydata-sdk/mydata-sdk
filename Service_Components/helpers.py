@@ -432,7 +432,14 @@ class Helpers:
                         self.storeCSR_JSON(store_dict)
                     debug_log.info("Stored missing csr's to DB")
                     latest_csr_id = self.get_latest_csr_id(cr_id)
-                    debug_log.info("Our latest csr id now ({})".format(latest_csr_id))
+                    status = self.query_db("select cr_id, consent_status from csr_storage where csr_id = %s;"
+                                           , (latest_csr_id,))
+                    debug_log.info("Our latest csr id now ({}) with status ({})".format(latest_csr_id, status))
+                    if status == "Active":
+                        debug_log.info("Introspection done successfully.")
+                    else:
+                        debug_log.info("Introspection failed.")
+                        raise LookupError("Introspection failed.")
 
 
                 else:
@@ -473,19 +480,22 @@ class Helpers:
         return distribution_ids
 
     def validate_authorization_token(self, cr_id, surrogate_id, our_key):
-        # debug_log.info("For debugging purposes we check latest csr here, remove this line!")
-        # debug_log.info(self.get_latest_csr(cr_id))
-        slr = self.get_slr(surrogate_id)
-        slr_tool = SLR_tool()
-        slr_tool.slr = slr
-        key = slr_tool.get_operator_key()
+        # slr = self.get_slr(surrogate_id)
+        # slr_tool = SLR_tool()
+        # slr_tool.slr = slr
+        # key = slr_tool.get_operator_key()
         token = self.get_token(cr_id)
-        debug_log.info("Fetched key({}) and token({}).".format(key, token))
-        tt = Token_tool()
-        tt.token = token
-        tt.key = key
-        aud = tt.verify_token(our_key)
-        debug_log.info(aud)
+        # debug_log.info("Fetched key({}) and token({}).".format(key, token))
+        jws_holder = jwt.JWS()
+        jws_holder.deserialize(raw_jws=token["auth_token"])
+        auth_token_payload = loads(jws_holder.__dict__["objects"]["payload"])
+        debug_log.info("Decoded Auth Token\n{}".format(dumps(auth_token_payload, indent=2)))
+        now = time.time()
+        if auth_token_payload["exp"] < now:
+            raise ValueError("Token is expired.")
+        if auth_token_payload["nbf"] > now:
+            raise TypeError("Token used too soon.")
+        # debug_log.info(aud)
         return token
 
 
