@@ -25,15 +25,22 @@ class Status_Change(Resource):
             self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
         except Exception as e:
             debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
-        helper_object = Helpers(current_app.config)
+        self.helper_object = Helpers(current_app.config)
 
     @error_handler
-    def post(self, acc_id, srv_id, cr_id):
-        '''get
+    def post(self, acc_id, srv_id, cr_id, new_status):
+        '''post
 
         :return: Returns latest csr for source
         '''
         try:
+            # TODO: Do we need srv_id for anything?
+            # TODO: How do we authorize this request? Who is allowed to make it?
+            # Get previous_csr_id
+            previous_csr_id = self.AM.get_last_csr(cr_id)["csr_id"]
+            csr_payload = self.helper_object.gen_csr(acc_id, cr_id, new_status, previous_csr_id)
+            debug_log.info("Created CSR payload:\n {}".format(csr_payload))
+            result = self.AM.create_new_csr(cr_id, csr_payload)
             debug_log.info("We received status change request for cr_id ({}) for srv_id ({}) on account ({})"
                            .format(cr_id, srv_id, acc_id))
             # result = self.AM.get_last_csr(cr_id)
@@ -46,4 +53,4 @@ class Status_Change(Resource):
         return {"template": "thingy"}  # result
 
 
-api.add_resource(Status_Change, '/account_id/<string:acc_id>/service/<string:srv_id>/consent/<string:cr_id>/status')
+api.add_resource(Status_Change, '/account_id/<string:acc_id>/service/<string:srv_id>/consent/<string:cr_id>/status/<string:new_status>')

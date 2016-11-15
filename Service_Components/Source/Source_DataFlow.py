@@ -105,9 +105,12 @@ class DataRequest(Resource):
 
         # OPT: Introspection # TODO: Implement
             # introspect = is_introspection_necessary()
-        self.helpers.introspection(cr_id, self.operator_url)
-
-
+        try:
+            self.helpers.introspection(cr_id, self.operator_url)
+            return {"Some test data": "like so", "and it continues": "like so!"}
+        except LookupError as e:
+            debug_log.exception(e)
+            return {"error message is": "appropriate."}
         # Process request
         # Return.
 

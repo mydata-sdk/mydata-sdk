@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS `db_Srv`.`csr_storage` (
   `slr_id` LONGTEXT NOT NULL,
   `surrogate_id` LONGTEXT NOT NULL,
   `rs_id` LONGTEXT NOT NULL,
-  PRIMARY KEY (`cr_id`(255)))
+  PRIMARY KEY (`csr_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
