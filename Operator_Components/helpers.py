@@ -513,7 +513,8 @@ class Helpers:
         # Something to check state here?
         # Also store RS_ID in DB around here.
         ##
-        rs_id = "{}||{}".format(source_URI, str(guid())) # TODO: This needs to be looked at.
+
+        rs_id = "{}{}".format(source_URI.lstrip("http://").lstrip("https://"), str(guid()))  # TODO: This needs to be looked at.
         self.storeRS_ID(rs_id)
         return rs_id
 
@@ -580,7 +581,8 @@ class Helpers:
                             "dataset": [
                                 {
                                     "dataset_id": "String",
-                                    "distribution_id": "String"
+                                    "distribution_id": "String",
+                                    "distribution_url": ""
                                 }
                             ]
                         }
@@ -603,7 +605,8 @@ class Helpers:
         for dataset in consent_form["source"]["dataset"]:
             dt_tmp = {
                 "dataset_id": dataset["dataset_id"],
-                "distribution_id": dataset["distribution"]["distribution_id"]
+                "distribution_id": dataset["distribution"]["distribution_id"],
+                "distribution_url": dataset["distribution"]["access_url"]
             }
             _tmpl["cr"]["common_part"]["rs_description"]["resource_set"]["dataset"].append(dt_tmp)
 

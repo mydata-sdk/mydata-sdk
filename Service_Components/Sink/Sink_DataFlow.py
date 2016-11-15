@@ -66,19 +66,13 @@ class DataFlow(Resource):
             cr = self.helpers.validate_cr(cr_id, surrogate_id=user_id)
 
             sq.task("Validate Request from UI")
-            distribution_ids = self.helpers.validate_request_from_ui(cr, data_set_id, rs_id)
+            distribution_urls = self.helpers.validate_request_from_ui(cr, data_set_id, rs_id)
 
             # Fetch data request urls
-            # LOOP: for every data_set_id
-            for distribution_id in distribution_ids:
-                debug_log.info(distribution_id)
-                # Fetch corresponding distribution point url based on data_set_id
-                pass  # TODO: Implement
-
             # Data request urls fetched.
             debug_log.info("Data request urls fetched.")
-            return cr_id, cr
-        cr_id, cr = step_1()
+            return cr_id, cr, distribution_urls
+        cr_id, cr, distribution_urls = step_1()
 
         sq.task("Validate Authorisation Token")
         surrogate_id = cr["cr"]["common_part"]["surrogate_id"]
@@ -133,7 +127,8 @@ class DataFlow(Resource):
         # Request signed.
         # Request created.
         sq.send_to("Service_Components Mgmnt (Source)", "Data Request (PoP stuff)")
-        req = requests.get("http://localhost:7000"+current_app.config["SERVICE_ROOT_PATH"]+"/source_flow"+"/datarequest",
+        for url in distribution_urls:
+            req = requests.get(url,
                            auth=SignedRequest(token=aud, sign_method=True, sign_path=True, key=our_key_full, protected=dumps(our_key["prot"])))
         debug_log.info("Made data request and received following data from Source: \n{}"
                        .format(dumps(loads(req.content), indent=2)))

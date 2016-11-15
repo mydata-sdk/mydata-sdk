@@ -463,21 +463,21 @@ class Helpers:
             raise ValueError("Given rs_id doesn't match CR")
         debug_log.info("RS_ID checked successfully")
         # Check that rs_description field contains data_set_id (Optional?)
-        distribution_ids = []
+        distribution_urls = []
         if data_set_id is not None:
             datasets = cr["common_part"]["rs_description"]["resource_set"]["dataset"]
             for dataset in datasets:
                 if dataset["dataset_id"] == data_set_id:
-                    distribution_ids.append(dataset["distribution_id"])
+                    distribution_urls.append(dataset["distribution_url"])
         else:
             datasets = cr["cr"]["common_part"]["rs_description"]["resource_set"]["dataset"]
             for dataset in datasets:
-                distribution_ids.append(dataset["distribution_id"])
-        debug_log.info("Got following distribution ids")
-        debug_log.info(distribution_ids)
+                distribution_urls.append(dataset["distribution_url"])
+        debug_log.info("Got following distribution urls")
+        debug_log.info(distribution_urls)
         # Request from UI validated.
         debug_log.info("Request from UI validated.")
-        return distribution_ids
+        return distribution_urls
 
     def validate_authorization_token(self, cr_id, surrogate_id, our_key):
         # slr = self.get_slr(surrogate_id)

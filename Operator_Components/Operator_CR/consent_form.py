@@ -58,7 +58,7 @@ class ConsentFormHandler(Resource):
                 "description": dataset["description"],
                 "keyword": dataset["keyword"],
                 "publisher": dataset["publisher"],
-                "purposes": purposes
+                "purposes": dataset["purposes"]
             }
 
             _consent_form["sink"]["dataset"].append(item)
@@ -76,7 +76,11 @@ class ConsentFormHandler(Resource):
                 "publisher": dataset["publisher"],
                 "distribution": {
                     "distribution_id": dataset["distribution"][0]["distributionId"],
-                    "access_url": dataset["distribution"][0]["accessURL"],
+                    "access_url": "{}{}{}".format(source["serviceInstance"][0]["domain"],
+                                                  source["serviceInstance"][0]["serviceAccessEndPoint"][
+                                                      "serviceAccessURI"]
+                                                  , dataset["distribution"][0]["accessURL"]),
+
                 }
             }
             _consent_form["source"]["dataset"].append(item)
@@ -84,7 +88,8 @@ class ConsentFormHandler(Resource):
 
         sq.task("Generate RS_ID")
 
-
+        source_domain = source["serviceInstance"][0]["domain"]
+        source_access_uri = source["serviceInstance"][0]["serviceAccessEndPoint"]["serviceAccessURI"]
         rs_id = self.Helpers.gen_rs_id(source["serviceInstance"][0]["domain"])
         sq.task("Store RS_ID")
         _consent_form["source"]["rs_id"] = rs_id
