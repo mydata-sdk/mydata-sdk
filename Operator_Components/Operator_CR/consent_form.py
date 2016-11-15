@@ -13,7 +13,7 @@ from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
 from helpers import AccountManagerHandler, Helpers
 from op_tasks import CR_installer
-
+from requests import post
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
 
@@ -185,6 +185,25 @@ class ConsentFormHandler(Resource):
 
         sq.send_to("Account Mgmt", "Send CR/CSR to sign and store")
         result = self.AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
+
+        # TODO: These are debugging and testing calls, remove them once operation is verified.
+        req = post("http://operator_components:5000/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
+                      .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
+
+        debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
+            req.status_code,
+            req.reason,
+            dumps(loads(req.content), indent=2)
+        ))
+        req = post("http://operator_components:5000/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Active"
+                      .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
+        debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
+            req.status_code,
+            req.reason,
+            dumps(loads(req.content), indent=2)
+        ))
+
+
         debug_log.info(dumps(result, indent=3))
         sink_cr = result["data"]["sink"]["consentRecord"]["attributes"]["cr"]
         sink_csr = result["data"]["sink"]["consentStatusRecord"]["attributes"]["csr"]

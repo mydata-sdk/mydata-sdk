@@ -105,7 +105,7 @@ class AccountManagerHandler:
             "consent":      "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
             "auth_token":   "api/consent/{sink_cr_id}/authorizationtoken/",
             "last_csr":     "api/consent/{cr_id}/status/last/",
-            "new_csr":      "api/consent/{cr_id}/status/"}
+            "new_csr":      "api/consent/{cr_id}/status/"} # Works as path to GET missing csr and POST new ones
         req = get(self.url + self.endpoint["token"], auth=(self.username, self.password), timeout=timeout)
 
         # check if the request for token succeeded
@@ -174,20 +174,42 @@ class AccountManagerHandler:
     def create_new_csr(self, cr_id, payload):
         endpoint_url = self.url + self.endpoint["new_csr"].replace("{cr_id}", cr_id)
         debug_log.debug("" + endpoint_url)
-
+        payload = {"data": {"attributes": payload, "type": "ConsentStatusRecord"}}
         req = post(endpoint_url, json=payload,
                    headers={'Api-Key': self.token},
                    timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
-            tool = SLR_tool()
-            payload = tool.decrypt_payload(templ["data"]["attributes"]["csr"]["payload"])
-            debug_log.info("Got CSR payload from account:\n{}".format(dumps(payload, indent=2)))
-            csr_id = payload["record_id"]
-            return {"csr_id": csr_id}
+            #tool = SLR_tool()
+            #payload = tool.decrypt_payload(templ["data"]["attributes"]["csr"]["payload"])
+            debug_log.info("Created CSR:\n{}".format(dumps(templ, indent=2)))
+            #csr_id = payload["record_id"]
+
+            return {"csr": templ}
         else:
             raise DetailedHTTPException(status=req.status_code,
-                                        detail={"msg": "Getting last csr from account management failed.",
+                                        detail={"msg": "Creating new csr at account management failed.",
+                                                "content": req.content},
+                                        title=req.reason)
+
+    def get_missing_csr(self, cr_id, csr_id):
+        endpoint_url = self.url + self.endpoint["new_csr"].replace("{cr_id}", cr_id)
+        debug_log.debug("" + endpoint_url)
+        payload = {"csr_id": csr_id}
+        req = get(endpoint_url, params=payload,
+                   headers={'Api-Key': self.token},
+                   timeout=self.timeout)
+        if req.ok:
+            templ = loads(req.text)
+            #tool = SLR_tool()
+            #payload = tool.decrypt_payload(templ["data"]["attributes"]["csr"]["payload"])
+            debug_log.info("Fetched missing CSR:\n{}".format(dumps(templ, indent=2)))
+            #csr_id = payload["record_id"]
+
+            return {"missing_csr": templ}
+        else:
+            raise DetailedHTTPException(status=req.status_code,
+                                        detail={"msg": "Creating new csr at account management failed.",
                                                 "content": req.content},
                                         title=req.reason)
 
@@ -491,7 +513,7 @@ class Helpers:
         # Something to check state here?
         # Also store RS_ID in DB around here.
         ##
-        rs_id = "{}||{}".format(source_URI, str(guid()))
+        rs_id = "{}||{}".format(source_URI, str(guid())) # TODO: This needs to be looked at.
         self.storeRS_ID(rs_id)
         return rs_id
 
