@@ -178,6 +178,49 @@ paths:
           schema:
             $ref: "#/definitions/errors"
 
+  /account_id/{acc_id}/service/{srv_id}/consent/{cr_id}/status/{new_status}:
+    get:
+      tags:
+      - "Operator"
+      - "Source"
+      description: "Change status of consent"
+      parameters:
+      - name: "acc_id"
+        in: "path"
+        description: "Unique Surrogate id for service"
+        required: true
+        type: "string"
+        format: "uuid4"
+      - name: "srv_id"
+        in: "path"
+        description: "Unique ID service id"
+        required: true
+        type: "string"
+        format: "uuid4"
+      - name: "cr_id"
+        in: "path"
+        description: "Unique ID consent record"
+        required: true
+        type: "string"
+        format: "uuid4"
+      - name: "new_status"
+        in: "path"
+        description: "new status as Active/Disabled/Withdrawn"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "returns 200 OK, or Error message"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/errors"
+        502:
+          description: "Bad Gateway"
+          schema:
+            $ref: "#/definitions/errors"
+
+
 definitions:
   errors:
       type: object
@@ -275,6 +318,7 @@ definitions:
         type: array
         items:
           type: string
+
 
       title:
         type: string
