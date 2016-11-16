@@ -130,13 +130,13 @@ class DataFlow(Resource):
         # Request signed.
         # Request created.
         sq.send_to("Service_Components Mgmnt (Source)", "Data Request (PoP stuff)")
+        # Make Data Request
         for url in distribution_urls:
             req = requests.get(url,
                            auth=SignedRequest(token=aud, sign_method=True, sign_path=True, key=our_key_full, protected=dumps(our_key["prot"])))
         debug_log.info("Made data request and received following data from Source: \n{}"
                        .format(dumps(loads(req.content), indent=2)))
-        # Make Data Request
-        status = {"status": "running", "service_mode": "Sink"}
+        status = {"status": "ok", "service_mode": "Sink"}
         return status
 
 
@@ -146,9 +146,3 @@ api.add_resource(DataFlow, '/dc')
 
 #api.add_resource(DataFlow, '/user/<string:user_id>/consentRecord/<string:cr_id>/resourceSet/<string:rs_id>')
 #"http://service_components:7000/api/1.2/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"
-
-
-'''
-SLR token_issuer_key pois
-pop key ja token_issuer_key CR
-'''

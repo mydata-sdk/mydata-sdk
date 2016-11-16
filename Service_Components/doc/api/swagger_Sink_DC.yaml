@@ -4,9 +4,9 @@ info:
   version: "1.2"
   title: "Sink DC API"
 host: "example.sink.example"
-basePath: "/api/1.2/dc"
+basePath: "/api/1.2/sink_flow"
 paths:
-  /user/{user_id}/consentRecord/{cr_id}/resourceSet/{rs_id}:
+  /dc:
     get:
       tags:
       - "Sink"
@@ -16,60 +16,26 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - in: "path"
-        name: "user_id"
-        description: "Unique id for useraccount in sink"
+      - in: "body"
+        name: "body"
+        description: "payload detailing data"
         required: true
-        type: string
-      - in: "path"
-        name: "cr_id"
-        description: "Existing consentrecord id"
-        required: true
-        type: string
-      - in: "path"
-        name: "rs_id"
-        description: "Resource set id"
-        required: true
-        type: string
+        schema:
+          $ref: "#/definitions/DcPayload"
       - in: "query"
-        name: "data_set_id"
-        description: "Dataset id"
-        required: false
+        name: data_set_id
+        description: "Dataset we want to request data for"
         type: string
       responses:
-        202:
-          description: "Returns "
-          schema:
-            $ref: "#/definitions/processing"
+        200:
+          description: "Returns 200 OK, or Error Message"
+
         500:
           description: "Internal server error"
           schema:
             $ref: "#/definitions/errors"
 
-  /status/{process_id}:
-    get:
-      tags:
-      - "Sink"
-      description: "Query status of on going data flow"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "path"
-        name: "process_id"
-        description: "Unique id for background process."
-        required: true
-        type: string
-      responses:
-        200:
-          description: "Returns status of processing "
-          schema:
-            $ref: "#/definitions/handling"
-        500:
-          description: "Internal server error"
-          schema:
-            $ref: "#/definitions/errors"
+
 
 definitions:
   errors:
@@ -90,18 +56,16 @@ definitions:
         source:
           type: string
           description: Source URI
-  processing:
+
+  DcPayload:
       type: object
       properties:
-        process_id:
+        user_id:
           type: string
-          description: Id that can be used to query status of processing
-  handling:
-      type: object
-      properties:
-        status:
+          description: string containing user_id
+        cr_id:
           type: string
-          description: Status of process (Active/Done/Cancelled)
-        reason:
+          description: string contaning cr_id
+        rs_id:
           type: string
-          description: Verbal description for status
+          description: string containing rs_id
