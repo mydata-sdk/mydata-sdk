@@ -30,6 +30,7 @@ class ConsentFormHandler(Resource):
         self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
         self.timeout = current_app.config["TIMEOUT"]
+        self.debug_mode = current_app.config["DEBUG_MODE"]
         try:
             self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
         except Exception as e:
@@ -117,7 +118,7 @@ class ConsentFormHandler(Resource):
                                         detail="RS_ID could not be validated.",
                                         status=403)
 
-        sq.send_to("Account Mgmt", "GET surrogate_id & slr_id")
+        sq.send_to("Account Manager", "GET surrogate_id & slr_id")
         try:
             sink_sur = self.AM.getSUR_ID(sink_srv_id, account_id)
             source_sur = self.AM.getSUR_ID(source_srv_id, account_id)
@@ -188,25 +189,28 @@ class ConsentFormHandler(Resource):
         source_csr = self.Helpers.gen_csr(surrogate_id_source, source_cr["cr"]["common_part"]["cr_id"], "Active",
                                           "null")
 
-        sq.send_to("Account Mgmt", "Send CR/CSR to sign and store")
+        sq.send_to("Account Manager", "Send CR/CSR to sign and store")
         result = self.AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
 
         # TODO: These are debugging and testing calls, remove them once operation is verified.
-        req = post("http://operator_components:5000/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
-                      .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
+        if self.debug_mode:
+            own_addr = request.url_root.rstrip(request.script_root)
+            debug_log.info("Our own address is: {}".format(own_addr))
+            req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
+                          .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
 
-        debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
-            req.status_code,
-            req.reason,
-            dumps(loads(req.content), indent=2)
-        ))
-        req = post("http://operator_components:5000/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Active"
-                      .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
-        debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
-            req.status_code,
-            req.reason,
-            dumps(loads(req.content), indent=2)
-        ))
+            debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
+                req.status_code,
+                req.reason,
+                dumps(loads(req.content), indent=2)
+            ))
+            req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Active"
+                          .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
+            debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
+                req.status_code,
+                req.reason,
+                dumps(loads(req.content), indent=2)
+            ))
 
 
         debug_log.info(dumps(result, indent=3))
@@ -220,8 +224,8 @@ class ConsentFormHandler(Resource):
         crs_csrs_payload = {"sink": {"cr": sink_cr, "csr": sink_csr},
                  "source": {"cr": source_cr, "csr": source_csr}}
         #logger.info("Going to Celery task")
-        sq.send_to("Sink", "Post CR-Sink, CSR-Sink")
-        sq.send_to("Source", "Post CR-Source, CSR-Source")
+        sq.send_to("Service_Components Mgmnt (Sink)", "Post CR-Sink, CSR-Sink")
+        sq.send_to("Service_Components Mgmnt (Source)", "Post CR-Source, CSR-Source")
 
         debug_log.info(dumps(crs_csrs_payload, indent=2))
         CR_installer.delay(crs_csrs_payload, self.SH.getService_url(sink_srv_id), self.SH.getService_url(source_srv_id))

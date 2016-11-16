@@ -12,6 +12,7 @@ import logging
 from jwcrypto import jwk
 from Templates import Sequences
 debug_log = logging.getLogger("debug")
+logger = logging.getLogger("sequence")
 api_Sink_blueprint = Blueprint("api_Sink_blueprint", __name__)
 api = Api()
 api.init_app(api_Sink_blueprint)
@@ -42,6 +43,7 @@ class DataFlow(Resource):
     @error_handler
     def post(self):  # TODO Make this a GET
         def renew_token(operator_url, record_id):
+            sq.task("Renewing Auth Token.")
             token = requests.get(
                 "{}/api/1.2/cr/auth_token/{}".format(operator_url, record_id))  # TODO Get api path from some config?
             debug_log.info("{}, {}, {}, {}".format(token.url, token.reason, token.status_code, token.text))
@@ -121,6 +123,7 @@ class DataFlow(Resource):
         # Sign request
         # Fetch private key pair of public key specified in Authorisation Token's "sub" field.
         # Sign with fetched private key
+        sq.task("Fetch key used to sign request")
         our_key_full = jwk.JWK()
         our_key_full.import_key(**our_key["key"])
         # Add signature to request

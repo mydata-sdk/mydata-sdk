@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
 from time import time
-import logging
-from json import dumps, loads
-
-from base64 import urlsafe_b64decode as decode
-
-
-from base64 import urlsafe_b64decode as decode
-from json import loads
-from jwcrypto import jws, jwk
 
 #### Schemas
 source_cr_schema = {
@@ -300,11 +291,14 @@ csr_schema = {
 ####
 
 
+import logging
+from json import dumps, loads
 class Sequences:
     def __init__(self, name, seq=False):
         '''
 
         :param name:
+        :param seq:  seq should always be dictionary with "seq" field.
         '''
         self.logger = logging.getLogger("sequence")
         self.name = name

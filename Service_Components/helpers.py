@@ -750,13 +750,16 @@ class CR_tool:
         for key in keys:
             cr_jwk = jwk.JWK(**key)
             cr_jws = jws.JWS()
-            cr_jws.deserialize(dumps(self.cr["cr"]["attributes"]["cr"]))
+            cr = self.cr["cr"]["attributes"]["cr"]
+            cr_jws.deserialize(dumps(cr))
 
             try:
                 cr_jws.verify(cr_jwk)
                 return True
             except Exception as e:
-                pass
+                debug_log.info(
+                    "FAILED key verification for CR: \n({})\n WITH KEY: \n({})".format(cr, cr_jwk.export_public()))
+                debug_log.exception(e)
                 # print(repr(e))
                 # return False
         return False
@@ -771,6 +774,7 @@ class CR_tool:
                 csr_jws.verify(cr_jwk)
                 return True
             except Exception as e:
+                debug_log.info("FAILED key verification for CSR: \n({})\n WITH KEY: \n({})".format(csr, cr_jwk.export_public()))
                 debug_log.exception(e)
                 pass
                 # print(repr(e))
