@@ -84,7 +84,8 @@ class Helpers:
         try:
             db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
             query = self.query_db("select * from code_and_user_mapping where code=%s;", (code,))
-            user_from_db = loads(query)["user_id"]
+            debug_log.info(query)
+            user_from_db = loads(query)
             return user_from_db
         except Exception as e:
             debug_log.exception(e)

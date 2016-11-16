@@ -514,7 +514,7 @@ class Helpers:
         # Also store RS_ID in DB around here.
         ##
 
-        rs_id = "{}{}".format(source_URI.lstrip("http://").lstrip("https://"), str(guid()))  # TODO: This needs to be looked at.
+        rs_id = "{}{}".format(source_URI.lstrip("http://").lstrip("https://"), str(guid()))
         self.storeRS_ID(rs_id)
         return rs_id
 

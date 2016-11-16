@@ -115,7 +115,7 @@ class RegisterSur(Resource):
             # Create template
             self.payload["link_id"] = str(guid())
             # TODO: Currently you can generate endlessly new slr even if one exists already
-            sq.task("Fill template for Account Mgmnt")
+            sq.task("Fill template for Account Manager")
             template = {"code": js["code"],
                         "data": {
                             "slr": {

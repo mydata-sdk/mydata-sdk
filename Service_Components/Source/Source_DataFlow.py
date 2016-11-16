@@ -11,6 +11,7 @@ from json import loads, dumps
 from Templates import Sequences
 from signed_requests.json_builder import pop_handler
 debug_log = logging.getLogger("debug")
+logger = logging.getLogger("sequence")
 api_Source_blueprint = Blueprint("api_Source_blueprint", __name__)
 api = Api()
 api.init_app(api_Source_blueprint)
@@ -106,7 +107,9 @@ class DataRequest(Resource):
         # OPT: Introspection # TODO: Implement
             # introspect = is_introspection_necessary()
         try:
+            sq.task("Intropection")
             self.helpers.introspection(cr_id, self.operator_url)
+            sq.task("Return requested data.")
             return {"Some test data": "like so", "and it continues": "like so!"}
         except LookupError as e:
             debug_log.exception(e)

@@ -13,7 +13,7 @@ api_CR_blueprint = Blueprint("api_Introspection_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
 debug_log = logging.getLogger("debug")
-
+logger = logging.getLogger("sequence")
 class Introspection(Resource):
     def __init__(self):
         super(Introspection, self).__init__()
