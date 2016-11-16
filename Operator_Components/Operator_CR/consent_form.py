@@ -38,6 +38,7 @@ class ConsentFormHandler(Resource):
         self.SH = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"], current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.getService = self.SH.getService
         self.Helpers = Helpers(current_app.config)
+        self.operator_url = current_app.config["OPERATOR_URL"]
 
     @error_handler
     def get(self, account_id):
@@ -194,7 +195,7 @@ class ConsentFormHandler(Resource):
 
         # TODO: These are debugging and testing calls, remove them once operation is verified.
         if self.debug_mode:
-            own_addr = request.url_root.rstrip(request.script_root)
+            own_addr = self.operator_url #request.url_root.rstrip(request.script_root)
             debug_log.info("Our own address is: {}".format(own_addr))
             req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
                           .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))

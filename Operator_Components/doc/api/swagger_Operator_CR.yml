@@ -77,8 +77,8 @@ paths:
             $ref: "#/definitions/Consent_FormReply"
       # Expected responses for this operation:
       responses:
-        200:
-          description: "Returns 200 OK or Error message"
+        201:
+          description: "Returns 201 Created or Error message"
         500:
           description: "Internal server error"
           schema:
@@ -118,6 +118,65 @@ paths:
           schema:
             $ref: "#/definitions/errors"
 
+  /introspection/{cr_id}:
+    get:
+      tags:
+      - "Operator"
+      - "Source"
+      description: "Gets last csr for given cr_id"
+      parameters:
+      - name: "cr_id"
+        in: "path"
+        description: "Unique ID consent record"
+        required: true
+        type: "string"
+        format: "uuid4"
+      responses:
+        200:
+          description: "returns 200 OK and latest csr_id, or Error message"
+          schema:
+            $ref: "#/definitions/IntrospectionReply"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/errors"
+        502:
+          description: "Bad Gateway"
+          schema:
+            $ref: "#/definitions/errors"
+
+  /introspection/{cr_id}/missing_since/{csr_id}:
+    get:
+      tags:
+      - "Operator"
+      - "Source"
+      description: "Gets new csr's for given cr since given csr_id"
+      parameters:
+      - name: "cr_id"
+        in: "path"
+        description: "Unique ID consent record"
+        required: true
+        type: "string"
+        format: "uuid4"
+      - name: "csr_id"
+        in: "path"
+        description: "Unique ID consent status record"
+        required: true
+        type: "string"
+        format: "uuid4"
+      responses:
+        200:
+          description: "returns 200 OK and new csr's since given csr_id, or Error message"
+          schema:
+            $ref: "#/definitions/IntrospectionMissingReply"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/errors"
+        502:
+          description: "Bad Gateway"
+          schema:
+            $ref: "#/definitions/errors"
 
 definitions:
   errors:
@@ -146,6 +205,27 @@ definitions:
         type: string
         description: string containing auth_token
 
+  IntrospectionReply:
+    type: object
+    properties:
+      csr_id:
+        type: string
+        description: string containing csr_id
+
+  IntrospectionMissingReply:
+    type: object
+    properties:
+      missing_csr:
+        type: object
+        properties:
+          data:
+            type: array
+            items:
+              type: object
+              properties:
+                attributes:
+                  type: object
+                  description: Missing csr
 
   DataSet_Sink:
     type: object
@@ -195,7 +275,6 @@ definitions:
         type: array
         items:
           type: string
-
 
       title:
         type: string
