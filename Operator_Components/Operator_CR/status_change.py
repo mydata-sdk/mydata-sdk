@@ -50,7 +50,7 @@ class Status_Change(Resource):
                                         detail="Account Manager might be down or unresponsive.",
                                         trace=traceback.format_exc(limit=100).splitlines())
         # debug_log.info(dumps(result))
-        return {"template": "thingy"}  # result
+        return {"status": "OK"}  # result
 
 
 api.add_resource(Status_Change, '/account_id/<string:acc_id>/service/<string:srv_id>/consent/<string:cr_id>/status/<string:new_status>')

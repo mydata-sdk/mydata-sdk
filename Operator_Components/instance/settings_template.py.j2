@@ -131,6 +131,12 @@ CERT_PASSWORD_PATH = "./cert_pw"
 {% endif %}
 
 
+{% if OPERATOR_URL is defined %}
+OPERATOR_URL = {{ OPERATOR_URL }}
+{% else %}
+OPERATOR_URL = "http://localhost:5000"
+{% endif %}
+
 {% if OPERATOR_UID is defined %}
 OPERATOR_UID = {{ OPERATOR_UID }}
 {% else %}
