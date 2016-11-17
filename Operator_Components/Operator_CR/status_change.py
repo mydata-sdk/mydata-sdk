@@ -34,6 +34,8 @@ class Status_Change(Resource):
         :return: Returns latest csr for source
         '''
         try:
+            debug_log.info("We received status change request for cr_id ({}) for srv_id ({}) on account ({})"
+                           .format(cr_id, srv_id, acc_id))
             # TODO: Do we need srv_id for anything?
             # TODO: How do we authorize this request? Who is allowed to make it?
             # Get previous_csr_id
@@ -41,8 +43,7 @@ class Status_Change(Resource):
             csr_payload = self.helper_object.gen_csr(acc_id, cr_id, new_status, previous_csr_id)
             debug_log.info("Created CSR payload:\n {}".format(csr_payload))
             result = self.AM.create_new_csr(cr_id, csr_payload)
-            debug_log.info("We received status change request for cr_id ({}) for srv_id ({}) on account ({})"
-                           .format(cr_id, srv_id, acc_id))
+
             # result = self.AM.get_last_csr(cr_id)
         except AttributeError as e:
             raise DetailedHTTPException(status=502,
