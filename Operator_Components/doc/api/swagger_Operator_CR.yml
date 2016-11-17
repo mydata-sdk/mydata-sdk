@@ -177,7 +177,7 @@ paths:
             $ref: "#/definitions/errors"
 
   /account_id/{acc_id}/service/{srv_id}/consent/{cr_id}/status/{new_status}:
-    get:
+    post:
       tags:
       - "Operator"
       - "Source"

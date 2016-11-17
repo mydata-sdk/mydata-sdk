@@ -405,7 +405,7 @@ class Helpers:
                 return
             else:
                 debug_log.info("Our csr({}) is outdated!".format(latest_csr_id))
-                req = post(
+                req = get(
                     operator_url + "/api/1.2/cr" + "/consent/{}/missing_since/{}".format(cr_id, latest_csr_id))
                 if req.ok:
                     tool = SLR_tool()

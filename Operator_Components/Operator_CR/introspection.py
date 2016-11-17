@@ -28,7 +28,7 @@ class Introspection(Resource):
         helper_object = Helpers(current_app.config)
 
     @error_handler
-    def post(self, cr_id):
+    def get(self, cr_id):
         '''post
 
         :return: Returns latest csr for source
