@@ -13,6 +13,7 @@ logger = get_custom_logger(__name__)
 
 
 def log_query(sql_query=None, arguments=None):
+    logger.info("Executing")
     if sql_query is None:
         raise AttributeError("Provide sql_query as parameter")
     if arguments is None:
@@ -27,6 +28,7 @@ def log_query(sql_query=None, arguments=None):
 
 
 def get_db_cursor():
+    logger.info("Executing")
     try:
         cursor = db.connection.cursor()
     except Exception as exp:
@@ -46,6 +48,7 @@ def execute_sql_insert(cursor, sql_query):
 
     INSERT to MySQL
     """
+    logger.info("Executing")
 
     last_id = ""
 
@@ -80,6 +83,7 @@ def execute_sql_insert_2(cursor, sql_query, arguments):
 
     INSERT to MySQL
     """
+    logger.info("Executing")
 
     last_id = ""
 
@@ -114,6 +118,7 @@ def execute_sql_update(cursor, sql_query, arguments):
 
     INSERT to MySQL
     """
+    logger.info("Executing")
 
     logger.debug('sql_query: ' + str(sql_query))
 
@@ -142,6 +147,7 @@ def execute_sql_select(cursor=None, sql_query=None):
 
     SELECT from MySQL
     """
+    logger.info("Executing")
 
     if app.config["SUPER_DEBUG"]:
         logger.debug('sql_query: ' + repr(sql_query))
@@ -174,6 +180,7 @@ def execute_sql_select_2(cursor=None, sql_query=None, arguments=None):
 
     SELECT from MySQL
     """
+    logger.info("Executing")
 
     log_query(sql_query=sql_query, arguments=arguments)
 
@@ -206,6 +213,7 @@ def execute_sql_count(cursor=None, sql_query=None):
 
     SELECT from MySQL
     """
+    logger.info("Executing")
 
     consent_count = 0
 
@@ -241,6 +249,7 @@ def drop_table_content():
 
     Drop table content
     """
+    logger.info("Executing")
 
     try:
         cursor = get_db_cursor()
@@ -292,6 +301,7 @@ def drop_table_content():
 
 
 def get_primary_keys_by_account_id(cursor=None, account_id=None, table_name=None):
+    logger.info("Executing")
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
     if account_id is None:
@@ -333,6 +343,7 @@ def get_primary_keys_by_account_id(cursor=None, account_id=None, table_name=None
 
 
 def get_slr_ids(cursor=None, account_id=None, table_name=None):
+    logger.info("Executing")
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
     if account_id is None:
@@ -374,6 +385,7 @@ def get_slr_ids(cursor=None, account_id=None, table_name=None):
 
 
 def get_slsr_ids(cursor=None, slr_id=None, table_name=None):
+    logger.info("Executing")
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
     if slr_id is None:
@@ -415,6 +427,7 @@ def get_slsr_ids(cursor=None, slr_id=None, table_name=None):
 
 
 def get_cr_ids(cursor=None, slr_id=None, table_name=None):
+    logger.info("Executing")
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
     if slr_id is None:
@@ -456,6 +469,7 @@ def get_cr_ids(cursor=None, slr_id=None, table_name=None):
 
 
 def get_csr_ids(cursor=None, cr_id=None, csr_primary_key=None, table_name=None):
+    logger.info("Executing")
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
     if cr_id is None:
@@ -505,6 +519,7 @@ def get_csr_ids(cursor=None, cr_id=None, csr_primary_key=None, table_name=None):
 
 
 def get_last_csr_id(cursor=None, cr_id=None, table_name=None):
+    logger.info("Executing")
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
     if cr_id is None:
@@ -544,6 +559,51 @@ def get_last_csr_id(cursor=None, cr_id=None, table_name=None):
         return cursor, entry_id
 
 
+def get_account_id_by_csr_id(cursor=None, cr_id=None, acc_table_name=None, slr_table_name=None, cr_table_name=None):
+    logger.info("Executing")
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if acc_table_name is None:
+        raise AttributeError("Provide acc_table_name as parameter")
+    if slr_table_name is None:
+        raise AttributeError("Provide slr_table_name as parameter")
+    if cr_table_name is None:
+        raise AttributeError("Provide cr_table_name as parameter")
+
+
+    sql_query = "SELECT `Accounts`.`id` " \
+                "FROM " + acc_table_name + " " \
+                "INNER JOIN " + slr_table_name + " on " + acc_table_name + ".`id` = " + slr_table_name + ".`Accounts_id` " \
+                "INNER JOIN " + cr_table_name + " on " + slr_table_name + ".`id` = " + cr_table_name + ".`ServiceLinkRecords_id` " \
+                "WHERE " + cr_table_name + ".`consentRecordId` LIKE %s " \
+                "LIMIT 1;"
+
+    arguments = (
+        '%' + str(cr_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
+        entry_id = str(data_list[0])
+        logger.info("Got entry_id: " + repr(entry_id))
+
+        return cursor, entry_id
 
 
 
