@@ -21,12 +21,117 @@ from app import db, api, login_manager, app
 # Import services
 from app.helpers import get_custom_logger, ApiError, get_utc_time
 from app.mod_blackbox.controllers import get_account_public_key, generate_and_sign_jws
-from app.mod_database.helpers import get_db_cursor, get_last_csr_id, get_csr_ids
+from app.mod_database.helpers import get_db_cursor, get_last_csr_id, get_csr_ids, get_account_id_by_csr_id
 
 # create logger with 'spam_application'
-from app.mod_database.models import SurrogateId, ConsentRecord, ServiceLinkRecord, ConsentStatusRecord
+from app.mod_database.models import SurrogateId, ConsentRecord, ServiceLinkRecord, ConsentStatusRecord, Account
 
 logger = get_custom_logger(__name__)
+
+
+def get_account_id_by_cr(cr_id=None, endpoint="get_account_id_by_cr(cr_id, endpoint)"):
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+
+    logger.info("Executing for: " + str(endpoint))
+
+    ##
+    # Account
+    try:
+        logger.info("Create Account object")
+        account_entry = Account()
+    except Exception as exp:
+        error_title = "Failed to create Account object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("account_entry: " + account_entry.log_entry)
+
+    # Get database table name for Consent Status Record
+    try:
+        logger.info("Get Account table name")
+        account_table_name = account_entry.table_name
+    except Exception as exp:
+        error_title = "Failed to get Account table name"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Got Account table name: " + str(account_table_name))
+
+    ##
+    # ServiceLinkRecord
+    try:
+        logger.info("Create ServiceLinkRecord object")
+        slr_entry = ServiceLinkRecord()
+    except Exception as exp:
+        error_title = "Failed to create ServiceLinkRecord object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("slr_entry: " + slr_entry.log_entry)
+
+    # Get database table name for Consent Status Record
+    try:
+        logger.info("Get ServiceLinkRecord table name")
+        slr_table_name = slr_entry.table_name
+    except Exception as exp:
+        error_title = "Failed to get ServiceLinkRecord table name"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Got ServiceLinkRecord table name: " + str(slr_table_name))
+
+    ##
+    # ConsentRecord
+    try:
+        logger.info("Create ConsentRecord object")
+        cr_entry = ConsentRecord()
+    except Exception as exp:
+        error_title = "Failed to create Consent Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("cr_entry: " + cr_entry.log_entry)
+
+    # Get database table name for Consent Status Record
+    try:
+        logger.info("Get Consent Record table name")
+        cr_table_name = cr_entry.table_name
+    except Exception as exp:
+        error_title = "Failed to get Consent Record table name"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Got Consent Record table name: " + str(cr_table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+
+    # Get Account ID
+    try:
+        logger.info("Get Account ID")
+        cursor, account_id = get_account_id_by_csr_id(
+            cursor=cursor,
+            cr_id=cr_id,
+            acc_table_name=account_table_name,
+            slr_table_name=slr_table_name,
+            cr_table_name=cr_table_name
+        )
+    except IndexError as exp:
+        error_title = "Account ID Not Found"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to get Account ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Got Account ID: " + str(cr_table_name))
+        return account_id
 
 
 def sign_cr(account_id=None, payload=None, endpoint="sign_slr(account_id, payload, endpoint)"):
@@ -475,14 +580,26 @@ def add_csr(cr_id=None, csr_payload=None, endpoint="add_csr()"):
     else:
         logger.info("Identical IDs: cr_id from URI: " + str(cr_id) + ", cr_id from payload: " + str(csr_cr_id))
 
+
+    ######
+    # Account ID
+    ####
+    try:
+        logger.info("Get Account ID by CSR_ID")
+        account_id = get_account_id_by_cr(cr_id=cr_id, endpoint=endpoint)
+    except Exception as exp:
+        logger.error("Could not Account ID by CSR_ID: " + repr(exp))
+        raise
+    else:
+        logger.info("account_id: " + str(account_id))
+
     ######
     # Sign
     ####
     # Sign CSR
     try:
         logger.info("Sign CSR")
-        # TODO: ACCOUNT ID
-        csr_signed = sign_csr(account_id=1, payload=csr_payload, endpoint=endpoint)
+        csr_signed = sign_csr(account_id=account_id, payload=csr_payload, endpoint=endpoint)
     except Exception as exp:
         logger.error("Could not sign Source's CSR: " + repr(exp))
         raise
