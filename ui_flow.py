@@ -72,7 +72,7 @@ def initialize(account_url):
 # Creates two Service Links by making a GET-request to Operator backend.
 def create_service_link(operator_url, service_id):
     print("\n##### CREATE A SERVICE LINK #####")
-    slr_flow = get(operator_url + "api/1.2/slr/account/2/service/"+service_id)
+    slr_flow = get(operator_url + "api/1.2/slr/account/1/service/"+service_id)
     if not slr_flow.ok:
         print("Creation of first SLR failed with status ({}) reason ({}) and the following content:\n{}".format(
             slr_flow.status_code,
@@ -96,7 +96,7 @@ def give_consent(operator_url, sink_id, source_id):
     ids = {"sink": sink_id, "source": source_id}
 
     print("\n###### 1.FETCH CONSENT FORM ######")
-    req = get(operator_url + "api/1.2/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id))
+    req = get(operator_url + "api/1.2/cr/consent_form/account/1?sink={}&source={}".format(sink_id, source_id))
     if not req.ok:
         print("Fetching consent form consent failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
@@ -108,7 +108,7 @@ def give_consent(operator_url, sink_id, source_id):
     print("\n###### 2.SEND CONSENT FORM ######")
     print(req.url, req.reason, req.status_code, req.text)
     js = json.loads(req.text)
-    req = post(operator_url + "api/1.2/cr/consent_form/account/2", json=js)
+    req = post(operator_url + "api/1.2/cr/consent_form/account/1", json=js)
     if not req.ok:
         print("Granting consent failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
