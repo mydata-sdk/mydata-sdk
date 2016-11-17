@@ -58,7 +58,7 @@ class DataFlow(Resource):
             cr_id = params["cr_id"]
             rs_id = params["rs_id"]
             sq.task("Get data_set_id from POST json")
-            data_set_id = request.args.get("data_set_id", None)
+            data_set_id = request.args.get("dataset_id", None)
             debug_log.info("data_set_id is ({}), cr_id is ({}), user_id ({}) and rs_id ({})"
                            .format(data_set_id, cr_id, user_id, rs_id))
             sq.task("Create request")

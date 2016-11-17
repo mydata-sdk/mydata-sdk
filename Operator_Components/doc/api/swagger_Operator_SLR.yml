@@ -25,7 +25,7 @@ paths:
           $ref: "#/definitions/LinkParams"
       responses:
         200:
-          description: "Returns 200 OK or Error message"
+          description: "Returns 200 OK"
         500:
           description: "Internal server error"
           schema:

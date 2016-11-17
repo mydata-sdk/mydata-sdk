@@ -6,6 +6,23 @@ info:
 host: "example.service_mgmnt.example"
 basePath: "/api/1.2/slr"
 paths:
+  /code:
+    get:
+      tags:
+      - "Operator"
+      - "Service Management"
+      description: "Generates, store and returns unique code for the SLR flow"
+      parameters: []
+      responses:
+        200:
+          description: "Returns the code used in next steps of SLR flow. This is required\
+            \ on most endpoints that follow."
+          schema:
+            $ref: "#/definitions/CodeResponse"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/errors"
   /auth:
     post:
       tags:
@@ -32,23 +49,7 @@ paths:
           description: "Internal server error"
           schema:
             $ref: "#/definitions/errors"
-  /code:
-    get:
-      tags:
-      - "Operator"
-      - "Service Management"
-      description: "Generates, store and returns unique code for the SLR flow"
-      parameters: []
-      responses:
-        200:
-          description: "Returns the code used in next steps of SLR flow. This is required\
-            \ on most endpoints that follow."
-          schema:
-            $ref: "#/definitions/CodeResponse"
-        500:
-          description: "Internal server error"
-          schema:
-            $ref: "#/definitions/errors"
+
   /login:
     post:
       tags:
@@ -69,7 +70,7 @@ paths:
           $ref: "#/definitions/LoginParams"
       responses:
         200:
-          description: "Returns 200 OK or Error message"
+          description: "Returns 200 OK"
         500:
           description: "Internal server error"
           schema:
@@ -79,7 +80,7 @@ paths:
       tags:
       - "Service Management"
       - "Operator"
-      description: "Takes SLR signed by Operator, signs it with own key and sends\
+      description: "Takes SLR signed by account owner at Operator, signs it with own key and sends\
         \ to Operator for verification."
       consumes:
       - "application/json"
@@ -94,7 +95,7 @@ paths:
           $ref: "#/definitions/SlrParams"
       responses:
         200:
-          description: "Returns 200 OK or Error message"
+          description: "Returns 200 OK"
         500:
           description: "Internal server error"
           schema:

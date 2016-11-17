@@ -39,7 +39,7 @@ paths:
       # Expected responses for this operation:
       responses:
         200:
-          description: "Returns 200 OK or Error message"
+          description: "Returns 200 OK"
           schema:
             $ref: "#/definitions/Consent_FormReply"
 
@@ -78,7 +78,7 @@ paths:
       # Expected responses for this operation:
       responses:
         201:
-          description: "Returns 201 Created or Error message"
+          description: "Returns 201 Created"
         500:
           description: "Internal server error"
           schema:
@@ -100,13 +100,13 @@ paths:
       parameters:
       - name: "cr_id"
         in: "path"
-        description: "Unique ID consent record"
+        description: "Unique ID of consent record"
         required: true
         type: "string"
         format: "uuid4"
       responses:
         200:
-          description: "returns 200 OK and Auth Token, or Error message"
+          description: "returns 200 OK and Auth Token"
           schema:
             $ref: "#/definitions/Auth_TokenReply"
         500:
@@ -127,13 +127,13 @@ paths:
       parameters:
       - name: "cr_id"
         in: "path"
-        description: "Unique ID consent record"
+        description: "Unique ID of consent record"
         required: true
         type: "string"
-        format: "uuid4"
+
       responses:
         200:
-          description: "returns 200 OK and latest csr_id, or Error message"
+          description: "returns 200 OK and latest csr_id"
           schema:
             $ref: "#/definitions/IntrospectionReply"
         500:
@@ -145,7 +145,7 @@ paths:
           schema:
             $ref: "#/definitions/errors"
 
-  /introspection/{cr_id}/missing_since/{csr_id}:
+  /consent/{cr_id}/missing_since/{csr_id}:
     get:
       tags:
       - "Operator"
@@ -154,19 +154,17 @@ paths:
       parameters:
       - name: "cr_id"
         in: "path"
-        description: "Unique ID consent record"
+        description: "Unique ID of consent record"
         required: true
         type: "string"
-        format: "uuid4"
       - name: "csr_id"
         in: "path"
-        description: "Unique ID consent status record"
+        description: "Unique ID of consent status record"
         required: true
         type: "string"
-        format: "uuid4"
       responses:
         200:
-          description: "returns 200 OK and new csr's since given csr_id, or Error message"
+          description: "returns 200 OK and new csr's since given csr_id"
           schema:
             $ref: "#/definitions/IntrospectionMissingReply"
         500:
@@ -190,19 +188,16 @@ paths:
         description: "Unique Surrogate id for service"
         required: true
         type: "string"
-        format: "uuid4"
       - name: "srv_id"
         in: "path"
-        description: "Unique ID service id"
+        description: "Unique ID of service id"
         required: true
         type: "string"
-        format: "uuid4"
       - name: "cr_id"
         in: "path"
-        description: "Unique ID consent record"
+        description: "Unique ID of consent record"
         required: true
         type: "string"
-        format: "uuid4"
       - name: "new_status"
         in: "path"
         description: "new status as Active/Disabled/Withdrawn"
@@ -210,7 +205,7 @@ paths:
         type: "string"
       responses:
         200:
-          description: "returns 200 OK, or Error message"
+          description: "returns 200 OK"
         500:
           description: "Internal server error"
           schema:
