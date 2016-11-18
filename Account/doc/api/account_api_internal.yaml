@@ -4,7 +4,7 @@ info:
   title: 'Digital Health Revolution - MyData Account'
   description:
     ' #### MyData-SDK - MyData Account API - Internal '
-  version: '1.2'
+  version: '1.2.1'
   contact:
     url: 'https://github.com/HIIT/mydata-stack'
   license:
