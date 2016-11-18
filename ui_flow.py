@@ -8,8 +8,8 @@ from uuid import uuid4
 # TODO: Maybe these should be given as parameters
 #Service_ID_Source   = "57f3a57b0cf2fcf22eea33a2"  # MyLocation
 #Service_ID_Sink     = "57f3a57b0cf2fcf22eea33a3"  # PHR
-Service_ID_Source   = "582ed4d50cf2f4663ec4f011"  # MyLocation
-Service_ID_Sink     = "582ed4d50cf2f4663ec4f012"  # PHR
+Service_ID_Source   = "582f2bf50cf2f4663ec4f01f"  # MyLocation
+Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
 
 # TODO: Add more printing. Now user barely knows if initialization happened and did it succeed or not.
 # Sends JSON-payloads to Account that create three new accounts.
