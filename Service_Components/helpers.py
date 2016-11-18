@@ -10,7 +10,7 @@ from flask import Blueprint
 from flask_restful import Api
 import jsonschema
 import db_handler
-from requests import get
+from requests import get, post
 from sqlite3 import IntegrityError
 from DetailedHTTPException import DetailedHTTPException
 
@@ -167,7 +167,8 @@ class Helpers:
     def get_cr_json(self, cr_id):
         # TODO: query_db is not really optimal when making two separate queries in row.
         cr = self.query_db("select * from cr_storage where cr_id = %s;", (cr_id,))
-        csr = self.query_db("select cr_id, json from csr_storage where cr_id = %s;", (cr_id,))
+        csr_id = self.get_latest_csr_id(cr_id)
+        csr = self.query_db("select cr_id, json from csr_storage where csr_id = %s and cr_id = %s;", (csr_id, cr_id,))
         if cr is None or csr is None:
             raise IndexError("CR and CSR couldn't be found with given id ({})".format(cr_id))
         debug_log.info("Found CR ({}) and CSR ({})".format(cr, csr))
@@ -405,15 +406,15 @@ class Helpers:
             else:
                 debug_log.info("Our csr({}) is outdated!".format(latest_csr_id))
                 req = get(
-                    operator_url + "/api/1.2/cr" + "/introspection/{}/missing_since/{}".format(cr_id, latest_csr_id))
+                    operator_url + "/api/1.2/cr" + "/consent/{}/missing_since/{}".format(cr_id, latest_csr_id))
                 if req.ok:
                     tool = SLR_tool()
                     content = loads(req.content)
                     debug_log.info("We got: \n{}".format(content))
-                    slr_id = self.query_db("select cr_id, slr_id from csr_storage where csr_id = %s;"
-                                           , (latest_csr_id,))
-                    rs_id = self.query_db("select cr_id, rs_id from csr_storage where csr_id = %s;"
-                                           , (latest_csr_id,))
+                    slr_id = self.query_db("select cr_id, slr_id from cr_storage where cr_id = %s;"
+                                           , (cr_id,))
+                    rs_id = self.query_db("select cr_id, rs_id from cr_storage where cr_id = %s;"
+                                           , (cr_id,))
                     for csr in content["missing_csr"]["data"]:
                         if not isinstance(csr, dict):
                             csr = loads(csr)

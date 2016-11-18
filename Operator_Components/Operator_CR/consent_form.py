@@ -138,7 +138,13 @@ class ConsentFormHandler(Resource):
                                              source_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"] # One for Sink, one for Source
 
         sink_keys = self.Helpers.get_service_keys(surrogate_id_sink)
-        sink_key = loads(sink_keys[0])
+        try:
+            sink_key = loads(sink_keys[0])
+        except IndexError as e:
+            raise DetailedHTTPException(status=500,
+                                        title="Fetching service keys for sink has failed.",
+                                        detail="Couldn't find keys for surrogate id ({}).".format(surrogate_id_sink),
+                                        trace=traceback.format_exc(limit=100).splitlines())
         debug_log.info("Sink keys:\n{}".format(dumps(sink_key, indent=2)))
         sink_pop_key = sink_key["pop_key"]
         # Generate common_cr for both sink and source.

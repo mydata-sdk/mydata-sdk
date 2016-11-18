@@ -40,8 +40,8 @@ def get_AuthToken(cr_id, operator_url, app_config):
     user_id = cr_tool.get_surrogate_id()
     rs_id = cr_tool.get_rs_id()
 
-    req = get("http://service_components:7000/api/1.2/sink_flow/init")
-    print(req.url, req.status_code, req.content)
+    #req = get("http://service_components:7000/api/1.2/sink_flow/init")
+    #print(req.url, req.status_code, req.content)
 
     data  = {"cr_id": cr_id,
              "user_id": user_id,

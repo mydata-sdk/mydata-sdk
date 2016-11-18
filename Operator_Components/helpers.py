@@ -397,13 +397,11 @@ class Helpers:
     def store_service_key_json(self, kid, surrogate_id, key_json):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        try:
-            cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json) \
-                VALUES (%s, %s, %s);", (kid, surrogate_id, dumps(key_json)))
-            db.commit()
-        except:
-            cursor.execute("UPDATE service_keys_tbl SET key_json=%s WHERE kid=%s ;", (dumps(key_json), kid))
-            db.commit()
+        cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json) \
+            VALUES (%s, %s, %s);", (kid, surrogate_id, dumps(key_json)))
+        db.commit()
+#            cursor.execute("UPDATE service_keys_tbl SET key_json=%s WHERE kid=%s ;", (dumps(key_json), kid))
+#            db.commit()
         debug_log.info("Stored key_json({}) for surrogate_id({}) into DB".format(key_json, surrogate_id))
         cursor.close()
 
@@ -514,7 +512,7 @@ class Helpers:
         # Also store RS_ID in DB around here.
         ##
 
-        rs_id = "{}{}".format(source_URI.lstrip("http://").lstrip("https://"), str(guid()))
+        rs_id = "{}{}".format(source_URI.replace("http://", "").replace("https://", ""), str(guid()))
         self.storeRS_ID(rs_id)
         return rs_id
 

@@ -29,7 +29,7 @@ class Introspection(Resource):
 
     @error_handler
     def get(self, cr_id):
-        '''get
+        '''post
 
         :return: Returns latest csr for source
         '''
@@ -75,4 +75,4 @@ class Introspection_Missing(Resource):
         return result
 
 api.add_resource(Introspection, '/introspection/<string:cr_id>')
-api.add_resource(Introspection_Missing, '/introspection/<string:cr_id>/missing_since/<string:csr_id>')
+api.add_resource(Introspection_Missing, '/consent/<string:cr_id>/missing_since/<string:csr_id>')

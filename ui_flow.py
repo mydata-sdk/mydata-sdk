@@ -8,8 +8,8 @@ from uuid import uuid4
 # TODO: Maybe these should be given as parameters
 #Service_ID_Source   = "57f3a57b0cf2fcf22eea33a2"  # MyLocation
 #Service_ID_Sink     = "57f3a57b0cf2fcf22eea33a3"  # PHR
-Service_ID_Source   = "582b7df00cf2727145535753"  # MyLocation
-Service_ID_Sink     = "582b7df00cf2727145535754"  # PHR
+Service_ID_Source   = "582f2bf50cf2f4663ec4f01f"  # MyLocation
+Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
 
 # TODO: Add more printing. Now user barely knows if initialization happened and did it succeed or not.
 # Sends JSON-payloads to Account that create three new accounts.
@@ -169,21 +169,21 @@ if __name__ == '__main__':
     help_string_sink_id = \
         "ID of the Sink. \
         Check that this matches to what is specified in Service Registry. \
-        Defaults to '582b7df00cf2727145535754'."
+        Defaults to '{}'.".format(Service_ID_Sink)
     parser.add_argument("--sink_id",
                         help=help_string_sink_id,
                         type=str,
-                        default="582b7df00cf2727145535754",
+                        default=Service_ID_Sink,
                         required=False)
 
     help_string_source_id = \
         "ID of the Source. \
         Check that this matches to what is specified in Service Registry. \
-        Defaults to '582b7df00cf2727145535753'."
+        Defaults to '{}'.".format(Service_ID_Source)
     parser.add_argument("--source_id",
                         help=help_string_source_id,
                         type=str,
-                        default="582b7df00cf2727145535753",
+                        default=Service_ID_Source,
                         required=False)
 
 #     exclusive_grp = parser.add_mutually_exclusive_group()

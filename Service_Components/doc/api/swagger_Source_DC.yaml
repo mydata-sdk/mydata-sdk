@@ -4,9 +4,9 @@ info:
   version: "1.2"
   title: "Source DC API"
 host: "example.source.example"
-basePath: "/api/1.2/dc"
+basePath: "/api/1.2/source_flow"
 paths:
-  /*:
+  /datarequest:
     get:
       tags:
       - "Source"
@@ -21,17 +21,14 @@ paths:
         description: "Authorization Token"
         required: true
         type: string
-      - in: "query"
-        name: "rs_id"
-        description: "Resource Set ID"
-        required: true
-        type: string
 
       responses:
         200:
           description: "Returns 200"
+          schema:
+            $ref: "#/definitions/data"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
 
@@ -54,3 +51,7 @@ definitions:
         source:
           type: string
           description: Source URI
+
+  data:
+      type: object
+
