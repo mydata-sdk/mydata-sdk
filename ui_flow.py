@@ -169,7 +169,7 @@ if __name__ == '__main__':
     help_string_sink_id = \
         "ID of the Sink. \
         Check that this matches to what is specified in Service Registry. \
-        Defaults to '582b7df00cf2727145535754'."
+        Defaults to '{}'.".format(Service_ID_Sink)
     parser.add_argument("--sink_id",
                         help=help_string_sink_id,
                         type=str,
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     help_string_source_id = \
         "ID of the Source. \
         Check that this matches to what is specified in Service Registry. \
-        Defaults to '582b7df00cf2727145535753'."
+        Defaults to '{}'.".format(Service_ID_Source)
     parser.add_argument("--source_id",
                         help=help_string_source_id,
                         type=str,
