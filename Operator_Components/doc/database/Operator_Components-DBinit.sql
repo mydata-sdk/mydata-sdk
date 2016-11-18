@@ -59,7 +59,7 @@ ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
 -- -----------------------------------------------------
--- Table `db_Operator`.`keys_tbl`
+-- Table `db_Operator`.`keys_tbl` TODO: Check this, used to have kid as PK but would cause fails since service gives same key for all surrogates atm.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `db_Operator`.`service_keys_tbl` ;
 
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `db_Operator`.`service_keys_tbl` (
   `kid` LONGTEXT NOT NULL,
   `surrogate_id` LONGTEXT NOT NULL,
   `key_json` LONGTEXT NOT NULL,
-  PRIMARY KEY (`kid`(255)))
+  PRIMARY KEY (`surrogate_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 

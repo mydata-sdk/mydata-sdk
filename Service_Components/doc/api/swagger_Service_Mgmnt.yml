@@ -20,7 +20,7 @@ paths:
           schema:
             $ref: "#/definitions/CodeResponse"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
   /auth:
@@ -29,7 +29,7 @@ paths:
       - "Service Management"
       - "Service"
       description: "Service calls this after user has authenticated. Causes Service\
-        \ Management to generate surrogate_id for the operator."
+        \ Management to generate surrogate_id for the operator. This endpoint starts a long chain of events."
       consumes:
       - "application/json"
       produces:
@@ -46,7 +46,7 @@ paths:
           description: "Returns 200 OK so Service Mngmt knows SLR was verified\
             \ successfully"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
 
@@ -72,7 +72,7 @@ paths:
         200:
           description: "Returns 200 OK"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
   /slr:
@@ -97,7 +97,7 @@ paths:
         200:
           description: "Returns 200 OK"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
 definitions:

@@ -42,6 +42,10 @@ paths:
           description: "Returns 200 OK"
           schema:
             $ref: "#/definitions/Consent_FormReply"
+        500:
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
+          schema:
+            $ref: "#/definitions/errors"
 
     post:
       # Describe this verb here. Note: you can use markdown
@@ -80,7 +84,7 @@ paths:
         201:
           description: "Returns 201 Created"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
         502:
@@ -110,7 +114,7 @@ paths:
           schema:
             $ref: "#/definitions/Auth_TokenReply"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
         502:
@@ -137,7 +141,7 @@ paths:
           schema:
             $ref: "#/definitions/IntrospectionReply"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
         502:
@@ -168,7 +172,7 @@ paths:
           schema:
             $ref: "#/definitions/IntrospectionMissingReply"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
         502:
@@ -207,7 +211,7 @@ paths:
         200:
           description: "returns 200 OK"
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
         502:
@@ -287,10 +291,10 @@ definitions:
           type: object
           properties:
             required:
-              type: string
+              type: boolean
               description: boolean containing required
             selected:
-              type: string
+              type: boolean
               description: boolean containing selected
             title:
               type: string
@@ -331,7 +335,7 @@ definitions:
             type: string
             description: string containing access_url
       selected:
-        type: string
+        type: boolean
         description: boolean containing selected
       datase_id:
         type: string

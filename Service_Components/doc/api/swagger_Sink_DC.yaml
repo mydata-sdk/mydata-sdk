@@ -31,7 +31,7 @@ paths:
           description: "Returns 200 OK"
 
         500:
-          description: "Internal server error"
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
 
