@@ -1,7 +1,7 @@
 ---
 swagger: "2.0"
 info:
-  version: "1.2"
+  version: "1.2.1"
   title: "Service SLR API"
 host: "example.service.example"
 basePath: "/api/1.2/slr"
