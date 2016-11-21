@@ -48,9 +48,9 @@ def get_AuthToken(cr_id, operator_url, app_config):
              "rs_id": urllib.quote_plus(rs_id)}
     print(dumps(data, indent=2))
 
-    req = post("http://service_components:7000/api/1.2/sink_flow/dc", json=data)
+    #req = post("http://service_components:7000/api/1.2/sink_flow/dc", json=data)
     # req = get("http://service_components:7000/api/1.2/sink_flow/"
     #           "user/"+"95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c"+"/"
     #           "consentRecord/"+"cd431509-777a-4285-8211-95c5ac577537"+"/"
     #           "resourceSet/"+urllib.quote_plus("http://service_components:7000||9aebb487-0c83-4139-b12c-d7fcea93a3ad"))
-    print(req.url, req.status_code, req.content)
+    #print(req.url, req.status_code, req.content)

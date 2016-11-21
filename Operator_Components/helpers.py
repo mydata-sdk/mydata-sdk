@@ -483,7 +483,7 @@ class Helpers:
                 debug_log.info(rv)
                 if rv is not None:
                     db.close()
-                    return rv  # The second value in the tuple.
+                    return rv  # the tuple.
                 else:
                     return None
             except Exception as e:

@@ -67,23 +67,51 @@ class Helpers:
         :param args: Arguments to inject into the query
         :return: Single hit for the given query
         '''
+
+        result = self.query_db_multiple(query, args=args, one=True)
+        if result is not None:
+            return result[1]
+        else:
+            return None
+
+    def query_db_multiple(self, query, args=(), one=False):
+        '''
+        Simple queries to DB
+        :param query: SQL query
+        :param args: Arguments to inject into the query
+        :return: all hits for the given query
+        '''
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cur = cursor.execute(query, args)
-        try:
-            rv = cursor.fetchone()  # Returns tuple
-            debug_log.info(rv)
-            if rv is not None:
+        if one:
+            try:
+                rv = cursor.fetchone()  # Returns tuple
+                debug_log.info(rv)
+                if rv is not None:
+                    db.close()
+                    return rv  # the tuple.
+                else:
+                    return None
+            except Exception as e:
+                debug_log.exception(e)
+                debug_log.info(cur)
                 db.close()
-                return rv[1]  # The second value in the tuple.
-            else:
                 return None
-        except Exception as e:
-            debug_log.info("query_db failed with error:")
-            debug_log.exception(e)
-            debug_log.info(cur)
-            db.close()
-            return None
+        else:
+            try:
+                rv = cursor.fetchall()  # Returns tuple
+                debug_log.info(rv)
+                if rv is not None:
+                    db.close()
+                    return rv  # This should be list of tuples [(1,2,3), (3,4,5)...]
+                else:
+                    return None
+            except Exception as e:
+                debug_log.exception(e)
+                debug_log.info(cur)
+                db.close()
+                return None
 
     def storeJSON(self, DictionaryToStore):
         """
@@ -177,6 +205,13 @@ class Helpers:
         combined = {"cr": cr_from_db, "csr": csr_from_db}
 
         return combined
+
+    def get_source_cr(self, sink_cr_id):
+        tool = CR_tool()
+        sink_cr = self.get_cr_json(sink_cr_id)
+        tool.cr = sink_cr
+        source_cr_id = tool.get_source_cr_id()
+        return source_cr_id
 
     def validate_cr(self, cr_id, surrogate_id):
         """
@@ -457,7 +492,7 @@ class Helpers:
 
         # The rs_id is urlencoded, do the same to one fetched from cr
         rs_id_in_cr = urllib.quote_plus(cr["cr"]["common_part"]["rs_id"])
-
+        debug_log.info("Found rs_id ({}) from cr".format(rs_id_in_cr))
         # Check that rs_description field contains rs_id
         debug_log.info("rs_id in cr({}) and from ui({})".format(rs_id_in_cr, rs_id))
         if (rs_id != rs_id_in_cr):
@@ -718,6 +753,9 @@ class CR_tool:
 
     def get_pop_key(self):
         return self.get_CR_payload()["role_specific_part"]["pop_key"]
+
+    def get_source_cr_id(self):
+        return self.get_CR_payload()["role_specific_part"]["source_cr_id"]
 
     def get_slr_id(self):
         return self.get_CR_payload()["common_part"]["slr_id"]

@@ -114,6 +114,8 @@ services:
       - SERVICE_CR_PATH="/cr"
       - SERVICE_SLR_PATH="/slr"
       - VIRTUAL_HOST=localhost.service
+    ports:
+      - '7000:7000'
     networks:
       - mydata_sdk_demo_network
 

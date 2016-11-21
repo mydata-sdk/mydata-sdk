@@ -3,8 +3,9 @@ from signed_requests.signed_request_auth import SignedRequest
 
 __author__ = 'alpaloma'
 from flask import Blueprint, current_app, request
-from helpers import Helpers
+from helpers import Helpers, CR_tool
 import requests
+import urllib
 from json import dumps, loads
 from DetailedHTTPException import error_handler
 from flask_restful import Resource, Api
@@ -32,6 +33,39 @@ class Status(Resource):
     def get(self):
         status = {"status": "running", "service_mode": "Sink"}
         return status
+
+class DebugDataFlow(Resource):
+    def __init__(self):
+        super(DebugDataFlow, self).__init__()
+        self.service_url = current_app.config["SERVICE_URL"]
+        self.operator_url = current_app.config["OPERATOR_URL"]
+        self.helpers = Helpers(current_app.config)
+
+    @error_handler
+    def get(self, rs_id):  # TODO Make this a GET
+
+        debug_log.info("Got rs_id {} to DebugDataFlow endpoint".format(rs_id))
+        records = self.helpers.query_db_multiple("select rs_id, cr_id, slr_id, surrogate_id from cr_storage where rs_id = %s;", (rs_id,))
+        #rs_id =
+        debug_log.info("DB query resulted in following results:\n{}".format(records))
+        for record in records:
+            cr_id = record[1]
+            tool = CR_tool()
+            tool.cr = self.helpers.get_cr_json(cr_id)
+            role = tool.get_role()
+            debug_log.info("Found role {}".format(role))
+            if role == "Sink":
+                if record[0] == rs_id:
+                    surrogate_id = record[3]
+                    payload = {"user_id": surrogate_id,
+                               "cr_id": cr_id,
+                               "rs_id": urllib.quote_plus(rs_id)}
+                    # TODO get the url from, config
+                    debug_log.info(dumps(payload, indent=2))
+                    req = requests.post("http://service_components:7000/api/1.2/sink_flow/dc", json=payload)
+                    return req.content
+
+
 
 class DataFlow(Resource):
     def __init__(self):
@@ -131,18 +165,21 @@ class DataFlow(Resource):
         # Request created.
         sq.send_to("Service_Components Mgmnt (Source)", "Data Request (PoP stuff)")
         # Make Data Request
+        data = []
         for url in distribution_urls:
             req = requests.get(url,
                            auth=SignedRequest(token=aud, sign_method=True, sign_path=True, key=our_key_full, protected=dumps(our_key["prot"])))
+            if req.ok:
+                data.append(loads(req.content))
         debug_log.info("Made data request and received following data from Source: \n{}"
                        .format(dumps(loads(req.content), indent=2)))
-        status = {"status": "ok", "service_mode": "Sink"}
-        return status
+
+        return {"response_data": data}
 
 
 
 api.add_resource(Status, '/init')
 api.add_resource(DataFlow, '/dc')
-
+api.add_resource(DebugDataFlow, '/debug_dc/<string:rs_id>')
 #api.add_resource(DataFlow, '/user/<string:user_id>/consentRecord/<string:cr_id>/resourceSet/<string:rs_id>')
 #"http://service_components:7000/api/1.2/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"

@@ -2,6 +2,7 @@
 
 import json
 import argparse
+import time
 from requests import get, post
 from uuid import uuid4
 
@@ -122,8 +123,29 @@ def give_consent(operator_url, sink_id, source_id):
     print(json.dumps(json.loads(req.text), indent=2))
 
     print("\n\n")
-    return
+    return js["source"]["rs_id"]
 
+
+def make_data_request(service_url, rs_id):
+    wait_time = 8
+    print("\n##### Make_data_request #####")
+    print("\n##### Waiting {} seconds for previous actions to complete #####".format(wait_time))
+    time.sleep(wait_time)
+    req = get(service_url + "api/1.2/sink_flow/debug_dc/{}".format(rs_id))
+    if not req.ok:
+        print("Debug Data request failed with status ({}) reason ({}) and the following content:\n{}".format(
+            req.status_code,
+            req.reason,
+            json.dumps(json.loads(req.content), indent=2)
+        ))
+        raise Exception("Debug Data flow failed.")
+
+    print(req.url, req.reason, req.status_code)
+    print("\n")
+    print(json.dumps(json.loads(json.loads(req.content)), indent=2))
+
+    print("\n\n")
+    return
 
 if __name__ == '__main__':
 
@@ -149,6 +171,15 @@ if __name__ == '__main__':
                         type=str,
                         default="http://localhost:5000/",
                         required=False)
+
+    help_string_service_url = \
+        "URL to Sink backend. Defaults to 'http://localhost:7000/'."
+    parser.add_argument("--service_url",
+                        help=help_string_service_url,
+                        type=str,
+                        default="http://localhost:7000/",
+                        required=False)
+
 
     # Skips
     help_string_skip_init = \
@@ -201,6 +232,7 @@ if __name__ == '__main__':
     print(args.skip_init)
     print(args.sink_id)
     print(args.source_id)
+    print(args.service_url)
 
     if not args.skip_init:
         # Do not skip init
@@ -212,4 +244,7 @@ if __name__ == '__main__':
         create_service_link(args.operator_url, args.source_id)
 
     # Consent
-    give_consent(args.operator_url, args.sink_id, args.source_id)
+    rs_id = give_consent(args.operator_url, args.sink_id, args.source_id)
+
+    # Debug Data Flow
+    make_data_request(args.service_url, rs_id)
