@@ -1,7 +1,7 @@
 ---
 swagger: "2.0"
 info:
-  version: "1.2"
+  version: "1.2.1"
   title: "Sink DC API"
 host: "example.sink.example"
 basePath: "/api/1.2/sink_flow"
