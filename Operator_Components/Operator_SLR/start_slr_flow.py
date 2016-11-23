@@ -56,7 +56,7 @@ class Start(Resource):
         :param account_id: Account Manager user id
         :param service_id: Service id as in Service Registry
         """
-        debug_log.info("#### Request to this end point with parameters: account_id ({}), service_id ({})"
+        debug_log.info("#### Request to start SLR flow with parameters: account_id ({}), service_id ({})"
                        .format(account_id, service_id))
         try:
             try:
@@ -83,7 +83,7 @@ class Start(Resource):
                 if code_status is 200:
                     sq.task("Load code object for use")
                     code = loads(result.text)
-                    debug_log.info("Session information contains: {}, account id {} and service_id {}"
+                    debug_log.info("Session information contains: code {}, account id {} and service_id {}"
                                    .format(result.text, account_id, service_id))
 
                     sq.task("Store session_information to database")
@@ -107,8 +107,6 @@ class Start(Resource):
                                             detail="Service_Components Mgmnt might be down or unresponsive.",
                                             trace=traceback.format_exc(limit=100).splitlines())
 
-            debug_log.info("We got code: {}".format(code))
-
             sq.task("Add user_id(Account) to response from Service dictionary")
             code["user_id"] = account_id
 
@@ -116,7 +114,7 @@ class Start(Resource):
                 service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)
                 sq.send_to("Service_Components Mgmnt", "Redirect user to Service_Components Mgmnt login")
                 result = post(service_endpoint, json=code, timeout=self.request_timeout)
-                debug_log.info("#### Response to this end point: {}\n{}".format(result.status_code, result.text))
+                debug_log.info("#### Response to SLR flow end point: {}\n{}".format(result.status_code, result.text))
                 if not result.ok:
                     raise DetailedHTTPException(status=result.status_code,
                                                 detail={
