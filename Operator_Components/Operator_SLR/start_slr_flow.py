@@ -37,12 +37,12 @@ debug_log = logging.getLogger("debug")
 sq = Sequences("Operator_Components Mgmnt", {})
 
 
-class Start(Resource):
+class StartSlrFlow(Resource):
     def __init__(self):
         """
 
         """
-        super(Start, self).__init__()
+        super(StartSlrFlow, self).__init__()
         self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
                                                                current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.request_timeout = current_app.config["TIMEOUT"]
@@ -148,4 +148,4 @@ class Start(Resource):
                                         exception=e,
                                         trace=traceback.format_exc(limit=100).splitlines())
 
-api.add_resource(Start, '/account/<string:account_id>/service/<string:service_id>')
+api.add_resource(StartSlrFlow, '/account/<string:account_id>/service/<string:service_id>')
