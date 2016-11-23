@@ -72,7 +72,7 @@ class DetailedHTTPException(HTTPException):
                 for errors in e.error["errors"]:
                     print(errors)
                     self.error["errors"].append(errors)
-            # Incase of general exception.
+            # In case of general exception.
             except Exception as e:
                 if self.detail is None:
                     self.detail = {"Error": repr(e)}
