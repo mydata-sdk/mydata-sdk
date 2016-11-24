@@ -341,6 +341,19 @@ class Helpers:
         self.service_registry_search_domain = app_config["SERVICE_REGISTRY_SEARCH_DOMAIN"]
         self.service_registry_search_endpoint = app_config["SERVICE_REGISTRY_SEARCH_ENDPOINT"]
 
+
+    # def header_fix(self, malformed_dictionary):  # We do not check if its malformed, we expect it to be.
+    #     if malformed_dictionary.get("signature", False):
+    #         malformed_dictionary["header"] = loads(malformed_dictionary["header"])
+    #         return malformed_dictionary
+    #     elif malformed_dictionary.get("signatures", False):
+    #         sigs = malformed_dictionary["signatures"]
+    #         for signature in sigs:
+    #             if isinstance(signature["header"], str):
+    #                 signature["header"] = loads(signature["header"])
+    #         return malformed_dictionary
+    #     raise ValueError("Received dictionary was not expected type.")
+
     def get_key(self):
         keysize = self.keysize
         cert_key_path = self.cert_key_path
@@ -418,7 +431,7 @@ class Helpers:
     def change_rs_id_status(self, rs_id, status):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        query = cursor.execute("select * from rs_id_tbl where rs_id=%s;", (rs_id,))
+        cursor.execute("select * from rs_id_tbl where rs_id=%s;", (rs_id,))
         result = cursor.fetchone()
         rs_id = result[0]
         used = result[1]

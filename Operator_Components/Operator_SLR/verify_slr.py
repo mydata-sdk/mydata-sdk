@@ -4,30 +4,25 @@ import logging
 import traceback
 from base64 import urlsafe_b64decode as decode
 from json import loads, dumps
-from uuid import uuid4 as guid
-
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import Sequences
 from flask import request, Blueprint, current_app
 from flask_cors import CORS
 from flask_restful import Resource, Api
 from helpers import AccountManagerHandler, Helpers
-from jwcrypto import jws, jwk
 
+
+# Flask init
 api_SLR_Verify = Blueprint("api_SLR_blueprint", __name__)
-
 CORS(api_SLR_Verify)
 api = Api()
 api.init_app(api_SLR_Verify)
 
-logger = logging.getLogger("sequence")
+# Logging
 debug_log = logging.getLogger("debug")
-logger.setLevel(logging.INFO)
-
 sq = Sequences("Operator_Components Mgmnt", {})
 
 '''
-
 Service_Components Mgmnt->Operator_Components Mgmnt: Verify SLR(JWS)
 Operator_Components Mgmnt->Operator_Components Mgmnt: Load SLR to object
 Operator_Components Mgmnt->Operator_Components Mgmnt: Fix possible incorrect padding in payload
@@ -39,63 +34,7 @@ Operator_Components Mgmnt->Operator_Components Mgmnt: Load decoded payload as py
 Operator_Components Mgmnt->Operator_Components Mgmnt: Load slr and code from json payload
 Operator_Components Mgmnt->Account Manager: Verify SLR at Account Manager.
 Operator_Components Mgmnt-->Service_Components Mgmnt: 201, SLR VERIFIED
-
-
 '''
-
-request_timeout = 20
-SUPER_DEBUG = True
-account_id = "ACC-ID-RANDOM"
-user_account_id = account_id + "_" + str(guid())
-
-
-##### Here some functions to help with verifying SLR(JWS)
-
-
-def verifyJWS(json_JWS):
-    def verify(jws, header):
-        try:
-            sign_key = jwk.JWK(**header["jwk"])
-            jws.verify(sign_key)
-            return True
-        except Exception as e:
-            debug_log.info(repr(e))
-
-    try:
-
-        json_web_signature = jws.JWS()
-        if (isinstance(json_JWS, dict)):
-            json_web_signature.deserialize(dumps(json_JWS))
-        elif (isinstance(json_JWS, str)):
-            json_web_signature = jws.JWS(json_JWS)
-            json_JWS = loads(json_JWS)
-
-        if json_JWS.get("header", False):  # Only one signature
-            if (verify(json_web_signature, json_JWS["header"])):
-                return True
-            return False
-        elif json_JWS.get("signatures", False):  # Multiple signatures
-            signatures = json_JWS["signatures"]
-            for signature in signatures:
-                if (verify(json_web_signature, signature["header"])):
-                    return True
-        return False
-    except Exception as e:
-        debug_log.info("M:", repr(e))
-        return False
-
-
-def header_fix(malformed_dictionary):  # We do not check if its malformed, we expect it to be.
-    if malformed_dictionary.get("signature", False):
-        malformed_dictionary["header"] = loads(malformed_dictionary["header"])
-        return malformed_dictionary
-    elif malformed_dictionary.get("signatures", False):
-        sigs = malformed_dictionary["signatures"]
-        for signature in sigs:
-            if isinstance(signature["header"], str):
-                signature["header"] = loads(signature["header"])
-        return malformed_dictionary
-    raise ValueError("Received dictionary was not expected type.")
 
 
 class VerifySLR(Resource):
@@ -118,11 +57,11 @@ class VerifySLR(Resource):
     @error_handler
     def post(self):
 
-        debug_log.info(dumps(request.json, indent=2))
+        debug_log.info("VerifySLR method post got parameters: \n{}".format(dumps(request.json, indent=2)))
 
         sq.task("Load SLR to object")
         slr = request.json["slr"]
-        debug_log.info("{} {}".format("SLR STORE:\n", slr))
+        debug_log.info("{} {}".format("SLR from request payload json:\n", slr))
 
         sq.task("Load slr payload as object")
         payload = slr["payload"]
