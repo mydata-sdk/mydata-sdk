@@ -649,28 +649,16 @@ class Helpers:
         return _tmpl
 
     def gen_auth_token(self, auth_token_info):
-        gen3 = {"generate": "RSA", "size": self.keysize, "kid": "Something went wrong, check helpers.py key generation"}
-        operator_key = jwk.JWK(**gen3)
-        try:
-            with open(self.cert_key_path, "r") as cert_file:
-                operator_key2 = jwk.JWK(**loads(load(cert_file)))
-                operator_key = operator_key2
-        except Exception as e:
-            print(e)
-            with open(self.cert_key_path, "w+") as cert_file:
-                dump(operator_key.export(), cert_file, indent=2)
-        slrt = SLR_tool()
-        slrt.slr = auth_token_info
-        debug_log.debug(dumps(slrt.get_SLR_payload(), indent=2))
-        debug_log.debug(dumps(slrt.get_CR_payload(), indent=2))
-        # JOSE header
-        header = {"typ": "JWT",
-                  "alg": "HS256"}
+        operator_key = jwk.JWK(**self.get_key()["key"])
+        slr_tool = SLR_tool()
+        slr_tool.slr = auth_token_info
+        debug_log.debug(dumps(slr_tool.get_SLR_payload(), indent=2))
+        debug_log.debug(dumps(slr_tool.get_CR_payload(), indent=2))
         # Claims
         srv_handler = ServiceRegistryHandler(self.service_registry_search_domain, self.service_registry_search_endpoint)
         payload = {"iss": self.operator_id,  # Operator ID,
-                   "cnf": {"kid": slrt.get_source_cr_id()},
-                   "aud": srv_handler.getService_url(slrt.get_source_service_id()),
+                   "cnf": {"kid": slr_tool.get_source_cr_id()},
+                   "aud": srv_handler.getService_url(slr_tool.get_source_service_id()),
                    "exp": int(time.time() + self.not_after_interval),
                    # datetime.fromtimestamp(time.time()+2592000).strftime("%Y-%m-%dT%H:%M:%S %Z"), # 30 days in seconds
                    # Experiation time of token on or after which token MUST NOT be accepted
@@ -679,14 +667,10 @@ class Helpers:
                    "iat": int(time.time()),
                    # datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S %Z"),  # The time which the JWT was issued
                    "jti": str(guid()),  # JWT id claim provides a unique identifier for the JWT
-                   "pi_id": slrt.get_source_cr_id(),  # Resource set id that was assigned in the linked Consent Record
+                   "pi_id": slr_tool.get_source_cr_id(),  # Resource set id that was assigned in the linked Consent Record
                    }
-        debug_log.debug(dumps(payload, indent=2))
         key = operator_key
-        debug_log.debug(key.export())
-        debug_log.debug(key.export_public())
         header = {"alg": "RS256"}
-
         token = jwt.JWT(header=header, claims=payload)
         token.make_signed_token(key)
         return token.serialize()

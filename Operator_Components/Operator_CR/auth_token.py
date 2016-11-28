@@ -8,12 +8,17 @@ from flask import Blueprint, current_app
 from flask_restful import Api, Resource
 from helpers import AccountManagerHandler
 from helpers import Helpers
+from Templates import Sequences
 
+# Init Flask
 api_CR_blueprint = Blueprint("api_AuthToken_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
+
+# Logging
 debug_log = logging.getLogger("debug")
-logger = logging.getLogger("sequence")
+sq = Sequences("Operator_Components Mgmnt", {})
+
 class AuthToken(Resource):
     def __init__(self):
         super(AuthToken, self).__init__()
@@ -27,6 +32,7 @@ class AuthToken(Resource):
             debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
         helper_object = Helpers(current_app.config)
         self.gen_auth_token = helper_object.gen_auth_token
+
     @error_handler
     def get(self, cr_id):
         '''get
@@ -37,8 +43,7 @@ class AuthToken(Resource):
         # Generate Auth Token and save it.
         # helper.py has the function template, look into it.
         ##
-
-        #gen_auth_token()
+        debug_log.info("Got Request for Auth_token, given cr_id ({})".format(cr_id))
         try:
             result = self.AM.get_AuthTokenInfo(cr_id)
         except AttributeError as e:
@@ -46,9 +51,9 @@ class AuthToken(Resource):
                                         title="It would seem initiating Account Manager Handler has failed.",
                                         detail="Account Manager might be down or unresponsive.",
                                         trace=traceback.format_exc(limit=100).splitlines())
-        debug_log.debug(dumps(result, indent=2))
+        debug_log.info("Account Manager gave following Auth Token Info:\n{}".format(dumps(result, indent=2)))
         token = self.gen_auth_token(result)
-        debug_log.info(dumps(result, indent=2))
+        debug_log.info("Generated auth token: {}".format(token))
         return {"auth_token" : token}
 
 
