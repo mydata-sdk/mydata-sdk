@@ -6,7 +6,6 @@ __author__ = 'alpaloma'
 import logging
 import traceback
 from json import dumps, loads
-
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import ServiceRegistryHandler, Consent_form_Out, Sequences
 from flask import request, Blueprint, current_app

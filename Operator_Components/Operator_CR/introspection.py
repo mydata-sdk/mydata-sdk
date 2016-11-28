@@ -2,16 +2,18 @@
 import logging
 import traceback
 from json import dumps
-
 from DetailedHTTPException import error_handler, DetailedHTTPException
 from flask import Blueprint, current_app
 from flask_restful import Api, Resource
 from helpers import AccountManagerHandler
 from helpers import Helpers
 
+# Init Flask
 api_CR_blueprint = Blueprint("api_Introspection_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
+
+# Logging
 debug_log = logging.getLogger("debug")
 logger = logging.getLogger("sequence")
 class Introspection(Resource):
