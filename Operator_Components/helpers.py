@@ -476,6 +476,7 @@ class Helpers:
 
         result = self.query_db_multiple(query, args=args, one=True)
         if result is not None:
+            debug_log.info("Made DB query: {}\nResult type: {}\nResult content: {}".format(query, type(result), result))
             return result[1]
         else:
             return None
@@ -492,11 +493,14 @@ class Helpers:
         cur = cursor.execute(query, args)
         if one:
             try:
-                rv = cursor.fetchone()  # Returns tuple
-                debug_log.info(rv)
-                if rv is not None:
+                result = cursor.fetchone()  # Returns tuple
+                debug_log.info(result)
+                if result is not None:
                     db.close()
-                    return rv  # the tuple.
+                    debug_log.info("Made DB query: {}\n"
+                                   "Result type: {}\n"
+                                   "Result content: {}".format(query, type(result), result))
+                    return result  # the tuple.
                 else:
                     return None
             except Exception as e:
@@ -506,11 +510,14 @@ class Helpers:
                 return None
         else:
             try:
-                rv = cursor.fetchall()  # Returns tuple
-                debug_log.info(rv)
-                if rv is not None:
+                result = cursor.fetchall()  # Returns tuple
+                debug_log.info(result)
+                if result is not None:
                     db.close()
-                    return rv  # This should be list of tuples [(1,2,3), (3,4,5)...]
+                    debug_log.info("Made DB query: {}\n"
+                                   "Result type: {}\n"
+                                   "Result content: {}".format(query, type(result), result))
+                    return result  # This should be list of tuples [(1,2,3), (3,4,5)...]
                 else:
                     return None
             except Exception as e:

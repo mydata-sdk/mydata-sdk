@@ -52,7 +52,6 @@ class VerifySLR(Resource):
                 "Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
 
         self.Helpers = Helpers(current_app.config)
-        self.query_db = self.Helpers.query_db
 
     @error_handler
     def post(self):
@@ -64,48 +63,41 @@ class VerifySLR(Resource):
         debug_log.info("{} {}".format("SLR from request payload json:\n", slr))
 
         sq.task("Load slr payload as object")
-        payload = slr["payload"]
-        debug_log.info("{} {}".format("Before Fix:", payload))
+        slr_payload = slr["payload"]
+        debug_log.info("{} {}".format("Payload before fix:", slr_payload))
 
         sq.task("Fix possible incorrect padding in payload")
-        payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
-        debug_log.info("{} {}".format("After Fix :", payload))
+        slr_payload += '=' * (-len(slr_payload) % 4)  # Fix incorrect padding of base64 string.
+        debug_log.info("{} {}".format("Payload after fix :", slr_payload))
 
-        sq.task("Decode payload and store it into object")
-        content = decode(payload.encode())
+        sq.task("Decode slr payload to a string and store it into variable")
+        content = decode(slr_payload.encode())
 
-        sq.task("Load decoded payload as python dict")
-        payload = loads(content.decode("utf-8"))  # TODO: Figure out why we get str out of loads the first time?
-        debug_log.info(payload)
-        debug_log.info(type(payload))
+        sq.task("Load slr payload string as python dict")
+        slr_payload = loads(content.decode("utf-8"))
+        debug_log.info(slr_payload)
+        debug_log.info(type(slr_payload))
 
-        sq.task("Fetch link_id from decoded payload")
-        slr_id = payload["link_id"]
-        code = request.json["data"]["code"].decode()
-        debug_log.info(code)
-        debug_log.info(request.json["data"]["code"])
+        sq.task("Fetch code from request")
+        code = request.json["data"]["code"]
+        debug_log.info("Found code {} from request".format(code))
+
         try:
             ##
             # Verify SLR with key from Service_Components Management
             ##
             sq.task("Load account_id from database")
-            query = self.query_db("select * from session_store where code=%s;", (request.json["data"]["code"],))
-            debug_log.info(query)
-            dict_query = loads(query)
-            debug_log.info("{}  {}".format(type(dict_query), dict_query))
-            account_id = dict_query["account_id"]
+            query = self.Helpers.query_db("select * from session_store where code=%s;", (code,))
+            session_info = loads(query)
+            account_id = session_info["account_id"]
 
             debug_log.info("################Verify########################")
             debug_log.info(dumps(request.json))
             debug_log.info("########################################")
 
-            sq.task("Load slr and code from json payload")
-            slr = request.json["slr"]
-            code = request.json["data"]["code"]
-
             sq.send_to("Account Manager", "Verify SLR at Account Manager.")
             try:
-                reply = self.AM.verify_slr(payload, code, slr, account_id)
+                reply = self.AM.verify_slr(slr_payload, code, slr, account_id)
             except AttributeError as e:
                 raise DetailedHTTPException(status=502,
                                             title="It would seem initiating Account Manager Handler has failed.",
@@ -113,7 +105,7 @@ class VerifySLR(Resource):
                                             trace=traceback.format_exc(limit=100).splitlines())
             if reply.ok:
                 sq.reply_to("Service_Components Mgmnt", "201, SLR VERIFIED")
-                debug_log.info(reply.text)
+                debug_log.info("Account Manager replied:\n{}".format(reply.text))
                 return reply.text, reply.status_code
             else:
                 raise DetailedHTTPException(status=reply.status_code,
