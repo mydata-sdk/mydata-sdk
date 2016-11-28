@@ -75,8 +75,6 @@ from instance.settings import SERVICE_URL
 from requests import get
 class ServiceRegistryHandler:
     def __init__(self, domain, endpoint):
-        # Here could be some code to setup where ServiceRegistry is located etc
-        # TODO: Get this from config or such.
         # self.registry_url = "http://178.62.229.148:8081"+"/api/v1/services/"
         self.registry_url = domain + endpoint #"/api/v1/services/"
         pass
@@ -94,12 +92,11 @@ class ServiceRegistryHandler:
         return service
 
     def getService_url(self, service_id):
-        debug_log.info("getService_url got {} of type {} as parameter.".format(service_id, type(service_id)))
+        debug_log.info("getService_url got service id {} of type {} as parameter.".format(service_id, type(service_id)))
         if isinstance(service_id, unicode):
             service_id = service_id.encode()
         try:
             service = get(self.registry_url+service_id).json()
-            debug_log.info(service_id)
             service = service[0]
         except Exception as e:
             debug_log.exception(e)

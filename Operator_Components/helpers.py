@@ -563,7 +563,7 @@ class Helpers:
 
         return common_cr
 
-    def gen_cr_sink(self, common_CR, consent_form, source_cr_id):
+    def gen_cr_sink(self, common_CR, consent_form, ki_cr, source_cr_id):
         _rules = []
         common_CR["subject_id"] = consent_form["sink"]["service_id"]
 
@@ -584,14 +584,14 @@ class Helpers:
                 "source_cr_id": source_cr_id,
                 "usage_rules": _rules
             },
-            "consent_receipt_part": {"ki_cr": {}},
+            "consent_receipt_part": {"ki_cr": ki_cr},
             "extension_part": {"extensions": {}}
         }
         }
 
         return _tmpl
 
-    def gen_cr_source(self, common_CR, consent_form,
+    def gen_cr_source(self, common_CR, consent_form, ki_cr,
                       sink_pop_key):  # TODO: Operator_public key is now fetched with function.
         common_CR["subject_id"] = consent_form["source"]["service_id"]
         rs_description = \
@@ -618,7 +618,7 @@ class Helpers:
                 "pop_key": sink_pop_key,
                 "token_issuer_key": self.get_key()["pub"],
             },
-            "consent_receipt_part": {"ki_cr": {}},
+            "consent_receipt_part": {"ki_cr": ki_cr},
             "extension_part": {"extensions": {}}
         }
         }
@@ -635,14 +635,14 @@ class Helpers:
         return _tmpl
 
     def Gen_ki_cr(self, everything):
-        return True
+        return {}
 
     def gen_csr(self, account_id, consent_record_id, consent_status, previous_record_id):
         _tmpl = {
             "record_id": str(guid()),
             "surrogate_id": account_id,
             "cr_id": consent_record_id,
-            "consent_status": consent_status,  # "Active/Disabled/Withdrawn",
+            "consent_status": consent_status,  # "Active/Disabled/Withdrawn"
             "iat": int(time.time()),
             "prev_record_id": previous_record_id,
         }

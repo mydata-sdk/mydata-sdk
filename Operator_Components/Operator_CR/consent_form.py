@@ -14,15 +14,18 @@ from flask_restful import Resource, Api
 from helpers import AccountManagerHandler, Helpers
 from op_tasks import CR_installer
 from requests import post
-logger = logging.getLogger("sequence")
-debug_log = logging.getLogger("debug")
 
+# Logging
+debug_log = logging.getLogger("debug")
+sq = Sequences("Operator_Components Mgmnt", {})
+
+# Init Flask
 api_CR_blueprint = Blueprint("api_CR_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
 
-sq = Sequences("Operator_Components Mgmnt", {})
-Operator_public_key = {}
+
+
 class ConsentFormHandler(Resource):
     def __init__(self):
         super(ConsentFormHandler, self).__init__()
@@ -42,17 +45,16 @@ class ConsentFormHandler(Resource):
 
     @error_handler
     def get(self, account_id):
-        '''get
+        """get
         :return: Returns Consent form to UI for user input.
-        '''
+        """
         _consent_form = Consent_form_Out
         service_ids = request.args
 
         sq.task("Fetch services")
         sink = self.getService(service_ids["sink"])
         _consent_form["sink"]["service_id"] = sink["serviceId"]
-        purposes = _consent_form["sink"]["dataset"][0]["purposes"] # TODO replace this once Service registry stops being stupid.
-        _consent_form["sink"]["dataset"] = [] # Clear out template.
+        _consent_form["sink"]["dataset"] = []  # Clear out template.
         for dataset in sink["serviceDescription"]["serviceDataDescription"][0]["dataset"]:
             item = {
                 "dataset_id": dataset["datasetId"],
@@ -65,10 +67,9 @@ class ConsentFormHandler(Resource):
 
             _consent_form["sink"]["dataset"].append(item)
 
-
         source = self.getService(service_ids["source"])
         _consent_form["source"]["service_id"] = source["serviceId"]
-        _consent_form["source"]["dataset"] = [] # Clear out template.
+        _consent_form["source"]["dataset"] = []  # Clear out template.
         for dataset in source["serviceDescription"]["serviceDataDescription"][0]["dataset"]:
             item = {
                 "dataset_id": dataset["datasetId"],
@@ -87,13 +88,10 @@ class ConsentFormHandler(Resource):
             }
             _consent_form["source"]["dataset"].append(item)
 
-
         sq.task("Generate RS_ID")
-
         source_domain = source["serviceInstance"][0]["domain"]
-        source_access_uri = source["serviceInstance"][0]["serviceAccessEndPoint"]["serviceAccessURI"]
-        rs_id = self.Helpers.gen_rs_id(source["serviceInstance"][0]["domain"])
-        sq.task("Store RS_ID")
+        rs_id = self.Helpers.gen_rs_id(source_domain)
+        sq.task("Store generated RS_ID")
         _consent_form["source"]["rs_id"] = rs_id
 
         sq.reply_to("UI", msg="Consent Form+RS_ID")
@@ -101,11 +99,11 @@ class ConsentFormHandler(Resource):
 
     @error_handler
     def post(self, account_id):
-        '''post
+        """post
         :return: Returns 201 when consent has been created
-        '''
-        debug_log.info(dumps(request.json, indent=2))
+        """
 
+        debug_log.info("ConsentFormHandler post got json:\n{}".format(dumps(request.json, indent=2)))
 
         _consent_form = request.json
         sink_srv_id = _consent_form["sink"]["service_id"]
@@ -128,14 +126,15 @@ class ConsentFormHandler(Resource):
                                         title="It would seem initiating Account Manager Handler has failed.",
                                         detail="Account Manager might be down or unresponsive.",
                                         trace=traceback.format_exc(limit=100).splitlines())
-        debug_log.info("sink_sur = {}".format(sink_sur))
-        debug_log.info("source_sur = {}".format(source_sur))
+        debug_log.info("Got {} as surrogate id for sink from Account Manager".format(sink_sur))
+        debug_log.info("Got {} as surrogate id for source from Account Manager".format(source_sur))
 
+        # Get slr and surrogate_id
         slr_id_sink, surrogate_id_sink = sink_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"],\
-                                         sink_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]  # Get slr and surrogate_id
-
+                                         sink_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]
+        # One for Sink, one for Source
         slr_id_source, surrogate_id_source = source_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"],\
-                                             source_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"] # One for Sink, one for Source
+                                             source_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]
 
         sink_keys = self.Helpers.get_service_keys(surrogate_id_sink)
         try:
@@ -151,10 +150,10 @@ class ConsentFormHandler(Resource):
         sq.task("Generate common CR")
 
         issued = int(time.time()) #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        not_before = int(time.time()) #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ") # TODO: This and not after are Optional, who says when to put them?
+        # TODO: Not before and not after are Optional. Verify who says when to put them?
+        not_before = int(time.time()) #datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         not_after = int(time.time()+current_app.config["NOT_AFTER_INTERVAL"]) #datetime.fromtimestamp(time.time()+current_app.config["NOT_AFTER_INTERVAL"]).strftime("%Y-%m-%dT%H:%M:%SZ")
         operator_id = current_app.config["UID"]
-
 
         common_cr_source = self.Helpers.gen_cr_common(surrogate_id_source,
                                                       _consent_form["source"]["rs_id"],
@@ -177,20 +176,20 @@ class ConsentFormHandler(Resource):
                                                     "Sink")
 
         sq.task("Generate ki_cr")
-        ki_cr = self.Helpers.Gen_ki_cr(self)
+        ki_cr = self.Helpers.Gen_ki_cr(self)  # TODO: Implement
 
         sq.task("Generate CR for sink")
-        sink_cr = self.Helpers.gen_cr_sink(common_cr_sink, _consent_form, common_cr_source["cr_id"])
+        sink_cr = self.Helpers.gen_cr_sink(common_cr_sink, _consent_form, ki_cr, common_cr_source["cr_id"])
 
         sq.task("Generate CR for source")
-        source_cr = self.Helpers.gen_cr_source(common_cr_source, _consent_form,
-                                          sink_pop_key)
+        source_cr = self.Helpers.gen_cr_source(common_cr_source, _consent_form, ki_cr, sink_pop_key)
 
         sink_cr["cr"]["common_part"]["rs_description"] = source_cr["cr"]["common_part"]["rs_description"]
 
-        debug_log.info(sink_cr)
-        debug_log.info(source_cr)
+        debug_log.info("CR generated for sink:\n{}".format(sink_cr))
+        debug_log.info("CR generated for source:\n{}".format(source_cr))
         sq.task("Generate CSR's")
+
         sink_csr = self.Helpers.gen_csr(surrogate_id_sink, sink_cr["cr"]["common_part"]["cr_id"], "Active",
                                         "null")
         source_csr = self.Helpers.gen_csr(surrogate_id_source, source_cr["cr"]["common_part"]["cr_id"], "Active",
@@ -199,12 +198,12 @@ class ConsentFormHandler(Resource):
         sq.send_to("Account Manager", "Send CR/CSR to sign and store")
         result = self.AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
 
-        # TODO: These are debugging and testing calls, remove them once operation is verified.
+        # These are debugging and testing calls.
         if self.debug_mode:
             own_addr = self.operator_url #request.url_root.rstrip(request.script_root)
             debug_log.info("Our own address is: {}".format(own_addr))
             req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
-                          .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
+                                .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
 
             debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
                 req.status_code,
@@ -212,34 +211,28 @@ class ConsentFormHandler(Resource):
                 dumps(loads(req.content), indent=2)
             ))
             req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Active"
-                          .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
+                                .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
             debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
                 req.status_code,
                 req.reason,
                 dumps(loads(req.content), indent=2)
             ))
 
-
-        debug_log.info(dumps(result, indent=3))
+        debug_log.info("CR/CSR structure the Account Manager signed:\n{}".format(dumps(result, indent=2)))
         sink_cr = result["data"]["sink"]["consentRecord"]["attributes"]["cr"]
         sink_csr = result["data"]["sink"]["consentStatusRecord"]["attributes"]["csr"]
 
         source_cr = result["data"]["source"]["consentRecord"]["attributes"]["cr"]
         source_csr = result["data"]["source"]["consentStatusRecord"]["attributes"]["csr"]
 
-
         crs_csrs_payload = {"sink": {"cr": sink_cr, "csr": sink_csr},
-                 "source": {"cr": source_cr, "csr": source_csr}}
-        #logger.info("Going to Celery task")
+                            "source": {"cr": source_cr, "csr": source_csr}}
+
+        debug_log.info("CR/CSR payload sent to celery task"
+                       " for sending to services:\n{}".format(dumps(crs_csrs_payload, indent=2)))
         sq.send_to("Service_Components Mgmnt (Sink)", "Post CR-Sink, CSR-Sink")
         sq.send_to("Service_Components Mgmnt (Source)", "Post CR-Source, CSR-Source")
-
-        debug_log.info(dumps(crs_csrs_payload, indent=2))
         CR_installer.delay(crs_csrs_payload, self.SH.getService_url(sink_srv_id), self.SH.getService_url(source_srv_id))
         return {"status": 201, "msg": "CREATED"}, 201
 
-
-
-
 api.add_resource(ConsentFormHandler, '/consent_form/account/<string:account_id>')
-
