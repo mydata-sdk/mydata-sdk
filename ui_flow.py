@@ -127,7 +127,7 @@ def give_consent(operator_url, sink_id, source_id):
 
 
 def make_data_request(service_url, rs_id):
-    wait_time = 8
+    wait_time = 5
     print("\n##### Make_data_request #####")
     print("\n##### Waiting {} seconds for previous actions to complete #####".format(wait_time))
     time.sleep(wait_time)
