@@ -7,22 +7,21 @@ import logging
 import traceback
 from json import dumps, loads
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import ServiceRegistryHandler, Consent_form_Out, Sequences
+from Templates import Consent_form_Out, Sequences
 from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
-from helpers import AccountManagerHandler, Helpers
+from helpers import AccountManagerHandler, Helpers, ServiceRegistryHandler
 from op_tasks import CR_installer
 from requests import post
 
 # Logging
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt", {})
+sq = Sequences("Operator_Components Mgmnt")
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_CR_blueprint", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
-
 
 
 class ConsentFormHandler(Resource):
@@ -36,8 +35,10 @@ class ConsentFormHandler(Resource):
         try:
             self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
         except Exception as e:
-            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
-        self.SH = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"], current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
+            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}"
+                           .format(repr(e)))
+        self.SH = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
+                                         current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.getService = self.SH.getService
         self.Helpers = Helpers(current_app.config)
         self.operator_url = current_app.config["OPERATOR_URL"]
@@ -109,7 +110,8 @@ class ConsentFormHandler(Resource):
         source_srv_id = _consent_form["source"]["service_id"]
 
         sq.task("Validate RS_ID")
-        if self.Helpers.validate_rs_id(_consent_form["source"]["rs_id"]):  # Validate RS_ID (RS_ID exists and not used before)
+        # Validate RS_ID (RS_ID exists and not used before)
+        if self.Helpers.validate_rs_id(_consent_form["source"]["rs_id"]):
             self.Helpers.store_consent_form(_consent_form)  # Store Consent Form
         else:
             raise DetailedHTTPException(title="RS_ID Validation error.",

@@ -14,7 +14,6 @@ api.init_app(api_CR_blueprint)
 
 # Logging
 debug_log = logging.getLogger("debug")
-logger = logging.getLogger("sequence")
 
 
 class Introspection(Resource):

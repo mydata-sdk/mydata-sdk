@@ -1,22 +1,7 @@
 # -*- coding: utf-8 -*-
-from uuid import uuid4 as guid
 from time import time
 import logging
 debug_log = logging.getLogger("debug")
-
-Service_ID_A = 10
-Service_ID_B = 100
-
-Service_DescriptionA = {
-    "name": "2"
-}
-Service_DescriptionB = {
-    "name": "1"
-}
-
-Services = {"10": Service_DescriptionA,
-            "100": Service_DescriptionB
-            }
 
 Consent_form_Out = {  # From Operator_CR to UI
     "source": {
@@ -63,65 +48,18 @@ Consent_form_Out = {  # From Operator_CR to UI
             }
         ]
     }
-
 }
-
-Consent_form_In = {
-    "rs_id": ""
-}
-
-
-from instance.settings import SERVICE_URL
-from requests import get
-class ServiceRegistryHandler:
-    def __init__(self, domain, endpoint):
-        # self.registry_url = "http://178.62.229.148:8081"+"/api/v1/services/"
-        self.registry_url = domain + endpoint #"/api/v1/services/"
-        pass
-
-    def getService(self, service_id):
-        try:
-            debug_log.info("Making request GET {}{}".format(self.registry_url, service_id))
-            req = get(self.registry_url+service_id)
-            service = req.json()
-            debug_log.info(service)
-            service = service[0]
-        except Exception as e:
-            debug_log.exception(e)
-            raise e
-        return service
-
-    def getService_url(self, service_id):
-        debug_log.info("getService_url got service id {} of type {} as parameter.".format(service_id, type(service_id)))
-        if isinstance(service_id, unicode):
-            service_id = service_id.encode()
-        try:
-            service = get(self.registry_url+service_id).json()
-            service = service[0]
-        except Exception as e:
-            debug_log.exception(e)
-            raise e
-        url = service["serviceInstance"][0]["domain"]
-
-        return url
-
-
 
 import logging
-from json import dumps, loads
+from json import dumps
 class Sequences:
-    def __init__(self, name, seq=False):
-        '''
+    def __init__(self, name):
+        """
 
         :param name:
-        :param seq:  seq should always be dictionary with "seq" field.
-        '''
+        """
         self.logger = logging.getLogger("sequence")
         self.name = name
-        self.sequence = {}
-
-    def update(self, seq):
-        self.sequence.update(seq)
 
     def send_to(self, to, msg=""):
         return self.seq_tool(msg, to, )
@@ -137,17 +75,14 @@ class Sequences:
 
         if box:
             form = 'Note over {}: {}'.format(self.name, msg)
-            return self.seq_form(form, self.sequence)
+            return self.seq_form(form, )
         elif dotted:
             form = "{}-->{}: {}".format(self.name, to, msg)
-            return self.seq_form(form, self.sequence)
+            return self.seq_form(form)
         else:
             form = "{}->{}: {}".format(self.name, to, msg)
-            return self.seq_form(form, self.sequence)
+            return self.seq_form(form)
 
-    def dump_sequence(self):
-        return ""
-
-    def seq_form(self, line, seq):
+    def seq_form(self, line):
         self.logger.info(dumps({"seq": line, "time": time()}))
         return {"seq": {}}

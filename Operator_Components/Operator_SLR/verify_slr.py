@@ -20,7 +20,7 @@ api.init_app(api_SLR_Verify)
 
 # Logging
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt", {})
+sq = Sequences("Operator_Components Mgmnt")
 
 '''
 Service_Components Mgmnt->Operator_Components Mgmnt: Verify SLR(JWS)

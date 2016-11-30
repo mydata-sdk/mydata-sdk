@@ -6,11 +6,11 @@ from json import loads, dumps
 from uuid import uuid4 as guid
 import time
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import ServiceRegistryHandler, Sequences
+from Templates import Sequences
 from flask import request, Blueprint, current_app
 from flask_cors import CORS
 from flask_restful import Resource, Api
-from helpers import AccountManagerHandler, Helpers
+from helpers import AccountManagerHandler, Helpers, ServiceRegistryHandler
 from requests import post
 
 # Flask init
@@ -21,7 +21,7 @@ api.init_app(api_SLR_RegisterSur)
 
 # Logging
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt", {})
+sq = Sequences("Operator_Components Mgmnt")
 
 '''
 Service_Components Mgmnt->Operator_Components Mgmnt: Send Operator_Components request to make SLR

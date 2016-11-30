@@ -31,8 +31,8 @@ debug_log.setLevel(logging.INFO)
 from instance.settings import OPERATOR_ROOT_PATH, OPERATOR_CR_PATH, OPERATOR_SLR_PATH
 
 application = DispatcherMiddleware(Operator_Root.create_app(),
-                                   {OPERATOR_ROOT_PATH+OPERATOR_CR_PATH: Operator_CR.create_app(),
-                                    OPERATOR_ROOT_PATH+OPERATOR_SLR_PATH: Operator_SLR.create_app()})
+                                   {OPERATOR_ROOT_PATH + OPERATOR_CR_PATH: Operator_CR.create_app(),
+                                    OPERATOR_ROOT_PATH + OPERATOR_SLR_PATH: Operator_SLR.create_app()})
 
 if __name__ == "__main__":
     run_simple('0.0.0.0', 5000, application, use_reloader=False, use_debugger=False, threaded=True)

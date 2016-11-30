@@ -16,7 +16,7 @@ api.init_app(api_CR_blueprint)
 
 # Logging
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt", {})
+sq = Sequences("Operator_Components Mgmnt")
 
 class AuthToken(Resource):
     def __init__(self):

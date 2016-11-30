@@ -7,11 +7,11 @@ from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import Sequences, ServiceRegistryHandler
+from Templates import Sequences
 from flask import Blueprint, current_app
 from flask_cors import CORS
 from flask_restful import Resource, Api
-from helpers import Helpers
+from helpers import Helpers, ServiceRegistryHandler
 
 '''
 
@@ -34,7 +34,7 @@ api.init_app(api_SLR_Start)
 
 # Logger stuff
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt", {})
+sq = Sequences("Operator_Components Mgmnt")
 
 
 class StartSlrFlow(Resource):

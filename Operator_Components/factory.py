@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 """
+Based on:
     overholt.factory
     ~~~~~~~~~~~~~~~~
     overholt factory module
 """
 
 import os
-
 from celery import Celery
 from flask import Flask
-from flask_restful import Api
 from helpers import register_blueprints
 
 
@@ -30,7 +29,7 @@ def create_app(package_name, package_path, settings_override=None,
     app.config.from_object(settings_override)
     apis = None
     if register_bps:
-        rv, apis  =register_blueprints(app, package_name, package_path)
+        rv, apis = register_blueprints(app, package_name, package_path)
 
     return app, apis
 

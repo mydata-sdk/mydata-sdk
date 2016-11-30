@@ -27,14 +27,14 @@ def error_handler(method):
                 raise DetailedHTTPException(exception=e, trace=trace)
         except DetailedHTTPException as e:
             # Need for this can be questioned. It reduces portability of the decorator.
-            if (DEBUG_MODE):
+            if DEBUG_MODE:
                 print(e.trace)
                 try:
                     location_url = api.url_for(method)  # This is a handy feature but as before, reduces portability.
                 except:
                     location_url = "Not resolved"
                 # location = repr(method).split(" ")[1]
-                if (e.error["errors"][e.count]["source"] is None):
+                if e.error["errors"][e.count]["source"] is None:
                     e.error["errors"][e.count]["source"] = location_url
                     e.error["errors"][e.count]["trace"] = e.trace
                 print(dumps(e.error, indent=2))
@@ -67,7 +67,7 @@ class DetailedHTTPException(HTTPException):
                 raise exception
             except DetailedHTTPException as e:
                 self.count = exception.count + 1
-                if (self.code is None):
+                if self.code is None:
                     self.code = e.code
                 for errors in e.error["errors"]:
                     print(errors)

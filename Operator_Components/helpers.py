@@ -9,54 +9,53 @@ from sqlite3 import IntegrityError
 from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
 from flask_restful import Api
-from Templates import ServiceRegistryHandler
 import db_handler as db_handler
 
+# Logging
 debug_log = logging.getLogger("debug")
-from datetime import datetime
 
 
-def read_key(path, password=None, ):
-    ##
-    # Read RSA key from PEM file and return JWK object of it.
-    ##
-    try:
-        from settings import cert_password_path
-        with open(cert_password_path, "r") as pw_file:
-            password = pw_file.readline()
-    except Exception as e:
-        print(e)
-        password = None
-        pass
-    if password is not None:  # Remove trailing line end if it exists
-        password = password.strip("\n")
-
-    from jwcrypto import jwk
-    from jwkest.jwk import RSAKey
-    with open(path, "r") as f:
-        pem_data = f.read()
-    try:
-        # Note import_rsa_key is importKey from CryptoDome
-        rsajwk = RSAKey(key=import_rsa_key(pem_data, passphrase=password), use='sig')
-
-    except ValueError as e:
-        while True:
-            pw = input("Please enter password for PEM file: ")
-            try:
-                # Note import_rsa_key is importKey from CryptoDome
-                rsajwk = RSAKey(key=import_rsa_key(pem_data, passphrase=pw), use='sig')
-                save_pw = bool(str(raw_input("Should the password be saved?(True/False): ")).capitalize())
-                if save_pw:
-                    with open("./cert_pw", "w+") as pw_file:
-                        pw_file.write(pw)
-                break
-
-            except Exception as e:
-                print(repr(e))
-                print("Password may have been incorrect. Try again or terminate.")
-
-    jwssa = jwk.JWK(**rsajwk.to_dict())
-    return jwssa
+# def read_key(path, password=None, ):
+#     ##
+#     # Read RSA key from PEM file and return JWK object of it.
+#     ##
+#     try:
+#         from settings import cert_password_path
+#         with open(cert_password_path, "r") as pw_file:
+#             password = pw_file.readline()
+#     except Exception as e:
+#         print(e)
+#         password = None
+#         pass
+#     if password is not None:  # Remove trailing line end if it exists
+#         password = password.strip("\n")
+#
+#     from jwcrypto import jwk
+#     from jwkest.jwk import RSAKey
+#     with open(path, "r") as f:
+#         pem_data = f.read()
+#     try:
+#         # Note import_rsa_key is importKey from CryptoDome
+#         rsajwk = RSAKey(key=import_rsa_key(pem_data, passphrase=password), use='sig')
+#
+#     except ValueError as e:
+#         while True:
+#             pw = input("Please enter password for PEM file: ")
+#             try:
+#                 # Note import_rsa_key is importKey from CryptoDome
+#                 rsajwk = RSAKey(key=import_rsa_key(pem_data, passphrase=pw), use='sig')
+#                 save_pw = bool(str(raw_input("Should the password be saved?(True/False): ")).capitalize())
+#                 if save_pw:
+#                     with open("./cert_pw", "w+") as pw_file:
+#                         pw_file.write(pw)
+#                 break
+#
+#             except Exception as e:
+#                 print(repr(e))
+#                 print("Password may have been incorrect. Try again or terminate.")
+#
+#     jwssa = jwk.JWK(**rsajwk.to_dict())
+#     return jwssa
 
 
 def register_blueprints(app, package_name, package_path):
@@ -81,14 +80,11 @@ def register_blueprints(app, package_name, package_path):
 
 
 from jwcrypto import jwt, jwk
-# from Templates import SLR_tool
 from json import dumps, dump, load
 from uuid import uuid4 as guid
-
 from requests import get, post
 from json import loads
 from core import DetailedHTTPException
-
 
 class AccountManagerHandler:
     def __init__(self, account_management_url, account_management_username, account_management_password, timeout):
@@ -326,6 +322,35 @@ class AccountManagerHandler:
 
         return loads(req.text)
 
+class ServiceRegistryHandler:
+    def __init__(self, domain, endpoint):
+        # self.registry_url = "http://178.62.229.148:8081"+"/api/v1/services/"
+        self.registry_url = domain + endpoint
+
+    def getService(self, service_id):
+        try:
+            debug_log.info("Making request GET {}{}".format(self.registry_url, service_id))
+            req = get(self.registry_url+service_id)
+            service = req.json()
+            debug_log.info(service)
+            service = service[0]
+        except Exception as e:
+            debug_log.exception(e)
+            raise e
+        return service
+
+    def getService_url(self, service_id):
+        debug_log.info("getService_url got service id {} of type {} as parameter.".format(service_id, type(service_id)))
+        if isinstance(service_id, unicode):
+            service_id = service_id.encode()
+        try:
+            service = get(self.registry_url+service_id).json()
+            service = service[0]
+        except Exception as e:
+            debug_log.exception(e)
+            raise e
+        url = service["serviceInstance"][0]["domain"]
+        return url
 
 class Helpers:
     def __init__(self, app_config):
@@ -412,6 +437,7 @@ class Helpers:
         cursor = db.cursor()
         cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json) \
             VALUES (%s, %s, %s);", (kid, surrogate_id, dumps(key_json)))
+
         db.commit()
 #            cursor.execute("UPDATE service_keys_tbl SET key_json=%s WHERE kid=%s ;", (dumps(key_json), kid))
 #            db.commit()
@@ -592,7 +618,7 @@ class Helpers:
         return _tmpl
 
     def gen_cr_source(self, common_CR, consent_form, ki_cr,
-                      sink_pop_key):  # TODO: Operator_public key is now fetched with function.
+                      sink_pop_key):
         common_CR["subject_id"] = consent_form["source"]["service_id"]
         rs_description = \
             {
