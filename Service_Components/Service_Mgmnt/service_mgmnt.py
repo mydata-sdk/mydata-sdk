@@ -4,17 +4,17 @@ import logging
 import time
 import traceback
 from base64 import urlsafe_b64decode as decode
-from json import loads, dumps, load, dump
-from requests import post
+from json import loads, dumps
 from uuid import uuid4 as guid
 
-from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import Sequences
 from flask import request, abort, Blueprint, current_app
 from flask_cors import CORS
 from flask_restful import Resource, Api
-from helpers import Helpers
 from jwcrypto import jws, jwk
+from requests import post
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from helpers_srv import Helpers, Sequences
 
 api_Service_Mgmnt = Blueprint("api_Service_Mgmnt", __name__)
 
@@ -24,7 +24,7 @@ api.init_app(api_Service_Mgmnt)
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
 
-sq = Sequences("Service_Components Mgmnt", {})
+sq = Sequences("Service_Components Mgmnt")
 
 '''
 

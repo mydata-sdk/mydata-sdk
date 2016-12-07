@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 import time
 
 __author__ = 'alpaloma'
@@ -7,10 +6,10 @@ import logging
 import traceback
 from json import dumps, loads
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import Consent_form_Out, Sequences
+from Templates import Consent_form_Out
 from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
-from helpers import AccountManagerHandler, Helpers, ServiceRegistryHandler
+from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences
 from op_tasks import CR_installer
 from requests import post
 

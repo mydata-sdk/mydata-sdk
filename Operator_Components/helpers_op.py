@@ -6,9 +6,9 @@ import time
 from base64 import urlsafe_b64decode as decode
 from sqlite3 import IntegrityError
 
-from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
 from flask_restful import Api
+
 import db_handler as db_handler
 
 # Logging
@@ -156,8 +156,7 @@ class AccountManagerHandler:
                   timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
-            tool = SLR_tool()
-            payload = tool.decrypt_payload(templ["data"]["attributes"]["csr"]["payload"])
+            payload = base_token_tool.decode_payload(templ["data"]["attributes"]["csr"]["payload"])
             debug_log.info("Got CSR payload from account:\n{}".format(dumps(payload, indent=2)))
             csr_id = payload["record_id"]
             return {"csr_id": csr_id}
@@ -177,7 +176,7 @@ class AccountManagerHandler:
         if req.ok:
             templ = loads(req.text)
             #tool = SLR_tool()
-            #payload = tool.decrypt_payload(templ["data"]["attributes"]["csr"]["payload"])
+            #payload = tool.decode_payload(templ["data"]["attributes"]["csr"]["payload"])
             debug_log.info("Created CSR:\n{}".format(dumps(templ, indent=2)))
             #csr_id = payload["record_id"]
 
@@ -198,7 +197,7 @@ class AccountManagerHandler:
         if req.ok:
             templ = loads(req.text)
             #tool = SLR_tool()
-            #payload = tool.decrypt_payload(templ["data"]["attributes"]["csr"]["payload"])
+            #payload = tool.decode_payload(templ["data"]["attributes"]["csr"]["payload"])
             debug_log.info("Fetched missing CSR:\n{}".format(dumps(templ, indent=2)))
             #csr_id = payload["record_id"]
 
@@ -352,6 +351,7 @@ class ServiceRegistryHandler:
         url = service["serviceInstance"][0]["domain"]
         return url
 
+
 class Helpers:
     def __init__(self, app_config):
         self.host = app_config["MYSQL_HOST"]
@@ -487,6 +487,8 @@ class Helpers:
                 db.commit()
                 # db.close()
             except IntegrityError as e:
+                debug_log.info("")
+                raise e
                 cursor.execute("UPDATE session_store SET json=%s WHERE code=%s ;", (dumps(DictionaryToStore[key]), key))
                 db.commit()
                 # db.close()
@@ -701,8 +703,19 @@ class Helpers:
         token.make_signed_token(key)
         return token.serialize()
 
+class base_token_tool:
 
-class SLR_tool:
+    @staticmethod
+    def decode_payload(payload):
+        payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
+        content = decode(payload.encode())
+        payload = loads(content.decode("utf-8"))
+        debug_log.info("Decoded payload is:")
+        debug_log.info(payload)
+        return payload
+
+
+class SLR_tool(base_token_tool):
     def __init__(self):
         self.slr = {
             "data": {
@@ -770,23 +783,17 @@ class SLR_tool:
             }
         }
 
-    def decrypt_payload(self, payload):
-        payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
-        content = decode(payload.encode())
-        payload = loads(content.decode("utf-8"))
-        return payload
-
     def get_SLR_payload(self):
         debug_log.info(dumps(self.slr, indent=2))
         base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["slr"][
             "payload"]  # TODO: This is a workaround for structure repetition.
-        payload = self.decrypt_payload(base64_payload)
+        payload = self.decode_payload(base64_payload)
         return payload
 
     def get_CR_payload(self):
         base64_payload = self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["cr"][
             "payload"]  # TODO: This is a workaround for structure repetition.
-        payload = self.decrypt_payload(base64_payload)
+        payload = self.decode_payload(base64_payload)
         return payload
 
     def get_token_key(self):
@@ -818,3 +825,39 @@ class SLR_tool:
 
     def get_sink_service_id(self):
         return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
+
+
+class Sequences:
+    def __init__(self, name):
+        """
+
+        :param name:
+        """
+        self.logger = logging.getLogger("sequence")
+        self.name = name
+
+    def send_to(self, to, msg=""):
+        return self.seq_tool(msg, to, )
+
+    def reply_to(self, to, msg=""):
+        return self.seq_tool(msg, to, dotted=True)
+
+    def task(self, content):
+
+        return self.seq_tool(msg=content, box=False, to=self.name)
+
+    def seq_tool(self, msg=None, to="Change_Me", box=False, dotted=False):
+
+        if box:
+            form = 'Note over {}: {}'.format(self.name, msg)
+            return self.seq_form(form, )
+        elif dotted:
+            form = "{}-->{}: {}".format(self.name, to, msg)
+            return self.seq_form(form)
+        else:
+            form = "{}->{}: {}".format(self.name, to, msg)
+            return self.seq_form(form)
+
+    def seq_form(self, line):
+        self.logger.info(dumps({"seq": line, "time": time.time()}))
+        return {"seq": {}}

@@ -2,12 +2,13 @@
 import logging
 import traceback
 from json import dumps
-from DetailedHTTPException import error_handler, DetailedHTTPException
+
 from flask import Blueprint, current_app
 from flask_restful import Api, Resource
-from helpers import AccountManagerHandler
-from helpers import Helpers
-from Templates import Sequences
+
+from DetailedHTTPException import error_handler, DetailedHTTPException
+from helpers_op import AccountManagerHandler
+from helpers_op import Helpers, Sequences
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_AuthToken_blueprint", __name__)
@@ -17,6 +18,7 @@ api.init_app(api_CR_blueprint)
 # Logging
 debug_log = logging.getLogger("debug")
 sq = Sequences("Operator_Components Mgmnt")
+
 
 class AuthToken(Resource):
     def __init__(self):
@@ -53,7 +55,7 @@ class AuthToken(Resource):
         debug_log.info("Account Manager gave following Auth Token Info:\n{}".format(dumps(result, indent=2)))
         token = self.gen_auth_token(result)
         debug_log.info("Generated auth token: {}".format(token))
-        return {"auth_token" : token}
+        return {"auth_token": token}
 
 
 api.add_resource(AuthToken, '/auth_token/<string:cr_id>')

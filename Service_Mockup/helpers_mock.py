@@ -2,6 +2,7 @@
 import importlib
 import logging
 import pkgutil
+import time
 from json import dumps, loads
 from sqlite3 import IntegrityError
 
@@ -14,6 +15,7 @@ from DetailedHTTPException import DetailedHTTPException
 
 debug_log = logging.getLogger("debug")
 
+
 class Helpers:
     def __init__(self, app_config):
         self.host = app_config["MYSQL_HOST"]
@@ -25,12 +27,12 @@ class Helpers:
         self.port = app_config["MYSQL_PORT"]
 
     def query_db(self, query, args=()):
-        '''
+        """
         Simple queries to DB
         :param query: SQL query
         :param args: Arguments to inject into the query
         :return: Single hit for the given query
-        '''
+        """
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cur = cursor.execute(query, args)
@@ -67,7 +69,7 @@ class Helpers:
                 db.commit()
                 db.close()
 
-    def storeCodeUser(self, DictionaryToStore):
+    def store_code_user(self, DictionaryToStore):
         # {"code": "user_id"}
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
@@ -82,7 +84,6 @@ class Helpers:
 
     def get_user_id_with_code(self, code):
         try:
-            db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
             query = self.query_db("select * from code_and_user_mapping where code=%s;", (code,))
             debug_log.info(query)
             user_from_db = loads(query)
@@ -166,3 +167,39 @@ def register_blueprints(app, package_name, package_path):
             if isinstance(item, Api):
                 apis.append(item)
     return rv, apis
+
+
+class Sequences:
+    def __init__(self, name):
+        """
+
+        :param name:
+        """
+        self.logger = logging.getLogger("sequence")
+        self.name = name
+
+    def send_to(self, to, msg=""):
+        return self.seq_tool(msg, to, )
+
+    def reply_to(self, to, msg=""):
+        return self.seq_tool(msg, to, dotted=True)
+
+    def task(self, content):
+
+        return self.seq_tool(msg=content, box=False, to=self.name)
+
+    def seq_tool(self, msg=None, to="Change_Me", box=False, dotted=False):
+
+        if box:
+            form = 'Note over {}: {}'.format(self.name, msg)
+            return self.seq_form(form, )
+        elif dotted:
+            form = "{}-->{}: {}".format(self.name, to, msg)
+            return self.seq_form(form)
+        else:
+            form = "{}->{}: {}".format(self.name, to, msg)
+            return self.seq_form(form)
+
+    def seq_form(self, line):
+        self.logger.info(dumps({"seq": line, "time": time.time()}))
+        return {"seq": {}}

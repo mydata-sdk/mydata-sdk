@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 __author__ = 'alpaloma'
 
-from DetailedHTTPException import error_handler
+import logging
+from json import loads, dumps
+
 from flask import Blueprint, request, current_app
 from flask_restful import Resource, Api
-from helpers import Helpers, Token_tool
-import logging
-from jwcrypto import jwk, jwt, jws
-from json import loads, dumps
-from Templates import Sequences
+from jwcrypto import jwk, jwt
+
+from DetailedHTTPException import error_handler
+from helpers_srv import Helpers, Sequences
 from signed_requests.json_builder import pop_handler
+
 debug_log = logging.getLogger("debug")
 logger = logging.getLogger("sequence")
 api_Source_blueprint = Blueprint("api_Source_blueprint", __name__)
 api = Api()
 api.init_app(api_Source_blueprint)
 
-sq = Sequences("Service_Components Mgmnt (Source)", {})
+sq = Sequences("Service_Components Mgmnt (Source)")
 # import xmltodict
 # @api.representation('application/xml')
 # def output_xml(data, code, headers=None):
@@ -46,15 +48,15 @@ class DataRequest(Resource):
         debug_log.info(authorization)
         pop_h = pop_handler(token=authorization.split(" ")[1]) # TODO: Logic to pick up PoP
         sq.task("Fetch at field from PoP")
-        decrypted_pop_token = loads(pop_h.get_at())
+        decoded_pop_token = loads(pop_h.get_at())
         debug_log.info("Token verified state should be False here, it is: {}".format(pop_h.verified))
 
-        debug_log.info(type(decrypted_pop_token))
-        debug_log.info(dumps(decrypted_pop_token, indent=2))
+        debug_log.info(type(decoded_pop_token))
+        debug_log.info(dumps(decoded_pop_token, indent=2))
 
 
-        sq.task("Decrypt auth_token from PoP and get cr_id.")
-        token = decrypted_pop_token["at"]["auth_token"]
+        sq.task("Decode auth_token from PoP and get cr_id.")
+        token = decoded_pop_token["at"]["auth_token"]
         jws_holder = jwt.JWS()
         jws_holder.deserialize(raw_jws=token)
         auth_token_payload = loads(jws_holder.__dict__["objects"]["payload"])
@@ -82,7 +84,7 @@ class DataRequest(Resource):
 
         sq.task("Validate Request(PoP token)")
         pop_h = pop_handler(token=authorization.split(" ")[1], key=pop_key)
-        decrypted_pop_token = loads(pop_h.get_at())  # This step affects verified state of object.
+        decoded_pop_token = loads(pop_h.get_at())  # This step affects verified state of object.
         debug_log.info("Token verified state should be True here, it is: {}".format(pop_h.verified))
         # Validate Request
         if pop_h.verified is False:

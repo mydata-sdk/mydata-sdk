@@ -17,12 +17,10 @@ celery = create_celery_app()
 #     print(sink.url, sink.reason, sink.status_code, sink.text)
 
 
-from sqlite3 import OperationalError, IntegrityError
 import db_handler
 from json import dumps, loads
 from requests import get
-from instance.settings import MYSQL_HOST, MYSQL_PASSWORD, MYSQL_USER, MYSQL_PORT, MYSQL_DB
-from helpers import Helpers, CR_tool
+from helpers_srv import Helpers, CR_tool
 @celery.task
 def get_AuthToken(cr_id, operator_url, app_config):
     print(operator_url, cr_id)

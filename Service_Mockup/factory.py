@@ -9,8 +9,8 @@ import os
 
 from celery import Celery
 from flask import Flask
-from flask_restful import Api
-from helpers import register_blueprints
+
+from helpers_mock import register_blueprints
 
 
 

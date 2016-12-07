@@ -3,15 +3,15 @@ __author__ = 'alpaloma'
 import logging
 import traceback
 from json import loads
+
+from flask import Blueprint, current_app
+from flask_cors import CORS
+from flask_restful import Resource, Api
 from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import Sequences
-from flask import Blueprint, current_app
-from flask_cors import CORS
-from flask_restful import Resource, Api
-from helpers import Helpers, ServiceRegistryHandler
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences
 
 '''
 

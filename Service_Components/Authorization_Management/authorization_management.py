@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 __author__ = 'alpaloma'
 import logging
-import os
 import time
-from json import loads, dumps
+from json import dumps
 
-from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import sink_cr_schema, source_cr_schema, csr_schema, Sequences
 from flask import request, Blueprint, current_app
 from flask_cors import CORS
 from flask_restful import Resource, Api
-from helpers import validate_json, SLR_tool, CR_tool, Helpers
-from jwcrypto import jwk
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from Templates import sink_cr_schema, source_cr_schema, csr_schema
+from helpers_srv import validate_json, SLR_tool, CR_tool, Helpers, Sequences
 from srv_tasks import get_AuthToken
 
 api_Service_Mgmnt = Blueprint("api_Service_Mgmnt", __name__)  # TODO Rename this
@@ -19,8 +18,6 @@ api_Service_Mgmnt = Blueprint("api_Service_Mgmnt", __name__)  # TODO Rename this
 CORS(api_Service_Mgmnt)
 api = Api()
 api.init_app(api_Service_Mgmnt)
-
-file_store = os.path.abspath("file_store/") + "/"  # os.path.abspath seems to skim the / away from the end.
 
 '''
 
@@ -44,7 +41,7 @@ Using the code we link surrogate id to MyData Account and service confirming the
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
 
-sq = Sequences("Service_Components Mgmnt", {})
+sq = Sequences("Service_Components Mgmnt")
 
 
 def timeme(method):

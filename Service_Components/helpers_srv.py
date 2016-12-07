@@ -2,16 +2,17 @@
 import importlib
 import logging
 import pkgutil
-import urllib
-from json import dumps, load, dump
 import time
-from datetime import datetime
+import urllib
+from json import load, dump
+from sqlite3 import IntegrityError
+
+import jsonschema
 from flask import Blueprint
 from flask_restful import Api
-import jsonschema
+from requests import get
+
 import db_handler
-from requests import get, post
-from sqlite3 import IntegrityError
 from DetailedHTTPException import DetailedHTTPException
 
 debug_log = logging.getLogger("debug")
@@ -247,9 +248,9 @@ class Helpers:
             raise ValueError("CR and CSR verification failed.")
         debug_log.info("Verified cr/csr ({}) for surrogate_id ({}) ".format(cr_id, surrogate_id))
 
-        combined_decrypted = dumps({"cr": tool.get_CR_payload(), "csr": tool.get_CSR_payload()}, indent=2)
-        debug_log.info("Decrypted cr/csr structure is:")
-        debug_log.info(combined_decrypted)
+        combined_decoded = dumps({"cr": tool.get_CR_payload(), "csr": tool.get_CSR_payload()}, indent=2)
+        debug_log.info("Decoded cr/csr structure is:")
+        debug_log.info(combined_decoded)
         # Check that state is "Active"
         state = tool.get_state()
         if state != "Active":
@@ -279,7 +280,7 @@ class Helpers:
         # CR validated.
 
         debug_log.info("CR has been validated.")
-        return loads(combined_decrypted)
+        return loads(combined_decoded)
 
     def verifyCode(self, code):
         """
@@ -443,17 +444,17 @@ class Helpers:
                 req = get(
                     operator_url + "/api/1.2/cr" + "/consent/{}/missing_since/{}".format(cr_id, latest_csr_id))
                 if req.ok:
-                    tool = SLR_tool()
+                    decode_payload = base_token_tool.decode_payload
                     content = loads(req.content)
                     debug_log.info("We got: \n{}".format(content))
                     slr_id = self.query_db("select cr_id, slr_id from cr_storage where cr_id = %s;"
                                            , (cr_id,))
                     rs_id = self.query_db("select cr_id, rs_id from cr_storage where cr_id = %s;"
-                                           , (cr_id,))
+                                          , (cr_id,))
                     for csr in content["missing_csr"]["data"]:
                         if not isinstance(csr, dict):
                             csr = loads(csr)
-                        decoded_payload = tool.decrypt_payload(csr["attributes"]["csr"]["payload"])
+                        decoded_payload = decode_payload(csr["attributes"]["csr"]["payload"])
                         store_dict = {
                             "rs_id": rs_id,
                             "csr_id": decoded_payload["record_id"],
@@ -559,95 +560,137 @@ def register_blueprints(app, package_name, package_path):
 from base64 import urlsafe_b64decode as decode
 from json import loads
 
+import logging
+from json import dumps
 
-class SLR_tool:
-    def __init__(self):
-        self.slr = {
-            "code": "7e4f7cf6-f169-4430-9b23-a4820446fe71",
-            "data": {
-                "slr": {
-                    "type": "ServiceLinkRecord",
-                    "attributes": {
-                        "slr": {
-                            "payload": "IntcIm9wZXJhdG9yX2lkXCI6IFwiQUNDLUlELVJBTkRPTVwiLCBcImNyZWF0ZWRcIjogMTQ3MTM0NDYyNiwgXCJzdXJyb2dhdGVfaWRcIjogXCI5YjQxNmE5Zi1jYjRmLTRkNWMtYjJiZS01OWQxYjc3ZjJlZmFfMVwiLCBcInRva2VuX2tleVwiOiB7XCJrZXlcIjoge1wieVwiOiBcIkN0NGNHMnpPQzdrano5VWF1WHFqcTRtZ0d0bEdXcDJjcWZneVVlaUU4U2dcIiwgXCJ4XCI6IFwiUnJueHZoZjVsZXppQTZyZms4ZDlRbV96bXd2SDc5X2U5eUhBS2ZJR2dFRVwiLCBcImNydlwiOiBcIlAtMjU2XCIsIFwia3R5XCI6IFwiRUNcIiwgXCJraWRcIjogXCJTUlZNR05ULUlESzNZXCJ9fSwgXCJsaW5rX2lkXCI6IFwiNDJhMzVhN2QtMjkxZS00N2UzLWIyMmYtOTk2NjJmNjgzNDEzXCIsIFwib3BlcmF0b3Jfa2V5XCI6IHtcInVzZVwiOiBcInNpZ1wiLCBcImVcIjogXCJBUUFCXCIsIFwia3R5XCI6IFwiUlNBXCIsIFwiblwiOiBcIndITUFwQ2FVSkZpcHlGU2NUNzgxd2VuTm5mbU5jVkQxZTBmSFhfcmVfcWFTNWZvQkJzN1c0aWE1bnVxNjVFQWJKdWFxaGVPR2FEamVIaVU4V1Q5cWdnYks5cTY4SXZUTDN1bjN6R2o5WmQ3N3MySXdzNE1BSW1EeWN3Rml0aDE2M3lxdW9ETXFMX1YySXl5Mm45Uzloa1M5ZkV6cXJsZ01sYklnczJtVkJpNmdWVTJwYnJTN0gxUGFSV194YlFSX1puN19laV9uOFdlWFA1d2NEX3NJYldNa1NCc3VVZ21jam9XM1ktNW1ERDJWYmRFejJFbWtZaTlHZmstcDlBenlVbk56ZkIyTE1jSk1aekpWUWNYaUdCTzdrcG9uRkEwY3VIMV9CR0NsZXJ6Mnh2TWxXdjlPVnZzN3ZDTmRlQV9mano2eloyMUtadVo0RG1nZzBrOTRsd1wifSwgXCJ2ZXJzaW9uXCI6IFwiMS4yXCIsIFwiY3Jfa2V5c1wiOiBbe1wieVwiOiBcIlhaeWlveV9BME5qQ3Q1ZGt6OW5MOGI3YXdQRl9Cck5iYzVObjFOTTdXS0FcIiwgXCJ4XCI6IFwiR3ZaVEdpMllSb0VCblc2QzB4clpRQ0tNeWwza2lNcjgtRVoySU1ocnpXb1wiLCBcImNydlwiOiBcIlAtMjU2XCIsIFwia3R5XCI6IFwiRUNcIiwgXCJraWRcIjogXCJhY2Mta2lkLTg1MTVhYjQ2LTlkODItNDUzNC1hZDFmLTYzZDFlNDdiZDY2YlwifV0sIFwic2VydmljZV9pZFwiOiBcIjFcIn0i",
-                            "signatures": [
-                                {
-                                    "header": {
-                                        "jwk": {
-                                            "x": "GvZTGi2YRoEBnW6C0xrZQCKMyl3kiMr8-EZ2IMhrzWo",
-                                            "kty": "EC",
-                                            "crv": "P-256",
-                                            "y": "XZyioy_A0NjCt5dkz9nL8b7awPF_BrNbc5Nn1NM7WKA",
-                                            "kid": "acc-kid-8515ab46-9d82-4534-ad1f-63d1e47bd66b"
-                                        },
-                                        "kid": "acc-kid-8515ab46-9d82-4534-ad1f-63d1e47bd66b"
-                                    },
-                                    "protected": "eyJhbGciOiAiRVMyNTYifQ",
-                                    "signature": "fsSuhqLp6suUuT8waseMlpYcFx4vqIviIteBLUNWPUOubHPDY64sbpfx_flpPFymxG_t8r3Ptb96kv-ZDyjb7g"
-                                },
-                                {
-                                    "header": {
-                                        "jwk": {
-                                            "x": "Rrnxvhf5leziA6rfk8d9Qm_zmwvH79_e9yHAKfIGgEE",
-                                            "kty": "EC",
-                                            "crv": "P-256",
-                                            "y": "Ct4cG2zOC7kjz9UauXqjq4mgGtlGWp2cqfgyUeiE8Sg",
-                                            "kid": "SRVMGNT-IDK3Y"
-                                        },
-                                        "kid": "SRVMGNT-IDK3Y"
-                                    },
-                                    "protected": "eyJhbGciOiAiRVMyNTYifQ",
-                                    "signature": "3rZCfJxvpD7covQjH_lhkJwId8ynVIMLZ6t1obiCrlwJOJe_Yc7dmImi10w8tc9_7c7u35_ysiD72wIlbJ4oFQ"
-                                }
-                            ]
-                        }
-                    }
-                },
-                "meta": {
-                    "slsr_id": "374707b7-a60b-4596-9f3a-6a5affa414c3",
-                    "slr_id": "42a35a7d-291e-47e3-b22f-99662f683413"
-                },
-                "slsr": {
-                    "type": "ServiceLinkStatusRecord",
-                    "attributes": {
-                        "slsr": {
-                            "header": {
-                                "jwk": {
-                                    "x": "GvZTGi2YRoEBnW6C0xrZQCKMyl3kiMr8-EZ2IMhrzWo",
-                                    "kty": "EC",
-                                    "crv": "P-256",
-                                    "y": "XZyioy_A0NjCt5dkz9nL8b7awPF_BrNbc5Nn1NM7WKA",
-                                    "kid": "acc-kid-8515ab46-9d82-4534-ad1f-63d1e47bd66b"
-                                },
-                                "kid": "acc-kid-8515ab46-9d82-4534-ad1f-63d1e47bd66b"
-                            },
-                            "protected": "eyJhbGciOiAiRVMyNTYifQ",
-                            "payload": "IntcInNscl9pZFwiOiBcIjQyYTM1YTdkLTI5MWUtNDdlMy1iMjJmLTk5NjYyZjY4MzQxM1wiLCBcImFjY291bnRfaWRcIjogXCIxXCIsIFwic2xfc3RhdHVzXCI6IFwiQWN0aXZlXCIsIFwicmVjb3JkX2lkXCI6IFwiMzc0NzA3YjctYTYwYi00NTk2LTlmM2EtNmE1YWZmYTQxNGMzXCIsIFwiaWF0XCI6IDE0NzEzNDQ2MjYsIFwicHJldl9yZWNvcmRfaWRcIjogXCJOVUxMXCJ9Ig",
-                            "signature": "cfj3Zm5ICVtTdUJigKGTxJX4V8vzs1e9qVj83hPmiD-XJonrBRW60zQN-3lRTuJithFbrGgBJShGj1InuNGMsw"
-                        }
-                    }
-                },
-                "surrogate_id": "9b416a9f-cb4f-4d5c-b2be-59d1b77f2efa_1"
-            }}
 
-    def decrypt_payload(self, payload):
+class Sequences:
+    def __init__(self, name):
+        """
+
+        :param name:
+        """
+        self.logger = logging.getLogger("sequence")
+        self.name = name
+
+    def send_to(self, to, msg=""):
+        return self.seq_tool(msg, to, )
+
+    def reply_to(self, to, msg=""):
+        return self.seq_tool(msg, to, dotted=True)
+
+    def task(self, content):
+
+        return self.seq_tool(msg=content, box=False, to=self.name)
+
+    def seq_tool(self, msg=None, to="Change_Me", box=False, dotted=False):
+
+        if box:
+            form = 'Note over {}: {}'.format(self.name, msg)
+            return self.seq_form(form, )
+        elif dotted:
+            form = "{}-->{}: {}".format(self.name, to, msg)
+            return self.seq_form(form)
+        else:
+            form = "{}->{}: {}".format(self.name, to, msg)
+            return self.seq_form(form)
+
+    def seq_form(self, line):
+        self.logger.info(dumps({"seq": line, "time": time.time()}))
+        return {"seq": {}}
+
+
+class base_token_tool:
+    @staticmethod
+    def decode_payload(payload):
         payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
         content = decode(payload.encode())
         payload = loads(content.decode("utf-8"))
-        debug_log.info("Decrypted payload is:")
+        debug_log.info("Decoded payload is:")
         debug_log.info(payload)
         return payload
 
+
+class SLR_tool(base_token_tool):
+    def __init__(self):
+        # Here you can see the structure this tool handles
+        # Do note this default value should be re-assigned before use
+        self.slr = {"code": "486b01cb-518a-4838-be63-624f0d86a2a1",
+                    "data": {
+                        "surrogate_id": "e15053fd-0808-4125-9acf-f0647d62a2bb_486b01cb-518a-4838-be63-624f0d86a2a1",
+                        "slr": {
+                            "attributes": {
+                                "slr": {
+                                    "signatures": [
+                                        {
+                                            "header": {
+                                                "kid": "acc-kid-a40b9976-916a-4a13-a149-7241ce56abb4"
+
+                                            },
+                                            "protected": "eyJhbGciOiAiRVMyNTYifQ",
+                                            "signature": "RE2o3P85Zcss3PD6uKHgr7Mk2UI-wFmv1IthtjWIbEJsyF2OBwmpeDafhbmE1sDy6EOL6mnm4iLYd3VqaG-Jhg"
+
+                                        },
+                                        {
+                                            "header": {
+                                                "jwk": {
+                                                    "kid": "SRVMGNT-RSA-512",
+                                                    "e": "AQAB",
+                                                    "kty": "RSA",
+                                                    "n": "yGgsP9cWMiPPmgOQ0JtYSw6zwuDou8AGAyDutv5pLw5ivz6xoLhZM-iQWF7EsrEGtSrQNyYLs2Vs-JqmntPjHQ"
+
+                                                },
+                                                "kid": "SRVMGMNT-CHANGE_ME"
+
+                                            },
+                                            "protected": "eyJhbGciOiAiUlMyNTYifQ",
+                                            "signature": "VLpAmxZoNQVP3ilGoMMsGGro23kPiISxqqyJsOi7EmbSoHnHWCKktJyqM5xsiNkfyGnfIoKTCowsAamNS5ymgQ"
+
+                                        }
+
+                                    ],
+                                    "payload": "eyJvcGVyYXRvcl9pZCI6ICJPcGVyYXRvcjExMiIsICJzdXJyb2dhdGVfaWQiOiAiZTE1MDUzZmQtMDgwOC00MTI1LTlhY2YtZjA2NDdkNjJhMmJiXzQ4NmIwMWNiLTUxOGEtNDgzOC1iZTYzLTYyNGYwZDg2YTJhMSIsICJsaW5rX2lkIjogIjFhMzYxYjE1LTEyODYtNGQyNi1iNzFiLWYwODRlZjE3ZGY0MSIsICJvcGVyYXRvcl9rZXkiOiB7ImtpZCI6ICJBQ0MtSUQtUkFORE9NIiwgImUiOiAiQVFBQiIsICJrdHkiOiAiUlNBIiwgIm4iOiAidG1obGFQVXdKZ280eVNUTXJUR0ZGeWJWeEsyOHVER3RKU0ZEZEdrM2JheFRXbWdmSzBDNkRNcXc1bHFwLUVYVE1UUmZJcU1iZE1jRG1VTm55SnBRMXcifSwgInZlcnNpb24iOiAiMS4yIiwgImNyX2tleXMiOiBbeyJ5IjogImRha3dlMlBwbWxkbGFjbnBvSGE1bHZrRDFabFhURnZXYTNlYURvRmZWaUkiLCAieCI6ICJoanFnTGlvRS1Kek51QVdFOVp3ZUE5QkRiNWxTU3pVUDZ6eHB4WlZyNG53IiwgImNydiI6ICJQLTI1NiIsICJrdHkiOiAiRUMiLCAia2lkIjogImFjYy1raWQtYTQwYjk5NzYtOTE2YS00YTEzLWExNDktNzI0MWNlNTZhYmI0In1dLCAic2VydmljZV9pZCI6ICI1ODJmMmJmNTBjZjJmNDY2M2VjNGYwMWYiLCAiaWF0IjogMTQ4MTEwNjg4Nn0"
+
+                                }
+
+                            },
+                            "type": "ServiceLinkRecord",
+                            "id": "1a361b15-1286-4d26-b71b-f084ef17df41"
+
+                        },
+                        "ssr": {
+                            "attributes": {
+                                "slsr": {
+                                    "header": {
+                                        "kid": "acc-kid-a40b9976-916a-4a13-a149-7241ce56abb4"
+
+                                    },
+                                    "protected": "eyJhbGciOiAiRVMyNTYifQ",
+                                    "payload": "eyJzbHJfaWQiOiAiMWEzNjFiMTUtMTI4Ni00ZDI2LWI3MWItZjA4NGVmMTdkZjQxIiwgImFjY291bnRfaWQiOiAiMiIsICJzdXJyb2dhdGVfaWQiOiAiZTE1MDUzZmQtMDgwOC00MTI1LTlhY2YtZjA2NDdkNjJhMmJiXzQ4NmIwMWNiLTUxOGEtNDgzOC1iZTYzLTYyNGYwZDg2YTJhMSIsICJzbF9zdGF0dXMiOiAiQWN0aXZlIiwgInZlcnNpb24iOiAiMS4yIiwgInJlY29yZF9pZCI6ICI0MmRkNjBkYy1iZGUzLTQwZmMtYTM4Yi04NjJhNzllMDQyYjgiLCAiaWF0IjogMTQ4MTEwNjg4NywgInByZXZfcmVjb3JkX2lkIjogIk5VTEwifQ",
+                                    "signature": "824jlcq5oKa2-xk9mswlyrgvhWQbkC3NbgeY0GT-IXvK9uxeMkxkHY0AQa1usan3WP6ee5SMbKClt7xRV_Q5oQ"
+
+                                }
+
+                            },
+                            "type": "ServiceLinkStatusRecord",
+                            "id": "42dd60dc-bde3-40fc-a38b-862a79e042b8"
+
+                        }
+
+                    }
+
+                    }
+
     def get_SLR_payload(self):
         base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["payload"]
-        debug_log.info("Decrypting SLR payload:")
-        payload = self.decrypt_payload(base64_payload)
+        debug_log.info("Decoding SLR payload:")
+        payload = self.decode_payload(base64_payload)
         return payload
 
-    def get_SLSR_payload(self):
+    def get_SSR_payload(self):
         base64_payload = self.slr["data"]["ssr"]["attributes"]["ssr"]["payload"]
-        debug_log.info("Decrypting SSR payload:")
-        payload = self.decrypt_payload(base64_payload)
+        debug_log.info("Decoding SSR payload:")
+        payload = self.decode_payload(base64_payload)
         return payload
 
     def get_token_key(self):
@@ -660,74 +703,26 @@ class SLR_tool:
         return self.get_SLR_payload()["cr_keys"]
 
 
-#
-# sl = SLR_tool()
-# print(dumps(sl.get_CR_payload(), indent=2))
-# print(sl.get_SLR_payload())
-# print(sl.get_cr_keys())
-# print(sl.get_rs_id())
-# print(sl.get_rs_set())
-# print(sl.get_slr_id())
-# print(sl.get_sink_surrogate_id())
-# print(sl.get_source_surrogate_id())
-
 from jwcrypto import jwk, jws
 
 
-class CR_tool:
+class CR_tool(base_token_tool):
     def __init__(self):
+        # This is the kind of structure this tool expects to work with
+        # csr and cr are both jws structures in the long (not compact) form.
         self.cr = {
-            "csr": {
-                "signature": "e4tiFSvnqUb8k1U6BXC5WhbkQWVJZqMsDqc3efPRkBcL1cM21mSJXYOS4dSiCx4ak8S8S1IKN4wcyuAxXfrGeQ",
-                "payload": "IntcImNvbW1vbl9wYXJ0XCI6IHtcInNscl9pZFwiOiBcImJhYmY5Mjc3LWEyZmItNGI4MS1iMTYyLTE4ZTI5MzUyNzYxN1wiLCBcInZlcnNpb25fbnVtYmVyXCI6IFwiU3RyaW5nXCIsIFwicnNfaWRcIjogXCIyXzYyNmE3YmZiLTk0MmEtNDI2ZC1hNDc2LWE0Mzk5NmYyMDAwNVwiLCBcImNyX2lkXCI6IFwiMjlmZmRkZmMtNjBhMS00YmYwLTkzMWMtNGQ1ZWYwMmQ2N2YyXCIsIFwiaXNzdWVkXCI6IDE0NzE1OTMwMjYsIFwic3ViamVjdF9pZFwiOiBcIjFcIiwgXCJub3RfYmVmb3JlXCI6IFwiU3RyaW5nXCIsIFwibm90X2FmdGVyXCI6IFwiU3RyaW5nXCIsIFwiaXNzdWVkX2F0XCI6IFwiU3RyaW5nXCIsIFwic3Vycm9nYXRlX2lkXCI6IFwiZTZlMjdlNzUtNjUxZi00Y2I0LTg5ZTItYTUxZWI5NDllYjYwXzJcIn0sIFwicm9sZV9zcGVjaWZpY19wYXJ0XCI6IHtcInJvbGVcIjogXCJTaW5rXCIsIFwidXNhZ2VfcnVsZXNcIjogW1wiQWxsIHlvdXIgY2F0cyBhcmUgYmVsb25nIHRvIHVzXCIsIFwiU29tZXRoaW5nIHJhbmRvbVwiXX0sIFwiZXh0ZW5zaW9uc1wiOiB7fSwgXCJtdmNyXCI6IHt9fSI",
-                "protected": "eyJhbGciOiAiRVMyNTYifQ",
-                "header": {
-                    "jwk": {
-                        "kty": "EC",
-                        "crv": "P-256",
-                        "y": "XIpGIZ7bz7uaoj_9L05CQSOw6VykuD6bK4r_OMVQSao",
-                        "x": "GfJCOXimGb3ZW4IJJIlKUZeoj8GCW7YYJRZgHuYUsds",
-                        "kid": "acc-kid-3802fd17-49f4-48fc-8ac1-09624a52a3ae"
-                    },
-                    "kid": "acc-kid-3802fd17-49f4-48fc-8ac1-09624a52a3ae"
-                }
-            },
-            "cr": {
-                "signature": "fiiVhAPxzYGgkV3D43FvgKSdIvDrsyMm_Vz4WWhBoLaXbTcZKNEvKL5Tx1O6YRwShOc9plK7YRxgWyY9OYd7zA",
-                "payload": "IntcImFjY291bnRfaWRcIjogXCJlNmUyN2U3NS02NTFmLTRjYjQtODllMi1hNTFlYjk0OWViNjBfMlwiLCBcImNyX2lkXCI6IFwiMjlmZmRkZmMtNjBhMS00YmYwLTkzMWMtNGQ1ZWYwMmQ2N2YyXCIsIFwicHJldl9yZWNvcmRfaWRcIjogXCJudWxsXCIsIFwicmVjb3JkX2lkXCI6IFwiZTBiZDk1MTUtNjA5Zi00YzMxLThiMmQtZDliMTY5NjdiZmQzXCIsIFwiaWF0XCI6IDE0NzE1OTMwMjYsIFwiY29uc2VudF9zdGF0dXNcIjogXCJBY3RpdmVcIn0i",
-                "protected": "eyJhbGciOiAiRVMyNTYifQ",
-                "header": {
-                    "jwk": {
-                        "kty": "EC",
-                        "crv": "P-256",
-                        "y": "XIpGIZ7bz7uaoj_9L05CQSOw6VykuD6bK4r_OMVQSao",
-                        "x": "GfJCOXimGb3ZW4IJJIlKUZeoj8GCW7YYJRZgHuYUsds",
-                        "kid": "acc-kid-3802fd17-49f4-48fc-8ac1-09624a52a3ae"
-                    },
-                    "kid": "acc-kid-3802fd17-49f4-48fc-8ac1-09624a52a3ae"
-                }
-            }
+            "csr": {},
+            "cr": {}
         }
-
-    def decrypt_payload(self, payload):
-        # print("payload :\n", slr)
-        # print("Before Fix:", payload)
-        payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
-        # print("After Fix :", payload)
-        content = decode(payload.encode())
-        payload = loads(content.decode("utf-8"))
-        debug_log.info("Decrypted payload is:")
-        debug_log.info(payload)
-        return payload
 
     def get_CR_payload(self):
         base64_payload = self.cr["cr"]["attributes"]["cr"]["payload"]
-        payload = self.decrypt_payload(base64_payload)
+        payload = self.decode_payload(base64_payload)
         return payload
 
     def get_CSR_payload(self):
         base64_payload = self.cr["csr"]["attributes"]["csr"]["payload"]
-        payload = self.decrypt_payload(base64_payload)
+        payload = self.decode_payload(base64_payload)
         return payload
 
     def get_cr_id_from_csr(self):
@@ -813,7 +808,8 @@ class CR_tool:
                 csr_jws.verify(cr_jwk)
                 return True
             except Exception as e:
-                debug_log.info("FAILED key verification for CSR: \n({})\n WITH KEY: \n({})".format(csr, cr_jwk.export_public()))
+                debug_log.info(
+                    "FAILED key verification for CSR: \n({})\n WITH KEY: \n({})".format(csr, cr_jwk.export_public()))
                 debug_log.exception(e)
                 pass
                 # print(repr(e))
@@ -840,7 +836,7 @@ class Token_tool:
         #  Replace key.
         self.key = None
 
-    def decrypt_payload(self, payload):
+    def decode_payload(self, payload):
         key = jwk.JWK()
         key.import_key(**self.key)
         token = jwt.JWT()
@@ -852,19 +848,17 @@ class Token_tool:
             # TODO: get new auth token and start again.
             raise e
         claims = loads(token.claims)
-        # payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
-        # content = decode(payload.encode('utf-8'))
-        debug_log.info("Decrypted following claims from token:")
+        debug_log.info("Decoded following claims from token:")
         debug_log.info(dumps(claims, indent=2))
         # payload = loads(loads(content.decode('utf-8')))
         return claims
 
     def get_token(self):
         debug_log.info("Fetching token..")
-        decrypted_token = self.decrypt_payload(self.token["auth_token"])
+        decoded_token = self.decode_payload(self.token["auth_token"])
         debug_log.info("Got following token:")
-        debug_log.info(dumps(decrypted_token, indent=2))
-        return decrypted_token
+        debug_log.info(dumps(decoded_token, indent=2))
+        return decoded_token
 
     def verify_token(self,
                      our_key):  # TODO: Get some clarification what we want to verify now that sub field doesn't contain key.
@@ -886,6 +880,3 @@ class Token_tool:
 
         # TODO: Figure out beter way to return aud
         return token
-
-# tt = Token_tool()
-# print(tt.decrypt_payload(tt.token["auth_token"]))

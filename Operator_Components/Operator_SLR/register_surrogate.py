@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 __author__ = 'alpaloma'
 import logging
+import time
 import traceback
 from json import loads, dumps
 from uuid import uuid4 as guid
-import time
-from DetailedHTTPException import DetailedHTTPException, error_handler
-from Templates import Sequences
+
 from flask import request, Blueprint, current_app
 from flask_cors import CORS
 from flask_restful import Resource, Api
-from helpers import AccountManagerHandler, Helpers, ServiceRegistryHandler
 from requests import post
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences
 
 # Flask init
 api_SLR_RegisterSur = Blueprint("api_SLR_RegisterSur", __name__)

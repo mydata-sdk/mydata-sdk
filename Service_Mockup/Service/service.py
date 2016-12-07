@@ -4,13 +4,14 @@ import logging
 import time
 from json import loads
 
-from DetailedHTTPException import DetailedHTTPException, error_handler
 from flask import request, Blueprint, current_app
 from flask_cors import CORS
 from flask_restful import Resource, Api
-from helpers import Helpers
 from jwcrypto import jwk
 from requests import post
+
+from DetailedHTTPException import DetailedHTTPException, error_handler
+from helpers_mock import Helpers
 
 debug_log = logging.getLogger("debug")
 
@@ -73,7 +74,7 @@ class UserLogin(Resource):
         debug_log.info(dumps(request.json, indent=2))
         user_id = request.json["user_id"]
         code = request.json["code"]
-        self.helpers.storeCodeUser({code: user_id})
+        self.helpers.store_code_user({code: user_id})
 
         debug_log.info("User logged in with id ({})".format(format(user_id)))
         endpoint = "/api/1.2/slr/auth"

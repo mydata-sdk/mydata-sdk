@@ -7,10 +7,11 @@ Based on:
 """
 
 import os
+
 from celery import Celery
 from flask import Flask
-from helpers import register_blueprints
 
+from helpers_op import register_blueprints
 
 
 def create_app(package_name, package_path, settings_override=None,

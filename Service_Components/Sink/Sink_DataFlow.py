@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
-from signed_requests.signed_request_auth import SignedRequest
-
-__author__ = 'alpaloma'
-from flask import Blueprint, current_app, request
-from helpers import Helpers, CR_tool
-import requests
+import logging
 import urllib
 from json import dumps, loads
-from DetailedHTTPException import error_handler
+
+import requests
+from flask import Blueprint, current_app, request
 from flask_restful import Resource, Api
-import logging
 from jwcrypto import jwk
-from Templates import Sequences
+
+from DetailedHTTPException import error_handler
+from helpers_srv import Helpers, CR_tool, Sequences
+from signed_requests.signed_request_auth import SignedRequest
+
 debug_log = logging.getLogger("debug")
 logger = logging.getLogger("sequence")
 api_Sink_blueprint = Blueprint("api_Sink_blueprint", __name__)
 api = Api()
 api.init_app(api_Sink_blueprint)
 
-sq = Sequences("Service_Components Mgmnt (Sink)", {})
+sq = Sequences("Service_Components Mgmnt (Sink)")
 # import xmltodict
 # @api.representation('application/xml')
 # def output_xml(data, code, headers=None):
