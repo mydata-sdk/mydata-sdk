@@ -48,7 +48,7 @@ class DataRequest(Resource):
         debug_log.info(authorization)
         pop_h = pop_handler(token=authorization.split(" ")[1]) # TODO: Logic to pick up PoP
         sq.task("Fetch at field from PoP")
-        decoded_pop_token = loads(pop_h.get_at())
+        decoded_pop_token = loads(pop_h.get_decoded_token())
         debug_log.info("Token verified state should be False here, it is: {}".format(pop_h.verified))
 
         debug_log.info(type(decoded_pop_token))
@@ -84,7 +84,7 @@ class DataRequest(Resource):
 
         sq.task("Validate Request(PoP token)")
         pop_h = pop_handler(token=authorization.split(" ")[1], key=pop_key)
-        decoded_pop_token = loads(pop_h.get_at())  # This step affects verified state of object.
+        decoded_pop_token = loads(pop_h.get_decoded_token())  # This step affects verified state of object.
         debug_log.info("Token verified state should be True here, it is: {}".format(pop_h.verified))
         # Validate Request
         if pop_h.verified is False:

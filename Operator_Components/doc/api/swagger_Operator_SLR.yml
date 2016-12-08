@@ -90,8 +90,8 @@ paths:
         schema:
           $ref: "#/definitions/VerifyParams"
       responses:
-        200:
-          description: "Returns 200 OK so Service Mngmt knows SLR was verified\
+        201:
+          description: "Returns 201 CREATED so Service Mngmt knows SLR was verified\
             \ successfully"
           schema:
             $ref: "#/definitions/VerifyResponse"

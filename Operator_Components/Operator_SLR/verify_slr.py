@@ -105,7 +105,7 @@ class VerifySLR(Resource):
                                             trace=traceback.format_exc(limit=100).splitlines())
             if reply.ok:
                 sq.reply_to("Service_Components Mgmnt", "201, SLR VERIFIED")
-                debug_log.info("Account Manager replied:\n{}".format(reply.text))
+                debug_log.info("Account Manager replied {} with content:\n{}".format(reply.status_code, reply.text))
                 return reply.text, reply.status_code
             else:
                 raise DetailedHTTPException(status=reply.status_code,
