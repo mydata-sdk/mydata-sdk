@@ -140,7 +140,7 @@ definitions:
             description: string containing code
       slr:
         type: object
-        description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-linking.pdf"
+        description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-service-linking.pdf"
   CodeResponse:
     properties:
       code:

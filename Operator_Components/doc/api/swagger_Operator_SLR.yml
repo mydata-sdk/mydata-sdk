@@ -188,7 +188,7 @@ definitions:
                 properties:
                   ssr:
                     type: object
-                    description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-linking.pdf"
+                    description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-service-linking.pdf"
               type:
                 type: string
                 description: string containing type
@@ -212,7 +212,7 @@ definitions:
                 properties:
                   slr:
                     type: object
-                    description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-linking.pdf"
+                    description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-service-linking.pdf"
               type:
                 type: string
                 description: string containing type

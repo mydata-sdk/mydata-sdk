@@ -115,6 +115,7 @@ class StartSlrFlow(Resource):
                 sq.send_to("Service_Components Mgmnt", "Redirect user to Service_Components Mgmnt login")
                 result = post(service_endpoint, json=code, timeout=self.request_timeout)
                 debug_log.info("#### Response to SLR flow end point: {}\n{}".format(result.status_code, result.text))
+
                 if not result.ok:
                     raise DetailedHTTPException(status=result.status_code,
                                                 detail={
@@ -122,7 +123,8 @@ class StartSlrFlow(Resource):
                                                            " to Service_Components Mgmnt",
                                                     "Error from Service_Components Mgmnt": loads(result.text)},
                                                 title=result.reason)
-
+                else:
+                    return {"status": "CREATED"}, 201
             except Timeout:
                 raise DetailedHTTPException(status=504,
                                             title="Request to Service_Components Mgmnt failed due to TimeoutError.",

@@ -3,15 +3,19 @@
     wsgi
     ~~~~
     overholt wsgi module
+    This is the beginning of all, it loads up the modules wanted using DispatcherMiddleware
+    The RestApiHandler section is for debugging purposes and enables generating JSequence styled descriptions.
+    It is optional and enabled only if RestApiHandler from restapi_logging_handler library is found.
 """
+
+import logging
 
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
-import logging
 
-import Operator_SLR
 import Operator_CR
 import Operator_Root
+import Operator_SLR
 
 logger = logging.getLogger("sequence")
 try:
