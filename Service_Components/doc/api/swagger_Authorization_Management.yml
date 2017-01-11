@@ -1,7 +1,7 @@
 ---
 swagger: "2.0"
 info:
-  version: "1.2"
+  version: "1.2.1"
   title: "Authorization Management API"
 host: "example.service_mgmnt.example"
 basePath: "/api/1.2/cr"
@@ -66,17 +66,17 @@ definitions:
         properties:
           cr:
             type: object
-            description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-data-authz.pdf"
+            description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-data-authz.pdf"
 
           csr:
             type: object
-            description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-data-authz.pdf"
+            description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-data-authz.pdf"
       sink:
         type: object
         properties:
           cr:
             type: object
-            description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-data-authz.pdf"
+            description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-data-authz.pdf"
           csr:
             type: object
-            description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-data-authz.pdf"
+            description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-data-authz.pdf"

@@ -9,6 +9,8 @@ from uuid import uuid4
 # TODO: Maybe these should be given as parameters
 #Service_ID_Source   = "57f3a57b0cf2fcf22eea33a2"  # MyLocation
 #Service_ID_Sink     = "57f3a57b0cf2fcf22eea33a3"  # PHR
+#Service_ID_Source   = "582b7df00cf2727145535753"  # MyLocation
+#Service_ID_Sink     = "582b7df00cf2727145535754"  # PHR
 Service_ID_Source   = "582f2bf50cf2f4663ec4f01f"  # MyLocation
 Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
 
@@ -34,9 +36,9 @@ def initialize(account_url):
             'username': username,
             'password': password,
             'acceptTermsOfService': 'True'
+            }
+          }
         }
-    }
-}
     resp = post(account_url + 'api/accounts/',
                 json=user_data)
     print(resp.status_code, resp.reason, resp.text, resp.url)
