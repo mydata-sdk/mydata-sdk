@@ -2,12 +2,30 @@ version: '2'
 
 services:
 
+  kongfig:
+    image: mashupmill/kongfig
+# Alternatively you can specify kongfig.yml using ENV_VAR
+# https://github.com/MashupMill/docker-kongfig/blob/master/entrypoint.sh#L23
+#    environment:
+#      - CONFIG=/config/
+    volumes:
+      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/:/config/
+    command: --path kongfig.yml --host kong:8001
+    networks:
+      - mydata-sandbox-backbone
+
+
   mysql-db:
     image: mysql:5.6
     container_name: mysql-db
     volumes:
       - mysql-data:/var/lib/mysql
-      - "./init-db:/docker-entrypoint-initdb.d:ro"
+      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-DBinit.sql:/docker-entrypoint-initdb.d/MyDataAccount-DBinit.sql
+      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-UserInit.sql:/docker-entrypoint-initdb.d/MyDataAccount-UserInit.sql
+      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Operator_Components/doc/database/Operator_Components-DBinit.sql:/docker-entrypoint-initdb.d/Operator_Components-DBinit.sql
+      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Components/doc/database/Service_Components-DBinit.sql:/docker-entrypoint-initdb.d/Service_Components-DBinit.sql
+      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Mockup/doc/database/Service_Mockup-DBinit.sql:/docker-entrypoint-initdb.d/Service_Mockup-DBinit.sql
+#      - "./init-db:/docker-entrypoint-initdb.d:ro"
     environment:
       - MYSQL_ROOT_PASSWORD=Y3xUcheg
       - MYSQL_USER=mydataaccount
@@ -39,6 +57,7 @@ services:
       - '8080:8080'
     networks:
       - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
 
   operator_components:
     build:
@@ -80,6 +99,7 @@ services:
       - '5000:5000'
     networks:
       - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
 
   service_components:
     build:
@@ -116,6 +136,7 @@ services:
       - VIRTUAL_HOST=localhost.service
     networks:
       - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
 
   service_mockup:
     build:
@@ -139,6 +160,7 @@ services:
       - MYSQL_PORT=3306
     networks:
       - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
 
   celery_worker_operator:
     build:
@@ -178,6 +200,7 @@ services:
       - VIRTUAL_HOST=localhost.celeryworker.operator
     networks:
       - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
 
   celery_worker_service:
     build:
@@ -222,6 +245,7 @@ services:
       - VIRTUAL_HOST=localhost.celeryworker.service
     networks:
       - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
 
   redis:
     image: redis:3.2-alpine
@@ -237,3 +261,6 @@ volumes:
 
 networks:
   mydata_sdk_demo_network:
+  mydata-sandbox-backbone:
+    external: true
+
