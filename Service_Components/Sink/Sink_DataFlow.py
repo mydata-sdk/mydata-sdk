@@ -63,6 +63,7 @@ class DebugDataFlow(Resource):
                     # TODO get the url from, config
                     debug_log.info(dumps(payload, indent=2))
                     req = requests.post("http://service_components:7000/api/1.2/sink_flow/dc", json=payload)
+                    debug_log.info("Request status {} and contenr:\n {}".format(req.status_code, req.text))
                     return req.content
 
 

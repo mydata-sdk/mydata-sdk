@@ -135,6 +135,7 @@ def make_data_request(service_url, rs_id):
     time.sleep(wait_time)
     req = get(service_url + "api/1.2/sink_flow/debug_dc/{}".format(rs_id))
     if not req.ok:
+        print(req.text, req.url)
         print("Debug Data request failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
             req.reason,
