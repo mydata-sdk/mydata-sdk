@@ -5,7 +5,7 @@ apis:
     ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
     plugins: []
     attributes:
-      request_path: /account
+      request_host: account.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://account:8080 # (required)
@@ -13,7 +13,7 @@ apis:
     ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
     plugins: []
     attributes:
-      request_path: /operator-mgmt
+      request_host: operator-mgmt.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://operator_components:5000 # (required)
@@ -21,7 +21,7 @@ apis:
     ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
     plugins: []
     attributes:
-      request_path: /service-mgmt
+      request_host: service-mgmt.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://service_components:7000 # (required)
@@ -29,7 +29,7 @@ apis:
     ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
     plugins: []
     attributes:
-      request_path: /service-mockup
+      request_host: service-mockup.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://service_mockup:2000 # (required)

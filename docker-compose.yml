@@ -94,6 +94,7 @@ services:
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
       - SERVICE_URL="http://service_components:7000"
+      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://node.registry.sandbox.mydata.fi"
       - VIRTUAL_HOST=localhost.operator
     ports:
       - '5000:5000'
