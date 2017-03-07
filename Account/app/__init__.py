@@ -17,8 +17,12 @@ sys.setdefaultencoding('utf-8')
 
 
 def create_app(config_filename='config'):
+    """
+    Application Factory
+    :param config_filename:
+    :return: Application object
+    """
     from flask import Flask, json, current_app
-    from flask_restful import Api
     from app.helpers import ApiError, make_json_response, get_custom_logger
     from app.app_modules import db, login_manager
 
@@ -36,9 +40,6 @@ def create_app(config_filename='config'):
         login_manager.login_message = current_app.config["LOGIN_MESSAGE"]
         login_manager.session_protection = current_app.config["SESSION_PROTECTION"]
         # TODO: Validate next()
-
-        # add prefix here or it won't work when you register blueprint
-        #api = Api(current_app, prefix=current_app.config["URL_PREFIX"])
 
         # Before each request
         @current_app.before_request
