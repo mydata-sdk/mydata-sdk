@@ -95,21 +95,32 @@ def get_custom_logger(logger_name='default_logger'):
 
     if len(logger.handlers) == 0:
         # TODO: This can not be correct solution
-        logger.setLevel(logging.DEBUG)
+        if current_app.config["LOG_LEVEL"] == 'DEBUG':
+            logger.setLevel(logging.DEBUG)
+        elif current_app.config["LOG_LEVEL"] == 'INFO':
+            logger.setLevel(logging.INFO)
+        elif current_app.config["LOG_LEVEL"] == 'WARNING':
+            logger.setLevel(logging.WARNING)
+        elif current_app.config["LOG_LEVEL"] == 'ERROR':
+            logger.setLevel(logging.ERROR)
+        elif current_app.config["LOG_LEVEL"] == 'CRITICAL':
+            logger.setLevel(logging.CRITICAL)
+        else:
+            logger.setLevel(logging.NOTSET)
 
         # create formatter
         formatter = logging.Formatter(current_app.config["LOG_FORMATTER"])
 
         # console handler
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.DEBUG)
+        #console_handler.setLevel(logging.DEBUG)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
         # file handler
         if current_app.config["LOG_TO_FILE"]:
             file_handler = TimedRotatingFileHandler(current_app.config["LOG_FILE"], when="midnight", interval=1, backupCount=10, utc=True)
-            file_handler.setLevel(logging.DEBUG)
+            #file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
 

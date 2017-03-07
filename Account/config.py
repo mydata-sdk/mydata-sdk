@@ -3,7 +3,7 @@
 from os import urandom
 
 # Statement for enabling the development environment
-DEBUG = True
+DEBUG = False
 
 # Enable more detailed logging
 SUPER_DEBUG = True
@@ -17,6 +17,7 @@ LOG_FORMATTER = '%(asctime)s - %(name)s in function %(funcName)s at line: %(line
 LOG_PATH = './logs/'
 LOG_FILE = LOG_PATH + 'account.log'
 LOG_TO_FILE = False
+LOG_LEVEL = 'INFO'
 
 # Define the application directory
 import os
