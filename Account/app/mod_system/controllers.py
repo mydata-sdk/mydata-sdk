@@ -23,6 +23,11 @@ logger = get_custom_logger('mod_system_controllers')
 # Resources
 class InitDb(Resource):
     def get(self, secret=None):
+        """
+        Clear database content and init with default accounts
+        :param secret:
+        :return:
+        """
 
         # Verifying secret
         logger.debug("Provided secret: " + str(secret))
@@ -184,5 +189,69 @@ class InitDb(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
+class ClearDb(Resource):
+    def get(self, secret=None):
+        """
+        Clear Database content
+        :param secret:
+        :return:
+        """
+
+        # Verifying secret
+        logger.debug("Provided secret: " + str(secret))
+        if secret is None:
+            logger.debug("No secret provided --> terminating")
+            raise ApiError(code=403, title="Provide correct secret!")
+
+        if secret != 'salainen':
+            logger.debug("Wrong secret provided --> terminating")
+            raise ApiError(code=403, title="Provide correct secret!")
+
+        # Response data container
+        response_data = {}
+
+        # Clear MySQL tables
+        logger.info("##########")
+        logger.info("Clearing MySQL DB")
+        try:
+            drop_table_content()
+        except Exception as exp:
+            logger.error("Could not clear DB tables: " + repr(exp))
+            raise ApiError(code=500, title="Could not clear DB tables", detail=repr(exp))
+        else:
+            logger.info("Cleared")
+            response_data['Account'] = "MySQL Database cleared"
+
+        # Clear Blackbox Sqlite
+        logger.info("##########")
+        logger.info("Clearing Blackbox Sqlite")
+        try:
+            # JWKs for accounts with id < 3 won't be deleted
+            clear_blackbox_sqlite_db()
+        except Exception as exp:
+            logger.error("Could not clear DB tables: " + repr(exp))
+            raise ApiError(code=500, title="Could not clear DB tables", detail=repr(exp))
+        else:
+            logger.info("Cleared")
+            response_data['Blackbox'] = "SQLite Database cleared"
+
+        # Clear ApiKey Sqlite
+        logger.info("##########")
+        logger.info("Clearing ApiKey Sqlite")
+        try:
+            # Api Keys for accounts with id < 3 won't be deleted
+            clear_apikey_sqlite_db()
+        except Exception as exp:
+            logger.error("Could not clear DB tables: " + repr(exp))
+            raise ApiError(code=500, title="Could not clear DB tables", detail=repr(exp))
+        else:
+            logger.info("Cleared")
+            response_data['ApiKey'] = "SQLite Database cleared"
+
+        response_data_dict = {'status': 'DB cleared'}
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
 # Register resources
 api.add_resource(InitDb, '/system/db/init/<string:secret>', endpoint='db_init')
+api.add_resource(ClearDb, '/system/db/clear/<string:secret>', endpoint='db_clear')
