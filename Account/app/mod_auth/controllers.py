@@ -9,7 +9,7 @@ import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/b
 
 # Import flask dependencies
 from flask import Blueprint, render_template, make_response, flash
-from flask.ext.login import login_user, login_required, logout_user
+from flask_login import login_user, login_required, logout_user
 from flask_restful import Resource, Api, reqparse
 
 # Import the database object from the main app module

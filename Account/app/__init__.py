@@ -24,8 +24,8 @@ sys.setdefaultencoding('utf-8')
 # Import flask and template operators
 from flask import Flask, render_template, Blueprint, json, make_response
 from flask_restful import Resource, Api
-from flask.ext.mysqldb import MySQL
-from flask.ext.login import LoginManager
+from flask_mysqldb import MySQL
+from flask_login import LoginManager
 
 # Define the WSGI application object
 app = Flask(__name__)

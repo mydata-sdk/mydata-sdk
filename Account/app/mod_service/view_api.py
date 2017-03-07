@@ -22,7 +22,7 @@ from random import randint
 # Import flask dependencies
 import time
 from flask import Blueprint, render_template, make_response, flash, session, request, jsonify, url_for, json
-from flask.ext.login import login_user, login_required
+from flask_login import login_user, login_required
 from flask_restful import Resource, Api, reqparse
 from base64 import b64decode
 

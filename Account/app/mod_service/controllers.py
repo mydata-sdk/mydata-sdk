@@ -12,7 +12,7 @@ from time import time
 
 # Import flask dependencies
 from flask import Blueprint, render_template, make_response, flash, session
-from flask.ext.login import login_user, login_required
+from flask_login import login_user, login_required
 from flask_restful import Resource, Api, reqparse
 
 # Import the database object from the main app module
