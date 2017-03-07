@@ -10,12 +10,12 @@ import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/b
 from random import randint
 
 # Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash, session, request
+from flask import Blueprint, render_template, make_response, flash, session, request, current_app
 from flask_login import login_user, login_required
 from flask_restful import Resource, Api, reqparse
 
-# Import the database object from the main app module
-from app import db, api, login_manager, app
+# Import the database object
+from app.app_modules import db
 
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
@@ -35,6 +35,7 @@ from app.mod_database.models import Account, LocalIdentityPWD, LocalIdentity, Sa
 from app.mod_api_auth.controllers import get_account_id_by_api_key
 
 mod_account_api = Blueprint('account_api', __name__, template_folder='templates')
+account_api = Api(mod_account_api)
 
 # create logger with 'spam_application'
 logger = get_custom_logger(__name__)
@@ -63,7 +64,7 @@ class Accounts(Resource):
         """
 
         try:
-            endpoint = str(api.url_for(self))
+            endpoint = str(account_api.url_for(self))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -224,7 +225,7 @@ class AccountExport(Resource):
     def get(self, account_id):
         logger.info("AccountExport")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -283,7 +284,7 @@ class AccountParticulars(Resource):
     def get(self, account_id):
         logger.info("AccountParticulars")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -343,7 +344,7 @@ class AccountParticular(Resource):
     def get(self, account_id, particulars_id):
         logger.info("AccountParticulars")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, particulars_id=particulars_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, particulars_id=particulars_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -408,7 +409,7 @@ class AccountParticular(Resource):
     def patch(self, account_id, particulars_id):
         logger.info("AccountParticular")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, particulars_id=particulars_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, particulars_id=particulars_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -528,7 +529,7 @@ class AccountContacts(Resource):
     def get(self, account_id):
         logger.info("AccountContacts")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -585,7 +586,7 @@ class AccountContacts(Resource):
     def post(self, account_id):
         logger.info("AccountContacts")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -671,7 +672,7 @@ class AccountContact(Resource):
     def get(self, account_id, contacts_id):
         logger.info("AccountContact")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, contacts_id=contacts_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, contacts_id=contacts_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -736,7 +737,7 @@ class AccountContact(Resource):
     def patch(self, account_id, contacts_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountContact")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, contacts_id=contacts_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, contacts_id=contacts_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -856,7 +857,7 @@ class AccountEmails(Resource):
     def get(self, account_id):
         logger.info("AccountEmails")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -913,7 +914,7 @@ class AccountEmails(Resource):
     def post(self, account_id):
         logger.info("AccountEmails")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -999,7 +1000,7 @@ class AccountEmail(Resource):
     def get(self, account_id, emails_id):
         logger.info("AccountEmail")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, emails_id=emails_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, emails_id=emails_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1064,7 +1065,7 @@ class AccountEmail(Resource):
     def patch(self, account_id, emails_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountEmail")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, emails_id=emails_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, emails_id=emails_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1185,7 +1186,7 @@ class AccountTelephones(Resource):
     def get(self, account_id):
         logger.info("AccountTelephones")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1242,7 +1243,7 @@ class AccountTelephones(Resource):
     def post(self, account_id):
         logger.info("AccountTelephones")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1328,7 +1329,7 @@ class AccountTelephone(Resource):
     def get(self, account_id, telephones_id):
         logger.info("AccountTelephone")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, telephones_id=telephones_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, telephones_id=telephones_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1393,7 +1394,7 @@ class AccountTelephone(Resource):
     def patch(self, account_id, telephones_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountTelephone")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, telephones_id=telephones_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, telephones_id=telephones_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1514,7 +1515,7 @@ class AccountSettings(Resource):
     def get(self, account_id):
         logger.info("AccountSettings")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1571,7 +1572,7 @@ class AccountSettings(Resource):
     def post(self, account_id):
         logger.info("AccountSettings")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1657,7 +1658,7 @@ class AccountSetting(Resource):
     def get(self, account_id, settings_id):
         logger.info("AccountSetting")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, settings_id=settings_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, settings_id=settings_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1722,7 +1723,7 @@ class AccountSetting(Resource):
     def patch(self, account_id, settings_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountSetting")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, settings_id=settings_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, settings_id=settings_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1843,7 +1844,7 @@ class AccountEventLogs(Resource):
     def get(self, account_id):
         logger.info("AccountEventLogs")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1902,7 +1903,7 @@ class AccountEventLog(Resource):
     def get(self, account_id, event_log_id):
         logger.info("AccountEventLog")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, event_log_id=event_log_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, event_log_id=event_log_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -1969,7 +1970,7 @@ class AccountServiceLinkRecords(Resource):
     def get(self, account_id):
         logger.info("AccountServiceLinkRecords")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -2028,7 +2029,7 @@ class AccountServiceLinkRecord(Resource):
     def get(self, account_id, slr_id):
         logger.info("AccountServiceLinkRecord")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -2095,7 +2096,7 @@ class AccountServiceLinkStatusRecords(Resource):
     def get(self, account_id, slr_id):
         logger.info("AccountServiceLinkStatusRecords")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -2167,7 +2168,7 @@ class AccountServiceLinkStatusRecord(Resource):
     def get(self, account_id, slr_id, slsr_id):
         logger.info("AccountServiceLinkStatusRecord")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id, slsr_id=slsr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id, slsr_id=slsr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -2247,7 +2248,7 @@ class AccountConsentRecords(Resource):
     def get(self, account_id, slr_id):
         logger.info("AccountConsentRecords")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -2319,7 +2320,7 @@ class AccountConsentRecord(Resource):
     def get(self, account_id, slr_id, cr_id):
         logger.info("AccountConsentRecord")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -2399,7 +2400,7 @@ class AccountConsentStatusRecords(Resource):
     def get(self, account_id, slr_id, cr_id):
         logger.info("AccountConsentStatusRecords")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -2480,7 +2481,7 @@ class AccountConsentStatusRecord(Resource):
     def get(self, account_id, slr_id, cr_id, csr_id):
         logger.info("AccountConsentStatusRecord")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id, csr_id=csr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id, csr_id=csr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -2563,31 +2564,29 @@ class AccountConsentStatusRecord(Resource):
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
 
-
-
 # Register resources
-api.add_resource(Accounts, '/api/accounts/', '/', endpoint='/api/accounts/')
-api.add_resource(AccountExport, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
-api.add_resource(AccountParticulars, '/api/accounts/<string:account_id>/particulars/', endpoint='account-particulars')
-api.add_resource(AccountParticular, '/api/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')
-api.add_resource(AccountContacts, '/api/accounts/<string:account_id>/contacts/', endpoint='account-contacts')
-api.add_resource(AccountContact, '/api/accounts/<string:account_id>/contacts/<string:contacts_id>/', endpoint='account-contact')
-api.add_resource(AccountEmails, '/api/accounts/<string:account_id>/emails/', endpoint='account-emails')
-api.add_resource(AccountEmail, '/api/accounts/<string:account_id>/emails/<string:emails_id>/', endpoint='account-email')
-api.add_resource(AccountTelephones, '/api/accounts/<string:account_id>/telephones/', endpoint='account-telephones')
-api.add_resource(AccountTelephone, '/api/accounts/<string:account_id>/telephones/<string:telephones_id>/', endpoint='account-telephone')
-api.add_resource(AccountSettings, '/api/accounts/<string:account_id>/settings/', endpoint='account-settings')
-api.add_resource(AccountSetting, '/api/accounts/<string:account_id>/settings/<string:settings_id>/', endpoint='account-setting')
-api.add_resource(AccountEventLogs, '/api/accounts/<string:account_id>/logs/events/', endpoint='account-events')
-api.add_resource(AccountEventLog, '/api/accounts/<string:account_id>/logs/events/<string:event_log_id>/', endpoint='account-event')
-api.add_resource(AccountServiceLinkRecords, '/api/accounts/<string:account_id>/servicelinks/', endpoint='account-slrs')
-api.add_resource(AccountServiceLinkRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/', endpoint='account-slr')
-api.add_resource(AccountServiceLinkStatusRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/', endpoint='account-slsrs')
-api.add_resource(AccountServiceLinkStatusRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/<string:slsr_id>/', endpoint='account-slsr')
-api.add_resource(AccountConsentRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/', endpoint='account-crs')
-api.add_resource(AccountConsentRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/', endpoint='account-cr')
-api.add_resource(AccountConsentStatusRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/', endpoint='account-csrs')
-api.add_resource(AccountConsentStatusRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/<string:csr_id>/', endpoint='account-csr')
+account_api.add_resource(Accounts, '/api/accounts/', '/', endpoint='accounts')
+account_api.add_resource(AccountExport, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
+account_api.add_resource(AccountParticulars, '/api/accounts/<string:account_id>/particulars/', endpoint='account-particulars')
+account_api.add_resource(AccountParticular, '/api/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')
+account_api.add_resource(AccountContacts, '/api/accounts/<string:account_id>/contacts/', endpoint='account-contacts')
+account_api.add_resource(AccountContact, '/api/accounts/<string:account_id>/contacts/<string:contacts_id>/', endpoint='account-contact')
+account_api.add_resource(AccountEmails, '/api/accounts/<string:account_id>/emails/', endpoint='account-emails')
+account_api.add_resource(AccountEmail, '/api/accounts/<string:account_id>/emails/<string:emails_id>/', endpoint='account-email')
+account_api.add_resource(AccountTelephones, '/api/accounts/<string:account_id>/telephones/', endpoint='account-telephones')
+account_api.add_resource(AccountTelephone, '/api/accounts/<string:account_id>/telephones/<string:telephones_id>/', endpoint='account-telephone')
+account_api.add_resource(AccountSettings, '/api/accounts/<string:account_id>/settings/', endpoint='account-settings')
+account_api.add_resource(AccountSetting, '/api/accounts/<string:account_id>/settings/<string:settings_id>/', endpoint='account-setting')
+account_api.add_resource(AccountEventLogs, '/api/accounts/<string:account_id>/logs/events/', endpoint='account-events')
+account_api.add_resource(AccountEventLog, '/api/accounts/<string:account_id>/logs/events/<string:event_log_id>/', endpoint='account-event')
+account_api.add_resource(AccountServiceLinkRecords, '/api/accounts/<string:account_id>/servicelinks/', endpoint='account-slrs')
+account_api.add_resource(AccountServiceLinkRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/', endpoint='account-slr')
+account_api.add_resource(AccountServiceLinkStatusRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/', endpoint='account-slsrs')
+account_api.add_resource(AccountServiceLinkStatusRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/<string:slsr_id>/', endpoint='account-slsr')
+account_api.add_resource(AccountConsentRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/', endpoint='account-crs')
+account_api.add_resource(AccountConsentRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/', endpoint='account-cr')
+account_api.add_resource(AccountConsentStatusRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/', endpoint='account-csrs')
+account_api.add_resource(AccountConsentStatusRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/<string:csr_id>/', endpoint='account-csr')
 
 
 

@@ -17,9 +17,8 @@ import base64
 from functools import wraps
 from uuid import uuid4
 
-from flask import request
+from flask import request, current_app
 
-from app import ApiError
 from app.mod_api_auth.services import get_sqlite_connection, get_sqlite_cursor, store_api_key_to_db, get_api_key, \
     get_account_id
 from app.mod_blackbox.helpers import append_description_to_exception, get_custom_logger
@@ -218,13 +217,13 @@ def provideApiKey(endpoint="provideApiKey()"):
     except Exception as exp:
         logger.debug("Could not convert endpoint to str. Using default value.")
     error_detail = {'0': 'ApiKey MUST be provided for authentication.'}
-    raise ApiError(code=401, title="No ApiKey in Request Headers", detail=error_detail, source=endpoint)
+    raise apiError(code=401, title="No ApiKey in Request Headers", detail=error_detail, source=endpoint)
 
 
 def wrongApiKey():
     """Sends a 401 response"""
     error_detail = {'0': 'Correct ApiKey MUST be provided for authentication.'}
-    raise ApiError(code=401, title="Invalid ApiKey", detail=error_detail, source="wrongApiKey()")
+    raise apiError(code=401, title="Invalid ApiKey", detail=error_detail, source="wrongApiKey()")
 
 
 def requires_api_auth_user(f):

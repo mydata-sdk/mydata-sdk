@@ -70,7 +70,7 @@ http_responses = {
 def get_custom_logger(logger_name='default_logger'):
     # TODO: Is it ok to import here?
     from os import mkdir
-    from app import app
+    from flask import current_app
 
     # Logging levels
     # CRITICAL
@@ -81,15 +81,15 @@ def get_custom_logger(logger_name='default_logger'):
     # NOTSET
 
     # If there is no directory './logs', it will be created
-    if app.config["LOG_PATH"] != "./":
-        if not isdir(app.config["LOG_PATH"]):
+    if current_app.config["LOG_PATH"] != "./":
+        if not isdir(current_app.config["LOG_PATH"]):
             try:
-                mkdir(app.config["LOG_PATH"])
-                print("Creating LOG_PATH: '{}'.".format(app.config["LOG_PATH"]))
+                mkdir(current_app.config["LOG_PATH"])
+                print("Creating LOG_PATH: '{}'.".format(current_app.config["LOG_PATH"]))
             except IOError:
-                print("LOG_PATH: '{}' already exists.".format(app.config["LOG_PATH"]))
+                print("LOG_PATH: '{}' already exists.".format(current_app.config["LOG_PATH"]))
             except Exception as e:
-                print("LOG_PATH: '{}' could not be created. Exception: {}.".format(app.config["LOG_PATH"], repr(e)))
+                print("LOG_PATH: '{}' could not be created. Exception: {}.".format(current_app.config["LOG_PATH"], repr(e)))
 
     logger = logging.getLogger(logger_name)
 
@@ -98,7 +98,7 @@ def get_custom_logger(logger_name='default_logger'):
         logger.setLevel(logging.DEBUG)
 
         # create formatter
-        formatter = logging.Formatter(app.config["LOG_FORMATTER"])
+        formatter = logging.Formatter(current_app.config["LOG_FORMATTER"])
 
         # console handler
         console_handler = logging.StreamHandler()
@@ -107,8 +107,8 @@ def get_custom_logger(logger_name='default_logger'):
         logger.addHandler(console_handler)
 
         # file handler
-        if app.config["LOG_TO_FILE"]:
-            file_handler = TimedRotatingFileHandler(app.config["LOG_FILE"], when="midnight", interval=1, backupCount=10, utc=True)
+        if current_app.config["LOG_TO_FILE"]:
+            file_handler = TimedRotatingFileHandler(current_app.config["LOG_FILE"], when="midnight", interval=1, backupCount=10, utc=True)
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)

@@ -5,9 +5,7 @@ import uuid
 import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
 
 # Import the database object from the main app module
-from flask import json
-
-from app import login_manager, app
+from flask import json, current_app
 
 # create logger with 'spam_application'
 from app.helpers import get_custom_logger
@@ -23,7 +21,7 @@ def get_account_by_id(cursor=None, account_id=None):
         ###
         # User info by acoount_id
         logger.debug('User info by acoount_id')
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('account_id: ' + repr(account_id))
 
         sql_query = "SELECT " \
@@ -44,13 +42,13 @@ def get_account_by_id(cursor=None, account_id=None):
                     "ON MyDataAccount.Accounts.id = MyDataAccount.Emails.Accounts_id " \
                     "WHERE MyDataAccount.Accounts.id = '%s' AND MyDataAccount.Emails.prime = 1" % (account_id)
 
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('sql_query: ' + repr(sql_query))
 
         cursor.execute(sql_query)
 
         data = cursor.fetchone()
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('data: ' + repr(data))
 
         account_id_from_db = unicode(data[0])
@@ -65,14 +63,14 @@ def get_account_by_id(cursor=None, account_id=None):
     except Exception as exp:
         logger.debug('Account not found: ' + repr(exp))
 
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('Exception: ' + repr(exp))
 
         return cursor, None
 
     else:
         logger.debug('Account found with given id: ' + str(account_id))
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('account_id_from_db: ' + str(account_id_from_db))
             logger.debug('identity_id_from_db: ' + str(identity_id_from_db))
             logger.debug('username_from_db: ' + str(username_from_db))
@@ -120,7 +118,7 @@ def get_account_by_username_and_password(cursor=None, username=None, password=No
                     "ON MyDataAccount.Salts.LocalIdentities_id = MyDataAccount.LocalIdentities.id " \
                     "WHERE MyDataAccount.LocalIdentities.username = '%s'" % (username_to_check)
 
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('sql_query: ' + repr(sql_query))
 
         cursor.execute(sql_query)
@@ -135,14 +133,14 @@ def get_account_by_username_and_password(cursor=None, username=None, password=No
     except Exception as exp:
         logger.debug('Authentication failed: ' + repr(exp))
 
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('Exception: ' + repr(exp))
 
         return cursor, None
 
     else:
         logger.debug('User found with given username: ' + username)
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('account_id_from_db: ' + account_id_from_db)
             logger.debug('identity_id_from_db: ' + identity_id_from_db)
             logger.debug('username_from_db: ' + username_from_db)
@@ -150,7 +148,7 @@ def get_account_by_username_and_password(cursor=None, username=None, password=No
             logger.debug('salt_from_db: ' + salt_from_db)
 
     if bcrypt.hashpw(password_to_check, salt_from_db) == password_from_db:
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('Password hash from client: ' + bcrypt.hashpw(password_to_check, salt_from_db))
             logger.debug('Password hash from db    : ' + password_from_db)
 
@@ -159,7 +157,7 @@ def get_account_by_username_and_password(cursor=None, username=None, password=No
         return cursor, user
 
     else:
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('Password hash from client: ' + bcrypt.hashpw(password_to_check, salt_from_db))
             logger.debug('Password hash from db    : ' + password_from_db)
 
@@ -169,9 +167,9 @@ def get_account_by_username_and_password(cursor=None, username=None, password=No
 
 # user_loader callback for Flask-Login.
 # https://flask-login.readthedocs.org/en/latest/#how-it-works
-@login_manager.user_loader
+@current_app.login_manager.user_loader
 def load_user(account_id):
-    if app.config["SUPER_DEBUG"]:
+    if current_app.config["SUPER_DEBUG"]:
         logger.debug("load_user(account_id), account_id=" + account_id)
 
     cursor = get_db_cursor()
@@ -205,7 +203,7 @@ def get_account_id_by_username_and_password(username=None, password=None):
                     "ON MyDataAccount.Salts.LocalIdentities_id = MyDataAccount.LocalIdentities.id " \
                     "WHERE MyDataAccount.LocalIdentities.username = '%s'" % (username_to_check)
 
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('sql_query: ' + repr(sql_query))
 
         # DB cursor
@@ -223,7 +221,7 @@ def get_account_id_by_username_and_password(username=None, password=None):
     except Exception as exp:
         logger.debug('Authentication failed: ' + repr(exp))
 
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('Exception: ' + repr(exp))
 
         return None

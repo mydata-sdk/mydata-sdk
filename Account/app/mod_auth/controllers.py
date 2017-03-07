@@ -8,12 +8,12 @@ import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/b
 #from Crypto.Random.random import StrongRandom
 
 # Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash
+from flask import Blueprint, render_template, make_response, flash, current_app
 from flask_login import login_user, login_required, logout_user
 from flask_restful import Resource, Api, reqparse
 
-# Import the database object from the main app module
-from app import db, api, app
+# Import the database object
+from app.app_modules import db
 
 # Import Models
 from app.helpers import get_custom_logger
@@ -28,6 +28,7 @@ from app.mod_account.view_html import Home
 
 # Define the blueprint: 'auth', set its url prefix: app.url/auth
 mod_auth = Blueprint('auth', __name__, template_folder='templates')
+api = Api(mod_auth)
 
 # create logger with 'spam_application'
 logger = get_custom_logger('mod_auth_controllers')
@@ -55,7 +56,7 @@ class SignIn(Resource):
 
         cursor, registered_user = get_account_by_username_and_password(cursor=cursor, username=username_to_check, password=password_to_check)
 
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug("registered_user: " + registered_user.__repr__())
 
         if registered_user is None:

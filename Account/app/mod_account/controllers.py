@@ -10,12 +10,12 @@ import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/b
 from random import randint
 
 # Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash, session
+from flask import Blueprint, render_template, make_response, flash, session, current_app
 from flask_login import login_user, login_required
 from flask_restful import Resource, Api, reqparse
 
-# Import the database object from the main app module
-from app import db, api, login_manager, app
+# Import the database object
+from app.app_modules import db
 
 # Import services
 from app.helpers import get_custom_logger, ApiError

@@ -9,12 +9,11 @@ import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/b
 from random import randint
 
 # Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash, session
-from flask_login import login_user, login_required
-from flask_restful import Resource, Api, reqparse
+from flask import Blueprint, render_template, make_response, session
+from flask_login import login_required
+from flask_restful import Api, Resource
 
 # Import the database object from the main app module
-from app import db, api, login_manager, app
 
 # Import services
 from app.helpers import get_custom_logger
@@ -22,6 +21,7 @@ from app.mod_api_auth.controllers import get_account_api_key
 from app.mod_database.helpers import get_db_cursor
 
 mod_account_html = Blueprint('account_html', __name__, template_folder='templates')
+api = Api(mod_account_html)
 
 # create logger with 'spam_application'
 logger = get_custom_logger('mod_account_view_html')

@@ -3,11 +3,11 @@
 # Import dependencies
 import logging
 
-# Import the database object from the main app module
-from app import db, app
-
-# create logger with 'spam_application'
+from flask import current_app
 from app.helpers import get_custom_logger
+
+# Import the database object
+from app.app_modules import db
 
 logger = get_custom_logger(__name__)
 
@@ -52,7 +52,7 @@ def execute_sql_insert(cursor, sql_query):
 
     last_id = ""
 
-    if app.config["SUPER_DEBUG"]:
+    if current_app.config["SUPER_DEBUG"]:
         logger.debug('sql_query: ' + repr(sql_query))
 
     try:
@@ -149,7 +149,7 @@ def execute_sql_select(cursor=None, sql_query=None):
     """
     logger.info("Executing")
 
-    if app.config["SUPER_DEBUG"]:
+    if current_app.config["SUPER_DEBUG"]:
         logger.debug('sql_query: ' + repr(sql_query))
 
     try:
@@ -165,7 +165,7 @@ def execute_sql_select(cursor=None, sql_query=None):
         logger.debug('cursor.fetchall() failed: ' + repr(exp))
         data = 'No content'
 
-    if app.config["SUPER_DEBUG"]:
+    if current_app.config["SUPER_DEBUG"]:
         logger.debug('data ' + repr(data))
 
     return cursor, data
@@ -217,7 +217,7 @@ def execute_sql_count(cursor=None, sql_query=None):
 
     consent_count = 0
 
-    if app.config["SUPER_DEBUG"]:
+    if current_app.config["SUPER_DEBUG"]:
         logger.debug('sql_query: ' + repr(sql_query))
 
     try:
@@ -229,7 +229,7 @@ def execute_sql_count(cursor=None, sql_query=None):
 
     try:
         data = cursor.fetchone()
-        if app.config["SUPER_DEBUG"]:
+        if current_app.config["SUPER_DEBUG"]:
             logger.debug('data: ' + repr(data))
 
         consent_count = int(data[0])
@@ -237,7 +237,7 @@ def execute_sql_count(cursor=None, sql_query=None):
     except Exception as exp:
         logger.debug('cursor.fetchone() failed: ' + repr(exp))
 
-    if app.config["SUPER_DEBUG"]:
+    if current_app.config["SUPER_DEBUG"]:
         logger.debug('data ' + repr(data))
 
     return cursor, consent_count

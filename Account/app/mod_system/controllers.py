@@ -1,39 +1,20 @@
 # -*- coding: utf-8 -*-
 
 # Import dependencies
-import json
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-
-# Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash
-from flask_login import login_user, login_required
-from flask_restful import Resource, Api, reqparse
+from flask import Blueprint, make_response
+from flask_restful import Resource, Api
 import requests
 
-# Import the database object from the main app module
-from app import db, api, app, make_json_response
-
 # Import Models
-from app.helpers import get_custom_logger, ApiError
-from app.mod_account.view_api import Accounts
-from app.mod_api_auth.controllers import gen_account_api_key
+from app.helpers import get_custom_logger, ApiError, make_json_response
+from app.mod_account.view_api import Accounts, account_api
 from app.mod_api_auth.services import clear_apikey_sqlite_db
-from app.mod_auth.controllers import SignUp
-from app.mod_auth.helpers import get_account_by_username_and_password
-
-# Import Resources
-from app.mod_blackbox.controllers import gen_account_key
 from app.mod_blackbox.services import clear_blackbox_sqlite_db
-from app.mod_database.helpers import get_db_cursor, drop_table_content
-from app.mod_database.models import Particulars, Account, LocalIdentityPWD, LocalIdentity, Salt, Email
-from app.mod_account.view_html import Home
+from app.mod_database.helpers import drop_table_content
 
 # Define the blueprint: 'auth', set its url prefix: app.url/auth
 mod_system = Blueprint('system', __name__, template_folder='templates')
+api = Api(mod_system)
 
 # create logger with 'spam_application'
 logger = get_custom_logger('mod_system_controllers')
@@ -172,7 +153,7 @@ class InitDb(Resource):
         logger.debug("##########")
         #url = api.url_for(resource=SignUp, _external=True)
         headers = {'Content-Type': 'application/json'}
-        url = api.url_for(resource=Accounts, _external=True,)
+        url = account_api.url_for(resource=Accounts, _external=True)
         logger.debug("Posting: " + str(url))
 
         logger.debug("##########")
@@ -199,29 +180,8 @@ class InitDb(Resource):
         if r.status_code != 201:
             raise ApiError(code=500, title="Could not create third user", detail=str(r.text))
 
-
-        #return make_json_response(data=response_data, status_code=418)
-
-        # TODO: Remove following before production and uncomment above line
-        # Response data
-        response_text = "  \
-            I'm a little teapot short and stout. <br> \
-            Here is my handle. <br> \
-            Here is my spout. <br> \
-            When I get all steamed up, <br> \
-            Hear me shout! <br> \
-            Just tip me over <br> \
-            And pour me out <br> \
-             <br>\
-            I'm a clever teapot, yes it's true. <br> \
-            Here's an example of what I can do. <br> \
-            I can turn my handle to a spout. <br> \
-            Just tip me over and pour me out. <br> <br> \
-            <a href=\"https://en.wikipedia.org/wiki/Hyper_Text_Coffee_Pot_Control_Protocol\" target=\"_blank\">https://en.wikipedia.org/wiki/Hyper_Text_Coffee_Pot_Control_Protocol</a> \
-        "
-
-        response = make_response((response_text, 418))
-        return response
+        response_data_dict = {'status': 'reset completed'}
+        return make_json_response(data=response_data_dict, status_code=200)
 
 
 # Register resources

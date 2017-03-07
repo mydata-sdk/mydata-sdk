@@ -21,13 +21,10 @@ from random import randint
 
 # Import flask dependencies
 import time
-from flask import Blueprint, render_template, make_response, flash, session, request, jsonify, url_for, json
+from flask import Blueprint, render_template, make_response, flash, session, request, jsonify, url_for, json, current_app
 from flask_login import login_user, login_required
 from flask_restful import Resource, Api, reqparse
 from base64 import b64decode
-
-# Import the database object from the main app module
-from app import db, api, login_manager, app
 
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
@@ -41,6 +38,7 @@ from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, g
 from app.mod_service.models import NewServiceLink, VerifyServiceLink
 
 mod_service_api = Blueprint('service_api', __name__, template_folder='templates')
+api = Api(mod_service_api)
 
 # create logger with 'spam_application'
 logger = get_custom_logger('mod_service_view_api')

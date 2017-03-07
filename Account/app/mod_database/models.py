@@ -7,9 +7,7 @@ import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/b
 
 # Import the database object from the main app module
 import datetime
-from flask import json
-
-from app import db, api, login_manager, app
+from flask import json, current_app
 
 # create logger with 'spam_application'
 from app.helpers import get_custom_logger
@@ -691,7 +689,7 @@ class Particulars():
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", firstname="", lastname="", date_of_birth="", img_url=app.config['AVATAR_URL'], account_id="", deleted=0, table_name="MyDataAccount.Particulars"):
+    def __init__(self, id="", firstname="", lastname="", date_of_birth="", img_url=current_app.config['AVATAR_URL'], account_id="", deleted=0, table_name="MyDataAccount.Particulars"):
         if id is not None:
             self.id = id
         if firstname is not None:
