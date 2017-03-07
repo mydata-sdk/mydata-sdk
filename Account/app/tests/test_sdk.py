@@ -18,14 +18,17 @@ from app import create_app
 class SdkTestCase(unittest.TestCase):
 
     def setUp(self):
-        print("Setting Up")
+        print("setUp....")
         app = create_app()
         app.config['TESTING'] = True
         app = app.test_client()
         self.app = app
+        print("OK")
 
     def tearDown(self):
-        pass
+        print("tearDown....")
+        self.test_clear_db()
+        print("OK")
 
     def test_clear_db(self):
         response = self.app.get('/system/db/clear/salainen')
