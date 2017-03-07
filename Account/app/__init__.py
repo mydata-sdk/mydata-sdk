@@ -79,8 +79,5 @@ def create_app(config_filename='config'):
         current_app.register_blueprint(mod_system)
         current_app.register_blueprint(mod_authorization_api)
 
-        # Print URL map
-        print current_app.url_map
-
     return app
 
