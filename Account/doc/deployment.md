@@ -8,7 +8,7 @@ Note: Instructions based on clean Ubuntu 14.04 server
     sudo apt-get update
 
 ### MySQL Database
-    sudo apt-get -y install mysql-server-5.6
+    sudo apt-get -y install mysql-server-5.7
 
 You will be prompted for prompted to create a root password during the installation. 
 These instructions are using 'Y3xUcheg' as root password.
