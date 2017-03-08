@@ -22,7 +22,7 @@ class SdkTestCase(unittest.TestCase):
         TestCase Set Up
         :return:
         """
-        print("setUp....")
+        print("TestCase Set Up ....")
         app = create_app()
         app.config['TESTING'] = True
         app = app.test_client()
@@ -34,7 +34,7 @@ class SdkTestCase(unittest.TestCase):
         TestCase Tear Down
         :return:
         """
-        print("tearDown....")
+        print("TestCase Tear Down ....")
         self.test_clear_db()
         print("OK")
 
