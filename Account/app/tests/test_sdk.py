@@ -31,7 +31,7 @@ class SdkTestCase(unittest.TestCase):
         print("OK")
 
     def test_clear_db(self):
-        response = self.app.get('/system/db/clear/salainen')
+        response = self.app.get('/system/db/clear/')
         unittest.TestCase.assertEqual(self, response.status_code, 200)
 
 if __name__ == '__main__':

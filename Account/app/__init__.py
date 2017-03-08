@@ -68,7 +68,7 @@ def create_app(config_filename='config'):
         from app.mod_account.view_api import mod_account_api
         from app.mod_service.view_api import mod_service_api
         from app.mod_authorization.view_api import mod_authorization_api
-        from app.mod_system.controllers import mod_system
+        from app.mod_system.view_api import mod_system
 
         # Register blueprint(s)
         current_app.register_blueprint(mod_auth)
