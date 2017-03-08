@@ -2,6 +2,7 @@
 
 # Import dependencies
 from flask import Blueprint
+from flask import json
 from flask_restful import Resource, Api
 import requests
 
@@ -19,10 +20,9 @@ logger = get_custom_logger(__name__)
 
 
 class ClearDb(Resource):
-    def get(self, secret=None):
+    def get(self):
         """
         Clear Database content
-        :param secret:
         :return:
         """
 
@@ -63,9 +63,23 @@ class ClearDb(Resource):
             response_data['ApiKey'] = "ApiKey Database cleared"
 
         # Response
-        response_data_dict = {'status': 'DB cleared'}
+        return make_json_response(data=response_data, status_code=200)
+
+
+class SystemStatus(Resource):
+    def get(self):
+        """
+        Clear Database content
+        :param secret:
+        :return:
+        """
+
+        # Response
+        response_data_dict = {'status': 'running'}
+        logger.info(json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
 
 
 # Register resources
 api.add_resource(ClearDb, '/system/db/clear/', endpoint='db_clear')
+api.add_resource(SystemStatus, '/system/status/', '/', endpoint='system_status')

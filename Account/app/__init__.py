@@ -62,18 +62,14 @@ def create_app(config_filename='config'):
             return make_json_response(errors=error_dict, status_code=str(error_dict['code']))
 
         # Import a module / component using its blueprint handler variable
-        from app.mod_auth.controllers import mod_auth
         from app.mod_api_auth.view_api import mod_api_auth
-        from app.mod_account.view_html import mod_account_html
         from app.mod_account.view_api import mod_account_api
         from app.mod_service.view_api import mod_service_api
         from app.mod_authorization.view_api import mod_authorization_api
         from app.mod_system.view_api import mod_system
 
         # Register blueprint(s)
-        current_app.register_blueprint(mod_auth)
         current_app.register_blueprint(mod_api_auth)
-        current_app.register_blueprint(mod_account_html)
         current_app.register_blueprint(mod_account_api)
         current_app.register_blueprint(mod_service_api)
         current_app.register_blueprint(mod_system)

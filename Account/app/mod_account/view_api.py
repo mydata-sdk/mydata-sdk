@@ -47,19 +47,19 @@ class Accounts(Resource):
         """
         Example JSON
         {
-                "data": {
-                    "type": "Account",
-                    "attributes": {
-                        'firstName': 'Erkki',
-                        'lastName': 'Esimerkki',
-                        'dateOfBirth': '2016-05-31',
-                        'email': 'erkki.esimerkki@examlpe.org',
-                        'username': 'testUser',
-                        'password': 'Hello',
-                        'acceptTermsOfService': 'True'
-                    }
+            "data": {
+                "type": "Account",
+                "attributes": {
+                    'firstName': 'Erkki',
+                    'lastName': 'Esimerkki',
+                    'dateOfBirth': '2016-05-31',
+                    'email': 'erkki.esimerkki@examlpe.org',
+                    'username': 'testUser',
+                    'password': 'Hello',
+                    'acceptTermsOfService': 'True'
                 }
             }
+        }
         :return:
         """
 
@@ -2565,7 +2565,7 @@ class AccountConsentStatusRecord(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 # Register resources
-account_api.add_resource(Accounts, '/api/accounts/', '/', endpoint='accounts')
+account_api.add_resource(Accounts, '/api/accounts/', endpoint='accounts')
 account_api.add_resource(AccountExport, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
 account_api.add_resource(AccountParticulars, '/api/accounts/<string:account_id>/particulars/', endpoint='account-particulars')
 account_api.add_resource(AccountParticular, '/api/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')
