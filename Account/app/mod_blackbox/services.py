@@ -647,7 +647,7 @@ def clear_blackbox_sqlite_db():
         logger.error('get_sqlite_connection: ' + repr(exp))
         raise
 
-    sql_query = '''DELETE FROM account_keys WHERE account_id > 3;'''
+    sql_query = '''DELETE FROM account_keys;'''
 
     try:
         logger.info('Clearing database')

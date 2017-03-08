@@ -334,7 +334,7 @@ def clear_apikey_sqlite_db():
         logger.error('get_sqlite_connection: ' + repr(exp))
         raise
 
-    sql_query = '''DELETE FROM api_keys WHERE account_id > 3;'''
+    sql_query = '''DELETE FROM api_keys;'''
 
     try:
         logger.info('Clearing database')
