@@ -22,7 +22,10 @@ logger = get_custom_logger(__name__)
 
 
 def clear_mysql_db():
-    # Clear MySQL tables
+    """
+    Clear MySQL Database
+    :return: true
+    """
     logger.info("Clearing MySQL Database")
     try:
         drop_table_content()
@@ -35,6 +38,10 @@ def clear_mysql_db():
 
 
 def clear_blackbox_db():
+    """
+    Clear black box database
+    :return: true
+    """
     logger.info("Clearing Blackbox Database")
     try:
         clear_blackbox_sqlite_db()
@@ -47,7 +54,10 @@ def clear_blackbox_db():
 
 
 def clear_api_key_db():
-    # Clear ApiKey Database
+    """
+    Clear API Key database
+    :return: true
+    """
     logger.info("##########")
     logger.info("Clearing ApiKey Database")
     try:

@@ -18,6 +18,10 @@ from app import create_app
 class SdkTestCase(unittest.TestCase):
 
     def setUp(self):
+        """
+        TestCase Set Up
+        :return:
+        """
         print("setUp....")
         app = create_app()
         app.config['TESTING'] = True
@@ -26,11 +30,19 @@ class SdkTestCase(unittest.TestCase):
         print("OK")
 
     def tearDown(self):
+        """
+        TestCase Tear Down
+        :return:
+        """
         print("tearDown....")
         self.test_clear_db()
         print("OK")
 
     def test_clear_db(self):
+        """
+        Test database clearing
+        :return:
+        """
         response = self.app.get('/system/db/clear/')
         unittest.TestCase.assertEqual(self, response.status_code, 200)
 
