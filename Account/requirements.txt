@@ -9,10 +9,12 @@ Flask==0.12
 Flask-Login==0.4.0
 Flask-MySQLdb==0.2.0
 Flask-RESTful==0.3.5
+functools32==3.2.3.post2
 idna==2.5
 ipaddress==1.0.18
 itsdangerous==0.24
 Jinja2==2.9.5
+jsonschema==2.6.0
 jwcrypto==0.3.1
 MarkupSafe==0.23
 marshmallow==2.13.1
