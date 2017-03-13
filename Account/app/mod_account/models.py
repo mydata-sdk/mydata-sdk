@@ -100,7 +100,8 @@ class AccountAttributes(Schema):
     lastName = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     email = fields.Email(required=True, validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     dateOfBirth = fields.Date(required=True, error='Not valid date. Provide ISO8601-formatted date string.')
-    acceptTermsOfService = fields.Str(required=True, validate=Equal("True"))
+    #acceptTermsOfService = fields.Str(required=True, validate=Equal("True"))
+    acceptTermsOfService = fields.Bool(required=True, validate=Equal(True))
 
 
 class AccountData(Schema):

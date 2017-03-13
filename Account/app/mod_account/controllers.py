@@ -19,15 +19,151 @@ from app.app_modules import db
 
 # Import services
 from app.helpers import get_custom_logger, ApiError
-from app.mod_api_auth.controllers import get_account_id_by_api_key
+from app.mod_api_auth.controllers import get_account_id_by_api_key, gen_account_api_key
+from app.mod_blackbox.controllers import gen_account_key
 from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id, get_slr_ids, \
     get_slsr_ids, get_cr_ids, get_csr_ids
 
 # create logger with 'spam_application'
 from app.mod_database.models import Particulars, Contacts, Email, Telephone, Settings, EventLog, ServiceLinkRecord, \
-    ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
+    ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord, Account, LocalIdentityPWD, LocalIdentity, Salt
 
 logger = get_custom_logger(__name__)
+
+
+def hash_password(password=None):
+    """
+    Generates Hash from clear text password
+    :param password:
+    :return:
+    """
+
+    if password is None:
+        raise AttributeError("Provide password as parameter")
+
+    salt_str = str(bcrypt.gensalt())
+    pwd_hash = bcrypt.hashpw(str(password), salt_str)
+
+    return pwd_hash, salt_str
+
+
+def create_account(first_name=None, last_name=None, username=None, password=None, email_address=None, date_of_birth=None, endpoint="create_account()"):
+
+    logger.info('Global identifier for Account')
+    global_identifier = str(uuid.uuid4())
+    logger.debug('global_identifier: ' + global_identifier)
+
+    try:
+        pwd_hash, salt_str = hash_password(password=password)
+    except Exception as exp:
+        error_title = "Could not generate password salt"
+        logger.debug(error_title + ': ' + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+
+
+    # DB cursor
+    cursor = get_db_cursor()
+
+    try:
+        ###
+        # Accounts
+        logger.debug('Accounts')
+        account = Account(global_identifyer=global_identifier)
+        account.to_db(cursor=cursor)
+
+        ###
+        # localIdentityPWDs
+        logger.debug('localIdentityPWDs')
+        local_pwd = LocalIdentityPWD(password=pwd_hash)
+        local_pwd.to_db(cursor=cursor)
+
+        ###
+        # localIdentities
+        logger.debug('localIdentities')
+        local_identity = LocalIdentity(
+            username=username,
+            pwd_id=local_pwd.id,
+            accounts_id=account.id
+        )
+        local_identity.to_db(cursor=cursor)
+
+        ###
+        # salts
+        logger.debug('salts')
+        salt = Salt(
+            salt=salt_str,
+            identity_id=local_identity.id
+        )
+        salt.to_db(cursor=cursor)
+
+        ###
+        # Particulars
+        logger.debug('particulars')
+        particulars = Particulars(
+            firstname=first_name,
+            lastname=last_name,
+            date_of_birth=date_of_birth,
+            account_id=account.id
+        )
+        logger.debug("to_dict: " + repr(particulars.to_dict))
+        cursor = particulars.to_db(cursor=cursor)
+
+        ###
+        # emails
+        logger.debug('emails')
+        email = Email(
+            email=email_address,
+            type="Personal",
+            prime=1,
+            account_id=account.id
+        )
+        email.to_db(cursor=cursor)
+
+        ###
+        # Commit
+        db.connection.commit()
+    except Exception as exp:
+        error_title = "Could not create Account"
+        logger.debug('commit failed: ' + repr(exp))
+        logger.debug('--> rollback')
+        logger.error(error_title)
+        db.connection.rollback()
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug('Account commited')
+
+        try:
+            logger.info("Generating Key for Account")
+            kid = gen_account_key(account_id=account.id)
+        except Exception as exp:
+            error_title = "Could not generate Key for Account"
+            logger.debug(error_title + ': ' + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Generated Key for Account with Key ID: " + str(kid))
+
+        try:
+            logger.info("Generating API Key for Account")
+            api_key = gen_account_api_key(account_id=account.id)
+        except Exception as exp:
+            error_title = "Could not generate API Key for Account"
+            logger.debug(error_title + ': ' + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Generated API Key: " + str(api_key))
+
+        data = cursor.fetchall()
+        logger.debug('data: ' + repr(data))
+
+        try:
+            account_id = account.id
+        except Exception as exp:
+            error_title = "Could not format Account ID as String"
+            logger.debug(error_title + ': ' + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+
+        logger.info('Created Account with ID: ' + account_id)
+        return account_id
 
 
 def verify_account_id_match(account_id=None, api_key=None, account_id_to_compare=None, endpoint=None):

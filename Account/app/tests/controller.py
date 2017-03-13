@@ -86,9 +86,9 @@ def account_create(email_length=15, username_length=15, password_length=15, firs
         resource_type = "Account"
 
     if accept_terms:
-        accept_tos = "True"
+        accept_tos = True
     else:
-        accept_tos = "False"
+        accept_tos = False
 
 
     account = {

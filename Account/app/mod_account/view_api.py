@@ -23,7 +23,7 @@ from app.mod_account.controllers import get_particulars, get_particular, verify_
     update_particular, get_contacts, add_contact, get_contact, update_contact, get_emails, add_email, get_email, \
     update_email, get_telephone, update_telephone, get_telephones, add_telephone, get_settings, add_setting, get_setting, \
     update_setting, get_event_log, get_event_logs, get_slrs, get_slr, get_slsrs, get_slsr, get_cr, get_crs, get_csrs, \
-    get_csr, export_account
+    get_csr, export_account, create_account
 from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
     EmailsSchema, EmailsSchemaForUpdate, TelephonesSchema, TelephonesSchemaForUpdate, SettingsSchema, \
     SettingsSchemaForUpdate
@@ -94,109 +94,29 @@ class Accounts(Resource):
             lastName = json_data['data']['attributes']['lastName']
             email_address = json_data['data']['attributes']['email']
             dateOfBirth = json_data['data']['attributes']['dateOfBirth']
-            acceptTermsOfService = json_data['data']['attributes']['acceptTermsOfService']
-
-            global_identifier = str(uuid.uuid4())
-            salt_str = str(bcrypt.gensalt())
-            pwd_hash = bcrypt.hashpw(str(password), salt_str)
         except Exception as exp:
             error_title = "Could not prepare Account data"
             logger.error(error_title)
             raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
 
-        # DB cursor
-        cursor = get_db_cursor()
-
         try:
-            ###
-            # Accounts
-            logger.debug('Accounts')
-            account = Account(global_identifyer=global_identifier)
-            account.to_db(cursor=cursor)
-
-            ###
-            # localIdentityPWDs
-            logger.debug('localIdentityPWDs')
-            local_pwd = LocalIdentityPWD(password=pwd_hash)
-            local_pwd.to_db(cursor=cursor)
-
-            ###
-            # localIdentities
-            logger.debug('localIdentities')
-            local_identity = LocalIdentity(
+            account_id = create_account(
+                first_name=firstName,
+                last_name=lastName,
                 username=username,
-                pwd_id=local_pwd.id,
-                accounts_id=account.id
-            )
-            local_identity.to_db(cursor=cursor)
-
-            ###
-            # salts
-            logger.debug('salts')
-            salt = Salt(
-                salt=salt_str,
-                identity_id=local_identity.id
-            )
-            salt.to_db(cursor=cursor)
-
-            ###
-            # Particulars
-            logger.debug('particulars')
-            particulars = Particulars(
-                firstname=firstName,
-                lastname=lastName,
+                password=password,
+                email_address=email_address,
                 date_of_birth=dateOfBirth,
-                account_id=account.id
+                endpoint=endpoint
             )
-            logger.debug("to_dict: " + repr(particulars.to_dict))
-            cursor = particulars.to_db(cursor=cursor)
-
-            ###
-            # emails
-            logger.debug('emails')
-            email = Email(
-                email=email_address,
-                type="Personal",
-                prime=1,
-                account_id=account.id
-            )
-            email.to_db(cursor=cursor)
-
-            ###
-            # Commit
-            db.connection.commit()
+        except ApiError as exp:
+            error_title = "Could not create Account"
+            logger.error(error_title + ': ' + repr(exp))
+            raise
         except Exception as exp:
             error_title = "Could not create Account"
-            logger.debug('commit failed: ' + repr(exp))
-            logger.debug('--> rollback')
-            logger.error(error_title)
-            db.connection.rollback()
+            logger.debug(error_title + ': ' + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        else:
-            logger.debug('Account commited')
-
-            try:
-                logger.info("Generating Key for Account")
-                kid = gen_account_key(account_id=account.id)
-            except Exception as exp:
-                error_title = "Could not generate Key for Account"
-                logger.debug(error_title + ': ' + repr(exp))
-                #raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-            else:
-                logger.info("Generated Key for Account with Key ID: " + str(kid))
-
-            try:
-                logger.info("Generating API Key for Account")
-                api_key = gen_account_api_key(account_id=account.id)
-            except Exception as exp:
-                error_title = "Could not generate API Key for Account"
-                logger.debug(error_title + ': ' + repr(exp))
-                #raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-            else:
-                logger.info("Generated API Key: " + str(api_key))
-
-            data = cursor.fetchall()
-            logger.debug('data: ' + repr(data))
 
         # Response data container
         try:
@@ -206,7 +126,7 @@ class Accounts(Resource):
 
             response_data['data'] = {}
             response_data['data']['type'] = "Account"
-            response_data['data']['id'] = str(account.id)
+            response_data['data']['id'] = account_id
             response_data['data']['attributes'] = json_data['data']['attributes']
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))

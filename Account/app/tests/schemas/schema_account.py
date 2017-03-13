@@ -45,7 +45,7 @@ schema_account_create = {
               "type": "string"
             },
             "acceptTermsOfService": {
-              "type": "string"
+              "type": "boolean"
             },
             "password": {
               "type": "string"
