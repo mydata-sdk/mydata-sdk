@@ -5,14 +5,6 @@ import json
 import uuid
 import logging
 import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-from random import randint
-
-# Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash, session, current_app
-from flask_login import login_user, login_required
-from flask_restful import Resource, Api, reqparse
 
 # Import the database object
 from app.app_modules import db
@@ -31,6 +23,11 @@ from app.mod_database.models import Particulars, Contacts, Email, Telephone, Set
 logger = get_custom_logger(__name__)
 
 
+##################################
+##################################
+# Particulars
+##################################
+##################################
 def hash_password(password=None):
     """
     Generates Hash from clear text password
@@ -48,6 +45,18 @@ def hash_password(password=None):
 
 
 def create_account(first_name=None, last_name=None, username=None, password=None, email_address=None, date_of_birth=None, endpoint="create_account()"):
+    if first_name is None:
+        raise AttributeError("Provide first_name as parameter")
+    if last_name is None:
+        raise AttributeError("Provide last_name as parameter")
+    if username is None:
+        raise AttributeError("Provide username as parameter")
+    if password is None:
+        raise AttributeError("Provide password as parameter")
+    if email_address is None:
+        raise AttributeError("Provide email_address as parameter")
+    if date_of_birth is None:
+        raise AttributeError("Provide date_of_birth as parameter")
 
     logger.info('Global identifier for Account')
     global_identifier = str(uuid.uuid4())
@@ -59,7 +68,6 @@ def create_account(first_name=None, last_name=None, username=None, password=None
         error_title = "Could not generate password salt"
         logger.debug(error_title + ': ' + repr(exp))
         raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-
 
     # DB cursor
     cursor = get_db_cursor()
@@ -164,6 +172,45 @@ def create_account(first_name=None, last_name=None, username=None, password=None
 
         logger.info('Created Account with ID: ' + account_id)
         return account_id
+
+
+def delete_account(account_id=None):
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Get table name
+    logger.info("Create db_entry_object")
+    db_entry_object = Particulars()
+    logger.info(db_entry_object.log_entry)
+    logger.info("Get table name")
+    table_name = db_entry_object.table_name
+    logger.info("Got table name: " + str(table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get primary keys for particulars
+    try:
+        cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get Particulars from database
+    logger.info("Get Particulars from database")
+    db_entry_list = []
+    for id in id_list:
+        # TODO: try-except needed?
+        logger.info("Getting particulars with particular_id: " + str(id))
+        db_entry_dict = get_particular(account_id=account_id, id=id)
+        db_entry_list.append(db_entry_dict)
+        logger.info("Particulars object added to list: " + json.dumps(db_entry_dict))
+
+    return db_entry_list
 
 
 def verify_account_id_match(account_id=None, api_key=None, account_id_to_compare=None, endpoint=None):

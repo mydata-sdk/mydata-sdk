@@ -90,10 +90,10 @@ class Accounts(Resource):
         try:
             username = json_data['data']['attributes']['username']
             password = json_data['data']['attributes']['password']
-            firstName = json_data['data']['attributes']['firstName']
-            lastName = json_data['data']['attributes']['lastName']
+            first_name = json_data['data']['attributes']['firstName']
+            last_name = json_data['data']['attributes']['lastName']
             email_address = json_data['data']['attributes']['email']
-            dateOfBirth = json_data['data']['attributes']['dateOfBirth']
+            date_of_birth = json_data['data']['attributes']['dateOfBirth']
         except Exception as exp:
             error_title = "Could not prepare Account data"
             logger.error(error_title)
@@ -101,12 +101,12 @@ class Accounts(Resource):
 
         try:
             account_id = create_account(
-                first_name=firstName,
-                last_name=lastName,
+                first_name=first_name,
+                last_name=last_name,
                 username=username,
                 password=password,
                 email_address=email_address,
-                date_of_birth=dateOfBirth,
+                date_of_birth=date_of_birth,
                 endpoint=endpoint
             )
         except ApiError as exp:
@@ -138,6 +138,66 @@ class Accounts(Resource):
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
+
+
+class AccountDelete(Resource):
+    @requires_api_auth_user
+    def delete(self, account_id):
+        logger.info("AccountDelete")
+        try:
+            endpoint = str(account_api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provideApiKey(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Get Particulars
+        try:
+            logger.info("Fetching Particulars")
+            db_entries = get_particulars(account_id=account_id)
+        except Exception as exp:
+            error_title = "No Particulars found"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Particulars Fetched")
+            logger.info("Particulars: ")
+
+        # Response data container
+        try:
+            db_entry_list = db_entries
+            response_data = {}
+            response_data['data'] = db_entry_list
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
 
 
 class AccountExport(Resource):
