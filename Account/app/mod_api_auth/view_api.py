@@ -14,15 +14,15 @@ __status__ = "Development"
 __date__ = 26.5.2016
 """
 
-from flask import Blueprint, render_template, make_response, flash, session, request
-from flask_restful import Resource, Api, reqparse
+from flask import Blueprint, make_response, request
+from flask_restful import Resource, Api
 
 from app.helpers import get_custom_logger, make_json_response, ApiError
 from app.mod_api_auth.controllers import get_account_api_key, get_api_key_sdk
 from app.mod_api_auth.helpers import ApiKeyNotFoundError
 from app.mod_auth.helpers import get_account_id_by_username_and_password
 
-logger = get_custom_logger('mod_api_auth_view_api')
+logger = get_custom_logger(__name__)
 
 # Define the blueprint: 'auth', set its url prefix: app.url/auth
 mod_api_auth = Blueprint('api_auth', __name__, template_folder='templates')
@@ -88,7 +88,6 @@ class ApiKeyUser(Resource):
         else:
             logger.debug("account_id: " + str(self.account_id))
             logger.debug("api_key: " + str(api_key))
-
 
         response_data = {
             'Api-Key': api_key,

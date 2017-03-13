@@ -19,16 +19,17 @@ import json
 import os
 import sqlite3
 from jwcrypto import jwk, jws
-
-# create logger with 'spam_application'
-from app.mod_blackbox.helpers import append_description_to_exception, KeyNotFoundError, get_custom_logger, jws_header_fix, \
+from app.helpers import get_custom_logger
+from app.mod_blackbox.helpers import append_description_to_exception, KeyNotFoundError, jws_header_fix, \
     get_current_line_no
 
-logger = get_custom_logger('mod_blackbox_services')
+logger = get_custom_logger(__name__)
 
 DELIMITTER = '/'
-DATABASE = os.path.dirname(os.path.abspath(__file__)) + DELIMITTER + 'blackbox.sqlite'
-#DATABASE = 'blackbox.sqlite'
+DATABASE_BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+DATABASE_DIRECTORY = DELIMITTER + 'db'
+DATABASE_FILE = DELIMITTER + 'blackbox.sqlite'
+DATABASE = DATABASE_BASE_PATH + DATABASE_DIRECTORY + DATABASE_FILE
 
 
 def log_dict_as_json(data=None, pretty=0, lineno=None):
@@ -101,6 +102,16 @@ def get_sqlite_connection():
     else:
         logger.debug("init_db = True")
         init_db = True
+        # If there is no db directory it will be created
+        if DATABASE_DIRECTORY != "./":
+            if not os.path.isdir(DATABASE_DIRECTORY):
+                try:
+                    os.mkdir(DATABASE_DIRECTORY)
+                    print("Creating LOG_PATH: '{}'.".format(DATABASE_DIRECTORY))
+                except IOError:
+                    print("LOG_PATH: '{}' already exists.".format(DATABASE_DIRECTORY))
+                except Exception as e:
+                    print("LOG_PATH: '{}' could not be created. Exception: {}.".format(DATABASE_DIRECTORY, repr(e)))
 
     try:
         connection = sqlite3.connect(DATABASE)
