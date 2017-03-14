@@ -679,7 +679,7 @@ class Salt():
 ##########################################
 ##########################################
 ##########################################
-class Particulars():
+class Particulars():  # TODO: Add email and rename Particulars to AccountInfo
     id = ""
     firstname = None
     lastname = None
@@ -900,546 +900,546 @@ class Particulars():
 
 
 #####################
-class Email():
-    id = None
-    email = None
-    type = None
-    prime = None
-    account_id = None
-    table_name = ""
-    deleted = ""
-
-    def __init__(self, id="", email="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Emails"):
-        if id is not None:
-            self.id = id
-        if email is not None:
-            self.email = email
-        if type is not None:
-            self.type = type
-        if prime is not None:
-            if prime == "True":
-                self.prime = 1
-            else:
-                self.prime = 0
-        if account_id is not None:
-            self.account_id = account_id
-        if table_name is not None:
-            self.table_name = table_name
-        if deleted is not None:
-            self.deleted = deleted
-
-    @property
-    def table_name(self):
-        return self.table_name
-
-    @property
-    def id(self):
-        return self.id
-
-    @id.setter
-    def id(self, value):
-        self.id = value
-
-    @property
-    def email(self):
-        return self.email
-
-    @email.setter
-    def email(self, value):
-        self.email = value
-
-    @property
-    def type(self):
-        return self.type
-
-    @type.setter
-    def type(self, value):
-        self.type = value
-
-    @property
-    def prime(self):
-        return self.prime
-
-    @prime.setter
-    def prime(self, value):
-        self.prime = value
-
-    @property
-    def account_id(self):
-        return self.account_id
-
-    @account_id.setter
-    def account_id(self, value):
-        self.account_id = value
-
-    @property
-    def to_dict(self):
-        return self.__dict__
-
-    @property
-    def to_dict_external(self):
-        dictionary = self.to_dict
-        del dictionary['id']
-        del dictionary['account_id']
-        del dictionary['table_name']
-        del dictionary['deleted']
-        if dictionary['prime'] == 1:
-            dictionary['prime'] = "True"
-        elif dictionary['prime'] == 0:
-            dictionary['prime'] = "False"
-        return dictionary
-
-    @property
-    def to_api_dict(self):
-        dictionary = {}
-        dictionary['type'] = "Email"
-        dictionary['id'] = str(self.id)
-        dictionary['attributes'] = self.to_dict_external
-        return dictionary
-
-    @property
-    def to_json(self):
-        return json.dumps(self.to_dict)
-
-    @property
-    def log_entry(self):
-        return str(self.__class__.__name__) + " object " + str(self.to_json)
-
-    def to_db(self, cursor=""):
-
-        sql_query = "INSERT INTO " + self.table_name + " (email, entryType, prime, Accounts_id) " \
-                    "VALUES (%s, %s, %s, %s)"
-
-        arguments = (
-            str(self.email),
-            str(self.type),
-            str(self.prime),
-            int(self.account_id),
-        )
-
-        try:
-            cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            self.id = last_id
-            return cursor
-
-    def from_db(self, cursor=None):
-        if cursor is None:
-            raise AttributeError("Provide cursor as parameter")
-
-        sql_query = "SELECT id, email, entryType, prime, Accounts_id " \
-                    "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
-
-        arguments = (
-            '%' + str(self.id) + '%',
-            '%' + str(self.account_id) + '%',
-        )
-
-        try:
-            cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            logger.debug("Got data: " + repr(data))
-            if len(data) == 0:
-                raise IndexError("DB query returned no results")
-            if len(data[0]):
-                self.id = data[0][0]
-                self.email = data[0][1]
-                self.type = data[0][2]
-                self.prime = data[0][3]
-                self.account_id = data[0][4]
-            else:
-                self.id = data[0]
-                self.email = data[1]
-                self.type = data[2]
-                self.prime = data[0][3]
-                self.account_id = data[4]
-
-            return cursor
-
-    def update_db(self, cursor=""):
-
-        sql_query = "UPDATE " + self.table_name + " SET email=%s, entryType=%s, prime=%s " \
-                                                  "WHERE id=%s AND Accounts_id=%s"
-
-        arguments = (
-            str(self.email),
-            str(self.type),
-            str(self.prime),
-            str(self.id),
-            str(self.account_id),
-        )
-
-        try:
-            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            logger.info("SQL query executed")
-            return cursor
-
-
-#####################
-class Telephone():
-    id = None
-    tel = None
-    type = None
-    prime = None
-    account_id = None
-    table_name = ""
-    deleted = ""
-
-    def __init__(self, id="", tel="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Telephones"):
-        if id is not None:
-            self.id = id
-        if tel is not None:
-            self.tel = tel
-        if type is not None:
-            self.type = type
-        if prime is not None:
-            if prime == "True":
-                self.prime = 1
-            else:
-                self.prime = 0
-        if account_id is not None:
-            self.account_id = account_id
-        if table_name is not None:
-            self.table_name = table_name
-        if deleted is not None:
-            self.deleted = deleted
-
-    @property
-    def table_name(self):
-        return self.table_name
-
-    @property
-    def id(self):
-        return self.id
-
-    @id.setter
-    def id(self, value):
-        self.id = value
-
-    @property
-    def tel(self):
-        return self.tel
-
-    @tel.setter
-    def tel(self, value):
-        self.tel = value
-
-    @property
-    def type(self):
-        return self.type
-
-    @type.setter
-    def type(self, value):
-        self.type = value
-
-    @property
-    def prime(self):
-        return self.prime
-
-    @prime.setter
-    def prime(self, value):
-        self.prime = value
-
-    @property
-    def account_id(self):
-        return self.account_id
-
-    @account_id.setter
-    def account_id(self, value):
-        self.account_id = value
-
-    @property
-    def to_dict(self):
-        return self.__dict__
-
-    @property
-    def to_dict_external(self):
-        dictionary = self.to_dict
-        del dictionary['id']
-        del dictionary['account_id']
-        del dictionary['table_name']
-        del dictionary['deleted']
-        if dictionary['prime'] == 1:
-            dictionary['prime'] = "True"
-        elif dictionary['prime'] == 0:
-            dictionary['prime'] = "False"
-        return dictionary
-
-    @property
-    def to_api_dict(self):
-        dictionary = {}
-        dictionary['type'] = "Telephone"
-        dictionary['id'] = str(self.id)
-        dictionary['attributes'] = self.to_dict_external
-        return dictionary
-
-    @property
-    def to_json(self):
-        return json.dumps(self.to_dict)
-
-    @property
-    def log_entry(self):
-        return str(self.__class__.__name__) + " object " + str(self.to_json)
-
-    def to_db(self, cursor=""):
-
-        sql_query = "INSERT INTO " + self.table_name + " (tel, entryType, prime, Accounts_id) " \
-                    "VALUES (%s, %s, %s, %s)"
-
-        arguments = (
-            str(self.tel),
-            str(self.type),
-            str(self.prime),
-            int(self.account_id),
-        )
-
-        try:
-            cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            self.id = last_id
-            return cursor
-
-    def from_db(self, cursor=None):
-        if cursor is None:
-            raise AttributeError("Provide cursor as parameter")
-
-        # TODO: Don't allow if role is only criteria
-
-        sql_query = "SELECT id, tel, entryType, prime, Accounts_id " \
-                    "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
-
-        arguments = (
-            '%' + str(self.id) + '%',
-            '%' + str(self.account_id) + '%',
-        )
-
-        try:
-            cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            logger.debug("Got data: " + repr(data))
-            if len(data) == 0:
-                raise IndexError("DB query returned no results")
-            if len(data[0]):
-                self.id = data[0][0]
-                self.tel = data[0][1]
-                self.type = data[0][2]
-                self.prime = data[0][3]
-                self.account_id = data[0][4]
-            else:
-                self.id = data[0]
-                self.tel = data[1]
-                self.type = data[2]
-                self.prime = data[0][3]
-                self.account_id = data[4]
-
-            return cursor
-
-    def update_db(self, cursor=""):
-
-        sql_query = "UPDATE " + self.table_name + " SET tel=%s, entryType=%s, prime=%s " \
-                                                  "WHERE id=%s AND Accounts_id=%s"
-
-        arguments = (
-            str(self.tel),
-            str(self.type),
-            str(self.prime),
-            str(self.id),
-            str(self.account_id),
-        )
-
-        try:
-            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            logger.info("SQL query executed")
-            return cursor
+# class Email():  # TODO: To-be removed
+#     id = None
+#     email = None
+#     type = None
+#     prime = None
+#     account_id = None
+#     table_name = ""
+#     deleted = ""
+#
+#     def __init__(self, id="", email="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Emails"):
+#         if id is not None:
+#             self.id = id
+#         if email is not None:
+#             self.email = email
+#         if type is not None:
+#             self.type = type
+#         if prime is not None:
+#             if prime == "True":
+#                 self.prime = 1
+#             else:
+#                 self.prime = 0
+#         if account_id is not None:
+#             self.account_id = account_id
+#         if table_name is not None:
+#             self.table_name = table_name
+#         if deleted is not None:
+#             self.deleted = deleted
+#
+#     @property
+#     def table_name(self):
+#         return self.table_name
+#
+#     @property
+#     def id(self):
+#         return self.id
+#
+#     @id.setter
+#     def id(self, value):
+#         self.id = value
+#
+#     @property
+#     def email(self):
+#         return self.email
+#
+#     @email.setter
+#     def email(self, value):
+#         self.email = value
+#
+#     @property
+#     def type(self):
+#         return self.type
+#
+#     @type.setter
+#     def type(self, value):
+#         self.type = value
+#
+#     @property
+#     def prime(self):
+#         return self.prime
+#
+#     @prime.setter
+#     def prime(self, value):
+#         self.prime = value
+#
+#     @property
+#     def account_id(self):
+#         return self.account_id
+#
+#     @account_id.setter
+#     def account_id(self, value):
+#         self.account_id = value
+#
+#     @property
+#     def to_dict(self):
+#         return self.__dict__
+#
+#     @property
+#     def to_dict_external(self):
+#         dictionary = self.to_dict
+#         del dictionary['id']
+#         del dictionary['account_id']
+#         del dictionary['table_name']
+#         del dictionary['deleted']
+#         if dictionary['prime'] == 1:
+#             dictionary['prime'] = "True"
+#         elif dictionary['prime'] == 0:
+#             dictionary['prime'] = "False"
+#         return dictionary
+#
+#     @property
+#     def to_api_dict(self):
+#         dictionary = {}
+#         dictionary['type'] = "Email"
+#         dictionary['id'] = str(self.id)
+#         dictionary['attributes'] = self.to_dict_external
+#         return dictionary
+#
+#     @property
+#     def to_json(self):
+#         return json.dumps(self.to_dict)
+#
+#     @property
+#     def log_entry(self):
+#         return str(self.__class__.__name__) + " object " + str(self.to_json)
+#
+#     def to_db(self, cursor=""):
+#
+#         sql_query = "INSERT INTO " + self.table_name + " (email, entryType, prime, Accounts_id) " \
+#                     "VALUES (%s, %s, %s, %s)"
+#
+#         arguments = (
+#             str(self.email),
+#             str(self.type),
+#             str(self.prime),
+#             int(self.account_id),
+#         )
+#
+#         try:
+#             cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             self.id = last_id
+#             return cursor
+#
+#     def from_db(self, cursor=None):
+#         if cursor is None:
+#             raise AttributeError("Provide cursor as parameter")
+#
+#         sql_query = "SELECT id, email, entryType, prime, Accounts_id " \
+#                     "FROM " + self.table_name + " " \
+#                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
+#
+#         arguments = (
+#             '%' + str(self.id) + '%',
+#             '%' + str(self.account_id) + '%',
+#         )
+#
+#         try:
+#             cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             logger.debug("Got data: " + repr(data))
+#             if len(data) == 0:
+#                 raise IndexError("DB query returned no results")
+#             if len(data[0]):
+#                 self.id = data[0][0]
+#                 self.email = data[0][1]
+#                 self.type = data[0][2]
+#                 self.prime = data[0][3]
+#                 self.account_id = data[0][4]
+#             else:
+#                 self.id = data[0]
+#                 self.email = data[1]
+#                 self.type = data[2]
+#                 self.prime = data[0][3]
+#                 self.account_id = data[4]
+#
+#             return cursor
+#
+#     def update_db(self, cursor=""):
+#
+#         sql_query = "UPDATE " + self.table_name + " SET email=%s, entryType=%s, prime=%s " \
+#                                                   "WHERE id=%s AND Accounts_id=%s"
+#
+#         arguments = (
+#             str(self.email),
+#             str(self.type),
+#             str(self.prime),
+#             str(self.id),
+#             str(self.account_id),
+#         )
+#
+#         try:
+#             cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             logger.info("SQL query executed")
+#             return cursor
 
 
 #####################
-class Settings():
-    id = None
-    key = None
-    value = None
-    account_id = None
-    table_name = ""
-    deleted = ""
+# class Telephone():  # TODO: To-be removed
+#     id = None
+#     tel = None
+#     type = None
+#     prime = None
+#     account_id = None
+#     table_name = ""
+#     deleted = ""
+#
+#     def __init__(self, id="", tel="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Telephones"):
+#         if id is not None:
+#             self.id = id
+#         if tel is not None:
+#             self.tel = tel
+#         if type is not None:
+#             self.type = type
+#         if prime is not None:
+#             if prime == "True":
+#                 self.prime = 1
+#             else:
+#                 self.prime = 0
+#         if account_id is not None:
+#             self.account_id = account_id
+#         if table_name is not None:
+#             self.table_name = table_name
+#         if deleted is not None:
+#             self.deleted = deleted
+#
+#     @property
+#     def table_name(self):
+#         return self.table_name
+#
+#     @property
+#     def id(self):
+#         return self.id
+#
+#     @id.setter
+#     def id(self, value):
+#         self.id = value
+#
+#     @property
+#     def tel(self):
+#         return self.tel
+#
+#     @tel.setter
+#     def tel(self, value):
+#         self.tel = value
+#
+#     @property
+#     def type(self):
+#         return self.type
+#
+#     @type.setter
+#     def type(self, value):
+#         self.type = value
+#
+#     @property
+#     def prime(self):
+#         return self.prime
+#
+#     @prime.setter
+#     def prime(self, value):
+#         self.prime = value
+#
+#     @property
+#     def account_id(self):
+#         return self.account_id
+#
+#     @account_id.setter
+#     def account_id(self, value):
+#         self.account_id = value
+#
+#     @property
+#     def to_dict(self):
+#         return self.__dict__
+#
+#     @property
+#     def to_dict_external(self):
+#         dictionary = self.to_dict
+#         del dictionary['id']
+#         del dictionary['account_id']
+#         del dictionary['table_name']
+#         del dictionary['deleted']
+#         if dictionary['prime'] == 1:
+#             dictionary['prime'] = "True"
+#         elif dictionary['prime'] == 0:
+#             dictionary['prime'] = "False"
+#         return dictionary
+#
+#     @property
+#     def to_api_dict(self):
+#         dictionary = {}
+#         dictionary['type'] = "Telephone"
+#         dictionary['id'] = str(self.id)
+#         dictionary['attributes'] = self.to_dict_external
+#         return dictionary
+#
+#     @property
+#     def to_json(self):
+#         return json.dumps(self.to_dict)
+#
+#     @property
+#     def log_entry(self):
+#         return str(self.__class__.__name__) + " object " + str(self.to_json)
+#
+#     def to_db(self, cursor=""):
+#
+#         sql_query = "INSERT INTO " + self.table_name + " (tel, entryType, prime, Accounts_id) " \
+#                     "VALUES (%s, %s, %s, %s)"
+#
+#         arguments = (
+#             str(self.tel),
+#             str(self.type),
+#             str(self.prime),
+#             int(self.account_id),
+#         )
+#
+#         try:
+#             cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             self.id = last_id
+#             return cursor
+#
+#     def from_db(self, cursor=None):
+#         if cursor is None:
+#             raise AttributeError("Provide cursor as parameter")
+#
+#         # TODO: Don't allow if role is only criteria
+#
+#         sql_query = "SELECT id, tel, entryType, prime, Accounts_id " \
+#                     "FROM " + self.table_name + " " \
+#                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
+#
+#         arguments = (
+#             '%' + str(self.id) + '%',
+#             '%' + str(self.account_id) + '%',
+#         )
+#
+#         try:
+#             cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             logger.debug("Got data: " + repr(data))
+#             if len(data) == 0:
+#                 raise IndexError("DB query returned no results")
+#             if len(data[0]):
+#                 self.id = data[0][0]
+#                 self.tel = data[0][1]
+#                 self.type = data[0][2]
+#                 self.prime = data[0][3]
+#                 self.account_id = data[0][4]
+#             else:
+#                 self.id = data[0]
+#                 self.tel = data[1]
+#                 self.type = data[2]
+#                 self.prime = data[0][3]
+#                 self.account_id = data[4]
+#
+#             return cursor
+#
+#     def update_db(self, cursor=""):
+#
+#         sql_query = "UPDATE " + self.table_name + " SET tel=%s, entryType=%s, prime=%s " \
+#                                                   "WHERE id=%s AND Accounts_id=%s"
+#
+#         arguments = (
+#             str(self.tel),
+#             str(self.type),
+#             str(self.prime),
+#             str(self.id),
+#             str(self.account_id),
+#         )
+#
+#         try:
+#             cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             logger.info("SQL query executed")
+#             return cursor
 
-    def __init__(self, id="", key="", value="", account_id="", deleted=0, table_name="MyDataAccount.Settings"):
-        if id is not None:
-            self.id = id
-        if key is not None:
-            self.key = key
-        if key is not None:
-            self.key = key
-        if value is not None:
-            self.value = value
-        if account_id is not None:
-            self.account_id = account_id
-        if table_name is not None:
-            self.table_name = table_name
-        if deleted is not None:
-            self.deleted = deleted
 
-    @property
-    def table_name(self):
-        return self.table_name
-
-    @property
-    def id(self):
-        return self.id
-
-    @id.setter
-    def id(self, value):
-        self.id = value
-
-    @property
-    def key(self):
-        return self.key
-
-    @key.setter
-    def key(self, value):
-        self.key = value
-
-    @property
-    def value(self):
-        return self.value
-
-    @value.setter
-    def value(self, value):
-        self.value = value
-
-    @property
-    def account_id(self):
-        return self.account_id
-
-    @account_id.setter
-    def account_id(self, value):
-        self.account_id = value
-
-    @property
-    def to_dict(self):
-        return self.__dict__
-
-    @property
-    def to_dict_external(self):
-        dictionary = self.to_dict
-        del dictionary['id']
-        del dictionary['account_id']
-        del dictionary['table_name']
-        del dictionary['deleted']
-        return dictionary
-
-    @property
-    def to_api_dict(self):
-        dictionary = {}
-        dictionary['type'] = "Setting"
-        dictionary['id'] = str(self.id)
-        dictionary['attributes'] = self.to_dict_external
-        return dictionary
-
-    @property
-    def to_json(self):
-        return json.dumps(self.to_dict)
-
-    @property
-    def log_entry(self):
-        return str(self.__class__.__name__) + " object " + str(self.to_json)
-
-    def to_db(self, cursor=""):
-
-        sql_query = "INSERT INTO " + self.table_name + " (setting_key, setting_value, Accounts_id) " \
-                    "VALUES (%s, %s, %s)"
-
-        arguments = (
-            str(self.key),
-            str(self.value),
-            int(self.account_id),
-        )
-
-        try:
-            cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            self.id = last_id
-            return cursor
-
-    def from_db(self, cursor=None):
-        if cursor is None:
-            raise AttributeError("Provide cursor as parameter")
-
-        sql_query = "SELECT id, setting_key, setting_value, Accounts_id " \
-                    "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
-
-        arguments = (
-            '%' + str(self.id) + '%',
-            '%' + str(self.account_id) + '%',
-        )
-
-        try:
-            cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            logger.debug("Got data: " + repr(data))
-            if len(data) == 0:
-                raise IndexError("DB query returned no results")
-            if len(data[0]):
-                self.id = data[0][0]
-                self.key = data[0][1]
-                self.value = data[0][2]
-                self.account_id = data[0][3]
-            else:
-                self.id = data[0]
-                self.key = data[1]
-                self.value = data[2]
-                self.account_id = data[3]
-
-            return cursor
-
-    def update_db(self, cursor=""):
-
-        sql_query = "UPDATE " + self.table_name + " SET setting_key=%s, setting_value=%s " \
-                                                  "WHERE id=%s AND Accounts_id=%s"
-
-        arguments = (
-            str(self.key),
-            str(self.value),
-            str(self.id),
-            str(self.account_id),
-        )
-
-        try:
-            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            logger.info("SQL query executed")
-            return cursor
+#####################
+# class Settings():  # TODO: To-be removed
+#     id = None
+#     key = None
+#     value = None
+#     account_id = None
+#     table_name = ""
+#     deleted = ""
+#
+#     def __init__(self, id="", key="", value="", account_id="", deleted=0, table_name="MyDataAccount.Settings"):
+#         if id is not None:
+#             self.id = id
+#         if key is not None:
+#             self.key = key
+#         if key is not None:
+#             self.key = key
+#         if value is not None:
+#             self.value = value
+#         if account_id is not None:
+#             self.account_id = account_id
+#         if table_name is not None:
+#             self.table_name = table_name
+#         if deleted is not None:
+#             self.deleted = deleted
+#
+#     @property
+#     def table_name(self):
+#         return self.table_name
+#
+#     @property
+#     def id(self):
+#         return self.id
+#
+#     @id.setter
+#     def id(self, value):
+#         self.id = value
+#
+#     @property
+#     def key(self):
+#         return self.key
+#
+#     @key.setter
+#     def key(self, value):
+#         self.key = value
+#
+#     @property
+#     def value(self):
+#         return self.value
+#
+#     @value.setter
+#     def value(self, value):
+#         self.value = value
+#
+#     @property
+#     def account_id(self):
+#         return self.account_id
+#
+#     @account_id.setter
+#     def account_id(self, value):
+#         self.account_id = value
+#
+#     @property
+#     def to_dict(self):
+#         return self.__dict__
+#
+#     @property
+#     def to_dict_external(self):
+#         dictionary = self.to_dict
+#         del dictionary['id']
+#         del dictionary['account_id']
+#         del dictionary['table_name']
+#         del dictionary['deleted']
+#         return dictionary
+#
+#     @property
+#     def to_api_dict(self):
+#         dictionary = {}
+#         dictionary['type'] = "Setting"
+#         dictionary['id'] = str(self.id)
+#         dictionary['attributes'] = self.to_dict_external
+#         return dictionary
+#
+#     @property
+#     def to_json(self):
+#         return json.dumps(self.to_dict)
+#
+#     @property
+#     def log_entry(self):
+#         return str(self.__class__.__name__) + " object " + str(self.to_json)
+#
+#     def to_db(self, cursor=""):
+#
+#         sql_query = "INSERT INTO " + self.table_name + " (setting_key, setting_value, Accounts_id) " \
+#                     "VALUES (%s, %s, %s)"
+#
+#         arguments = (
+#             str(self.key),
+#             str(self.value),
+#             int(self.account_id),
+#         )
+#
+#         try:
+#             cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             self.id = last_id
+#             return cursor
+#
+#     def from_db(self, cursor=None):
+#         if cursor is None:
+#             raise AttributeError("Provide cursor as parameter")
+#
+#         sql_query = "SELECT id, setting_key, setting_value, Accounts_id " \
+#                     "FROM " + self.table_name + " " \
+#                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
+#
+#         arguments = (
+#             '%' + str(self.id) + '%',
+#             '%' + str(self.account_id) + '%',
+#         )
+#
+#         try:
+#             cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             logger.debug("Got data: " + repr(data))
+#             if len(data) == 0:
+#                 raise IndexError("DB query returned no results")
+#             if len(data[0]):
+#                 self.id = data[0][0]
+#                 self.key = data[0][1]
+#                 self.value = data[0][2]
+#                 self.account_id = data[0][3]
+#             else:
+#                 self.id = data[0]
+#                 self.key = data[1]
+#                 self.value = data[2]
+#                 self.account_id = data[3]
+#
+#             return cursor
+#
+#     def update_db(self, cursor=""):
+#
+#         sql_query = "UPDATE " + self.table_name + " SET setting_key=%s, setting_value=%s " \
+#                                                   "WHERE id=%s AND Accounts_id=%s"
+#
+#         arguments = (
+#             str(self.key),
+#             str(self.value),
+#             str(self.id),
+#             str(self.account_id),
+#         )
+#
+#         try:
+#             cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             logger.info("SQL query executed")
+#             return cursor
 
 
 #####################
@@ -1617,266 +1617,266 @@ class EventLog():
 
 
 #####################
-class Contacts():
-    id = None
-    address1 = None
-    address2 = None
-    postal_code = None
-    city = None
-    state = None
-    country = None
-    entryType = None
-    prime = None
-    account_id = None
-    table_name = ""
-    deleted = ""
-
-    def __init__(self, id="", address1="", address2="", postal_code="", city="", state="", country="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Contacts"):
-        if id is not None:
-            self.id = id
-        if address1 is not None:
-            self.address1 = address1
-        if address2 is not None:
-            self.address2 = address2
-        if postal_code is not None:
-            self.postal_code = postal_code
-        if city is not None:
-            self.city = city
-        if state is not None:
-            self.state = state
-        if country is not None:
-            self.country = country
-        if type is not None:
-            self.type = type
-        if prime is not None:
-            if prime == "True":
-                self.prime = 1
-            else:
-                self.prime = 0
-        if account_id is not None:
-            self.account_id = account_id
-        if table_name is not None:
-            self.table_name = table_name
-        if deleted is not None:
-            self.deleted = deleted
-
-    @property
-    def table_name(self):
-        return self.table_name
-
-    @property
-    def id(self):
-        return self.id
-
-    @id.setter
-    def id(self, value):
-        self.id = value
-
-    @property
-    def address1(self):
-        return self.address1
-
-    @address1.setter
-    def address1(self, value):
-        self.address1 = value
-
-    @property
-    def address2(self):
-        return self.address2
-
-    @address2.setter
-    def address2(self, value):
-        self.address2 = value
-
-    @property
-    def postal_code(self):
-        return self.postal_code
-
-    @postal_code.setter
-    def postal_code(self, value):
-        self.postal_code = value
-
-    @property
-    def city(self):
-        return self.city
-
-    @city.setter
-    def city(self, value):
-        self.city = value
-
-    @property
-    def state(self):
-        return self.state
-
-    @state.setter
-    def state(self, value):
-        self.state = value
-
-    @property
-    def country(self):
-        return self.country
-
-    @country.setter
-    def country(self, value):
-        self.country = value
-
-    @property
-    def type(self):
-        return self.type
-
-    @type.setter
-    def type(self, value):
-        self.type = value
-
-    @property
-    def prime(self):
-        return self.prime
-
-    @prime.setter
-    def prime(self, value):
-        self.prime = value
-
-    @property
-    def account_id(self):
-        return self.account_id
-
-    @account_id.setter
-    def account_id(self, value):
-        self.account_id = value
-
-    @property
-    def to_dict(self):
-        return self.__dict__
-
-    @property
-    def to_dict_external(self):
-        dictionary = self.to_dict
-        del dictionary['id']
-        del dictionary['account_id']
-        del dictionary['table_name']
-        del dictionary['deleted']
-        if dictionary['prime'] == 1:
-            dictionary['prime'] = "True"
-        elif dictionary['prime'] == 0:
-            dictionary['prime'] = "False"
-        return dictionary
-
-    @property
-    def to_api_dict(self):
-        dictionary = {}
-        dictionary['type'] = "Contact"
-        dictionary['id'] = str(self.id)
-        dictionary['attributes'] = self.to_dict_external
-        return dictionary
-
-    @property
-    def to_json(self):
-        return json.dumps(self.to_dict)
-
-    @property
-    def log_entry(self):
-        return str(self.__class__.__name__) + " object " + str(self.to_json)
-
-    def to_db(self, cursor=""):
-
-        sql_query = "INSERT INTO " + self.table_name + " (address1, address2, postalCode, city, state, country, entryType, prime, Accounts_id) " \
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-
-        arguments = (
-            str(self.address1),
-            str(self.address2),
-            str(self.postal_code),
-            str(self.city),
-            str(self.state),
-            str(self.country),
-            str(self.type),
-            str(self.prime),
-            int(self.account_id),
-        )
-
-        try:
-            cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            self.id = last_id
-            return cursor
-
-    def update_db(self, cursor=""):
-
-        sql_query = "UPDATE " + self.table_name + " SET address1=%s, address2=%s, postalCode=%s, city=%s, state=%s, " \
-                                                  "country=%s, entryType=%s, prime=%s " \
-                                                  "WHERE id=%s AND Accounts_id=%s"
-
-        arguments = (
-            str(self.address1),
-            str(self.address2),
-            str(self.postal_code),
-            str(self.city),
-            str(self.state),
-            str(self.country),
-            str(self.type),
-            str(self.prime),
-            str(self.id),
-            str(self.account_id),
-        )
-
-        try:
-            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            logger.info("SQL query executed")
-            return cursor
-
-    def from_db(self, cursor=None):
-        if cursor is None:
-            raise AttributeError("Provide cursor as parameter")
-
-        sql_query = "SELECT id, address1, address2, postalCode, city, state, country, entryType, prime, Accounts_id " \
-                    "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
-
-        arguments = (
-            '%' + str(self.id) + '%',
-            '%' + str(self.account_id) + '%',
-        )
-
-        try:
-            cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-        except Exception as exp:
-            logger.debug('sql_query: ' + repr(exp))
-            raise
-        else:
-            logger.debug("Got data: " + repr(data))
-            if len(data) == 0:
-                raise IndexError("DB query returned no results")
-            if len(data[0]):
-                self.id = data[0][0]
-                self.address1 = data[0][1]
-                self.address2 = data[0][2]
-                self.postal_code = data[0][3]
-                self.city = data[0][4]
-                self.state = data[0][5]
-                self.country = data[0][6]
-                self.type = data[0][7]
-                self.prime = data[0][8]
-                self.account_id = data[0][9]
-            else:
-                self.id = data[0]
-                self.address1 = data[1]
-                self.address2 = data[2]
-                self.postal_code = data[3]
-                self.city = data[4]
-                self.state = data[5]
-                self.country = data[6]
-                self.type = data[7]
-                self.prime = data[8]
-                self.account_id = data[9]
-
-            return cursor
+# class Contacts():  # TODO: To-be removed
+#     id = None
+#     address1 = None
+#     address2 = None
+#     postal_code = None
+#     city = None
+#     state = None
+#     country = None
+#     entryType = None
+#     prime = None
+#     account_id = None
+#     table_name = ""
+#     deleted = ""
+#
+#     def __init__(self, id="", address1="", address2="", postal_code="", city="", state="", country="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Contacts"):
+#         if id is not None:
+#             self.id = id
+#         if address1 is not None:
+#             self.address1 = address1
+#         if address2 is not None:
+#             self.address2 = address2
+#         if postal_code is not None:
+#             self.postal_code = postal_code
+#         if city is not None:
+#             self.city = city
+#         if state is not None:
+#             self.state = state
+#         if country is not None:
+#             self.country = country
+#         if type is not None:
+#             self.type = type
+#         if prime is not None:
+#             if prime == "True":
+#                 self.prime = 1
+#             else:
+#                 self.prime = 0
+#         if account_id is not None:
+#             self.account_id = account_id
+#         if table_name is not None:
+#             self.table_name = table_name
+#         if deleted is not None:
+#             self.deleted = deleted
+#
+#     @property
+#     def table_name(self):
+#         return self.table_name
+#
+#     @property
+#     def id(self):
+#         return self.id
+#
+#     @id.setter
+#     def id(self, value):
+#         self.id = value
+#
+#     @property
+#     def address1(self):
+#         return self.address1
+#
+#     @address1.setter
+#     def address1(self, value):
+#         self.address1 = value
+#
+#     @property
+#     def address2(self):
+#         return self.address2
+#
+#     @address2.setter
+#     def address2(self, value):
+#         self.address2 = value
+#
+#     @property
+#     def postal_code(self):
+#         return self.postal_code
+#
+#     @postal_code.setter
+#     def postal_code(self, value):
+#         self.postal_code = value
+#
+#     @property
+#     def city(self):
+#         return self.city
+#
+#     @city.setter
+#     def city(self, value):
+#         self.city = value
+#
+#     @property
+#     def state(self):
+#         return self.state
+#
+#     @state.setter
+#     def state(self, value):
+#         self.state = value
+#
+#     @property
+#     def country(self):
+#         return self.country
+#
+#     @country.setter
+#     def country(self, value):
+#         self.country = value
+#
+#     @property
+#     def type(self):
+#         return self.type
+#
+#     @type.setter
+#     def type(self, value):
+#         self.type = value
+#
+#     @property
+#     def prime(self):
+#         return self.prime
+#
+#     @prime.setter
+#     def prime(self, value):
+#         self.prime = value
+#
+#     @property
+#     def account_id(self):
+#         return self.account_id
+#
+#     @account_id.setter
+#     def account_id(self, value):
+#         self.account_id = value
+#
+#     @property
+#     def to_dict(self):
+#         return self.__dict__
+#
+#     @property
+#     def to_dict_external(self):
+#         dictionary = self.to_dict
+#         del dictionary['id']
+#         del dictionary['account_id']
+#         del dictionary['table_name']
+#         del dictionary['deleted']
+#         if dictionary['prime'] == 1:
+#             dictionary['prime'] = "True"
+#         elif dictionary['prime'] == 0:
+#             dictionary['prime'] = "False"
+#         return dictionary
+#
+#     @property
+#     def to_api_dict(self):
+#         dictionary = {}
+#         dictionary['type'] = "Contact"
+#         dictionary['id'] = str(self.id)
+#         dictionary['attributes'] = self.to_dict_external
+#         return dictionary
+#
+#     @property
+#     def to_json(self):
+#         return json.dumps(self.to_dict)
+#
+#     @property
+#     def log_entry(self):
+#         return str(self.__class__.__name__) + " object " + str(self.to_json)
+#
+#     def to_db(self, cursor=""):
+#
+#         sql_query = "INSERT INTO " + self.table_name + " (address1, address2, postalCode, city, state, country, entryType, prime, Accounts_id) " \
+#                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+#
+#         arguments = (
+#             str(self.address1),
+#             str(self.address2),
+#             str(self.postal_code),
+#             str(self.city),
+#             str(self.state),
+#             str(self.country),
+#             str(self.type),
+#             str(self.prime),
+#             int(self.account_id),
+#         )
+#
+#         try:
+#             cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             self.id = last_id
+#             return cursor
+#
+#     def update_db(self, cursor=""):
+#
+#         sql_query = "UPDATE " + self.table_name + " SET address1=%s, address2=%s, postalCode=%s, city=%s, state=%s, " \
+#                                                   "country=%s, entryType=%s, prime=%s " \
+#                                                   "WHERE id=%s AND Accounts_id=%s"
+#
+#         arguments = (
+#             str(self.address1),
+#             str(self.address2),
+#             str(self.postal_code),
+#             str(self.city),
+#             str(self.state),
+#             str(self.country),
+#             str(self.type),
+#             str(self.prime),
+#             str(self.id),
+#             str(self.account_id),
+#         )
+#
+#         try:
+#             cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             logger.info("SQL query executed")
+#             return cursor
+#
+#     def from_db(self, cursor=None):
+#         if cursor is None:
+#             raise AttributeError("Provide cursor as parameter")
+#
+#         sql_query = "SELECT id, address1, address2, postalCode, city, state, country, entryType, prime, Accounts_id " \
+#                     "FROM " + self.table_name + " " \
+#                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
+#
+#         arguments = (
+#             '%' + str(self.id) + '%',
+#             '%' + str(self.account_id) + '%',
+#         )
+#
+#         try:
+#             cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+#         except Exception as exp:
+#             logger.debug('sql_query: ' + repr(exp))
+#             raise
+#         else:
+#             logger.debug("Got data: " + repr(data))
+#             if len(data) == 0:
+#                 raise IndexError("DB query returned no results")
+#             if len(data[0]):
+#                 self.id = data[0][0]
+#                 self.address1 = data[0][1]
+#                 self.address2 = data[0][2]
+#                 self.postal_code = data[0][3]
+#                 self.city = data[0][4]
+#                 self.state = data[0][5]
+#                 self.country = data[0][6]
+#                 self.type = data[0][7]
+#                 self.prime = data[0][8]
+#                 self.account_id = data[0][9]
+#             else:
+#                 self.id = data[0]
+#                 self.address1 = data[1]
+#                 self.address2 = data[2]
+#                 self.postal_code = data[3]
+#                 self.city = data[4]
+#                 self.state = data[5]
+#                 self.country = data[6]
+#                 self.type = data[7]
+#                 self.prime = data[8]
+#                 self.account_id = data[9]
+#
+#             return cursor
 
 
 #####################
@@ -2352,6 +2352,7 @@ class ServiceLinkStatusRecord():
 
 
 class SurrogateId():
+    # TODO: Is this needed?
     # TODO: Rename to SlrIDs or similar
     # TODO: How to react if slr is deleted?
     surrogate_id = None
