@@ -100,7 +100,7 @@ class UserAuthenticated(Resource):
                     "token_key": self.service_key["pub"]}
 
             sq.send_to("Service_Components", "Send surrogate_id to Service_Mockup")
-            endpoint = "/api/1.2/slr/link"
+            endpoint = "/api/1.2/slr/link" # Todo: This needs to be fetched from somewhere
             content_json = {"code": code, "surrogate_id": surrogate_id}
             result_service = post("{}{}".format(self.service_url, endpoint), json=content_json)
             if not result_service.ok:
@@ -111,7 +111,7 @@ class UserAuthenticated(Resource):
                                             title=result_service.reason)
 
             sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
-            endpoint = "/api/1.2/slr/link"
+            endpoint = "/api/1.2/slr/link" # Todo: this needs to be fetched from somewhere
             result = post("{}{}".format(self.operator_url, endpoint), json=data)
             debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
             if not result.ok:

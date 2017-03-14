@@ -17,6 +17,12 @@ IS_SOURCE = {{ IS_SOURCE }}
 IS_SOURCE = True
 {% endif %}
 
+{% if SINK_URL is defined %}
+SINK_URL = {{ SINK_URL }}
+{% else %}
+SINK_URL = "http://service_component_sink:7000"
+{% endif %}
+
 # Name of host to connect to. Default: use the local host via a UNIX socket (where applicable)
 {% if MYSQL_HOST is defined %}
 MYSQL_HOST = {{ MYSQL_HOST }}

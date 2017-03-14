@@ -93,7 +93,7 @@ class RegisterSurrogate(Resource):
             # Fill token_key
             try:
                 sq.task("Verify surrogate_id and token_key exist in the payload json")
-                token_key = js["token_key"]
+                token_key = js["token_key"] # Todo: source has no need to send this, make the difference.
                 self.payload["surrogate_id"] = js["surrogate_id"]
                 #self.payload["token_key"] = {"key": token_key}
 

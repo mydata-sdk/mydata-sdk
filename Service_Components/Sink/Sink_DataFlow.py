@@ -38,11 +38,12 @@ class DebugDataFlow(Resource):
     def __init__(self):
         super(DebugDataFlow, self).__init__()
         self.service_url = current_app.config["SERVICE_URL"]
+        self.own_url = current_app.config["SINK_URL"]
         self.operator_url = current_app.config["OPERATOR_URL"]
         self.helpers = Helpers(current_app.config)
 
     @error_handler
-    def get(self, rs_id):  # TODO Make this a GET
+    def get(self, rs_id):
 
         debug_log.info("Got rs_id {} to DebugDataFlow endpoint".format(rs_id))
         records = self.helpers.query_db_multiple("select rs_id, cr_id, slr_id, surrogate_id from cr_storage where rs_id = %s;", (rs_id,))
@@ -62,7 +63,7 @@ class DebugDataFlow(Resource):
                                "rs_id": urllib.quote_plus(rs_id)}
                     # TODO get the url from, config
                     debug_log.info(dumps(payload, indent=2))
-                    req = requests.post("http://service_components:7000/api/1.2/sink_flow/dc", json=payload)
+                    req = requests.post(self.own_url+"/api/1.2/sink_flow/dc", json=payload)
                     return req.content
 
 
