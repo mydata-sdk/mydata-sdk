@@ -2,7 +2,8 @@ mkdir -p ./init-db
 cp ./Account/doc/database/MyDataAccount-DBinit.sql ./init-db/
 cp ./Account/doc/database/MyDataAccount-UserInit.sql ./init-db/
 cp ./Operator_Components/doc/database/Operator_Components-DBinit.sql ./init-db/
-cp ./Service_Components/doc/database/Service_Components-DBinit.sql ./init-db/
+cp ./Service_Components/doc/database/Service_Components-DBinit-Sink.sql ./init-db/
+cp ./Service_Components/doc/database/Service_Components-DBinit-Source.sql ./init-db/
 cp ./Service_Mockup/doc/database/Service_Mockup-DBinit.sql ./init-db/
 
 docker-compose rm --force mysql-db                  # Clean db

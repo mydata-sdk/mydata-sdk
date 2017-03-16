@@ -74,7 +74,6 @@ services:
       - OPERATOR_ROOT_PATH="/api/1.2"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
-#      - SERVICE_URL="http://service_components:7000" # This is nolonger used, using purely srv id passed to us to query Service Registry for this
       - SERVICE_REGISTRY_SEARCH_DOMAIN="http://node.registry.sandbox.mydata.fi"
       - VIRTUAL_HOST=localhost.operator
     ports:
@@ -82,7 +81,7 @@ services:
     networks:
       - mydata_sdk_demo_network
 
-  service_components:
+  service_component_source:
     build:
       context: .
 #      context: ./Service_Components/
@@ -90,18 +89,17 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Service_Components
-    container_name: service_components
+    container_name: service_component_source
     depends_on:
       - redis
     environment:
       - IS_SINK=False
       - IS_SOURCE=True
       - PYTHONUNBUFFERED='true'
-      - DATABASE_PATH="./db_Srv.sqlite"
       - MYSQL_HOST='mysql-db'
-      - MYSQL_USER='service'
+      - MYSQL_USER='service_source'
       - MYSQL_PASSWORD='MynorcA'
-      - MYSQL_DB='db_Srv'
+      - MYSQL_DB='db_Srv_Source'
       - MYSQL_PORT=3306
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
@@ -111,12 +109,12 @@ services:
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
-      - SERVICE_URL="http://service_mockup:2000"
+      - SERVICE_URL="http://service_mockup_source:2000"
       - OPERATOR_URL="http://operator_components:5000"
       - SERVICE_ROOT_PATH="/api/1.2"
       - SERVICE_CR_PATH="/cr"
       - SERVICE_SLR_PATH="/slr"
-      - VIRTUAL_HOST=localhost.service
+      - VIRTUAL_HOST=localhost.serviceSource
     ports:
       - '7000:7000'
     networks:
@@ -137,11 +135,10 @@ services:
       - IS_SOURCE=False
       - IS_SINK=True
       - PYTHONUNBUFFERED='true'
-      - DATABASE_PATH="./db_Srv.sqlite"
       - MYSQL_HOST='mysql-db'
-      - MYSQL_USER='service'
+      - MYSQL_USER='service_sink'
       - MYSQL_PASSWORD='MynorcA'
-      - MYSQL_DB='db_Srv'
+      - MYSQL_DB='db_Srv_Sink'
       - MYSQL_PORT=3306
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
@@ -162,7 +159,7 @@ services:
     networks:
       - mydata_sdk_demo_network
 
-  service_mockup:
+  service_mockup_source:
     build:
       context: .
 #      context: ./Service_Mockup/
@@ -170,12 +167,12 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Service_Mockup
-    container_name: service_mockup
+    container_name: service_mockup_source
     depends_on:
       - redis
     environment:
       - PYTHONUNBUFFERED='true'
-      - SERVICE_MGMNT_URL="http://service_components:7000"
+      - SERVICE_MGMNT_URL="http://service_component_source:7000"
       - VIRTUAL_HOST=localhost.srvmockup
       - MYSQL_HOST='mysql-db'
       - MYSQL_USER='serviceMockup'

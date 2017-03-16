@@ -11,21 +11,21 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='';
 -- Schema mydb
 -- -----------------------------------------------------
 -- -----------------------------------------------------
--- Schema db_Srv
+-- Schema db_Srv_Source
 -- -----------------------------------------------------
 
 -- -----------------------------------------------------
--- Schema db_Srv
+-- Schema db_Srv_Source
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `db_Srv` DEFAULT CHARACTER SET utf8 ;
-USE `db_Srv` ;
+CREATE SCHEMA IF NOT EXISTS `db_Srv_Source` DEFAULT CHARACTER SET utf8 ;
+USE `db_Srv_Source` ;
 
 -- -----------------------------------------------------
--- Table `db_Srv`.`codes`
+-- Table `db_Srv_Source`.`codes`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Srv`.`codes` ;
+DROP TABLE IF EXISTS `db_Srv_Source`.`codes` ;
 
-CREATE TABLE IF NOT EXISTS `db_Srv`.`codes` (
+CREATE TABLE IF NOT EXISTS `db_Srv_Source`.`codes` (
   `ID` LONGTEXT NOT NULL,
   `code` LONGTEXT NOT NULL,
   PRIMARY KEY (`ID`(255)))
@@ -34,11 +34,11 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `db_Srv`.`cr_storage`
+-- Table `db_Srv_Source`.`cr_storage`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Srv`.`cr_storage` ;
+DROP TABLE IF EXISTS `db_Srv_Source`.`cr_storage` ;
 
-CREATE TABLE IF NOT EXISTS `db_Srv`.`cr_storage` (
+CREATE TABLE IF NOT EXISTS `db_Srv_Source`.`cr_storage` (
   `cr_id` LONGTEXT NOT NULL,
   `json` LONGTEXT NOT NULL,
   `slr_id` LONGTEXT NOT NULL,
@@ -50,11 +50,11 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `db_Srv`.`csr_storage`
+-- Table `db_Srv_Source`.`csr_storage`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Srv`.`csr_storage` ;
+DROP TABLE IF EXISTS `db_Srv_Source`.`csr_storage` ;
 
-CREATE TABLE IF NOT EXISTS `db_Srv`.`csr_storage` (
+CREATE TABLE IF NOT EXISTS `db_Srv_Source`.`csr_storage` (
   `cr_id` VARCHAR(255) NOT NULL,
   `csr_id` VARCHAR(255) NOT NULL,
   `previous_record_id` VARCHAr(255) NOT NULL,
@@ -69,11 +69,11 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `db_Srv`.`storage`
+-- Table `db_Srv_Source`.`storage`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Srv`.`storage` ;
+DROP TABLE IF EXISTS `db_Srv_Source`.`storage` ;
 
-CREATE TABLE IF NOT EXISTS `db_Srv`.`storage` (
+CREATE TABLE IF NOT EXISTS `db_Srv_Source`.`storage` (
   `surrogate_id` LONGTEXT NOT NULL,
   `json` LONGTEXT NOT NULL,
   PRIMARY KEY (`surrogate_id`(255)))
@@ -82,11 +82,11 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `db_Srv`.`token_storage`
+-- Table `db_Srv_Source`.`token_storage`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Srv`.`token_storage` ;
+DROP TABLE IF EXISTS `db_Srv_Source`.`token_storage` ;
 
-CREATE TABLE IF NOT EXISTS `db_Srv`.`token_storage` (
+CREATE TABLE IF NOT EXISTS `db_Srv_Source`.`token_storage` (
   `cr_id` LONGTEXT NOT NULL,
   `token` LONGTEXT NOT NULL,
   PRIMARY KEY (`cr_id`(255)))
@@ -98,6 +98,6 @@ DEFAULT CHARACTER SET = utf8;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
-CREATE USER 'service'@'%' IDENTIFIED BY 'MynorcA';
-GRANT CREATE TEMPORARY TABLES, DELETE, DROP, INSERT, LOCK TABLES, SELECT, UPDATE ON db_Srv.* TO 'service'@'%';
+CREATE USER 'service_source'@'%' IDENTIFIED BY 'MynorcA';
+GRANT CREATE TEMPORARY TABLES, DELETE, DROP, INSERT, LOCK TABLES, SELECT, UPDATE ON db_Srv_Source.* TO 'service_source'@'%';
 FLUSH PRIVILEGES;

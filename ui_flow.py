@@ -12,8 +12,8 @@ from uuid import uuid4
 #Service_ID_Source   = "582b7df00cf2727145535753"  # MyLocation
 #Service_ID_Sink     = "582b7df00cf2727145535754"  # PHR
 Service_ID_Source   = "582f2bf50cf2f4663ec4f01f"  # MyLocation
-#Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
-Service_ID_Sink = "58c7c3d70cf2deab82d1fe3e"
+Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
+#Service_ID_Sink = "58c7c3d70cf2deab82d1fe3e"
 
 # TODO: Add more printing. Now user barely knows if initialization happened and did it succeed or not.
 # Sends JSON-payloads to Account that create three new accounts.
