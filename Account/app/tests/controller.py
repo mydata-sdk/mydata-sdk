@@ -59,13 +59,15 @@ def validate_json(json_object=None, json_schema=None):
         return True
 
 
-def account_create(email_length=15, username_length=15, password_length=15, firstname_length=15, lastname_length=15, invalid_email=False, invalid_date=False, invalid_type=False, accept_terms=True):
+def account_create(username=None, password=None, email_length=15, username_length=15, password_length=15, firstname_length=15, lastname_length=15, invalid_email=False, invalid_date=False, invalid_type=False, accept_terms=True):
     """
     Create valid Account
     :return: account, username, password
     """
-    username = generate_string(n=username_length)
-    password = generate_string(n=password_length)
+    if username is None:
+        username = generate_string(n=username_length)
+    if password is None:
+        password = generate_string(n=password_length)
     firstname = generate_string(n=firstname_length)
     lastname = generate_string(n=lastname_length)
 
