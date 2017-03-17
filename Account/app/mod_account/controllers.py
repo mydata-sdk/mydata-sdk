@@ -18,7 +18,7 @@ from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_
 
 # create logger with 'spam_application'
 from app.mod_database.models import Particulars, EventLog, ServiceLinkRecord, \
-    ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord, Account, LocalIdentityPWD, LocalIdentity, Salt
+    ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord, Account, LocalIdentityPWD, LocalIdentity, Salt, Email
 
 logger = get_custom_logger(__name__)
 
@@ -82,7 +82,7 @@ def create_account(first_name=None, last_name=None, username=None, password=None
         ###
         # localIdentityPWDs
         logger.debug('localIdentityPWDs')
-        local_pwd = LocalIdentityPWD(password=pwd_hash)
+        local_pwd = LocalIdentityPWD(password=pwd_hash, accounts_id=account.id)
         local_pwd.to_db(cursor=cursor)
 
         ###
@@ -100,7 +100,8 @@ def create_account(first_name=None, last_name=None, username=None, password=None
         logger.debug('salts')
         salt = Salt(
             salt=salt_str,
-            identity_id=local_identity.id
+            identity_id=local_identity.id,
+            accounts_id=account.id
         )
         salt.to_db(cursor=cursor)
 

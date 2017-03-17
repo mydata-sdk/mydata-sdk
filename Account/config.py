@@ -17,7 +17,7 @@ LOG_FORMATTER = '%(asctime)s - %(name)s in function %(funcName)s at line: %(line
 LOG_PATH = './logs/'
 LOG_FILE = LOG_PATH + 'account.log'
 LOG_TO_FILE = False
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'DEBUG'
 
 # Define the application directory
 import os

@@ -284,14 +284,17 @@ class LocalIdentity():
 class LocalIdentityPWD():
     id = None
     password = None
+    accounts_id = None
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", password="", deleted=0, table_name="MyDataAccount.LocalIdentityPWDs"):
+    def __init__(self, id="", password="", accounts_id="", deleted=0, table_name="MyDataAccount.LocalIdentityPWDs"):
         if id is not None:
             self.id = id
         if password is not None:
             self.password = password
+        if accounts_id is not None:
+            self.accounts_id = accounts_id
         if table_name is not None:
             self.table_name = table_name
         if deleted is not None:
@@ -318,6 +321,14 @@ class LocalIdentityPWD():
         self.password = value
 
     @property
+    def accounts_id(self):
+        return self.accounts_id
+
+    @accounts_id.setter
+    def accounts_id(self, value):
+        self.accounts_id = value
+
+    @property
     def to_dict(self):
         return self.__dict__
 
@@ -325,6 +336,7 @@ class LocalIdentityPWD():
     def to_dict_external(self):
         dictionary = self.to_dict
         del dictionary['id']
+        del dictionary['accounts_id']
         del dictionary['table_name']
         del dictionary['deleted']
         return dictionary
@@ -339,10 +351,11 @@ class LocalIdentityPWD():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (password) VALUES (%s)"
+        sql_query = "INSERT INTO " + self.table_name + " (password, Accounts_id) VALUES (%s, %s)"
 
         arguments = (
             str(self.password),
+            int(self.accounts_id),
         )
 
         try:
@@ -360,13 +373,14 @@ class LocalIdentityPWD():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, password " \
+        sql_query = "SELECT id, password, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND password LIKE %s;"
+                    "WHERE id LIKE %s AND password LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
             '%' + str(self.password) + '%',
+            '%' + str(self.accounts_id) + '%',
         )
 
         try:
@@ -381,9 +395,11 @@ class LocalIdentityPWD():
             if len(data[0]):
                 self.id = data[0][0]
                 self.password = data[0][1]
+                self.accounts_id = data[0][2]
             else:
                 self.id = data[0]
                 self.password = data[1]
+                self.accounts_id = data[2]
 
             return cursor
 
@@ -396,10 +412,11 @@ class OneTimeCookie():
     created = None
     updated = None
     identity_id = None
+    accounts_id = None
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", cookie="", used="", created="", updated="", identity_id="", deleted=0, table_name="MyDataAccount.OneTimeCookies"):
+    def __init__(self, id="", cookie="", used="", created="", updated="", identity_id="", accounts_id="", deleted=0, table_name="MyDataAccount.OneTimeCookies"):
         if id is not None:
             self.id = id
         if cookie is not None:
@@ -412,6 +429,8 @@ class OneTimeCookie():
             self.updated = updated
         if identity_id is not None:
             self.identity_id = identity_id
+        if accounts_id is not None:
+            self.accounts_id = accounts_id
         if table_name is not None:
             self.table_name = table_name
         if deleted is not None:
@@ -470,6 +489,14 @@ class OneTimeCookie():
         self.identity_id = value
 
     @property
+    def accounts_id(self):
+        return self.accounts_id
+
+    @accounts_id.setter
+    def accounts_id(self, value):
+        self.accounts_id = value
+
+    @property
     def to_dict(self):
         return self.__dict__
 
@@ -477,6 +504,7 @@ class OneTimeCookie():
     def to_dict_external(self):
         dictionary = self.to_dict
         del dictionary['id']
+        del dictionary['accounts_id']
         del dictionary['table_name']
         del dictionary['deleted']
         return dictionary
@@ -491,11 +519,12 @@ class OneTimeCookie():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (oneTimeCookie, LocalIdentities_id) " \
-                    "VALUES (%s, %s)"
+        sql_query = "INSERT INTO " + self.table_name + " (oneTimeCookie, Accounts_id, LocalIdentities_id) " \
+                    "VALUES (%s, %s, %s)"
 
         arguments = (
             str(self.cookie),
+            int(self.accounts_id),
             int(self.identity_id),
         )
 
@@ -512,10 +541,10 @@ class OneTimeCookie():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        sql_query = "SELECT id, oneTimeCookie, used, created, updated, LocalIdentities_id " \
+        sql_query = "SELECT id, oneTimeCookie, used, created, updated, LocalIdentities_id, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND oneTimeCookie LIKE %s AND used LIKE %s AND created LIKE %s " \
-                    "AND updated LIKE %s AND LocalIdentities_id LIKE %s;"
+                    "AND updated LIKE %s AND LocalIdentities_id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
@@ -524,6 +553,7 @@ class OneTimeCookie():
             '%' + str(self.created) + '%',
             '%' + str(self.updated) + '%',
             '%' + str(self.identity_id) + '%',
+            '%' + str(self.accounts_id) + '%',
         )
 
         try:
@@ -542,6 +572,7 @@ class OneTimeCookie():
                 self.created = data[0][3]
                 self.updated = data[0][4]
                 self.identity_id = data[0][5]
+                self.accounts_id = data[0][6]
             else:
                 self.id = data[0]
                 self.cookie = data[1]
@@ -549,6 +580,7 @@ class OneTimeCookie():
                 self.created = data[3]
                 self.updated = data[4]
                 self.identity_id = data[5]
+                self.accounts_id = data[6]
 
             return cursor
 
@@ -558,16 +590,19 @@ class Salt():
     id = None
     salt = None
     identity_id = None
+    accounts_id = None
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", salt="", identity_id="", deleted=0, table_name="MyDataAccount.Salts"):
+    def __init__(self, id="", salt="", identity_id="", accounts_id="", deleted=0, table_name="MyDataAccount.Salts"):
         if id is not None:
             self.id = id
         if salt is not None:
             self.salt = salt
         if identity_id is not None:
             self.identity_id = identity_id
+        if accounts_id is not None:
+            self.accounts_id = accounts_id
         if table_name is not None:
             self.table_name = table_name
         if deleted is not None:
@@ -602,6 +637,14 @@ class Salt():
         self.identity_id = value
 
     @property
+    def accounts_id(self):
+        return self.accounts_id
+
+    @accounts_id.setter
+    def accounts_id(self, value):
+        self.accounts_id = value
+
+    @property
     def to_dict(self):
         return self.__dict__
 
@@ -609,6 +652,7 @@ class Salt():
     def to_dict_external(self):
         dictionary = self.to_dict
         del dictionary['id']
+        del dictionary['accounts_id']
         del dictionary['table_name']
         del dictionary['deleted']
         return dictionary
@@ -623,10 +667,11 @@ class Salt():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (salt, LocalIdentities_id) VALUES (%s, %s)"
+        sql_query = "INSERT INTO " + self.table_name + " (salt, Accounts_id, LocalIdentities_id) VALUES (%s, %s, %s)"
 
         arguments = (
             str(self.salt),
+            int(self.accounts_id),
             int(self.identity_id),
         )
 
@@ -645,14 +690,15 @@ class Salt():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, salt, LocalIdentities_id " \
+        sql_query = "SELECT id, salt, LocalIdentities_id, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND salt LIKE %s AND LocalIdentities_id LIKE %s;"
+                    "WHERE id LIKE %s AND salt LIKE %s AND LocalIdentities_id LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
             '%' + str(self.salt) + '%',
             '%' + str(self.identity_id) + '%',
+            '%' + str(self.accounts_id) + '%',
         )
 
         try:
@@ -668,10 +714,12 @@ class Salt():
                 self.id = data[0][0]
                 self.salt = data[0][1]
                 self.identity_id = data[0][2]
+                self.accounts_id = data[0][3]
             else:
                 self.id = data[0]
                 self.salt = data[1]
                 self.identity_id = data[2]
+                self.accounts_id = data[3]
 
             return cursor
 
@@ -900,190 +948,190 @@ class Particulars():  # TODO: Add email and rename Particulars to AccountInfo
 
 
 #####################
-# class Email():  # TODO: To-be removed
-#     id = None
-#     email = None
-#     type = None
-#     prime = None
-#     account_id = None
-#     table_name = ""
-#     deleted = ""
-#
-#     def __init__(self, id="", email="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Emails"):
-#         if id is not None:
-#             self.id = id
-#         if email is not None:
-#             self.email = email
-#         if type is not None:
-#             self.type = type
-#         if prime is not None:
-#             if prime == "True":
-#                 self.prime = 1
-#             else:
-#                 self.prime = 0
-#         if account_id is not None:
-#             self.account_id = account_id
-#         if table_name is not None:
-#             self.table_name = table_name
-#         if deleted is not None:
-#             self.deleted = deleted
-#
-#     @property
-#     def table_name(self):
-#         return self.table_name
-#
-#     @property
-#     def id(self):
-#         return self.id
-#
-#     @id.setter
-#     def id(self, value):
-#         self.id = value
-#
-#     @property
-#     def email(self):
-#         return self.email
-#
-#     @email.setter
-#     def email(self, value):
-#         self.email = value
-#
-#     @property
-#     def type(self):
-#         return self.type
-#
-#     @type.setter
-#     def type(self, value):
-#         self.type = value
-#
-#     @property
-#     def prime(self):
-#         return self.prime
-#
-#     @prime.setter
-#     def prime(self, value):
-#         self.prime = value
-#
-#     @property
-#     def account_id(self):
-#         return self.account_id
-#
-#     @account_id.setter
-#     def account_id(self, value):
-#         self.account_id = value
-#
-#     @property
-#     def to_dict(self):
-#         return self.__dict__
-#
-#     @property
-#     def to_dict_external(self):
-#         dictionary = self.to_dict
-#         del dictionary['id']
-#         del dictionary['account_id']
-#         del dictionary['table_name']
-#         del dictionary['deleted']
-#         if dictionary['prime'] == 1:
-#             dictionary['prime'] = "True"
-#         elif dictionary['prime'] == 0:
-#             dictionary['prime'] = "False"
-#         return dictionary
-#
-#     @property
-#     def to_api_dict(self):
-#         dictionary = {}
-#         dictionary['type'] = "Email"
-#         dictionary['id'] = str(self.id)
-#         dictionary['attributes'] = self.to_dict_external
-#         return dictionary
-#
-#     @property
-#     def to_json(self):
-#         return json.dumps(self.to_dict)
-#
-#     @property
-#     def log_entry(self):
-#         return str(self.__class__.__name__) + " object " + str(self.to_json)
-#
-#     def to_db(self, cursor=""):
-#
-#         sql_query = "INSERT INTO " + self.table_name + " (email, entryType, prime, Accounts_id) " \
-#                     "VALUES (%s, %s, %s, %s)"
-#
-#         arguments = (
-#             str(self.email),
-#             str(self.type),
-#             str(self.prime),
-#             int(self.account_id),
-#         )
-#
-#         try:
-#             cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-#         except Exception as exp:
-#             logger.debug('sql_query: ' + repr(exp))
-#             raise
-#         else:
-#             self.id = last_id
-#             return cursor
-#
-#     def from_db(self, cursor=None):
-#         if cursor is None:
-#             raise AttributeError("Provide cursor as parameter")
-#
-#         sql_query = "SELECT id, email, entryType, prime, Accounts_id " \
-#                     "FROM " + self.table_name + " " \
-#                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
-#
-#         arguments = (
-#             '%' + str(self.id) + '%',
-#             '%' + str(self.account_id) + '%',
-#         )
-#
-#         try:
-#             cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
-#         except Exception as exp:
-#             logger.debug('sql_query: ' + repr(exp))
-#             raise
-#         else:
-#             logger.debug("Got data: " + repr(data))
-#             if len(data) == 0:
-#                 raise IndexError("DB query returned no results")
-#             if len(data[0]):
-#                 self.id = data[0][0]
-#                 self.email = data[0][1]
-#                 self.type = data[0][2]
-#                 self.prime = data[0][3]
-#                 self.account_id = data[0][4]
-#             else:
-#                 self.id = data[0]
-#                 self.email = data[1]
-#                 self.type = data[2]
-#                 self.prime = data[0][3]
-#                 self.account_id = data[4]
-#
-#             return cursor
-#
-#     def update_db(self, cursor=""):
-#
-#         sql_query = "UPDATE " + self.table_name + " SET email=%s, entryType=%s, prime=%s " \
-#                                                   "WHERE id=%s AND Accounts_id=%s"
-#
-#         arguments = (
-#             str(self.email),
-#             str(self.type),
-#             str(self.prime),
-#             str(self.id),
-#             str(self.account_id),
-#         )
-#
-#         try:
-#             cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
-#         except Exception as exp:
-#             logger.debug('sql_query: ' + repr(exp))
-#             raise
-#         else:
-#             logger.info("SQL query executed")
-#             return cursor
+class Email():  # TODO: To-be removed
+    id = None
+    email = None
+    type = None
+    prime = None
+    account_id = None
+    table_name = ""
+    deleted = ""
+
+    def __init__(self, id="", email="", type="Personal", prime="", account_id="", deleted=0, table_name="MyDataAccount.Emails"):
+        if id is not None:
+            self.id = id
+        if email is not None:
+            self.email = email
+        if type is not None:
+            self.type = type
+        if prime is not None:
+            if prime == "True":
+                self.prime = 1
+            else:
+                self.prime = 0
+        if account_id is not None:
+            self.account_id = account_id
+        if table_name is not None:
+            self.table_name = table_name
+        if deleted is not None:
+            self.deleted = deleted
+
+    @property
+    def table_name(self):
+        return self.table_name
+
+    @property
+    def id(self):
+        return self.id
+
+    @id.setter
+    def id(self, value):
+        self.id = value
+
+    @property
+    def email(self):
+        return self.email
+
+    @email.setter
+    def email(self, value):
+        self.email = value
+
+    @property
+    def type(self):
+        return self.type
+
+    @type.setter
+    def type(self, value):
+        self.type = value
+
+    @property
+    def prime(self):
+        return self.prime
+
+    @prime.setter
+    def prime(self, value):
+        self.prime = value
+
+    @property
+    def account_id(self):
+        return self.account_id
+
+    @account_id.setter
+    def account_id(self, value):
+        self.account_id = value
+
+    @property
+    def to_dict(self):
+        return self.__dict__
+
+    @property
+    def to_dict_external(self):
+        dictionary = self.to_dict
+        del dictionary['id']
+        del dictionary['account_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
+        if dictionary['prime'] == 1:
+            dictionary['prime'] = "True"
+        elif dictionary['prime'] == 0:
+            dictionary['prime'] = "False"
+        return dictionary
+
+    @property
+    def to_api_dict(self):
+        dictionary = {}
+        dictionary['type'] = "Email"
+        dictionary['id'] = str(self.id)
+        dictionary['attributes'] = self.to_dict_external
+        return dictionary
+
+    @property
+    def to_json(self):
+        return json.dumps(self.to_dict)
+
+    @property
+    def log_entry(self):
+        return str(self.__class__.__name__) + " object " + str(self.to_json)
+
+    def to_db(self, cursor=""):
+
+        sql_query = "INSERT INTO " + self.table_name + " (email, entryType, prime, Accounts_id) " \
+                    "VALUES (%s, %s, %s, %s)"
+
+        arguments = (
+            str(self.email),
+            str(self.type),
+            str(self.prime),
+            int(self.account_id),
+        )
+
+        try:
+            cursor, last_id = execute_sql_insert_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+        except Exception as exp:
+            logger.debug('sql_query: ' + repr(exp))
+            raise
+        else:
+            self.id = last_id
+            return cursor
+
+    def from_db(self, cursor=None):
+        if cursor is None:
+            raise AttributeError("Provide cursor as parameter")
+
+        sql_query = "SELECT id, email, entryType, prime, Accounts_id " \
+                    "FROM " + self.table_name + " " \
+                    "WHERE id LIKE %s AND Accounts_id LIKE %s;"
+
+        arguments = (
+            '%' + str(self.id) + '%',
+            '%' + str(self.account_id) + '%',
+        )
+
+        try:
+            cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+        except Exception as exp:
+            logger.debug('sql_query: ' + repr(exp))
+            raise
+        else:
+            logger.debug("Got data: " + repr(data))
+            if len(data) == 0:
+                raise IndexError("DB query returned no results")
+            if len(data[0]):
+                self.id = data[0][0]
+                self.email = data[0][1]
+                self.type = data[0][2]
+                self.prime = data[0][3]
+                self.account_id = data[0][4]
+            else:
+                self.id = data[0]
+                self.email = data[1]
+                self.type = data[2]
+                self.prime = data[0][3]
+                self.account_id = data[4]
+
+            return cursor
+
+    def update_db(self, cursor=""):
+
+        sql_query = "UPDATE " + self.table_name + " SET email=%s, entryType=%s, prime=%s " \
+                                                  "WHERE id=%s AND Accounts_id=%s"
+
+        arguments = (
+            str(self.email),
+            str(self.type),
+            str(self.prime),
+            str(self.id),
+            str(self.account_id),
+        )
+
+        try:
+            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+        except Exception as exp:
+            logger.debug('sql_query: ' + repr(exp))
+            raise
+        else:
+            logger.info("SQL query executed")
+            return cursor
 
 
 #####################
@@ -2115,10 +2163,11 @@ class ServiceLinkStatusRecord():
     issued_at = None
     prev_record_id = None
     service_link_records_id = None
+    accounts_id = None
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", service_link_status_record_id="", status="", service_link_status_record="", service_link_record_id="", issued_at="", prev_record_id="", service_link_records_id="", deleted=0, table_name="MyDataAccount.ServiceLinkStatusRecords"):
+    def __init__(self, id="", service_link_status_record_id="", status="", service_link_status_record="", service_link_record_id="", issued_at="", prev_record_id="", service_link_records_id="", accounts_id="", deleted=0, table_name="MyDataAccount.ServiceLinkStatusRecords"):
         if id is not None:
             self.id = id
         if service_link_status_record_id is not None:
@@ -2135,6 +2184,8 @@ class ServiceLinkStatusRecord():
             self.prev_record_id = prev_record_id
         if service_link_records_id is not None:
             self.service_link_records_id = service_link_records_id
+        if accounts_id is not None:
+            self.accounts_id = accounts_id
         if table_name is not None:
             self.table_name = table_name
         if deleted is not None:
@@ -2209,6 +2260,14 @@ class ServiceLinkStatusRecord():
         self.service_link_records_id = value
 
     @property
+    def accounts_id(self):
+        return self.accounts_id
+
+    @accounts_id.setter
+    def accounts_id(self, value):
+        self.accounts_id = value
+
+    @property
     def to_dict(self):
         return self.__dict__
 
@@ -2217,6 +2276,7 @@ class ServiceLinkStatusRecord():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['service_link_records_id']
+        del dictionary['accounts_id']
         del dictionary['table_name']
         del dictionary['deleted']
         return dictionary
@@ -2264,8 +2324,9 @@ class ServiceLinkStatusRecord():
                     "ServiceLinkRecords_id, " \
                     "serviceLinkRecordId, " \
                     "issued_at, " \
-                    "prevRecordId" \
-                    ") VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                    "prevRecordId," \
+                    "Accounts_id" \
+                    ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
             str(self.service_link_status_record_id),
@@ -2275,6 +2336,7 @@ class ServiceLinkStatusRecord():
             str(self.service_link_record_id),
             int(self.issued_at),
             str(self.prev_record_id),
+            int(self.accounts_id),
         )
 
         try:
@@ -2294,11 +2356,11 @@ class ServiceLinkStatusRecord():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, serviceLinkStatus, serviceLinkStatusRecord, ServiceLinkRecords_id, serviceLinkRecordId, " \
-                    "issued_at, prevRecordId, serviceLinkStatusRecordId " \
+                    "issued_at, prevRecordId, serviceLinkStatusRecordId, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND serviceLinkStatus LIKE %s AND serviceLinkStatusRecord LIKE %s AND " \
                     "ServiceLinkRecords_id LIKE %s AND serviceLinkRecordId LIKE %s AND issued_at LIKE %s AND " \
-                    "prevRecordId LIKE %s AND serviceLinkStatusRecordId LIKE %s;"
+                    "prevRecordId LIKE %s AND serviceLinkStatusRecordId LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
@@ -2309,6 +2371,7 @@ class ServiceLinkStatusRecord():
             '%' + str(self.issued_at) + '%',
             '%' + str(self.prev_record_id) + '%',
             '%' + str(self.service_link_status_record_id) + '%',
+            '%' + str(self.accounts_id) + '%',
         )
 
         try:
@@ -2329,6 +2392,7 @@ class ServiceLinkStatusRecord():
                 self.issued_at = data[0][5]
                 self.prev_record_id = data[0][6]
                 self.service_link_status_record_id = data[0][7]
+                self.accounts_id = data[0][8]
             else:
                 self.id = data[0]
                 self.status = data[1]
@@ -2338,6 +2402,7 @@ class ServiceLinkStatusRecord():
                 self.issued_at = data[5]
                 self.prev_record_id = data[6]
                 self.service_link_status_record_id = data[7]
+                self.accounts_id = data[8]
 
             try:
                 slsr_copy = self.service_link_status_record
@@ -2462,10 +2527,11 @@ class ConsentRecord():
     subject_id = None
     service_link_records_id = None
     role = None
+    accounts_id = None
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", consent_record="", consent_id="", surrogate_id="", resource_set_id="", service_link_record_id="", subject_id="", service_link_records_id="", role="", deleted=0, table_name="MyDataAccount.ConsentRecords"):
+    def __init__(self, id="", consent_record="", consent_id="", surrogate_id="", resource_set_id="", service_link_record_id="", subject_id="", service_link_records_id="", role="", accounts_id="", deleted=0, table_name="MyDataAccount.ConsentRecords"):
         self.id = id
         self.consent_record = consent_record
         self.surrogate_id = surrogate_id
@@ -2475,6 +2541,8 @@ class ConsentRecord():
         self.subject_id = subject_id
         self.service_link_records_id = service_link_records_id
         self.role = role
+        if accounts_id is not None:
+            self.accounts_id = accounts_id
         if table_name is not None:
             self.table_name = table_name
         if deleted is not None:
@@ -2557,6 +2625,14 @@ class ConsentRecord():
         self.role = value
 
     @property
+    def accounts_id(self):
+        return self.accounts_id
+
+    @accounts_id.setter
+    def accounts_id(self, value):
+        self.accounts_id = value
+
+    @property
     def to_dict(self):
         return self.__dict__
 
@@ -2565,6 +2641,7 @@ class ConsentRecord():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['service_link_records_id']
+        del dictionary['accounts_id']
         del dictionary['table_name']
         del dictionary['deleted']
         return dictionary
@@ -2609,8 +2686,9 @@ class ConsentRecord():
                     "serviceLinkRecordId, " \
                     "subjectId, " \
                     "ServiceLinkRecords_id," \
-                    "role" \
-                    ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                    "role," \
+                    "Accounts_id" \
+                    ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
             json.dumps(self.consent_record),
@@ -2621,6 +2699,7 @@ class ConsentRecord():
             str(self.subject_id),
             int(self.service_link_records_id),
             str(self.role),
+            int(self.accounts_id),
         )
 
         try:
@@ -2637,11 +2716,11 @@ class ConsentRecord():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, consentRecord, ServiceLinkRecords_id, surrogateId, consentRecordId, ResourceSetId, serviceLinkRecordId, subjectId, role " \
+        sql_query = "SELECT id, consentRecord, ServiceLinkRecords_id, surrogateId, consentRecordId, ResourceSetId, serviceLinkRecordId, subjectId, role, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND ServiceLinkRecords_id LIKE %s AND surrogateId LIKE %s AND " \
                     "consentRecordId LIKE %s AND ResourceSetId LIKE %s AND serviceLinkRecordId LIKE %s AND " \
-                    "subjectId LIKE %s AND role LIKE %s;"
+                    "subjectId LIKE %s AND role LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
@@ -2652,6 +2731,7 @@ class ConsentRecord():
             '%' + str(self.service_link_record_id) + '%',
             '%' + str(self.subject_id) + '%',
             '%' + str(self.role) + '%',
+            '%' + str(self.accounts_id) + '%',
         )
 
         try:
@@ -2673,6 +2753,7 @@ class ConsentRecord():
                 self.service_link_record_id = data[0][6]
                 self.subject_id = data[0][7]
                 self.role = data[0][8]
+                self.accounts_id = data[0][9]
             else:
                 self.id = data[0]
                 self.consent_record = data[1]
@@ -2683,6 +2764,7 @@ class ConsentRecord():
                 self.service_link_record_id = data[6]
                 self.subject_id = data[7]
                 self.role = data[8]
+                self.accounts_id = data[9]
 
             try:
                 cr_copy = self.consent_record
@@ -2705,10 +2787,11 @@ class ConsentStatusRecord():
     consent_record_id = None
     issued_at = None
     prev_record_id = None
+    accounts_id = None
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", consent_status_record_id="", status="", consent_status_record="", consent_records_id="", consent_record_id="", issued_at="", prev_record_id="", deleted=0, table_name="MyDataAccount.ConsentStatusRecords"):
+    def __init__(self, id="", consent_status_record_id="", status="", consent_status_record="", consent_records_id="", consent_record_id="", issued_at="", prev_record_id="", accounts_id="", deleted=0, table_name="MyDataAccount.ConsentStatusRecords"):
         if id is not None:
             self.id = id
         if consent_status_record_id is not None:
@@ -2725,6 +2808,8 @@ class ConsentStatusRecord():
             self.issued_at = issued_at
         if prev_record_id is not None:
             self.prev_record_id = prev_record_id
+        if accounts_id is not None:
+            self.accounts_id = accounts_id
         if table_name is not None:
             self.table_name = table_name
         if deleted is not None:
@@ -2799,6 +2884,14 @@ class ConsentStatusRecord():
         self.prev_record_id = value
 
     @property
+    def accounts_id(self):
+        return self.accounts_id
+
+    @accounts_id.setter
+    def accounts_id(self, value):
+        self.accounts_id = value
+
+    @property
     def to_dict(self):
         return self.__dict__
 
@@ -2807,6 +2900,7 @@ class ConsentStatusRecord():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['consent_records_id']
+        del dictionary['accounts_id']
         del dictionary['table_name']
         del dictionary['deleted']
         return dictionary
@@ -2850,8 +2944,9 @@ class ConsentStatusRecord():
                     "ConsentRecords_id, " \
                     "consentRecordId, " \
                     "issued_at, " \
-                    "prevRecordId" \
-                    ") VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                    "prevRecordId," \
+                    "Accounts_id" \
+                    ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
             str(self.consent_status_record_id),
@@ -2861,6 +2956,7 @@ class ConsentStatusRecord():
             str(self.consent_record_id),
             int(self.issued_at),
             str(self.prev_record_id),
+            int(self.accounts_id),
         )
 
         try:
@@ -2880,11 +2976,11 @@ class ConsentStatusRecord():
         # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, consentStatusRecordId, consentStatus, consentStatusRecord, ConsentRecords_id, " \
-                    "consentRecordId, issued_at, prevRecordId " \
+                    "consentRecordId, issued_at, prevRecordId, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND consentStatusRecordId LIKE %s AND consentStatus LIKE %s " \
                     "AND consentStatusRecord LIKE %s AND  ConsentRecords_id LIKE %s AND " \
-                    "consentRecordId LIKE %s AND issued_at LIKE %s AND prevRecordId LIKE %s;"
+                    "consentRecordId LIKE %s AND issued_at LIKE %s AND prevRecordId LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
@@ -2895,6 +2991,7 @@ class ConsentStatusRecord():
             '%' + str(self.consent_record_id) + '%',
             '%' + str(self.issued_at) + '%',
             '%' + str(self.prev_record_id) + '%',
+            '%' + str(self.accounts_id) + '%',
         )
 
         try:
@@ -2915,6 +3012,7 @@ class ConsentStatusRecord():
                 self.consent_record_id = data[0][5]
                 self.issued_at = data[0][6]
                 self.prev_record_id = data[0][7]
+                self.accounts_id = data[0][8]
             else:
                 self.id = data[0]
                 self.consent_status_record_id = data[1]
@@ -2924,6 +3022,7 @@ class ConsentStatusRecord():
                 self.consent_record_id = data[5]
                 self.issued_at = data[6]
                 self.prev_record_id = data[7]
+                self.accounts_id = data[8]
 
             try:
                 csr_copy = self.consent_status_record
