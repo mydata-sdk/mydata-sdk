@@ -428,6 +428,7 @@ class Helpers:
         # Get our latest csr_id
 
         # We send cr_id to Operator for inspection.
+        # TODO: Where do we get these paths?
         req = get(operator_url + "/api/1.2/cr" + "/introspection/{}".format(cr_id))
         debug_log.info(req.status_code)
         debug_log.info(req.content)
@@ -438,7 +439,9 @@ class Helpers:
             debug_log.info("Comparing our latest csr_id ({}) to ({})".format(latest_csr_id, csr_id))
             if csr_id == latest_csr_id:
                 debug_log.info("Verified we have latest csr.")
-                return
+                status = self.query_db("select cr_id, consent_status from csr_storage where csr_id = %s;"
+                                       , (latest_csr_id,))
+                return status
             else:
                 debug_log.info("Our csr({}) is outdated!".format(latest_csr_id))
                 req = get(
@@ -467,24 +470,21 @@ class Helpers:
                         }
                         debug_log.info("Storing CSR: \n{}".format(dumps(store_dict, indent=2)))
                         self.storeCSR_JSON(store_dict)
-                    debug_log.info("Stored missing csr's to DB")
+                    debug_log.info("Stored any missing csr's to DB")
                     latest_csr_id = self.get_latest_csr_id(cr_id)
                     status = self.query_db("select cr_id, consent_status from csr_storage where csr_id = %s;"
                                            , (latest_csr_id,))
                     debug_log.info("Our latest csr id now ({}) with status ({})".format(latest_csr_id, status))
-                    if status == "Active":
-                        debug_log.info("Introspection done successfully.")
-                    else:
-                        debug_log.info("Introspection failed.")
-                        raise LookupError("Introspection failed.")
 
+                    debug_log.info("Introspection done successfully.")
+                    return status
 
                 else:
                     raise ValueError("Request to get missing csr's failed with ({}) and reason ({}), content:\n{} "
                                      .format(req.status_code, req.reason, dumps(loads(req.content), indent=2)))
 
         else:
-            raise LookupError("Unable to perform introspect.")
+            raise LookupError("Unable to perform introspection.")
 
     def validate_request_from_ui(self, cr, data_set_id, rs_id):
         debug_log.info("CR passed to validate_request_from_ui:")

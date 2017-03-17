@@ -44,7 +44,14 @@ class StatusChange(Resource):
             # TODO: Do we need srv_id for anything?
             # TODO: How do we authorize this request? Who is allowed to make it?
             # Get previous_csr_id
-            previous_csr_id = self.AM.get_last_csr(cr_id)["csr_id"]
+            previous_csr = self.AM.get_last_csr(cr_id)
+            previous_csr_id = previous_csr["csr_id"]
+            if previous_csr["consent_status"] == new_status:
+                raise DetailedHTTPException(title="Unable to change consent status from {} to {}."
+                                            .format(previous_csr["consent_status"], new_status),
+                                            detail={"msg": "Status change must happen from one state to another."},
+                                            status=409)
+
             csr_payload = self.helper_object.gen_csr(acc_id, cr_id, new_status, previous_csr_id)
             debug_log.info("Created CSR payload:\n {}".format(csr_payload))
             self.AM.create_new_csr(cr_id, csr_payload)

@@ -77,7 +77,8 @@ class UserAuthenticated(Resource):
         cert_key_path = current_app.config["CERT_KEY_PATH"]
         self.helpers = Helpers(current_app.config)
         self.service_key = self.helpers.get_key()
-
+        self.is_sink = current_app.config["IS_SINK"]
+        self.is_source = current_app.config["IS_SOURCE"]
         self.service_url = current_app.config["SERVICE_URL"]
         self.operator_url = current_app.config["OPERATOR_URL"]
 
@@ -96,8 +97,10 @@ class UserAuthenticated(Resource):
 
             sq.task("Link code to generated surrogate_id")
             self.helpers.add_surrogate_id_to_code(request.json["code"], surrogate_id)
-            data = {"surrogate_id": surrogate_id, "code": request.json["code"],
-                    "token_key": self.service_key["pub"]}
+
+            data = {"surrogate_id": surrogate_id, "code": request.json["code"]}
+            if self.is_sink:
+                data["token_key"] = self.service_key["pub"]
 
             sq.send_to("Service_Components", "Send surrogate_id to Service_Mockup")
             endpoint = "/api/1.2/slr/link" # Todo: This needs to be fetched from somewhere

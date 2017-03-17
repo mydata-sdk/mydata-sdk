@@ -41,6 +41,8 @@ class RegisterSurrogate(Resource):
         self.app = current_app
         self.Helpers = Helpers(self.app.config)
         operator_id = self.app.config["UID"]
+        self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
+                                                               current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.operator_key = self.Helpers.get_key()
         self.request_timeout = self.app.config["TIMEOUT"]
 
@@ -88,31 +90,30 @@ class RegisterSurrogate(Resource):
             debug_log.debug("{}  {}".format(type(stored_session_from_db), stored_session_from_db))
             account_id = session_data["account_id"]
             self.payload["service_id"] = session_data["service_id"]
+            service_info = self.service_registry_handler.getService(self.payload["service_id"])
+            service_type = service_info["serviceDescription"]["serviceDataDescription"][0]["dataset"][0]["serviceDataType"]
 
             # Check Surrogate_ID exists.
             # Fill token_key
             try:
                 sq.task("Verify surrogate_id and token_key exist in the payload json")
-                token_key = js["token_key"] # Todo: source has no need to send this, make the difference.
                 self.payload["surrogate_id"] = js["surrogate_id"]
                 #self.payload["token_key"] = {"key": token_key}
 
                 sq.task("Store surrogate_id and keys for CR steps later on.")
-                service_keys = {"token_key": token_key,
-                                "pop_key": token_key}  # TODO: Get pop_key here?
+                if service_type != "output":
+                    token_key = js["token_key"]  # Todo: source has no need to send this, make the difference.
+                    service_keys = {"token_key": token_key,
+                                    "pop_key": token_key}
 
-                self.Helpers.store_service_key_json(kid=token_key["kid"],
-                                                    surrogate_id=js["surrogate_id"],
-                                                    key_json=service_keys)
+                    self.Helpers.store_service_key_json(kid=token_key["kid"],
+                                                        surrogate_id=js["surrogate_id"],
+                                                        key_json=service_keys)
             except Exception as e:
                 debug_log.exception(e)
                 raise DetailedHTTPException(exception=e,
                                             detail={"msg": "Received Invalid JSON that may not contain surrogate_id",
                                                     "json": js})
-
-            #sq.task("Fetch and fill token_issuer_keys")
-            # TODO: Token keys separetely when the time is right.
-            #self.payload["token_issuer_keys"][0] = self.Helpers.get_key()["pub"]
 
             # Create template
             self.payload["link_id"] = str(guid())
@@ -124,7 +125,7 @@ class RegisterSurrogate(Resource):
                             "slr": {
                                 "type": "ServiceLinkRecord",
                                 "attributes": self.payload,
-                            },
+                                   },
                                 "surrogate_id": {
                                     "type": "SurrogateId",
                                     "attributes":{
@@ -181,7 +182,6 @@ class RegisterSurrogate(Resource):
             except Exception as e:
                 raise DetailedHTTPException(exception=e, detail="Sending SLR to service has failed",
                                             trace=traceback.format_exc(limit=100).splitlines())
-
 
         except DetailedHTTPException as e:
             raise e

@@ -85,7 +85,7 @@ class DataFlow(Resource):
             store_dict = {cr_id: dumps(loads(token.text.encode()))}
             self.helpers.storeToken(store_dict)
 
-        def step_1():
+        def fetch_data_request_urls():
             params = request.json
             debug_log.info(params)
             debug_log.info(request.json)
@@ -109,7 +109,7 @@ class DataFlow(Resource):
             # Data request urls fetched.
             debug_log.info("Data request urls fetched.")
             return cr_id, cr, distribution_urls
-        cr_id, cr, distribution_urls = step_1()
+        cr_id, cr, distribution_urls = fetch_data_request_urls()
 
         sq.task("Validate Authorisation Token")
         surrogate_id = cr["cr"]["common_part"]["surrogate_id"]
