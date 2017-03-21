@@ -300,6 +300,77 @@ def drop_table_content():
             return True
 
 
+def mark_account_as_deleted(account_id=None):
+    """
+    Marks all entries related to Account as deleted
+    """
+    logger.info("Executing")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if not isinstance(account_id, int):
+        try:
+            account_id = int(account_id)
+        except Exception as exp:
+            logger.error("account_id has wrong type: " + repr(type(account_id)) + ' - ' + repr(exp))
+            raise TypeError("account_id MUST be int")
+        else:
+            logger.info("account_id: " + str(account_id))
+
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.debug('Could not get db cursor: ' + repr(exp))
+        raise
+
+    # sql_query = "SELECT Concat('UPDATE ',table_schema,'.',TABLE_NAME, ';') " \
+    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
+
+    # TODO: This might be good to implement with separate arguments
+    sql_query_for_account_table = "UPDATE MyDataAccount.Accounts SET deleted = 1 WHERE id = {0};".format(account_id)
+
+    sql_query = "SELECT Concat('UPDATE ',table_schema,'.',TABLE_NAME, ' SET deleted = 1 ', 'WHERE Accounts_id = %s',';') " \
+                "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
+
+    arguments = (
+        int(account_id),
+    )
+
+    # sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
+    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
+    # TODO: Remove two upper rows
+
+    try:
+        log_query(sql_query=sql_query, arguments=arguments)
+        cursor.execute(sql_query, (arguments))
+    except Exception as exp:
+        logger.debug('Error in SQL query execution: ' + repr(exp))
+        db.connection.rollback()
+        raise
+    else:
+        sql_queries = cursor.fetchall()
+        logger.debug("Fetched sql_queries: " + repr(sql_queries))
+
+        try:
+            for query in sql_queries:
+                if "MyDataAccount.Accounts" in query[0]:  # MyDataAccount.Accounts table has to skipped here because missing table column "Accounts_id"
+                    logger.debug("Skipping MyDataAccount.Accounts table because missing table column Accounts_id")
+                else:
+                    logger.debug("Executing: " + str(query[0]))
+                    sql_query = str(query[0])
+                    cursor.execute(sql_query)
+
+            logger.debug("Executing: " + str(sql_query_for_account_table))  # Handling MyDataAccount.Accounts
+            cursor.execute(sql_query_for_account_table)
+        except Exception as exp:
+            logger.debug('Error in SQL query execution: ' + repr(exp))
+            db.connection.rollback()
+            raise
+        else:
+            db.connection.commit()
+            logger.debug("Committed")
+            return True
+
+
 def get_primary_keys_by_account_id(cursor=None, account_id=None, table_name=None):
     logger.info("Executing")
     if cursor is None:

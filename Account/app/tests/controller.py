@@ -19,6 +19,15 @@ from jsonschema import validate, ValidationError, SchemaError
 default_headers = {'Content-Type': 'application/json', 'Accept-Charset': 'utf-8', 'Accept': 'application/json'}
 
 
+def print_test_title(test_name=None):
+    if test_name is None:
+        raise AttributeError("Provide test_name as parameter")
+    print("")
+    print(test_name)
+    print("############")
+
+
+
 def get_unique_string():
     return str(uuid4())
 

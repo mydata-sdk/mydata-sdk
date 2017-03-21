@@ -26,7 +26,7 @@ class Account():
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", global_identifyer="", activated="", deleted=0, table_name="MyDataAccount.Accounts"):
+    def __init__(self, id="", global_identifyer="", activated=0, deleted=0, table_name="MyDataAccount.Accounts"):
         if id is not None:
             self.id = id
         if global_identifyer is not None:
@@ -75,7 +75,16 @@ class Account():
         dictionary = self.to_dict
         del dictionary['id']
         del dictionary['deleted']
+        del dictionary['global_identifier']
         del dictionary['table_name']
+        return dictionary
+
+    @property
+    def to_api_dict(self):
+        dictionary = {}
+        dictionary['type'] = "Account"
+        dictionary['id'] = str(self.id)
+        dictionary['attributes'] = self.to_dict_external
         return dictionary
 
     @property

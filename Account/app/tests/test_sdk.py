@@ -14,12 +14,15 @@ __status__ = "Development"
 import unittest
 from base64 import b64encode
 
+from flask import json
+
 from app import create_app
-from app.tests.controller import is_json, validate_json, account_create, default_headers, generate_string
+from app.tests.controller import is_json, validate_json, account_create, default_headers, generate_string, \
+    print_test_title
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
-    schema_account_create_tos
+    schema_account_create_tos, schema_account_auth, schema_account_get
 from app.tests.schemas.schema_system import schema_db_clear, system_running
 
 
@@ -51,7 +54,8 @@ class SdkTestCase(unittest.TestCase):
         Test system running
         :return:
         """
-        print("Testing - test_system_running")
+        print_test_title(test_name="test_system_running")
+
         response = self.app.get('/system/status/')
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
@@ -64,7 +68,7 @@ class SdkTestCase(unittest.TestCase):
         Test database clearing
         :return:
         """
-        print("Testing - test_clear_db_positive")
+        print_test_title(test_name="test_clear_db_positive")
         response = self.app.get('/system/db/clear/')
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
@@ -77,7 +81,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Password too long
         :return:
         """
-        print("Testing - test_account_create_password_too_long")
+        print_test_title(test_name="test_account_create_password_too_long")
+
         account_json, username, password = account_create(password_length=21)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -89,7 +94,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Password too short
         :return:
         """
-        print("Testing - test_account_create_password_too_short")
+        print_test_title(test_name="test_account_create_password_too_short")
+
         account_json, username, password = account_create(password_length=3)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -103,7 +109,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Username too long
         :return:
         """
-        print("Testing - test_account_create_username_too_long")
+        print_test_title(test_name="test_account_create_username_too_long")
+
         account_json, username, password = account_create(username_length=256)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -115,7 +122,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Username too short
         :return:
         """
-        print("Testing - test_account_create_username_too_short")
+        print_test_title(test_name="test_account_create_username_too_short")
+
         account_json, username, password = account_create(username_length=2)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -129,7 +137,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Email too long
         :return:
         """
-        print("Testing - test_account_create_email_too_long")
+        print_test_title(test_name="test_account_create_email_too_long")
+
         account_json, username, password = account_create(email_length=256)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -141,7 +150,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Email invalid
         :return:
         """
-        print("Testing - test_account_create_email_invalid")
+        print_test_title(test_name="test_account_create_email_invalid")
+
         account_json, username, password = account_create(invalid_email=True)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -155,7 +165,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. First name too long
         :return:
         """
-        print("Testing - test_account_create_firstname_too_long")
+        print_test_title(test_name="test_account_create_firstname_too_long")
+
         account_json, username, password = account_create(firstname_length=256)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -167,7 +178,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. First name too short
         :return:
         """
-        print("Testing - test_account_create_firstname_too_short")
+        print_test_title(test_name="test_account_create_firstname_too_short")
+
         account_json, username, password = account_create(firstname_length=2)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -181,7 +193,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Last name too long
         :return:
         """
-        print("Testing - test_account_create_lastname_too_long")
+        print_test_title(test_name="test_account_create_lastname_too_long")
+
         account_json, username, password = account_create(lastname_length=256)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -193,7 +206,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Last name too short
         :return:
         """
-        print("Testing - test_account_create_lastname_too_short")
+        print_test_title(test_name="test_account_create_lastname_too_short")
+
         account_json, username, password = account_create(lastname_length=2)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -207,7 +221,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Date invalid
         :return:
         """
-        print("Testing - test_account_create_date_invalid")
+        print_test_title(test_name="test_account_create_date_invalid")
+
         account_json, username, password = account_create(invalid_date=True)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -221,7 +236,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. acceptTermsOfService == False
         :return:
         """
-        print("Testing - test_account_create_tos")
+        print_test_title(test_name="test_account_create_tos")
+
         account_json, username, password = account_create(accept_terms=False)
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
@@ -235,7 +251,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Positive case
         :return:
         """
-        print("Testing - test_account_create_positive")
+        print_test_title(test_name="test_account_create_positive")
+
         account_json, account_username, account_password = account_create()
         response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
@@ -251,17 +268,72 @@ class SdkTestCase(unittest.TestCase):
         Test user authentication
         :return:
         """
-        print("Testing - test_account_authenticate")
+        print_test_title(test_name="test_account_authentication")
+
         account_username, account_password = self.test_account_create_positive()
-        print("Using username: " + account_username)
-        print("Using password: " + account_password)
+        # print("Using username: " + account_username)
+        # print("Using password: " + account_password)
 
         request_headers = default_headers
         request_headers['Authorization'] = 'Basic ' + b64encode("{0}:{1}".format(account_username, account_password))
-        print (repr(request_headers))
+        # print (repr(request_headers))
 
         response = self.app.get('/api/auth/user/', headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_auth))
+
+        response_json = json.loads(response.data)
+        api_key = response_json["Api-Key"]
+        account_id = response_json["account_id"]
+        return api_key, account_id
+
+    ##########
+    ##########
+    def test_account_fetch(self):
+        """
+        Fetch Account entry
+        :return:
+        """
+        print_test_title(test_name="test_account_fetch")
+
+        account_api_key, account_id = self.test_account_authentication()
+        print("Using account_api_key: " + account_api_key)
+        print("Using account_id: " + account_id)
+
+        request_headers = default_headers
+        request_headers['Api-Key'] = str(account_api_key)
+
+        url = "api/accounts/" + str(account_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_get))
+
+    ##########
+    ##########
+    def test_account_delete(self):
+        """
+        Test user deletion
+        :return:
+        """
+        print_test_title(test_name="test_account_delete")
+
+        account_api_key, account_id = self.test_account_authentication()
+        print("Using account_api_key: " + account_api_key)
+        print("Using account_id: " + account_id)
+
+        request_headers = default_headers
+        request_headers['Api-Key'] = str(account_api_key)
+
+        url = "api/accounts/" + str(account_id) + "/"
+
+        response = self.app.delete(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 204, msg=response.data)
+
+    # TODO: Test Account authentication with deleted Account
+    # TODO: Test Resource fetching with removed Account
 
 if __name__ == '__main__':
     unittest.main()
