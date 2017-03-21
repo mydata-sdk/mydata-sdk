@@ -12,7 +12,7 @@ info:
 schemes:
   - https
 
-basePath: '/account/api/v1.3/internal/'
+basePath: '/api/v1.3/internal/'
 
 consumes:
   - application/json
