@@ -2185,13 +2185,6 @@ definitions:
         $ref: '#/definitions/account'
 
 
-  tinyAccountResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/tinyAccount'
-
-
   particularsResponse:
     type: object
     properties:
