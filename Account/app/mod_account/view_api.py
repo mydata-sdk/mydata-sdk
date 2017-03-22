@@ -184,6 +184,8 @@ class Account(Resource):
 
 
 class AccountDelete(Resource):
+    # TODO: Account reactivation
+    # TODO: Create Account with same credentials
     @requires_api_auth_user
     def delete(self, account_id):
         logger.info("AccountDelete")
