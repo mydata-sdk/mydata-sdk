@@ -28,7 +28,7 @@ from base64 import b64decode
 
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
-from app.mod_api_auth.controllers import requires_api_auth_user, get_account_id_by_api_key, provideApiKey, \
+from app.mod_api_auth.controllers import requires_api_auth_user, get_account_id_by_api_key, provide_api_key, \
     requires_api_auth_sdk
 from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jws, get_account_public_key, \
     verify_jws_signature_with_jwk
@@ -47,6 +47,7 @@ logger = get_custom_logger(__name__)
 
 # Resources
 class ConsentSignAndStore(Resource):
+    @requires_api_auth_user
     @requires_api_auth_sdk
     def post(self, account_id, source_slr_id, sink_slr_id):
 
@@ -60,7 +61,7 @@ class ConsentSignAndStore(Resource):
         except Exception as exp:
             logger.error("No ApiKey in headers")
             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
 
         try:
             account_id = str(account_id)
@@ -417,6 +418,7 @@ class ConsentSignAndStore(Resource):
 
 
 class AuthorizationTokenData(Resource):
+    @requires_api_auth_user
     @requires_api_auth_sdk
     def get(self, sink_cr_id):
 
@@ -430,7 +432,7 @@ class AuthorizationTokenData(Resource):
         except Exception as exp:
             logger.error("No ApiKey in headers")
             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
 
         try:
             sink_cr_id = str(sink_cr_id)
@@ -489,6 +491,7 @@ class AuthorizationTokenData(Resource):
 
 
 class LastCrStatus(Resource):
+    @requires_api_auth_user
     @requires_api_auth_sdk
     def get(self, cr_id):
 
@@ -502,7 +505,7 @@ class LastCrStatus(Resource):
         except Exception as exp:
             logger.error("No ApiKey in headers")
             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
 
         try:
             cr_id = str(cr_id)
@@ -538,6 +541,7 @@ class LastCrStatus(Resource):
 
 
 class CrStatus(Resource):
+    @requires_api_auth_user
     @requires_api_auth_sdk
     def post(self, cr_id):
         logger.info("CrStatus")
@@ -551,7 +555,7 @@ class CrStatus(Resource):
         except Exception as exp:
             logger.error("No ApiKey in headers")
             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
 
         try:
             cr_id = str(cr_id)
@@ -619,6 +623,7 @@ class CrStatus(Resource):
         return make_json_response(data=response_data_dict, status_code=201)
 
     @requires_api_auth_sdk
+    @requires_api_auth_user
     def get(self, cr_id):
         logger.info("CrStatus")
         try:
@@ -631,7 +636,7 @@ class CrStatus(Resource):
             api_key = request.headers.get('Api-Key')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 

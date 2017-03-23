@@ -54,7 +54,7 @@ schema_account_get = {
 schema_account_auth = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "properties": {
-        "Api-Key": {
+        "Api-Key-User": {
             "type": "string"
         },
         "account_id": {
@@ -62,7 +62,7 @@ schema_account_auth = {
         }
     },
     "required": [
-        "Api-Key",
+        "Api-Key-User",
         "account_id"
     ],
     "type": "object"

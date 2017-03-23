@@ -15,11 +15,14 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 from os.path import isdir
 from datetime import datetime
-from functools import wraps
+from flask import json, request
 
-from flask import json
-
+#
 # https://docs.python.org/3/howto/urllib2.html#httperror
+from jsonschema import SchemaError
+from jsonschema import ValidationError
+from jsonschema import validate
+
 http_responses = {
     100: ('Continue', 'Request received, please continue'),
     101: ('Switching Protocols', 'Switching to new protocol; obey Upgrade header'),
@@ -233,3 +236,28 @@ def get_utc_time():
     """
 
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def validate_json(json_object=None, json_schema=None):
+    """
+    Validate json with jsonschema library
+    :param json_object:
+    :param json_schema:
+    :return:
+    """
+    if json_object is None:
+        raise AttributeError("Provide json_object as parameter")
+    if json_schema is None:
+        raise AttributeError("Provide json_schema as parameter")
+
+    try:
+        validate(json_object, json_schema)
+    except ValidationError as exp:
+        raise ApiError(code=400, title="ValidationError", detail=repr(exp), source=request.path)
+    except SchemaError as exp:
+        raise ApiError(code=500, title="Invalid JSON Schema in Schema validator", detail=repr(exp), source=request.path)
+    except Exception as exp:
+        raise ApiError(code=500, title="Unexpected error", detail=repr(exp), source=request.path)
+    else:
+        return True
+

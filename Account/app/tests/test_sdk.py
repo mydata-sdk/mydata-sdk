@@ -18,18 +18,21 @@ from flask import json
 
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, generate_string, \
-    print_test_title
+    print_test_title, generate_sl_init_sink
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get
-from app.tests.schemas.schema_system import schema_db_clear, system_running
+from app.tests.schemas.schema_service_linking import schema_slr_init
+from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
 
 
 class SdkTestCase(unittest.TestCase):
 
     API_PREFIX_INTERNAL = "/account/api/v1.3/internal"
     API_PREFIX_EXTERNAL = "/account/api/v1.3/external"
+    SDK_USERNAME = "test_sdk"
+    SDK_PASSWORD = "test_sdk_pw"
 
     def setUp(self):
         """
@@ -79,6 +82,27 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         print(json.dumps(json.loads(response.data), indent=2))
+
+    ##########
+    ##########
+    def test_sdk_auth(self):
+        """
+        SDK authentication
+        :return:
+        """
+        request_headers = default_headers
+        request_headers['Authorization'] = 'Basic ' + b64encode("{0}:{1}".format(self.SDK_USERNAME, self.SDK_PASSWORD))
+
+        url = self.API_PREFIX_INTERNAL + '/auth/sdk/'
+        response = self.app.get(url, headers=request_headers)
+
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_sdk_auth))
+
+        response_json = json.loads(response.data)
+        api_key = response_json["Api-Key-Sdk"]
+        return api_key
 
     ##########
     ##########
@@ -300,14 +324,14 @@ class SdkTestCase(unittest.TestCase):
         # print (repr(request_headers))
 
         url = self.API_PREFIX_EXTERNAL + '/auth/user/'
-        print("URL: " + url)
         response = self.app.get(url, headers=request_headers)
+
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_auth))
 
         response_json = json.loads(response.data)
-        api_key = response_json["Api-Key"]
+        api_key = response_json["Api-Key-User"]
         account_id = response_json["account_id"]
         return api_key, account_id
 
@@ -321,11 +345,9 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_fetch")
 
         account_api_key, account_id = self.test_account_authentication()
-        print("Using account_api_key: " + account_api_key)
-        print("Using account_id: " + account_id)
 
         request_headers = default_headers
-        request_headers['Api-Key'] = str(account_api_key)
+        request_headers['Api-Key-User'] = str(account_api_key)
 
         url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/"
 
@@ -344,11 +366,9 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_delete")
 
         account_api_key, account_id = self.test_account_authentication()
-        print("Using account_api_key: " + account_api_key)
-        print("Using account_id: " + account_id)
 
         request_headers = default_headers
-        request_headers['Api-Key'] = str(account_api_key)
+        request_headers['Api-Key-User'] = str(account_api_key)
 
         url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/"
 
@@ -357,6 +377,33 @@ class SdkTestCase(unittest.TestCase):
 
     # TODO: Test Account authentication with deleted Account
     # TODO: Test Resource fetching with removed Account
+
+    ##########
+    ##########
+    def test_slr_init_sink(self):
+        """
+        Test user deletion
+        :return:
+        """
+        print_test_title(test_name="test_slr_init_source")
+
+        account_api_key, account_id = self.test_account_authentication()
+        sdk_api_key = self.test_sdk_auth()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/sink/"
+
+        payload, code, slr_id, pop_key = generate_sl_init_sink()
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("status_code: " + str(response.status_code))
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        # unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        # unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_init))
 
 if __name__ == '__main__':
     unittest.main()

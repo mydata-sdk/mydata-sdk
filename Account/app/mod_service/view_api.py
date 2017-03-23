@@ -27,51 +27,106 @@ from flask_restful import Resource, Api, reqparse
 from base64 import b64decode
 
 # Import services
-from app.helpers import get_custom_logger, make_json_response, ApiError
-from app.mod_api_auth.controllers import requires_api_auth_user, get_account_id_by_api_key, provideApiKey, \
-    requires_api_auth_sdk
+from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json
+from app.mod_api_auth.controllers import requires_api_auth_user, get_account_id_by_api_key, provide_api_key, \
+    requires_api_auth_sdk, get_user_api_key, get_sdk_api_key
 from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jws, get_account_public_key, \
     verify_jws_signature_with_jwk
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord
 from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, get_surrogate_id_by_account_and_service
 from app.mod_service.models import NewServiceLink, VerifyServiceLink
+from app.mod_service.schemas import schema_sl_init_sink
 
 mod_service_api = Blueprint('service_api', __name__, template_folder='templates')
 api = Api(mod_service_api)
 
 # create logger with 'spam_application'
-logger = get_custom_logger('mod_service_view_api')
+logger = get_custom_logger(__name__)
 
 
 # Resources
-class ServiceLinkSign(Resource):
+class ServiceLinkInitSource(Resource):
+    @requires_api_auth_user
     @requires_api_auth_sdk
-    def get(self, account_id):
+    def post(self, account_id):
+
+        response_data = {}
+
+        return make_json_response(data=response_data, status_code=501)
+
+
+class ServiceLinkInitSink(Resource):
+    @requires_api_auth_sdk
+    @requires_api_auth_user
+    def post(self, account_id):
         try:
             endpoint = str(api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
-        try:
-            api_key = request.headers.get('Api-Key')
-        except Exception as exp:
-            logger.error("No ApiKey in headers")
-            logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+        logger.info("Fetching User API Key")
+        api_key_user = get_user_api_key(endpoint=endpoint)
+        logger.debug("api_key_user: " + api_key_user)
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
 
         try:
             account_id = str(account_id)
         except Exception as exp:
             raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("Account ID from path: " + account_id)
+
+        # load JSON
+        json_data = request.get_json()
+        if not json_data:
+            error_detail = {'0': 'Set application/json as Content-Type', '1': 'Provide json payload'}
+            raise ApiError(code=400, title="No input data provided", detail=error_detail, source=endpoint)
+        else:
+            logger.debug("json_data: " + json.dumps(json_data))
+
+        # Validate payload content
+        validate_json(json_data, schema_sl_init_sink)
 
         response_data = {
-            'api_key': api_key,
-            'account_id': account_id
+            'json_data': json_data
         }
 
-        return make_json_response(data=response_data, status_code=200)
+        return make_json_response(data=response_data, status_code=501)
 
+
+class ServiceLinkSign(Resource):
+    # @requires_api_auth_user
+    # @requires_api_auth_sdk
+    # def get(self, account_id):
+    #     try:
+    #         endpoint = str(api.url_for(self, account_id=account_id))
+    #     except Exception as exp:
+    #         endpoint = str(__name__)
+    #
+    #     try:
+    #         api_key = request.headers.get('Api-Key')
+    #     except Exception as exp:
+    #         logger.error("No ApiKey in headers")
+    #         logger.debug("No ApiKey in headers: " + repr(repr(exp)))
+    #         return provide_api_key(endpoint=endpoint)
+    #
+    #     try:
+    #         account_id = str(account_id)
+    #     except Exception as exp:
+    #         raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+    #
+    #     response_data = {
+    #         'api_key': api_key,
+    #         'account_id': account_id
+    #     }
+    #
+    #     return make_json_response(data=response_data, status_code=200)
+
+    @requires_api_auth_user
     @requires_api_auth_sdk
     def post(self, account_id):
 
@@ -85,7 +140,7 @@ class ServiceLinkSign(Resource):
         except Exception as exp:
             logger.error("No ApiKey in headers")
             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
 
         try:
             account_id = str(account_id)
@@ -162,7 +217,8 @@ class ServiceLinkSign(Resource):
         return make_json_response(data=response_data_dict, status_code=201)
 
 
-class ServiceLinkVerify(Resource):
+class ServiceLinkStore(Resource):
+    @requires_api_auth_user
     @requires_api_auth_sdk
     def post(self, account_id):
 
@@ -176,7 +232,7 @@ class ServiceLinkVerify(Resource):
         except Exception as exp:
             logger.error("No ApiKey in headers")
             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
 
         try:
             account_id = str(account_id)
@@ -408,6 +464,7 @@ class ServiceLinkVerify(Resource):
 
 
 class ServiceSurrogate(Resource):
+    @requires_api_auth_user
     @requires_api_auth_sdk
     def get(self, account_id, service_id):
 
@@ -421,7 +478,7 @@ class ServiceSurrogate(Resource):
         except Exception as exp:
             logger.error("No ApiKey in headers")
             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
 
         try:
             account_id = str(account_id)
@@ -465,7 +522,9 @@ class ServiceSurrogate(Resource):
 
 
 # Register resources
+api.add_resource(ServiceLinkInitSource, '/accounts/<string:account_id>/servicelinks/init/source/', endpoint='sl_init_source')
+api.add_resource(ServiceLinkInitSink, '/accounts/<string:account_id>/servicelinks/init/sink/', endpoint='sl_init_sink')
 api.add_resource(ServiceLinkSign, '/accounts/<string:account_id>/servicelinks/', endpoint='sl_sign')
-api.add_resource(ServiceLinkVerify, '/accounts/<string:account_id>/servicelinks/verify/', endpoint='sl_verify')
+api.add_resource(ServiceLinkStore, '/accounts/<string:account_id>/servicelinks/verify/', endpoint='sl_verify')
 api.add_resource(ServiceSurrogate, '/accounts/<string:account_id>/services/<string:service_id>/surrogate/', endpoint='surrogate_id')  # TODO: Is this needed?
 

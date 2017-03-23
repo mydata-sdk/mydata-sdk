@@ -12,7 +12,7 @@ info:
 schemes:
   - https
 
-basePath: '/api/v1.3/internal/'
+basePath: '/account/api/v1.3/internal/'
 
 consumes:
   - application/json
@@ -67,7 +67,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/link/:
+  /accounts/{account_id}/servicelinks/:
     get:
       security:
         - apiKeyClient: []
@@ -104,7 +104,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/init/sink/:
+  /accounts/{account_id}/servicelinks/init/sink/:
     post:
       security:
         - apiKeyClient: []
@@ -146,7 +146,7 @@ paths:
           schema:
             $ref: '#/definitions/error'
             
-  /accounts/{account_id}/links/init/source/:
+  /accounts/{account_id}/servicelinks/init/source/:
     post:
       security:
         - apiKeyClient: []
@@ -189,7 +189,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/{link_id}/:
+  /accounts/{account_id}/servicelinks/{link_id}/:
     patch:
       security:
         - apiKeyClient: []
@@ -280,7 +280,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/{link_id}/store/:
+  /accounts/{account_id}/servicelinks/{link_id}/store/:
     post:
       security:
         - apiKeyClient: []
@@ -332,7 +332,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/{link_id}/statuses/:
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/:
     post:
       security:
         - apiKeyClient: []
@@ -428,7 +428,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/{link_id}/statuses/signed/:
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/signed/:
     post:
       security:
         - apiKeyClient: []
@@ -480,7 +480,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/{link_id}/statuses/{status_id}/:
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/{status_id}/:
     get:
       security:
         - apiKeyClient: []
@@ -527,7 +527,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/{link_id}/statuses/last/:
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/last/:
     get:
       security:
         - apiKeyClient: []
@@ -569,7 +569,7 @@ paths:
             $ref: '#/definitions/error'
 
 
-  /accounts/{account_id}/links/{source_link_id}/{sink_link_id}/consents/:
+  /accounts/{account_id}/servicelinks/{source_link_id}/{sink_link_id}/consents/:
     post:
       security:
         - apiKeyClient: []
@@ -622,7 +622,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/{link_id}/consents/:
+  /accounts/{account_id}/servicelinks/{link_id}/consents/:
     get:
       security:
         - apiKeyClient: []
@@ -673,7 +673,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /accounts/{account_id}/links/{link_id}/consents/last/:
+  /accounts/{account_id}/servicelinks/{link_id}/consents/last/:
     get:
       security:
         - apiKeyClient: []
@@ -1076,7 +1076,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /services/{service_id}/links/:
+  /services/{service_id}/servicelinks/:
     get:
       security:
         - apiKeyClient: []
@@ -1118,7 +1118,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /services/{service_id}/links/{link_id}/:
+  /services/{service_id}/servicelinks/{link_id}/:
     get:
       security:
         - apiKeyClient: []
@@ -1160,7 +1160,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /services/{service_id}/links/{link_id}/consents/:
+  /services/{service_id}/servicelinks/{link_id}/consents/:
     get:
       security:
         - apiKeyClient: []
@@ -1202,7 +1202,7 @@ paths:
             $ref: '#/definitions/error'
             
             
-  /services/{service_id}/links/{link_id}/consents/{consent_id}/:
+  /services/{service_id}/servicelinks/{link_id}/consents/{consent_id}/:
     get:
       security:
         - apiKeyClient: []

@@ -47,14 +47,14 @@ def create_app(config_filename='config'):
         # Before each request
         @current_app.before_request
         def new_request():
-            print("New Request")
+            print("New Request: " + str(request.path))
             print("############")
 
         # Error Handlers
         @current_app.errorhandler(404)
         def not_found(error):
             try:
-                request_url = request.base_url
+                request_url = request.path
             except Exception as exp:
                 request_url = "Unknown"
             not_found_error = ApiError(code=404, title="Not Found", detail="Endpoint not found", status="NotFound", source=request_url)

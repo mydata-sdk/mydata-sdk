@@ -17,7 +17,7 @@ from app.mod_account.controllers import get_particulars, get_particular, verify_
 from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
     EmailsSchema, EmailsSchemaForUpdate, TelephonesSchema, TelephonesSchemaForUpdate, SettingsSchema, \
     SettingsSchemaForUpdate
-from app.mod_api_auth.controllers import requires_api_auth_user, provideApiKey
+from app.mod_api_auth.controllers import requires_api_auth_user, provide_api_key
 
 mod_account_api = Blueprint('account_api', __name__, template_folder='templates')
 account_api = Api(mod_account_api)
@@ -136,10 +136,10 @@ class Account(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -196,10 +196,10 @@ class AccountDelete(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -254,10 +254,10 @@ class AccountExport(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -313,10 +313,10 @@ class AccountParticulars(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -373,10 +373,10 @@ class AccountParticular(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -438,10 +438,10 @@ class AccountParticular(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -558,10 +558,10 @@ class AccountContacts(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -615,10 +615,10 @@ class AccountContacts(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -701,10 +701,10 @@ class AccountContact(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -766,10 +766,10 @@ class AccountContact(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -886,10 +886,10 @@ class AccountEmails(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -943,10 +943,10 @@ class AccountEmails(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1029,10 +1029,10 @@ class AccountEmail(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1094,10 +1094,10 @@ class AccountEmail(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1215,10 +1215,10 @@ class AccountTelephones(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1272,10 +1272,10 @@ class AccountTelephones(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1358,10 +1358,10 @@ class AccountTelephone(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1423,10 +1423,10 @@ class AccountTelephone(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1544,10 +1544,10 @@ class AccountSettings(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1601,10 +1601,10 @@ class AccountSettings(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1687,10 +1687,10 @@ class AccountSetting(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1752,10 +1752,10 @@ class AccountSetting(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1873,10 +1873,10 @@ class AccountEventLogs(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1932,10 +1932,10 @@ class AccountEventLog(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1999,10 +1999,10 @@ class AccountServiceLinkRecords(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2058,10 +2058,10 @@ class AccountServiceLinkRecord(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2125,10 +2125,10 @@ class AccountServiceLinkStatusRecords(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2197,10 +2197,10 @@ class AccountServiceLinkStatusRecord(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2277,10 +2277,10 @@ class AccountConsentRecords(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2349,10 +2349,10 @@ class AccountConsentRecord(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2429,10 +2429,10 @@ class AccountConsentStatusRecords(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2510,10 +2510,10 @@ class AccountConsentStatusRecord(Resource):
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 

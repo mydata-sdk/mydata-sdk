@@ -48,3 +48,16 @@ system_running = {
     "status"
   ]
 }
+
+schema_sdk_auth = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "properties": {
+        "Api-Key-Sdk": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "Api-Key-Sdk",
+    ],
+    "type": "object"
+}

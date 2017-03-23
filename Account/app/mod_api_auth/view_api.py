@@ -90,7 +90,7 @@ class ApiKeyUser(Resource):
             logger.debug("api_key: " + str(api_key))
 
         response_data = {
-            'Api-Key': api_key,
+            'Api-Key-User': api_key,
             'account_id': str(self.account_id)
         }
 
@@ -129,10 +129,11 @@ class ApiKeySDK(Resource):
         if not auth or not self.check_basic_auth(auth.username, auth.password):
             return self.authenticate()
 
-        api_key = get_api_key_sdk()
+        api_key_sdk = get_api_key_sdk()
+        logger.debug("api_key_sdk: " + api_key_sdk)
 
         response_data = {
-            'api_key': api_key
+            'Api-Key-Sdk': api_key_sdk
         }
 
         return make_json_response(data=response_data, status_code=200)

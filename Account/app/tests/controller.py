@@ -120,3 +120,22 @@ def account_create(username=None, password=None, email_length=15, username_lengt
     account = json.dumps(account)
 
     return account, username, password
+
+
+def generate_sl_init_sink():
+
+    code = str(uuid4())
+    slr_id = str(uuid4())
+    pop_key = {'qq': str(uuid4())}
+
+    sl_init_payload = {
+      "code": code,
+      "data": {
+        "attributes": {
+          "slr_id": slr_id,
+          "pop_key": pop_key
+        }
+      }
+    }
+
+    return sl_init_payload, code, slr_id, pop_key
