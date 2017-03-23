@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
 # Import dependencies
+import urllib
+
 from flask import Blueprint
+from flask import current_app
 from flask import json
+from flask import url_for
 from flask_restful import Resource, Api
 import requests
 
 # Import Models
+from werkzeug.routing import BaseConverter
+
 from app.helpers import get_custom_logger, ApiError, make_json_response
 
 # Define the blueprint: 'auth', set its url prefix: app.url/auth
@@ -69,8 +75,8 @@ class ClearDb(Resource):
 class SystemStatus(Resource):
     def get(self):
         """
-        Clear Database content
-        :param secret:
+        Status check
+        :param:
         :return:
         """
 
@@ -80,6 +86,37 @@ class SystemStatus(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
+class SystemRoutes(Resource):
+    def get(self):
+        """
+        Application routes
+        :param secret:
+        :return:
+        """
+
+        # Routes to list
+        # http://flask.pocoo.org/snippets/117/
+        routes = []
+        for rule in current_app.url_map.iter_rules():
+            options = {}
+            for arg in rule.arguments:
+                options[arg] = "[{0}]".format(arg)
+
+            url = url_for(rule.endpoint, **options)
+            pretty_url = urllib.unquote("{}".format(url))
+
+            route = {
+                "url": pretty_url,
+                "methods": ','.join(rule.methods)
+            }
+            routes.append(route)
+
+        # Response
+        response_data_dict = {'routes': routes}
+        logger.info(json.dumps(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
 # Register resources
 api.add_resource(ClearDb, '/system/db/clear/', endpoint='db_clear')
 api.add_resource(SystemStatus, '/system/status/', '/', endpoint='system_status')
+api.add_resource(SystemRoutes, '/system/routes/', endpoint='system_routes')
