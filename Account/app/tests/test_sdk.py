@@ -28,6 +28,9 @@ from app.tests.schemas.schema_system import schema_db_clear, system_running
 
 class SdkTestCase(unittest.TestCase):
 
+    API_PREFIX_INTERNAL = "/account/api/v1.3/internal"
+    API_PREFIX_EXTERNAL = "/account/api/v1.3/external"
+
     def setUp(self):
         """
         TestCase Set Up
@@ -55,11 +58,27 @@ class SdkTestCase(unittest.TestCase):
         :return:
         """
         print_test_title(test_name="test_system_running")
+        url = self.API_PREFIX_INTERNAL + '/system/status/'
 
-        response = self.app.get('/system/status/')
+        response = self.app.get(url)
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, system_running))
+
+    ##########
+    ##########
+    def test_system_routes(self):
+        """
+        Test system running
+        :return:
+        """
+        print_test_title(test_name="test_system_routes")
+        url = self.API_PREFIX_INTERNAL + '/system/routes/'
+
+        response = self.app.get(url)
+        unittest.TestCase.assertEqual(self, response.status_code, 200)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        print(json.dumps(json.loads(response.data), indent=2))
 
     ##########
     ##########
@@ -69,7 +88,7 @@ class SdkTestCase(unittest.TestCase):
         :return:
         """
         print_test_title(test_name="test_clear_db_positive")
-        response = self.app.get('/system/db/clear/')
+        response = self.app.get(self.API_PREFIX_INTERNAL + '/system/db/clear/')
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_db_clear))
@@ -83,8 +102,10 @@ class SdkTestCase(unittest.TestCase):
         """
         print_test_title(test_name="test_account_create_password_too_long")
 
+        url = self.API_PREFIX_EXTERNAL + '/accounts/'
         account_json, username, password = account_create(password_length=21)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(url, data=account_json, headers=default_headers)
+
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_password_length))
@@ -97,7 +118,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_password_too_short")
 
         account_json, username, password = account_create(password_length=3)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_password_length))
@@ -112,7 +133,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_username_too_long")
 
         account_json, username, password = account_create(username_length=256)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_username_length))
@@ -125,7 +146,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_username_too_short")
 
         account_json, username, password = account_create(username_length=2)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_username_length))
@@ -140,7 +161,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_email_too_long")
 
         account_json, username, password = account_create(email_length=256)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_email_length))
@@ -153,7 +174,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_email_invalid")
 
         account_json, username, password = account_create(invalid_email=True)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_email_invalid))
@@ -168,7 +189,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_firstname_too_long")
 
         account_json, username, password = account_create(firstname_length=256)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_firstname_length))
@@ -181,7 +202,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_firstname_too_short")
 
         account_json, username, password = account_create(firstname_length=2)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_firstname_length))
@@ -196,7 +217,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_lastname_too_long")
 
         account_json, username, password = account_create(lastname_length=256)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_lastname_length))
@@ -209,7 +230,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_lastname_too_short")
 
         account_json, username, password = account_create(lastname_length=2)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_lastname_length))
@@ -224,7 +245,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_date_invalid")
 
         account_json, username, password = account_create(invalid_date=True)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_date_invalid))
@@ -239,7 +260,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_tos")
 
         account_json, username, password = account_create(accept_terms=False)
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create_tos))
@@ -254,7 +275,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_positive")
 
         account_json, account_username, account_password = account_create()
-        response = self.app.post('/api/accounts/', data=account_json, headers=default_headers)
+        response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_create))
@@ -278,7 +299,9 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Authorization'] = 'Basic ' + b64encode("{0}:{1}".format(account_username, account_password))
         # print (repr(request_headers))
 
-        response = self.app.get('/api/auth/user/', headers=request_headers)
+        url = self.API_PREFIX_EXTERNAL + '/auth/user/'
+        print("URL: " + url)
+        response = self.app.get(url, headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_auth))
@@ -304,7 +327,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers = default_headers
         request_headers['Api-Key'] = str(account_api_key)
 
-        url = "api/accounts/" + str(account_id) + "/"
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/"
 
         response = self.app.get(url, headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
@@ -327,7 +350,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers = default_headers
         request_headers['Api-Key'] = str(account_api_key)
 
-        url = "api/accounts/" + str(account_id) + "/"
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/"
 
         response = self.app.delete(url, headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 204, msg=response.data)

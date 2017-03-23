@@ -139,5 +139,5 @@ class ApiKeySDK(Resource):
 
 
 # Register resources
-api.add_resource(ApiKeyUser, '/api/auth/user/', endpoint='api_auth_user')
-api.add_resource(ApiKeySDK, '/api/auth/sdk/', endpoint='api_auth_sdk')
+api.add_resource(ApiKeyUser, '/external/auth/user/', endpoint='api_auth_user')
+api.add_resource(ApiKeySDK, '/internal/auth/sdk/', endpoint='api_auth_sdk')

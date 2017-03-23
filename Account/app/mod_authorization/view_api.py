@@ -688,7 +688,7 @@ class CrStatus(Resource):
 
 
 # Register resources
-api.add_resource(ConsentSignAndStore, '/api/account/<string:account_id>/servicelink/<string:source_slr_id>/<string:sink_slr_id>/consent/', endpoint='mydata-authorization')
-api.add_resource(AuthorizationTokenData, '/api/consent/<string:sink_cr_id>/authorizationtoken/', endpoint='mydata-authorizationtoken')
-api.add_resource(LastCrStatus, '/api/consent/<string:cr_id>/status/last/', endpoint='mydata-last-cr')
-api.add_resource(CrStatus, '/api/consent/<string:cr_id>/status/', endpoint='mydata-csr')
+api.add_resource(ConsentSignAndStore, '/accounts/<string:account_id>/servicelinks/<string:source_slr_id>/<string:sink_slr_id>/consent/', endpoint='mydata-authorization')
+api.add_resource(AuthorizationTokenData, '/consents/<string:sink_cr_id>/authorizationtoken/', endpoint='mydata-authorizationtoken')
+api.add_resource(LastCrStatus, '/consents/<string:cr_id>/statuses/last/', endpoint='mydata-last-cr')
+api.add_resource(CrStatus, '/consents/<string:cr_id>/statuses/', endpoint='mydata-csr')

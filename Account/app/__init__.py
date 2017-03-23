@@ -12,6 +12,9 @@ __status__ = "Development"
 """
 
 import sys
+
+from flask import request
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -50,7 +53,11 @@ def create_app(config_filename='config'):
         # Error Handlers
         @current_app.errorhandler(404)
         def not_found(error):
-            not_found_error = ApiError(code=404, title="Not Found", detail="Endpoint not found", status="NotFound")
+            try:
+                request_url = request.base_url
+            except Exception as exp:
+                request_url = "Unknown"
+            not_found_error = ApiError(code=404, title="Not Found", detail="Endpoint not found", status="NotFound", source=request_url)
             error_dict = not_found_error.to_dict()
             return make_json_response(errors=error_dict, status_code=str(error_dict['code']))
 
@@ -68,12 +75,21 @@ def create_app(config_filename='config'):
         from app.mod_authorization.view_api import mod_authorization_api
         from app.mod_system.view_api import mod_system
 
+        # URL Prefixs
+        prefix_api_auth = current_app.config["BLUEPRINT_URL_PREFIX"]
+        prefix_api_account = current_app.config["BLUEPRINT_URL_PREFIX"] + "/" + "external"
+        prefix_api_service = current_app.config["BLUEPRINT_URL_PREFIX"] + "/" + "internal"
+        prefix_api_authorization = current_app.config["BLUEPRINT_URL_PREFIX"] + "/" + "internal"
+        prefix_api_system = current_app.config["BLUEPRINT_URL_PREFIX"] + "/" + "internal"
+
         # Register blueprint(s)
-        current_app.register_blueprint(mod_api_auth)
-        current_app.register_blueprint(mod_account_api)
-        current_app.register_blueprint(mod_service_api)
-        current_app.register_blueprint(mod_system)
-        current_app.register_blueprint(mod_authorization_api)
+        current_app.register_blueprint(mod_api_auth, url_prefix=prefix_api_auth)
+        current_app.register_blueprint(mod_account_api, url_prefix=prefix_api_account)
+        current_app.register_blueprint(mod_service_api, url_prefix=prefix_api_service)
+        current_app.register_blueprint(mod_system, url_prefix=prefix_api_system)
+        current_app.register_blueprint(mod_authorization_api, url_prefix=prefix_api_authorization)
+
+        print("Running..")
 
     return app
 

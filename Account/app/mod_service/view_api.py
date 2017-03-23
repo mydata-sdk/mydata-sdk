@@ -465,7 +465,7 @@ class ServiceSurrogate(Resource):
 
 
 # Register resources
-api.add_resource(ServiceLinkSign, '/api/account/<string:account_id>/servicelink/', endpoint='sl_sign')
-api.add_resource(ServiceLinkVerify, '/api/account/<string:account_id>/servicelink/verify/', endpoint='sl_verify')
-api.add_resource(ServiceSurrogate, '/api/account/<string:account_id>/service/<string:service_id>/surrogate/', endpoint='surrogate_id')
+api.add_resource(ServiceLinkSign, '/accounts/<string:account_id>/servicelinks/', endpoint='sl_sign')
+api.add_resource(ServiceLinkVerify, '/accounts/<string:account_id>/servicelinks/verify/', endpoint='sl_verify')
+api.add_resource(ServiceSurrogate, '/accounts/<string:account_id>/services/<string:service_id>/surrogate/', endpoint='surrogate_id')  # TODO: Is this needed?
 
