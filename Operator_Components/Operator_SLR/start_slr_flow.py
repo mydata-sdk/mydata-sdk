@@ -4,12 +4,12 @@ import logging
 import traceback
 from json import loads
 
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, render_template_string, make_response
 from flask_cors import CORS
 from flask_restful import Resource, Api
 from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
-
+from base64 import urlsafe_b64encode
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from helpers_op import Helpers, ServiceRegistryHandler, Sequences
 
@@ -35,7 +35,6 @@ api.init_app(api_SLR_Start)
 # Logger stuff
 debug_log = logging.getLogger("debug")
 sq = Sequences("Operator_Components Mgmnt")
-
 
 class StartSlrFlow(Resource):
     def __init__(self):
@@ -108,12 +107,21 @@ class StartSlrFlow(Resource):
                                             trace=traceback.format_exc(limit=100).splitlines())
 
             sq.task("Add user_id(Account) to response from Service dictionary")
-            code["user_id"] = account_id
+            # code["user_id"] = account_id
 
             try:
                 service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)
+                service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
+                    code["code"], 1, urlsafe_b64encode("http://localhost:5000/"), "Operator"
+                )
+                debug_log.info("Redirect url with parameters:\n{}{}\nCode contains: {}".format(service_endpoint, service_query, code))
                 sq.send_to("Service_Components Mgmnt", "Redirect user to Service_Components Mgmnt login")
-                result = post(service_endpoint, json=code, timeout=self.request_timeout)
+                result = post(service_endpoint+service_query,
+                              json=code,
+                              timeout=self.request_timeout,
+                              allow_redirects=False
+                              )
+
                 debug_log.info("#### Response to SLR flow end point: {}\n{}".format(result.status_code, result.text))
 
                 if not result.ok:
@@ -124,7 +132,9 @@ class StartSlrFlow(Resource):
                                                     "Error from Service_Components Mgmnt": loads(result.text)},
                                                 title=result.reason)
                 else:
-                    return {"status": "CREATED"}, 201
+                    response = make_response(render_template_string(result.text), 302)
+                    return response
+                    # return {"status": "CREATED"}, 201
             except Timeout:
                 raise DetailedHTTPException(status=504,
                                             title="Request to Service_Components Mgmnt failed due to TimeoutError.",

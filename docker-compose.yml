@@ -179,6 +179,8 @@ services:
       - MYSQL_PASSWORD='MynorcA'
       - MYSQL_DB='db_Service_Mockup'
       - MYSQL_PORT=3306
+    ports:
+      - '2001:2000'
     networks:
       - mydata_sdk_demo_network
 
@@ -204,6 +206,8 @@ services:
       - MYSQL_PORT=3306
     networks:
       - mydata_sdk_demo_network
+    ports:
+      - '2002:2000'
 
 
 

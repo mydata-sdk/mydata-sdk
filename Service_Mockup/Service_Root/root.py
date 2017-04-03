@@ -31,9 +31,7 @@ def output_json(data, code, headers=None):
 class Root(Resource):
     #@error_handler
     def get(self):
-        app = current_app
-        config = app.config
-        status = {"id": config[""]}
+        status = {"status": "running"}
         return status
 
 

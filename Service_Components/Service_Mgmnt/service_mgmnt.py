@@ -7,9 +7,9 @@ from base64 import urlsafe_b64decode as decode
 from json import loads, dumps
 from uuid import uuid4 as guid
 
-from flask import request, abort, Blueprint, current_app
+from flask import request, abort, Blueprint, current_app, redirect
 from flask_cors import CORS
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 from jwcrypto import jws, jwk
 from requests import post
 
@@ -70,6 +70,54 @@ class GenCode(Resource):
                                         trace=traceback.format_exc(limit=100).splitlines())
 
 
+class SignInRedirector(Resource):
+    def __init__(self):
+        super(SignInRedirector, self).__init__()
+        self.service_url = current_app.config["SERVICE_URL"]
+        self.helpers = Helpers(current_app.config)
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('code', type=str, help='session code')
+        self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
+        self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
+        self.parser.add_argument('linkingFrom', type=str, help='Origin of the linking request(?)')  # TODO: Clarify?
+
+
+    @error_handler
+    def post(self):
+        debug_log.info("SignInRedisrector class, method post got json:")
+        debug_log.info(request.json)
+        args = self.parser.parse_args()
+        debug_log.info("Parser got args:\n{}\nWhere redirect_url is {}".format(dumps(args, indent=2),
+                                                                               decode(args["return_url"])))
+        code = request.json
+
+        sq.task("Verify code from Operator_Components")
+        if self.helpers.verifyCode(args['code']):
+            try:
+                sq.send_to("Service_Components", "Redirect login to Service_Components")
+                endpoint = "/api/1.2/slr/login" # TODO: Fetch this from somewhere
+                service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
+                    args["code"], args['operator_id'], args["return_url"], args["linkingFrom"]
+                )
+                return redirect("{}{}{}".format(self.service_url, endpoint, service_query), code=302)
+                # result = post("{}{}".format(self.service_url, endpoint), json=code)
+                # if not result.ok:
+                    # raise DetailedHTTPException(status=result.status_code,
+                    #                             detail={
+                    #                                 "msg": "Something went wrong while redirecting verified code to Service_Components",
+                    #                                 "Error from Service_Components": loads(result.text)},
+                    #                             title=result.reason)
+            except DetailedHTTPException as e:
+                e.trace = traceback.format_exc(limit=100).splitlines()
+                raise e
+            except Exception as e:
+                raise DetailedHTTPException(exception=e,
+                                            detail="Failed to POST code/user to Service_Components's /login",
+                                            trace=traceback.format_exc(limit=100).splitlines())
+        else:
+            abort(403)
+
+
 class UserAuthenticated(Resource):
     def __init__(self):
         super(UserAuthenticated, self).__init__()
@@ -89,11 +137,11 @@ class UserAuthenticated(Resource):
         try:
             debug_log.info("UserAuthenticated class, method post got json:")
             debug_log.info(request.json)
-            user_id = request.json["user_id"]
+            user_id = request.json["user_id"]  # TODO: We get user_id from mockup (currently guid) but don't use it?
             code = request.json["code"]
 
             sq.task("Generate surrogate_id.")
-            surrogate_id = "{}_{}".format(str(guid()), code)
+            surrogate_id = "{}_{}".format(str(guid()), code)   # TODO: Some logic to surrogate_id's?
 
             sq.task("Link code to generated surrogate_id")
             self.helpers.add_surrogate_id_to_code(request.json["code"], surrogate_id)
@@ -132,40 +180,6 @@ class UserAuthenticated(Resource):
                                         detail="Something failed in generating and delivering Surrogate_ID.",
                                         trace=traceback.format_exc(limit=100).splitlines())
 
-
-class SignInRedirector(Resource):
-    def __init__(self):
-        super(SignInRedirector, self).__init__()
-        self.service_url = current_app.config["SERVICE_URL"]
-        self.helpers = Helpers(current_app.config)
-
-    @error_handler
-    def post(self):
-        debug_log.info("SignInRedisrector class, method post got json:")
-        debug_log.info(request.json)
-        code = request.json
-
-        sq.task("Verify code from Operator_Components")
-        if self.helpers.verifyCode(code["code"]):
-            try:
-                sq.send_to("Service_Components", "Redirect login to Service_Components")
-                endpoint = "/api/1.2/slr/login"
-                result = post("{}{}".format(self.service_url, endpoint), json=code)
-                if not result.ok:
-                    raise DetailedHTTPException(status=result.status_code,
-                                                detail={
-                                                    "msg": "Something went wrong while redirecting verified code to Service_Components",
-                                                    "Error from Service_Components": loads(result.text)},
-                                                title=result.reason)
-            except DetailedHTTPException as e:
-                e.trace = traceback.format_exc(limit=100).splitlines()
-                raise e
-            except Exception as e:
-                raise DetailedHTTPException(exception=e,
-                                            detail="Failed to POST code/user to Service_Components's /login",
-                                            trace=traceback.format_exc(limit=100).splitlines())
-        else:
-            abort(403)
 
 
 def verifyJWS(json_JWS):
@@ -225,7 +239,6 @@ class StoreSLR(Resource):
         self.helpers = Helpers(config)
         self.service_key = self.helpers.get_key()
 
-
         self.protti = self.service_key["prot"]
         self.headeri = self.service_key["header"]
 
@@ -246,7 +259,6 @@ class StoreSLR(Resource):
 
             sq.task("Load slr payload as object")
             payload = slr["payload"]
-            payload = slr["payload"]
             debug_log.info("Before padding fix:{}".format(payload))
 
             sq.task("Fix possible incorrect padding in payload")
@@ -262,7 +274,6 @@ class StoreSLR(Resource):
             debug_log.info("Decoded SLR payload:")
             debug_log.info(type(payload))
             debug_log.info(dumps(payload, indent=2))
-
 
             sq.task("Fetch surrogate_id from decoded SLR payload")
             surrogate_id = payload["surrogate_id"].encode()
@@ -345,11 +356,9 @@ class StoreSLR(Resource):
     def get(self):  # Fancy but only used for testing. Should be disabled/removed in production.
         sq.task("Debugging endpoint, fetch SLR's from db and return")
         jsons = {"jsons": {}}
-        counter = 0
         for storage_row in self.helpers.query_db("select * from storage;"):
             debug_log.info(storage_row["json"])
             jsons["jsons"][storage_row["surrogate_id"]] = loads(storage_row["json"])
-            counter = +1
 
         sq.reply_to("Operator_Components Mgmnt", "Return SLR's from db")
         return jsons

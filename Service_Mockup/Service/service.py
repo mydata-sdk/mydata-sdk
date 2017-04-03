@@ -6,10 +6,11 @@ from json import loads
 
 from flask import request, Blueprint, current_app
 from flask_cors import CORS
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 from jwcrypto import jwk
 from requests import post
 
+from uuid import uuid4 as guid
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from helpers_mock import Helpers
 
@@ -67,18 +68,30 @@ class UserLogin(Resource):
     def __init__(self):
         super(UserLogin, self).__init__()
         self.helpers = Helpers(current_app.config)
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('code', type=str, help='session code')
+        self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
+        self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
+        self.parser.add_argument('linkingFrom', type=str, help='Origin of the linking request(?)')  # TODO: Clarify?
+
+    @error_handler
+    def get(self):
+        args = self.parser.parse_args()
+        return args
 
     @timeme
     @error_handler
     def post(self):
+        args = self.parser.parse_args()
         debug_log.info(dumps(request.json, indent=2))
-        user_id = request.json["user_id"]
-        code = request.json["code"]
+        user_id = str(guid())  # TODO: Placeholder for actual login.
+        code = args["code"]
+        response = {"code": code, "user_id": user_id}
         self.helpers.store_code_user({code: user_id})
 
         debug_log.info("User logged in with id ({})".format(format(user_id)))
-        endpoint = "/api/1.2/slr/auth"
-        result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=request.json)
+        endpoint = "/api/1.2/slr/auth"  # TODO: This needs to be fetched from somewhere.
+        result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=response)
         if not result.ok:
             raise DetailedHTTPException(status=result.status_code,
                                         detail={
