@@ -18,11 +18,12 @@ from flask import json
 
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, generate_string, \
-    print_test_title, generate_sl_init_sink
+    print_test_title, generate_sl_init_sink, generate_sl_init_source
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get
+from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init
 from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
 
@@ -382,10 +383,10 @@ class SdkTestCase(unittest.TestCase):
     ##########
     def test_slr_init_sink(self):
         """
-        Test user deletion
-        :return:
+        Test Sink SLR init
+        :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_slr_init_source")
+        print_test_title(test_name="test_slr_init_sink")
 
         account_api_key, account_id = self.test_account_authentication()
         sdk_api_key = self.test_sdk_auth()
@@ -399,11 +400,145 @@ class SdkTestCase(unittest.TestCase):
         payload, code, slr_id, pop_key = generate_sl_init_sink()
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("status_code: " + str(response.status_code))
         print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
-        # unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        # unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_init))
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_init))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_slr_init_sink_misformatted(self):
+        """
+        Test Sink SLR init with misformatted pop_key
+        :return:
+        """
+        print_test_title(test_name="test_slr_init_sink_misformatted")
+
+        account_api_key, account_id = self.test_account_authentication()
+        sdk_api_key = self.test_sdk_auth()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/sink/"
+
+        payload, code, slr_id, pop_key = generate_sl_init_sink(misformatted_payload=True)
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+    ##########
+    ##########
+    def test_slr_init_sink_duplicate(self):
+        """
+        Test Sink SLR init duplicate
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_slr_init_sink_duplicate")
+
+        account_id, account_api_key, sdk_api_key, slr_id_original = self.test_slr_init_sink()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/sink/"
+        payload, code, slr_id, pop_key = generate_sl_init_sink(slr_id=slr_id_original)
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 409, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_slr_init_source(self):
+        """
+        Test Sink SLR init
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_slr_init_source")
+
+        account_api_key, account_id = self.test_account_authentication()
+        sdk_api_key = self.test_sdk_auth()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/source/"
+
+        payload, code, slr_id = generate_sl_init_source()
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_init))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_slr_init_source_misformatted(self):
+        """
+        Test Source SLR init with misformatted pop_key
+        :return:
+        """
+        print_test_title(test_name="test_slr_init_source_misformatted")
+
+        account_api_key, account_id = self.test_account_authentication()
+        sdk_api_key = self.test_sdk_auth()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/source/"
+
+        payload, code, slr_id = generate_sl_init_source(misformatted_payload=True)
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+    ##########
+    ##########
+    def test_slr_init_source_duplicate(self):
+        """
+        Test Source SLR init duplicate
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_slr_init_source_duplicate")
+
+        account_id, account_api_key, sdk_api_key, slr_id_original = self.test_slr_init_sink()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/source/"
+        payload, code, slr_id = generate_sl_init_source(slr_id=slr_id_original)
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 409, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
 
 if __name__ == '__main__':
     unittest.main()

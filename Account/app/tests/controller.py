@@ -11,10 +11,11 @@ __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
 """
 import json
-from random import choice
+from random import choice, randint
 from string import lowercase
 from uuid import uuid4
 from jsonschema import validate, ValidationError, SchemaError
+from jwcrypto import jwk
 
 default_headers = {'Content-Type': 'application/json', 'Accept-Charset': 'utf-8', 'Accept': 'application/json'}
 
@@ -122,11 +123,17 @@ def account_create(username=None, password=None, email_length=15, username_lengt
     return account, username, password
 
 
-def generate_sl_init_sink():
+def generate_sl_init_sink(slr_id=None, misformatted_payload=False):
 
-    code = str(uuid4())
-    slr_id = str(uuid4())
-    pop_key = {'qq': str(uuid4())}
+    if slr_id is None:
+        slr_id = str(uuid4())
+
+    code = str(randint(100, 10000))
+    pop_key = json.loads(gen_jwk_key(prefix="sink"))
+
+    if misformatted_payload:
+        del pop_key['kty']
+        del pop_key['x']
 
     sl_init_payload = {
       "code": code,
@@ -138,4 +145,101 @@ def generate_sl_init_sink():
       }
     }
 
-    return sl_init_payload, code, slr_id, pop_key
+    payload = json.dumps(sl_init_payload)
+
+    return payload, code, slr_id, pop_key
+
+
+def generate_sl_init_source(slr_id=None, misformatted_payload=False):
+
+    if slr_id is None:
+        slr_id = str(uuid4())
+
+    code = str(randint(100, 10000))
+
+    sl_init_payload = {
+      "code": code,
+      "data": {
+        "attributes": {
+          "slr_id": slr_id
+        }
+      }
+    }
+
+    if misformatted_payload:
+        del sl_init_payload['code']
+
+    payload = json.dumps(sl_init_payload)
+
+    return payload, code, slr_id
+
+#############
+#############
+# JWS & JWK #
+#############
+#############
+
+
+def jwk_object_to_json(jwk_object=None):
+    """
+    Exports JWK object to JSON presentation
+
+    :param jwk_object:
+    :return: JSON presentation of JWK object
+    """
+    if jwk_object is None:
+        raise AttributeError("Provide jwk_object as parameter")
+
+    try:
+        jwk_json = jwk_object.export()
+    except Exception as exp:
+        raise
+    else:
+        return jwk_json
+
+
+def gen_key_as_jwk(kid=None):
+    """
+    Generates JWK (JSON Web Key) object with JWCrypto's jwk module.
+    - Module documentation: http://jwcrypto.readthedocs.io/en/stable/jwk.html
+
+    :param kid: Key ID, https://tools.ietf.org/html/rfc7517#section-4.5
+    :return: Generated JWK object
+    """
+    if kid is None:
+        raise AttributeError("Provide kid as parameter")
+    if not isinstance(kid, str):
+        raise TypeError("kid MUST be str")
+
+    gen = {"generate": "EC", "cvr": "P-256", "kid": kid}
+
+    try:
+        jwk_key = jwk.JWK(**gen)
+        jwk_key_json = jwk_object_to_json(jwk_object=jwk_key)
+    except Exception as exp:
+        raise
+    else:
+        return jwk_key_json
+
+
+def gen_jwk_key(prefix="key"):
+    """
+    Generate JWK
+
+    :param prefix:
+    :return: JWK
+    """
+    if prefix is None:
+        raise AttributeError("Provide prefix as parameter")
+    if not isinstance(prefix, str):
+        raise TypeError("prefix MUST be str")
+
+    kid = prefix + "-kid-" + str(uuid4())
+
+    try:
+        jwk = gen_key_as_jwk(kid=kid)
+    except Exception as exp:
+        raise
+    else:
+        return jwk
+

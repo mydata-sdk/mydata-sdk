@@ -19,6 +19,7 @@ from flask import json, request
 
 #
 # https://docs.python.org/3/howto/urllib2.html#httperror
+from jsonschema import Draft4Validator
 from jsonschema import SchemaError
 from jsonschema import ValidationError
 from jsonschema import validate
@@ -253,7 +254,34 @@ def validate_json(json_object=None, json_schema=None):
     try:
         validate(json_object, json_schema)
     except ValidationError as exp:
-        raise ApiError(code=400, title="ValidationError", detail=repr(exp), source=request.path)
+        validator = Draft4Validator(json_schema)
+        errors = sorted(validator.iter_errors(json_object), key=lambda e: e.path)
+
+        error_list = []
+        error_dict = {}
+
+        for error in errors:
+            # Path where error occurred
+            error_path = ""
+            error_path_list = list(error.schema_path)
+            count_1 = error_path_list.count("properties")
+            count_2 = error_path_list.count("required")
+            for index in range(count_1):
+                error_path_list.remove("properties")
+            for index in range(count_2):
+                error_path_list.remove("required")
+            for path_item in error_path_list:
+                error_path = error_path + "." + path_item
+            error_path = str(error_path)[1:]
+            if len(error_path) == 0:
+                error_path = "root"
+            error_string = str(error.message) + " at " + error_path
+            error_list.append(error_string)
+
+        for index in range(len(error_list)):
+            error_dict[index] = error_list[index]
+
+        raise ApiError(code=400, title="ValidationError", detail=error_dict, source=request.path)
     except SchemaError as exp:
         raise ApiError(code=500, title="Invalid JSON Schema in Schema validator", detail=repr(exp), source=request.path)
     except Exception as exp:

@@ -4,6 +4,8 @@
 import json
 import uuid
 import logging
+from _mysql import IntegrityError
+
 import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
 #from Crypto.Hash import SHA512
 #from Crypto.Random.random import StrongRandom
@@ -25,9 +27,153 @@ from app.mod_database.helpers import get_db_cursor
 
 
 # create logger with 'spam_application'
-from app.mod_database.models import SurrogateId
+from app.mod_database.models import SurrogateId, ServiceLinkRecord
 
-logger = get_custom_logger('mod_service_controllers')
+logger = get_custom_logger(__name__)
+
+
+def init_slr_source(account_id=None, slr_id=None, endpoint="init_slr_sink()"):
+
+    logger.info("init_slr_sink()")
+
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+
+    if not isinstance(account_id, str):
+        try:
+            account_id = str(account_id)
+        except Exception:
+            raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+    if not isinstance(slr_id, str):
+        try:
+            slr_id = str(slr_id)
+        except Exception:
+            raise TypeError("slr_id MUST be str, not " + str(type(slr_id)))
+    if not isinstance(endpoint, str):
+        try:
+            endpoint = str(endpoint)
+        except Exception:
+            raise TypeError("endpoint MUST be str, not " + str(type(endpoint)))
+
+    logger.info("Initing SLR")
+    try:
+        slr_entry = ServiceLinkRecord(
+            service_link_record_id=slr_id,
+            account_id=account_id
+        )
+    except Exception as exp:
+        logger.error('Could not create Service Link Record object: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to create Service Link Record object", detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Service Link Record entry created")
+        logger.debug(slr_entry.log_entry)
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+
+    # Store DB entry
+    try:
+        cursor = slr_entry.to_db(cursor=cursor)
+        slr_id = slr_entry.service_link_record_id
+        db.connection.commit()
+    except IntegrityError as exp:
+        error_title = "Service Link ID already exists"
+        error_detail = str(exp.args[1])
+        logger.error(error_title + " - " + error_detail)
+        db.connection.rollback()
+        logger.debug('--> rollback')
+        raise ApiError(code=409, title=error_title, detail=error_detail, source=endpoint)
+    except Exception as exp:
+        logger.error('Slr init commit failed: ' + repr(exp))
+        db.connection.rollback()
+        logger.debug('--> rollback')
+        raise ApiError(code=500, title="Failed to store init SLR", detail=repr(exp), source=endpoint)
+    else:
+        logger.info('Slr initialized commited')
+        logger.debug("slr_entry: " + slr_entry.log_entry)
+        return slr_id
+
+
+def init_slr_sink(account_id=None, slr_id=None, pop_key=None, endpoint="init_slr_sink()"):
+
+    logger.info("init_slr_sink()")
+
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+    if pop_key is None:
+        raise AttributeError("Provide pop_key as parameter")
+
+    if not isinstance(account_id, str):
+        try:
+            account_id = str(account_id)
+        except Exception:
+            raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+    if not isinstance(slr_id, str):
+        try:
+            slr_id = str(slr_id)
+        except Exception:
+            raise TypeError("slr_id MUST be str, not " + str(type(slr_id)))
+    if not isinstance(pop_key, dict):
+        try:
+            pop_key = dict(pop_key)
+        except Exception:
+            raise TypeError("pop_key MUST be dict, not " + str(type(pop_key)))
+    if not isinstance(endpoint, str):
+        try:
+            endpoint = str(endpoint)
+        except Exception:
+            raise TypeError("endpoint MUST be str, not " + str(type(endpoint)))
+
+    logger.info("Initing SLR")
+    try:
+        slr_entry = ServiceLinkRecord(
+            service_link_record_id=slr_id,
+            account_id=account_id,
+            pop_key=pop_key
+        )
+    except Exception as exp:
+        logger.error('Could not create Service Link Record object: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to create Service Link Record object", detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Service Link Record entry created")
+        logger.debug(slr_entry.log_entry)
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+
+    # Store DB entry
+    try:
+        cursor = slr_entry.to_db(cursor=cursor)
+        slr_id = slr_entry.service_link_record_id
+        db.connection.commit()
+    except IntegrityError as exp:
+        error_title = "Service Link ID already exists"
+        error_detail = str(exp.args[1])
+        logger.error(error_title + " - " + error_detail)
+        db.connection.rollback()
+        logger.debug('--> rollback')
+        raise ApiError(code=409, title=error_title, detail=error_detail, source=endpoint)
+    except Exception as exp:
+        logger.error('Slr init commit failed: ' + repr(exp))
+        db.connection.rollback()
+        logger.debug('--> rollback')
+        raise ApiError(code=500, title="Failed to store init SLR", detail=repr(exp), source=endpoint)
+    else:
+        logger.info('Slr initialized commited')
+        logger.debug("slr_entry: " + slr_entry.log_entry)
+        return slr_id
 
 
 def sign_slr(account_id=None, slr_payload=None, endpoint="sign_slr(account_id, slr_payload, endpoint)"):

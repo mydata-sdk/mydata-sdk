@@ -1945,10 +1945,11 @@ class ServiceLinkRecord():
     surrogate_id = None
     operator_id = None
     account_id = None
+    pop_key = None
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", service_link_record="", service_link_record_id="", service_id="", surrogate_id="", operator_id="", account_id="", deleted=0, table_name="MyDataAccount.ServiceLinkRecords"):
+    def __init__(self, id="", service_link_record="", service_link_record_id="", service_id="", surrogate_id="", operator_id="", account_id="", pop_key="", deleted=0, table_name="MyDataAccount.ServiceLinkRecords"):
         if id is not None:
             self.id = id
         if service_link_record is not None:
@@ -1963,6 +1964,8 @@ class ServiceLinkRecord():
             self.surrogate_id = surrogate_id
         if account_id is not None:
             self.account_id = account_id
+        if pop_key is not None:
+            self.pop_key = pop_key
         if table_name is not None:
             self.table_name = table_name
         if deleted is not None:
@@ -2029,6 +2032,14 @@ class ServiceLinkRecord():
         self.account_id = value
 
     @property
+    def pop_key(self):
+        return self.pop_key
+
+    @pop_key.setter
+    def pop_key(self, value):
+        self.pop_key = value
+
+    @property
     def to_dict(self):
         return self.__dict__
 
@@ -2084,8 +2095,9 @@ class ServiceLinkRecord():
                     "serviceId, " \
                     "surrogateId, " \
                     "operatorId, " \
+                    "pop_key," \
                     "Accounts_id" \
-                    ") VALUES (%s, %s, %s, %s, %s, %s)"
+                    ") VALUES (%s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
             json.dumps(self.service_link_record),
@@ -2093,6 +2105,7 @@ class ServiceLinkRecord():
             str(self.service_id),
             str(self.surrogate_id),
             str(self.operator_id),
+            json.dumps(self.pop_key),
             int(self.account_id),
         )
 
@@ -2110,10 +2123,10 @@ class ServiceLinkRecord():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, serviceLinkRecord, Accounts_id, serviceLinkRecordId, serviceId, surrogateId, operatorId  " \
+        sql_query = "SELECT id, serviceLinkRecord, Accounts_id, serviceLinkRecordId, serviceId, surrogateId, operatorId, popKey  " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND serviceLinkRecord LIKE %s AND serviceLinkRecordId LIKE %s AND " \
-                    "serviceId LIKE %s AND surrogateId LIKE %s AND operatorId LIKE %s AND Accounts_id LIKE %s;"
+                    "serviceId LIKE %s AND surrogateId LIKE %s AND operatorId LIKE %s AND popKey LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
@@ -2122,6 +2135,7 @@ class ServiceLinkRecord():
             '%' + str(self.service_id) + '%',
             '%' + str(self.surrogate_id) + '%',
             '%' + str(self.operator_id) + '%',
+            '%' + str(self.pop_key) + '%',
             '%' + str(self.account_id) + '%',
         )
 
@@ -2142,6 +2156,7 @@ class ServiceLinkRecord():
                 self.service_id = data[0][4]
                 self.surrogate_id = data[0][5]
                 self.operator_id = data[0][6]
+                self.pop_key = data[0][7]
             else:
                 self.id = data[0]
                 self.service_link_record = data[1]
@@ -2150,6 +2165,7 @@ class ServiceLinkRecord():
                 self.service_id = data[4]
                 self.surrogate_id = data[5]
                 self.operator_id = data[6]
+                self.pop_key = data[7]
 
             try:
                 slr_copy = self.service_link_record
@@ -2159,6 +2175,15 @@ class ServiceLinkRecord():
                 attribute_type = type(self.service_link_record)
                 logger.info("Could not convert service_link_record to dict. Type of attribute: " + repr(attribute_type) + " Using original" + repr(attribute_type) + " Using original: " + repr(exp))
                 self.service_link_record = slr_copy
+
+            try:
+                pop_key_copy = self.pop_key
+                logger.info("pop_key to dict")
+                self.pop_key = json.loads(self.pop_key)
+            except Exception as exp:
+                attribute_type = type(self.pop_key)
+                logger.info("Could not convert pop_key to dict. Type of attribute: " + repr(attribute_type) + " Using original" + repr(attribute_type) + " Using original: " + repr(exp))
+                self.pop_key = pop_key_copy
 
             return cursor
 

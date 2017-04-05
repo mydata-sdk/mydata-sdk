@@ -28,15 +28,17 @@ from base64 import b64decode
 
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json
+from app.mod_account.controllers import verify_account_id_match
 from app.mod_api_auth.controllers import requires_api_auth_user, get_account_id_by_api_key, provide_api_key, \
     requires_api_auth_sdk, get_user_api_key, get_sdk_api_key
 from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jws, get_account_public_key, \
     verify_jws_signature_with_jwk
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord
-from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, get_surrogate_id_by_account_and_service
+from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, get_surrogate_id_by_account_and_service, \
+    init_slr_sink, init_slr_source
 from app.mod_service.models import NewServiceLink, VerifyServiceLink
-from app.mod_service.schemas import schema_sl_init_sink
+from app.mod_service.schemas import schema_sl_init_sink, schema_sl_init_source
 
 mod_service_api = Blueprint('service_api', __name__, template_folder='templates')
 api = Api(mod_service_api)
@@ -50,10 +52,71 @@ class ServiceLinkInitSource(Resource):
     @requires_api_auth_user
     @requires_api_auth_sdk
     def post(self, account_id):
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
 
-        response_data = {}
+        logger.info("Fetching User API Key")
+        api_key_user = get_user_api_key(endpoint=endpoint)
+        logger.debug("api_key_user: " + api_key_user)
 
-        return make_json_response(data=response_data, status_code=501)
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("Account ID from path: " + account_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key_user, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # load JSON
+        json_data = request.get_json()
+        if not json_data:
+            error_detail = {'0': 'Set application/json as Content-Type', '1': 'Provide json payload'}
+            raise ApiError(code=400, title="No input data provided", detail=error_detail, source=endpoint)
+        else:
+            logger.debug("json_data: " + json.dumps(json_data))
+
+        # Validate payload content
+        validate_json(json_data, schema_sl_init_source)
+
+        # Get elements from payload
+        try:
+            code = json_data['code']
+            slr_id = json_data['data']['attributes']['slr_id']
+        except Exception as exp:
+            error_title = "Could not get data from payload"
+            logger.error(error_title + ": " + str(exp.message))
+            raise ApiError(code=500, title="Could not fetch code from json", detail=str(exp.message), source=endpoint)
+
+        try:
+            slr_id_inited = init_slr_source(account_id=account_id, slr_id=slr_id, endpoint=endpoint)
+        except ApiError as exp:
+            logger.error(repr(exp))
+            raise
+        except Exception as exp:
+            error_title = "Could not initialize service link"
+            logger.error(error_title + ": " + str(exp.message))
+            raise ApiError(code=500, title="Could not fetch code from json", detail=repr(exp), source=endpoint)
+
+
+        response_data = {
+          "code": code,
+          "data": {
+            "attributes": {
+              "slr_id": slr_id_inited
+            }
+          }
+        }
+
+        return make_json_response(data=response_data, status_code=201)
 
 
 class ServiceLinkInitSink(Resource):
@@ -80,6 +143,10 @@ class ServiceLinkInitSink(Resource):
         else:
             logger.debug("Account ID from path: " + account_id)
 
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key_user, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
         # load JSON
         json_data = request.get_json()
         if not json_data:
@@ -91,11 +158,37 @@ class ServiceLinkInitSink(Resource):
         # Validate payload content
         validate_json(json_data, schema_sl_init_sink)
 
+        # Get elements from payload
+        try:
+            code = json_data['code']
+            pop_key = json_data['data']['attributes']['pop_key']
+            slr_id = json_data['data']['attributes']['slr_id']
+        except Exception as exp:
+            error_title = "Could not get data from payload"
+            logger.error(error_title + ": " + str(exp.message))
+            raise ApiError(code=500, title="Could not fetch code from json", detail=str(exp.message), source=endpoint)
+
+        try:
+            slr_id_inited = init_slr_sink(account_id=account_id, slr_id=slr_id, pop_key=pop_key, endpoint=endpoint)
+        except ApiError as exp:
+            logger.error(repr(exp))
+            raise
+        except Exception as exp:
+            error_title = "Could not initialize service link"
+            logger.error(error_title + ": " + str(exp.message))
+            raise ApiError(code=500, title="Could not fetch code from json", detail=repr(exp), source=endpoint)
+
+
         response_data = {
-            'json_data': json_data
+          "code": code,
+          "data": {
+            "attributes": {
+              "slr_id": slr_id_inited
+            }
+          }
         }
 
-        return make_json_response(data=response_data, status_code=501)
+        return make_json_response(data=response_data, status_code=201)
 
 
 class ServiceLinkSign(Resource):
