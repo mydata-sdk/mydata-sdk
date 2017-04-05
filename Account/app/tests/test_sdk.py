@@ -677,6 +677,7 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
+    # TODO: sign slr with id that does not exists
     # TODO: store service signed slr and ssr
 
 
