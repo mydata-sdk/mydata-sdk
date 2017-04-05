@@ -191,10 +191,6 @@ def generate_sl_payload(slr_id=None, operator_id=None, operator_key=None, servic
     if surrogate_id is None:
         raise AttributeError("Provide surrogate_id as parameter")
 
-    if misformatted_payload:
-        del operator_key['kty']
-        del operator_key['x']
-
     sl_payload = {
       "code": "string",
       "data": {
@@ -210,6 +206,10 @@ def generate_sl_payload(slr_id=None, operator_id=None, operator_key=None, servic
         }
       }
     }
+
+    if misformatted_payload:
+        del sl_payload['data']['attributes']['surrogate_id']
+        del sl_payload['data']['attributes']['iat']
 
     payload = json.dumps(sl_payload)
 
