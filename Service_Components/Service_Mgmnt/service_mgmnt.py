@@ -28,7 +28,6 @@ sq = Sequences("Service_Components Mgmnt")
 
 '''
 
-
 '''
 
 
@@ -83,39 +82,29 @@ class SignInRedirector(Resource):
 
 
     @error_handler
-    def post(self):
+    def post(self): # TODO: Remove this function, its unnecessary now.
         debug_log.info("SignInRedisrector class, method post got json:")
         debug_log.info(request.json)
         args = self.parser.parse_args()
-        debug_log.info("Parser got args:\n{}\nWhere redirect_url is {}".format(dumps(args, indent=2),
-                                                                               decode(args["return_url"])))
-        code = request.json
+        debug_log.info('Parser got args:\n{}\nWhere redirect_url is {}'.format(dumps(args, indent=2),
+                                                                               args["return_url"]))
 
-        sq.task("Verify code from Operator_Components")
-        if self.helpers.verifyCode(args['code']):
-            try:
-                sq.send_to("Service_Components", "Redirect login to Service_Components")
-                endpoint = "/api/1.2/slr/login" # TODO: Fetch this from somewhere
-                service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
-                    args["code"], args['operator_id'], args["return_url"], args["linkingFrom"]
-                )
-                return redirect("{}{}{}".format(self.service_url, endpoint, service_query), code=302)
-                # result = post("{}{}".format(self.service_url, endpoint), json=code)
-                # if not result.ok:
-                    # raise DetailedHTTPException(status=result.status_code,
-                    #                             detail={
-                    #                                 "msg": "Something went wrong while redirecting verified code to Service_Components",
-                    #                                 "Error from Service_Components": loads(result.text)},
-                    #                             title=result.reason)
-            except DetailedHTTPException as e:
-                e.trace = traceback.format_exc(limit=100).splitlines()
-                raise e
-            except Exception as e:
-                raise DetailedHTTPException(exception=e,
-                                            detail="Failed to POST code/user to Service_Components's /login",
-                                            trace=traceback.format_exc(limit=100).splitlines())
-        else:
-            abort(403)
+        try:
+            sq.send_to("Service_Components", "Redirect login to Service_Components")
+            endpoint = "/api/1.2/slr/login"  # TODO: Fetch this from somewhere
+            service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
+                args["code"], args['operator_id'], args["return_url"], args["linkingFrom"]
+            )
+            return redirect("{}{}{}".format(self.service_url, endpoint, service_query), code=302)
+
+        except DetailedHTTPException as e:
+            e.trace = traceback.format_exc(limit=100).splitlines()
+            raise e
+        except Exception as e:
+            raise DetailedHTTPException(exception=e,
+                                        detail="Failed to POST code/user to Service_Components's /login",
+                                        trace=traceback.format_exc(limit=100).splitlines())
+
 
 
 class UserAuthenticated(Resource):

@@ -2,9 +2,9 @@
 __author__ = 'alpaloma'
 import logging
 import time
-from json import loads
+from json import loads, dumps
 
-from flask import request, Blueprint, current_app
+from flask import request, Blueprint, current_app, render_template_string, make_response
 from flask_cors import CORS
 from flask_restful import Resource, Api, reqparse
 from jwcrypto import jwk
@@ -77,12 +77,56 @@ class UserLogin(Resource):
     @error_handler
     def get(self):
         args = self.parser.parse_args()
-        return args
+        debug_log.info("Mockup UserLogin GET got args: \n{}".format(dumps(args, indent=2)))
+        tmpl_str = '''
+        <html><header></header><body>
+                    <form class="form-horizontal" action="" method="POST">
+              <fieldset>
+                <legend>Login to {{provider}}</legend>
+                <div class="form-group">
+                  <label for="inputEmail" class="col-lg-1 control-label">Email</label>
+                  <div class="col-lg-10">
+                    <input class="form-control" id="inputEmail" placeholder="Email" type="text">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="inputPassword" class="col-lg-1 control-label">Password</label>
+                  <div class="col-lg-10">
+                    <input class="form-control" id="inputPassword" placeholder="Password" type="password">
+                    <div class="checkbox">
+                      <label>
+                        <input type="checkbox"> Checkbox
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="col-lg-10 col-lg-offset-1">
+                    <button type="reset" class="btn btn-default">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                  </div>
+                </div>
+              </fieldset>
+              <input type="hidden" name="code" value="{{ code }}">
+              <input type="hidden" name="return_url" value="{{ return_url }}">
+              <input type="hidden" name="operator_id" value="{{ operator_id }}">
+              <input type="hidden" name="linkingFrom" value="{{ linkingFrom }}">
+            </form>
+        </body></html>
+        '''
+        # Render Login template
+        response = make_response(render_template_string(tmpl_str, **args), 200)
+        return response
 
+    # code = args["code"],
+    # operator_id = args["operator_id"],
+    # return_url = args["return_url"],
+    # linkingFrom = args["linkingFrom"]
     @timeme
     @error_handler
     def post(self):
         args = self.parser.parse_args()
+        debug_log.info("Mockup UserLogin POST args contain:\n {}".format(dumps(args, indent=2)))
         debug_log.info(dumps(request.json, indent=2))
         user_id = str(guid())  # TODO: Placeholder for actual login.
         code = args["code"]
@@ -103,7 +147,7 @@ class UserLogin(Resource):
         debug_log.info(result.text)
 
 
-from json import dumps
+
 
 
 class RegisterSur(Resource):
@@ -111,6 +155,7 @@ class RegisterSur(Resource):
         super(RegisterSur, self).__init__()
         self.db_path = current_app.config["DATABASE_PATH"]
         self.helpers = Helpers(current_app.config)
+
     @timeme
     @error_handler
     def post(self):
