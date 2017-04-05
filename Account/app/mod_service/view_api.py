@@ -27,7 +27,7 @@ from flask_restful import Resource, Api, reqparse
 from base64 import b64decode
 
 # Import services
-from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json
+from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids
 from app.mod_account.controllers import verify_account_id_match
 from app.mod_api_auth.controllers import requires_api_auth_user, get_account_id_by_api_key, provide_api_key, \
     requires_api_auth_sdk, get_user_api_key, get_sdk_api_key
@@ -38,7 +38,7 @@ from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord
 from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, get_surrogate_id_by_account_and_service, \
     init_slr_sink, init_slr_source
 from app.mod_service.models import NewServiceLink, VerifyServiceLink
-from app.mod_service.schemas import schema_sl_init_sink, schema_sl_init_source
+from app.mod_service.schemas import schema_sl_init_sink, schema_sl_init_source, schema_sl_sign
 
 mod_service_api = Blueprint('service_api', __name__, template_folder='templates')
 api = Api(mod_service_api)
@@ -89,12 +89,15 @@ class ServiceLinkInitSource(Resource):
 
         # Get elements from payload
         try:
-            code = json_data['code']
+            code = str(json_data['code'])
             slr_id = json_data['data']['attributes']['slr_id']
         except Exception as exp:
             error_title = "Could not get data from payload"
             logger.error(error_title + ": " + str(exp.message))
             raise ApiError(code=500, title="Could not fetch code from json", detail=str(exp.message), source=endpoint)
+        else:
+            logger.debug("code from payload: " + code)
+            logger.debug("slr_id from payload: " + slr_id)
 
         try:
             slr_id_inited = init_slr_source(account_id=account_id, slr_id=slr_id, endpoint=endpoint)
@@ -106,16 +109,25 @@ class ServiceLinkInitSource(Resource):
             logger.error(error_title + ": " + str(exp.message))
             raise ApiError(code=500, title="Could not fetch code from json", detail=repr(exp), source=endpoint)
 
-
-        response_data = {
-          "code": code,
-          "data": {
-            "attributes": {
-              "slr_id": slr_id_inited
+        # Response data container
+        try:
+            response_data = {
+                "code": code,
+                "data": {
+                    "attributes": {
+                        "slr_id": slr_id_inited
+                    }
+                }
             }
-          }
-        }
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
 
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data, status_code=201)
 
 
@@ -160,13 +172,17 @@ class ServiceLinkInitSink(Resource):
 
         # Get elements from payload
         try:
-            code = json_data['code']
+            code = str(json_data['code'])
             pop_key = json_data['data']['attributes']['pop_key']
             slr_id = json_data['data']['attributes']['slr_id']
         except Exception as exp:
             error_title = "Could not get data from payload"
             logger.error(error_title + ": " + str(exp.message))
             raise ApiError(code=500, title="Could not fetch code from json", detail=str(exp.message), source=endpoint)
+        else:
+            logger.debug("code from payload: " + code)
+            logger.debug("slr_id from payload: " + slr_id)
+            logger.debug("pop_key from payload: " + json.dumps(pop_key))
 
         try:
             slr_id_inited = init_slr_sink(account_id=account_id, slr_id=slr_id, pop_key=pop_key, endpoint=endpoint)
@@ -178,67 +194,57 @@ class ServiceLinkInitSink(Resource):
             logger.error(error_title + ": " + str(exp.message))
             raise ApiError(code=500, title="Could not fetch code from json", detail=repr(exp), source=endpoint)
 
-
-        response_data = {
-          "code": code,
-          "data": {
-            "attributes": {
-              "slr_id": slr_id_inited
+        # Response data container
+        try:
+            response_data = {
+                "code": code,
+                "data": {
+                    "attributes": {
+                        "slr_id": slr_id_inited
+                    }
+                }
             }
-          }
-        }
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
 
-        return make_json_response(data=response_data, status_code=201)
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=201)
 
 
 class ServiceLinkSign(Resource):
-    # @requires_api_auth_user
-    # @requires_api_auth_sdk
-    # def get(self, account_id):
-    #     try:
-    #         endpoint = str(api.url_for(self, account_id=account_id))
-    #     except Exception as exp:
-    #         endpoint = str(__name__)
-    #
-    #     try:
-    #         api_key = request.headers.get('Api-Key')
-    #     except Exception as exp:
-    #         logger.error("No ApiKey in headers")
-    #         logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-    #         return provide_api_key(endpoint=endpoint)
-    #
-    #     try:
-    #         account_id = str(account_id)
-    #     except Exception as exp:
-    #         raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
-    #
-    #     response_data = {
-    #         'api_key': api_key,
-    #         'account_id': account_id
-    #     }
-    #
-    #     return make_json_response(data=response_data, status_code=200)
-
     @requires_api_auth_user
     @requires_api_auth_sdk
-    def post(self, account_id):
-
+    def patch(self, account_id, link_id):
         try:
             endpoint = str(api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
-        try:
-            api_key = request.headers.get('Api-Key')
-        except Exception as exp:
-            logger.error("No ApiKey in headers")
-            logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provide_api_key(endpoint=endpoint)
+        logger.info("Fetching User API Key")
+        api_key_user = get_user_api_key(endpoint=endpoint)
+        logger.debug("api_key_user: " + api_key_user)
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
 
         try:
             account_id = str(account_id)
+            link_id = str(link_id)
         except Exception as exp:
-            raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+            raise ApiError(code=400, title="Unsupported path variables", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("account_id from path: " + account_id)
+            logger.debug("link_id from path: " + link_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key_user, endpoint=endpoint):
+            logger.info("Account IDs are matching")
 
         # load JSON
         json_data = request.get_json()
@@ -249,55 +255,49 @@ class ServiceLinkSign(Resource):
             logger.debug("json_data: " + json.dumps(json_data))
 
         # Validate payload content
-        schema = NewServiceLink()
-        schema_validation_result = schema.load(json_data)
+        validate_json(json_data, schema_sl_sign)
 
-        # Check validation errors
-        if schema_validation_result.errors:
-            logger.error("Invalid payload")
-            raise ApiError(code=400, title="Invalid payload", detail=dict(schema_validation_result.errors), source=endpoint)
+        # Get elements from payload
+        try:
+            logger.info("Get elements from payload")
+            code = str(json_data['code'])
+            slr_payload = json_data['data']['attributes']
+            link_id_from_payload = str(json_data['data']['attributes']['link_id'])
+        except Exception as exp:
+            error_title = "Could not get data from payload"
+            logger.error(error_title + ": " + str(exp.message))
+            raise ApiError(code=500, title="Could not get elements from payload", detail=str(exp.message), source=endpoint)
         else:
-            logger.debug("JSON validation -> OK")
+            logger.debug("code from payload: " + code)
+            logger.debug("slr_payload from payload: " + json.dumps(slr_payload))
+            logger.debug("link_id_from_payload from payload: " + link_id_from_payload)
 
-        # Get slr payload
+        # Verify SLR ID match
         try:
-            slr_payload = json_data['data']['slr']['attributes']
-        except Exception as exp:
-            logger.error("Could not fetch slr payload from json")
-            raise ApiError(code=400, title="Could not fetch slr payload from json", detail=repr(exp), source=endpoint)
-
-        # Get surrogate_id
-        try:
-            surrogate_id = json_data['data']['surrogate_id']
-        except Exception as exp:
-            logger.error("Could not fetch surrogate id from json")
-            raise ApiError(code=400, title="Could not fetch surrogate id from json", detail=repr(exp), source=endpoint)
-
-        # Get code
-        try:
-            code = json_data['code']
-        except Exception as exp:
-            logger.error("Could not fetch code from json")
-            raise ApiError(code=400, title="Could not fetch code from json", detail=repr(exp), source=endpoint)
+            compare_str_ids(id=link_id, id_to_compare=link_id_from_payload)
+        except ValueError as exp:
+            error_title = "SLR IDs are not matching"
+            error_detail = "SLR ID from path was {} and from payload {}".format(link_id, link_id_from_payload)
+            logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
+            raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
 
         # Sign SLR
         try:
             slr_signed_dict = sign_slr(account_id=account_id, slr_payload=slr_payload, endpoint=str(endpoint))
         except Exception as exp:
-            logger.error("Could not sign SLR")
-            logger.debug("Could not sign SLR: " + repr(exp))
+            logger.error("Could not sign SLR: " + repr(exp))
             raise
 
         # Response data container
         try:
-            response_data = {}
-            response_data['code'] = code
-            response_data['data'] = {}
-            response_data['data']['slr'] = {}
-            response_data['data']['slr']['type'] = "ServiceLinkRecord"
-            response_data['data']['slr']['attributes'] = {}
-            response_data['data']['slr']['attributes']['slr'] = slr_signed_dict
-            response_data['data']['surrogate_id'] = surrogate_id
+            response_data = {
+              "code": "string",
+              "data": {
+                "type": "ServiceLinkRecord",
+                "id": link_id,
+                "attributes": slr_signed_dict
+              }
+            }
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
@@ -617,7 +617,7 @@ class ServiceSurrogate(Resource):
 # Register resources
 api.add_resource(ServiceLinkInitSource, '/accounts/<string:account_id>/servicelinks/init/source/', endpoint='sl_init_source')
 api.add_resource(ServiceLinkInitSink, '/accounts/<string:account_id>/servicelinks/init/sink/', endpoint='sl_init_sink')
-api.add_resource(ServiceLinkSign, '/accounts/<string:account_id>/servicelinks/', endpoint='sl_sign')
+api.add_resource(ServiceLinkSign, '/accounts/<string:account_id>/servicelinks/<string:link_id>/', endpoint='sl_sign')
 api.add_resource(ServiceLinkStore, '/accounts/<string:account_id>/servicelinks/verify/', endpoint='sl_verify')
 api.add_resource(ServiceSurrogate, '/accounts/<string:account_id>/services/<string:service_id>/surrogate/', endpoint='surrogate_id')  # TODO: Is this needed?
 

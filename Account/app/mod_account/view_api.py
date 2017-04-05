@@ -228,6 +228,8 @@ class AccountDelete(Resource):
             logger.info("Particulars Fetched")
             logger.info("Particulars: ")
 
+        # TODO: Remove API-Key of Account owner
+
         # Response data container
         try:
             response_data = {}

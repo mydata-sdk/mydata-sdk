@@ -114,3 +114,97 @@ schema_sl_init_source = {
     ],
     "type": "object"
 }
+
+schema_sl_sign = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions": {},
+    "properties": {
+        "code": {
+            "type": "string"
+        },
+        "data": {
+            "properties": {
+                "attributes": {
+                    "properties": {
+                        "iat": {
+                            "type": "integer"
+                        },
+                        "link_id": {
+                            "type": "string"
+                        },
+                        "operator_id": {
+                            "type": "string"
+                        },
+                        "operator_key": {
+                            "properties": {
+                                "crv": {
+                                    "type": "string"
+                                },
+                                "cvr": {
+                                    "type": "string"
+                                },
+                                "d": {
+                                    "type": "string"
+                                },
+                                "kid": {
+                                    "type": "string"
+                                },
+                                "kty": {
+                                    "type": "string"
+                                },
+                                "x": {
+                                    "type": "string"
+                                },
+                                "y": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "crv",
+                                "d",
+                                "cvr",
+                                "y",
+                                "x",
+                                "kid",
+                                "kty"
+                            ],
+                            "type": "object"
+                        },
+                        "service_id": {
+                            "type": "string"
+                        },
+                        "surrogate_id": {
+                            "type": "string"
+                        },
+                        "version": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "operator_id",
+                        "surrogate_id",
+                        "link_id",
+                        "operator_key",
+                        "version",
+                        "iat",
+                        "service_id"
+                    ],
+                    "type": "object"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "attributes",
+                "type"
+            ],
+            "type": "object"
+        }
+    },
+    "required": [
+        "code",
+        "data"
+    ],
+    "type": "object"
+}

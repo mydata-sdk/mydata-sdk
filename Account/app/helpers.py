@@ -289,3 +289,32 @@ def validate_json(json_object=None, json_schema=None):
     else:
         return True
 
+
+def compare_str_ids(id=None, id_to_compare=None, endpoint="compare_str_ids()"):
+    if id is None:
+        raise AttributeError("Provide id as parameter")
+    if id_to_compare is None:
+        raise AttributeError("Provide account_id_to_compare as parameter")
+
+    if not isinstance(id, str):
+        try:
+            id = str(id)
+        except Exception:
+            raise TypeError("account_id MUST be str, not " + str(type(id)))
+    if not isinstance(id_to_compare, str):
+        try:
+            id_to_compare = str(id_to_compare)
+        except Exception:
+            raise TypeError("id_to_compare MUST be str, not " + str(type(id_to_compare)))
+    if not isinstance(endpoint, str):
+        try:
+            endpoint = str(endpoint)
+        except Exception:
+            raise TypeError("endpoint MUST be str, not " + str(type(endpoint)))
+
+    # Check if IDs are matching
+    if id != id_to_compare:
+        raise ValueError('IDs not matching')
+    else:
+        return True
+

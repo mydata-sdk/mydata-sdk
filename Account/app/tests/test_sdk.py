@@ -13,19 +13,22 @@ __status__ = "Development"
 
 import unittest
 from base64 import b64encode
+from random import randint
 
 from flask import json
 
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, generate_string, \
-    print_test_title, generate_sl_init_sink, generate_sl_init_source
+    print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
-from app.tests.schemas.schema_service_linking import schema_slr_init
+from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign
 from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
+
+
 
 
 class SdkTestCase(unittest.TestCase):
@@ -34,6 +37,16 @@ class SdkTestCase(unittest.TestCase):
     API_PREFIX_EXTERNAL = "/account/api/v1.3/external"
     SDK_USERNAME = "test_sdk"
     SDK_PASSWORD = "test_sdk_pw"
+
+    # Operator info
+    OPERATOR_ID = str(randint(100, 1000))
+    OPERATOR_KEY = json.loads(gen_jwk_key(prefix="operator"))
+
+    # Service info
+    SINK_SERVICE_ID = "srv_sink-" + str(randint(100, 1000))
+    SINK_SURROGATE_ID = "surrogate-" + str(randint(100, 1000))
+    SOURCE_SERVICE_ID = "srv_source-" + str(randint(100, 1000))
+    SOURCE_SURROGATE_ID = "surrogate-" + str(randint(100, 1000))
 
     def setUp(self):
         """
@@ -522,7 +535,7 @@ class SdkTestCase(unittest.TestCase):
         """
         print_test_title(test_name="test_slr_init_source_duplicate")
 
-        account_id, account_api_key, sdk_api_key, slr_id_original = self.test_slr_init_sink()
+        account_id, account_api_key, sdk_api_key, slr_id_original = self.test_slr_init_source()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -538,6 +551,70 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
         return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_slr_sign_sink(self):
+        """
+        Test Sink SLR signing
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_sign_sink")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_sink()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/"
+        payload = generate_sl_payload(
+            slr_id=slr_id,
+            operator_id=self.OPERATOR_ID,
+            operator_key=self.OPERATOR_KEY,
+            service_id=self.SINK_SERVICE_ID,
+            surrogate_id=self.SINK_SURROGATE_ID
+        )
+
+        response = self.app.patch(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_sign))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+
+    ##########
+    ##########
+    def test_slr_sign_source(self):
+        """
+        Test Source SLR signing
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_sign_source")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/"
+        payload = generate_sl_payload(
+            slr_id=slr_id,
+            operator_id=self.OPERATOR_ID,
+            operator_key=self.OPERATOR_KEY,
+            service_id=self.SOURCE_SERVICE_ID,
+            surrogate_id=self.SOURCE_SURROGATE_ID
+        )
+
+        response = self.app.patch(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_sign))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, response.data
 
 
 if __name__ == '__main__':

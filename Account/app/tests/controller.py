@@ -13,6 +13,7 @@ __status__ = "Development"
 import json
 from random import choice, randint
 from string import lowercase
+from time import time
 from uuid import uuid4
 from jsonschema import validate, ValidationError, SchemaError
 from jwcrypto import jwk
@@ -27,6 +28,9 @@ def print_test_title(test_name=None):
     print(test_name)
     print("############")
 
+
+def get_epoch():
+    return int(time())
 
 
 def get_unique_string():
@@ -126,7 +130,7 @@ def account_create(username=None, password=None, email_length=15, username_lengt
 def generate_sl_init_sink(slr_id=None, misformatted_payload=False):
 
     if slr_id is None:
-        slr_id = str(uuid4())
+        slr_id = get_unique_string()
 
     code = str(randint(100, 10000))
     pop_key = json.loads(gen_jwk_key(prefix="sink"))
@@ -153,7 +157,7 @@ def generate_sl_init_sink(slr_id=None, misformatted_payload=False):
 def generate_sl_init_source(slr_id=None, misformatted_payload=False):
 
     if slr_id is None:
-        slr_id = str(uuid4())
+        slr_id = get_unique_string()
 
     code = str(randint(100, 10000))
 
@@ -172,6 +176,44 @@ def generate_sl_init_source(slr_id=None, misformatted_payload=False):
     payload = json.dumps(sl_init_payload)
 
     return payload, code, slr_id
+
+
+def generate_sl_payload(slr_id=None, operator_id=None, operator_key=None, service_id=None, surrogate_id=None, misformatted_payload=False):
+
+    if slr_id is None:
+        raise AttributeError("Provide operator_id as parameter")
+    if operator_id is None:
+        raise AttributeError("Provide operator_id as parameter")
+    if operator_key is None:
+        raise AttributeError("Provide operator_key as parameter")
+    if service_id is None:
+        raise AttributeError("Provide service_id as parameter")
+    if surrogate_id is None:
+        raise AttributeError("Provide surrogate_id as parameter")
+
+    if misformatted_payload:
+        del operator_key['kty']
+        del operator_key['x']
+
+    sl_payload = {
+      "code": "string",
+      "data": {
+        "type": "string",
+        "attributes": {
+          "version": "1.3",
+          "link_id": slr_id,
+          "operator_id": operator_id,
+          "service_id": service_id,
+          "surrogate_id": surrogate_id,
+          "operator_key": operator_key,
+          "iat": get_epoch()
+        }
+      }
+    }
+
+    payload = json.dumps(sl_payload)
+
+    return payload
 
 #############
 #############
