@@ -332,7 +332,10 @@ class ServiceRegistryHandler:
             req = get(self.registry_url+service_id)
             service = req.json()
             debug_log.info(service)
-            service = service[0]
+            # TODO: This check is made purely for the reason jsonserver used for developing doesn't wrap json in []
+            # Do we need it in deployment?
+            if isinstance(service, list):
+                service = service[0]
         except Exception as e:
             debug_log.exception(e)
             raise e
@@ -344,7 +347,10 @@ class ServiceRegistryHandler:
             service_id = service_id.encode()
         try:
             service = get(self.registry_url+service_id).json()
-            service = service[0]
+            # TODO: This check is made purely for the reason jsonserver used for developing doesn't wrap json in []
+            # Do we need it in deployment?
+            if isinstance(service, list):
+                service = service[0]
         except Exception as e:
             debug_log.exception(e)
             raise e

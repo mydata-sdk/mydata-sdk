@@ -10,6 +10,8 @@ from flask_restful import Resource, Api, reqparse
 from jwcrypto import jwk
 from requests import post
 
+from base64 import urlsafe_b64encode as encode64
+
 from uuid import uuid4 as guid
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from helpers_mock import Helpers
@@ -72,12 +74,15 @@ class UserLogin(Resource):
         self.parser.add_argument('code', type=str, help='session code')
         self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
         self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
+        self.parser.add_argument('Password', type=str, help="Password for user.")
+        self.parser.add_argument('Email', type=str, help="Email/Username.")
         self.parser.add_argument('linkingFrom', type=str, help='Origin of the linking request(?)')  # TODO: Clarify?
 
     @error_handler
     def get(self):
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin GET got args: \n{}".format(dumps(args, indent=2)))
+        # TODO: Use template file or get this from somewhere.
         tmpl_str = '''
         <html><header></header><body>
                     <form class="form-horizontal" action="" method="POST">
@@ -86,13 +91,13 @@ class UserLogin(Resource):
                 <div class="form-group">
                   <label for="inputEmail" class="col-lg-1 control-label">Email</label>
                   <div class="col-lg-10">
-                    <input class="form-control" id="inputEmail" placeholder="Email" type="text">
+                    <input class="form-control" id="inputEmail" placeholder="Email" name="Email" type="text">
                   </div>
                 </div>
                 <div class="form-group">
                   <label for="inputPassword" class="col-lg-1 control-label">Password</label>
                   <div class="col-lg-10">
-                    <input class="form-control" id="inputPassword" placeholder="Password" type="password">
+                    <input class="form-control" id="inputPassword" placeholder="Password" name="Password" type="password">
                     <div class="checkbox">
                       <label>
                         <input type="checkbox"> Checkbox
@@ -125,10 +130,19 @@ class UserLogin(Resource):
     @timeme
     @error_handler
     def post(self):
+        def auth_user(username, password):
+            if (username is not None and len(username)>0) and (password is not None and len(password)>0):
+
+                return True
+            else:
+                return False
+
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin POST args contain:\n {}".format(dumps(args, indent=2)))
+        login_was_successfull = auth_user(args["Email"], args["Password"])
+        debug_log.info("Login in with given credentials resulted in: {}".format(login_was_successfull))
         debug_log.info(dumps(request.json, indent=2))
-        user_id = str(guid())  # TODO: Placeholder for actual login.
+        user_id = encode64(args["Email"])  # TODO: Placeholder for actual login.
         code = args["code"]
         response = {"code": code, "user_id": user_id}
         self.helpers.store_code_user({code: user_id})

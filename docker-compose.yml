@@ -74,7 +74,7 @@ services:
       - OPERATOR_ROOT_PATH="/api/1.2"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
-      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://node.registry.sandbox.mydata.fi"
+      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://jsonserver"
       - VIRTUAL_HOST=localhost.operator
     ports:
       - '5000:5000'
@@ -302,6 +302,24 @@ services:
       - redis-data:/data
     networks:
       - mydata_sdk_demo_network
+
+  jsonserver:
+    image: clue/json-server
+    container_name: jsonserver
+    volumes:
+      - ./serviceregistry.json:/data/db.json
+      - ./routes.json:/data/routes.json
+    entrypoint:
+      - json-server 
+      - db.json
+      - --routes
+      - routes.json
+      - -p 80
+    ports:
+      - 4444:80
+    networks:
+      - mydata_sdk_demo_network
+       
 
 volumes:
   mysql-data:
