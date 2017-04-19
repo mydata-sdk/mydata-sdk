@@ -124,13 +124,16 @@ class UserAuthenticated(Resource):
     @error_handler
     def post(self):
         try:
+            # TODO: Check that process is not ongoing for given user
+            # This is now the point we want to double check that similar flow is not going on already for said user.
             debug_log.info("UserAuthenticated class, method post got json:")
             debug_log.info(request.json)
             user_id = request.json["user_id"]  # TODO: We get user_id from mockup (currently guid) but don't use it?
             code = request.json["code"]
 
             sq.task("Generate surrogate_id.")
-            surrogate_id = "{}_{}".format(str(guid()), code)   # TODO: Some logic to surrogate_id's?
+            # TODO: Some logic to surrogate_id's?
+            surrogate_id = "{}_{}".format(str(guid()), code)
 
             sq.task("Link code to generated surrogate_id")
             self.helpers.add_surrogate_id_to_code(request.json["code"], surrogate_id)

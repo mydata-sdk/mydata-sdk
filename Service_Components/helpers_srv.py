@@ -159,7 +159,7 @@ class Helpers:
     def storeCode(self, code):
         """
         Store generated code into database
-        :param code: 
+        :param code: {code: "{}{}".format("!", code)}
         :return: None
         """
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
@@ -179,6 +179,17 @@ class Helpers:
         :param surrogate_id: 
         :return: None
         """
+
+        '''
+        For 1.3 Service service management doesn't generate the code.
+        The problem this creates is that we used to use code to prevent starting the session several times over.
+
+        TODO:
+          Write written description how we lock user from initiating several SLR requests at once.
+
+
+        '''
+
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         debug_log.info("Code we look up is {}".format(code))

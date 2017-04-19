@@ -131,7 +131,7 @@ class UserLogin(Resource):
     @error_handler
     def post(self):
         def auth_user(username, password):
-            if (username is not None and len(username)>0) and (password is not None and len(password)>0):
+            if (username is not None and len(username) > 0) and (password is not None and len(password) > 0):
 
                 return True
             else:
