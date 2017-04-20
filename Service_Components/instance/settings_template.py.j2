@@ -141,6 +141,13 @@ SERVICE_SLR_PATH = {{ SERVICE_SLR_PATH }}
 SERVICE_SLR_PATH = "/slr"
 {% endif %}
 
+{% if LOCK_WAIT_TIME is defined %}
+LOCK_WAIT_TIME = {{ LOCK_WAIT_TIME }}
+{% else %}
+LOCK_WAIT_TIME = 4
+{% endif %}
+
+
 {% if DEBUG_MODE is defined %}
 DEBUG_MODE = {{ DEBUG_MODE }}
 {% else %}

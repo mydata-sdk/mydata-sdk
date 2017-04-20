@@ -304,7 +304,7 @@ services:
       - mydata_sdk_demo_network
 
   jsonserver:
-    image: clue/json-server
+    image: ondrejmo/json-server
     container_name: jsonserver
     volumes:
       - ./serviceregistry.json:/data/db.json

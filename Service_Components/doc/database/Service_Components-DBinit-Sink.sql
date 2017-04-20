@@ -21,13 +21,14 @@ CREATE SCHEMA IF NOT EXISTS `db_Srv_Sink` DEFAULT CHARACTER SET utf8 ;
 USE `db_Srv_Sink` ;
 
 -- -----------------------------------------------------
--- Table `db_Srv_Sink`.`codes`
+-- Table `db_Srv_Sink`.`session_store`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Srv_Sink`.`codes` ;
+DROP TABLE IF EXISTS `db_Srv_Sink`.`session_store` ;
 
-CREATE TABLE IF NOT EXISTS `db_Srv_Sink`.`codes` (
+CREATE TABLE IF NOT EXISTS `db_Srv_Sink`.`session_store` (
   `ID` LONGTEXT NOT NULL,
   `code` LONGTEXT NOT NULL,
+  `surrogate_id` LONGTEXT NOT NULL,
   PRIMARY KEY (`ID`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;

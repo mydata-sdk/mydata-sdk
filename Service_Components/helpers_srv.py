@@ -156,23 +156,22 @@ class Helpers:
                 db.commit()
         db.close()
 
-    def storeCode(self, code):
+    def lock_user(self, user_id):
         """
-        Store generated code into database
+        Store user into DB while we are linking, preventing further service link attempts until previous one is finished.
         :param code: {code: "{}{}".format("!", code)}
         :return: None
         """
+        # TODO: Refactor DB name from codes to userlock or something like that.
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        code_key = list(code.keys())[0]
-        code_value = code[code_key]
-        cursor.execute("INSERT INTO codes (ID,code) \
-            VALUES (%s, %s)", (code_key, code_value))
+        cursor.execute("INSERT INTO session_store (ID,code,surrogate_id) \
+            VALUES (%s, %s, %s)", (user_id, user_id, user_id))
         db.commit()
-        debug_log.info("Storing code(key,value): {}, {}".format(code_key, code_value))
+        debug_log.info("Locking user_id({}) for SLR creation".format(user_id))
         db.close()
 
-    def add_surrogate_id_to_code(self, code, surrogate_id):
+    def add_surrogate_id_to_code(self, user_id, code, surrogate_id):
         """
         Link code with a surrogate_id
         :param code: 
@@ -187,22 +186,18 @@ class Helpers:
         TODO:
           Write written description how we lock user from initiating several SLR requests at once.
 
+          1. Check if user_id is in locked table,
+          2. When we know user starts SLR flow, add the user_id into a db that we check to see if we can start
 
         '''
 
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info("Code we look up is {}".format(code))
-        code = self.query_db("select * from codes where ID = %s;", (code,))
-        debug_log.info("Result for query: {}".format(code))
-        code_from_db = code
-        code_is_valid_and_unused = "!" in code_from_db
-        if (code_is_valid_and_unused):
-            cursor.execute("UPDATE codes SET code=%s WHERE ID=%s ;", (surrogate_id, code))
-            db.commit()
-            db.close()
-        else:
-            raise Exception("Invalid code")
+        cursor.execute("UPDATE session_store SET code=%s WHERE ID=%s ;", (code, user_id))
+        cursor.execute("UPDATE session_store SET surrogate_id=%s WHERE ID=%s ;", (surrogate_id, user_id))
+        db.commit()
+        db.close()
+
 
     def get_cr_json(self, cr_id):
         # TODO: query_db is not really optimal when making two separate queries in row.
@@ -293,14 +288,15 @@ class Helpers:
         debug_log.info("CR has been validated.")
         return loads(combined_decoded)
 
-    def verifyCode(self, code):
+    def check_lock(self, user_id):
         """
         Verify that code is found in database
-        :param code: 
+        :param user_id:
         :return: Boolean True if code is found in db. 
         """
-        code = self.query_db("select * from codes where ID = %s;", (code,))
-        if code is not None:
+        # TODO: Refactor db names
+        user_id = self.query_db("select * from session_store where ID = %s;", (user_id,))
+        if user_id is not None:
             return True
         return False
 
@@ -311,7 +307,7 @@ class Helpers:
         :param surrogate: surrogate_id
         :return: Boolean True if surrogate_id matches code
         """
-        code = self.query_db("select * from codes where ID = %s AND code = %s;", (code, surrogate))
+        code = self.query_db("select * from session_store where code = %s AND surrogate_id = %s;", (code, surrogate))
         if code is not None:
             # TODO: Could we remove code and surrogate_id after this check to ensure they wont be abused later.
             return True

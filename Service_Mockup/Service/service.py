@@ -4,13 +4,14 @@ import logging
 import time
 from json import loads, dumps
 
-from flask import request, Blueprint, current_app, render_template_string, make_response
+from flask import request, Blueprint, current_app, render_template_string, make_response, redirect
 from flask_cors import CORS
 from flask_restful import Resource, Api, reqparse
 from jwcrypto import jwk
 from requests import post
 
 from base64 import urlsafe_b64encode as encode64
+from base64 import urlsafe_b64decode as decode64
 
 from uuid import uuid4 as guid
 from DetailedHTTPException import DetailedHTTPException, error_handler
@@ -157,8 +158,8 @@ class UserLogin(Resource):
                                                    "and its alright to generate Surrogate_ID ",
                                             "Error from Service_Components Mgmnt": loads(result.text)},
                                         title=result.reason)
-
         debug_log.info(result.text)
+        return redirect("{}".format(decode64(args["return_url"])), code=302)
 
 
 

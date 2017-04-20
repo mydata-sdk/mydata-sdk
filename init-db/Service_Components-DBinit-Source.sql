@@ -21,16 +21,18 @@ CREATE SCHEMA IF NOT EXISTS `db_Srv_Source` DEFAULT CHARACTER SET utf8 ;
 USE `db_Srv_Source` ;
 
 -- -----------------------------------------------------
--- Table `db_Srv_Source`.`codes`
+-- Table `db_Srv_Source`.`session_store`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Srv_Source`.`codes` ;
+DROP TABLE IF EXISTS `db_Srv_Source`.`session_store` ;
 
-CREATE TABLE IF NOT EXISTS `db_Srv_Source`.`codes` (
+CREATE TABLE IF NOT EXISTS `db_Srv_Source`.`session_store` (
   `ID` LONGTEXT NOT NULL,
   `code` LONGTEXT NOT NULL,
+  `surrogate_id` LONGTEXT NOT NULL,
   PRIMARY KEY (`ID`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
+
 
 
 -- -----------------------------------------------------

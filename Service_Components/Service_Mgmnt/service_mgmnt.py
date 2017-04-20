@@ -47,7 +47,7 @@ class GenCode(Resource):
     def __init__(self):
         super(GenCode, self).__init__()
         self.helpers = Helpers(current_app.config)
-        self.storeCode = self.helpers.storeCode
+        self.storeCode = self.helpers.lock_user
 
     @error_handler
     def get(self):
@@ -118,6 +118,7 @@ class UserAuthenticated(Resource):
         self.is_source = current_app.config["IS_SOURCE"]
         self.service_url = current_app.config["SERVICE_URL"]
         self.operator_url = current_app.config["OPERATOR_URL"]
+        self.lock_wait_time = current_app.config["LOCK_WAIT_TIME"]
 
 
     @timeme
@@ -131,38 +132,52 @@ class UserAuthenticated(Resource):
             user_id = request.json["user_id"]  # TODO: We get user_id from mockup (currently guid) but don't use it?
             code = request.json["code"]
 
-            sq.task("Generate surrogate_id.")
-            # TODO: Some logic to surrogate_id's?
-            surrogate_id = "{}_{}".format(str(guid()), code)
+            sq.task("Checking if user_id is locked already.")
+            user_is_locked = self.helpers.check_lock(user_id)
+            if user_is_locked:
+                time.sleep(self.lock_wait_time)
+                user_is_locked = self.helpers.check_lock(user_id)
+            if user_is_locked:
+                return DetailedHTTPException(status=503,
+                                             detail={"msg": "Another SLR linking is in process, please try again once "
+                                                            "linking is over"},
+                                             title="User_id locked for SLR creation.")
+            else:
+                sq.task("Locking user_id.")
+                self.helpers.lock_user(user_id)
 
-            sq.task("Link code to generated surrogate_id")
-            self.helpers.add_surrogate_id_to_code(request.json["code"], surrogate_id)
+                sq.task("Generate surrogate_id.")
+                # TODO: Some logic to surrogate_id's?
+                surrogate_id = "{}_{}".format(str(guid()), code)
 
-            data = {"surrogate_id": surrogate_id, "code": request.json["code"]}
-            if self.is_sink:
-                data["token_key"] = self.service_key["pub"]
+                sq.task("Link code to generated surrogate_id")
+                self.helpers.add_surrogate_id_to_code(user_id, request.json["code"], surrogate_id)
 
-            sq.send_to("Service_Components", "Send surrogate_id to Service_Mockup")
-            endpoint = "/api/1.2/slr/link" # Todo: This needs to be fetched from somewhere
-            content_json = {"code": code, "surrogate_id": surrogate_id}
-            result_service = post("{}{}".format(self.service_url, endpoint), json=content_json)
-            if not result_service.ok:
-                raise DetailedHTTPException(status=result_service.status_code,
-                                            detail={
-                                                "msg": "Something went wrong while posting to Service_Components for /link",
-                                                "Error from Service_Components": loads(result_service.text)},
-                                            title=result_service.reason)
+                data = {"surrogate_id": surrogate_id, "code": request.json["code"]}
+                if self.is_sink:
+                    data["token_key"] = self.service_key["pub"]
 
-            sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
-            endpoint = "/api/1.2/slr/link" # Todo: this needs to be fetched from somewhere
-            result = post("{}{}".format(self.operator_url, endpoint), json=data)
-            debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
-            if not result.ok:
-                raise DetailedHTTPException(status=result.status_code,
-                                            detail={
-                                                "msg": "Something went wrong while posting to Operator_SLR for /link",
-                                                "Error from Operator_SLR": loads(result.text)},
-                                            title=result.reason)
+                sq.send_to("Service_Mockup", "Send surrogate_id to Service_Mockup")
+                endpoint = "/api/1.2/slr/link" # Todo: This needs to be fetched from somewhere
+                content_json = {"code": code, "surrogate_id": surrogate_id}
+                result_service = post("{}{}".format(self.service_url, endpoint), json=content_json)
+                if not result_service.ok:
+                    raise DetailedHTTPException(status=result_service.status_code,
+                                                detail={
+                                                    "msg": "Something went wrong while posting to Service_Mockup for /link",
+                                                    "Error from Service_Mockup": loads(result_service.text)},
+                                                title=result_service.reason)
+
+                sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
+                endpoint = "/api/1.2/slr/link" # Todo: this needs to be fetched from somewhere
+                result = post("{}{}".format(self.operator_url, endpoint), json=data)
+                debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
+                if not result.ok:
+                    raise DetailedHTTPException(status=result.status_code,
+                                                detail={
+                                                    "msg": "Something went wrong while posting to Operator_SLR for /link",
+                                                    "Error from Operator_SLR": loads(result.text)},
+                                                title=result.reason)
 
         except DetailedHTTPException as e:
             e.trace = traceback.format_exc(limit=100).splitlines()
