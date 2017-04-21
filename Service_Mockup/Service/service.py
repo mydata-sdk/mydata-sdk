@@ -84,6 +84,10 @@ class UserLogin(Resource):
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin GET got args: \n{}".format(dumps(args, indent=2)))
         # TODO: Use template file or get this from somewhere.
+        if args["linkingFrom"] == "Operator":
+            args["fromOperator"] = ""
+        else:
+            args["fromOperator"] = "hidden"
         tmpl_str = '''
         <html><header></header><body>
                     <form class="form-horizontal" action="" method="POST">
@@ -99,11 +103,6 @@ class UserLogin(Resource):
                   <label for="inputPassword" class="col-lg-1 control-label">Password</label>
                   <div class="col-lg-10">
                     <input class="form-control" id="inputPassword" placeholder="Password" name="Password" type="password">
-                    <div class="checkbox">
-                      <label>
-                        <input type="checkbox"> Checkbox
-                      </label>
-                    </div>
                   </div>
                 </div>
                 <div class="form-group">
@@ -113,6 +112,9 @@ class UserLogin(Resource):
                   </div>
                 </div>
               </fieldset>
+              <div {{ fromOperator }}>
+                <p> By signing in you agree to the <a href="#LinkToToS">Terms of Service</a></p>
+              </div>
               <input type="hidden" name="code" value="{{ code }}">
               <input type="hidden" name="return_url" value="{{ return_url }}">
               <input type="hidden" name="operator_id" value="{{ operator_id }}">
@@ -162,8 +164,25 @@ class UserLogin(Resource):
         return redirect("{}".format(decode64(args["return_url"])), code=302)
 
 
+class Terms(Resource):
+    def __init__(self):
+        super(Terms, self).__init__()
+        self.helpers = Helpers(current_app.config)
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('code', type=str, help='session code')
+        self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
+        self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
+        self.parser.add_argument('Password', type=str, help="Password for user.")
+        self.parser.add_argument('Email', type=str, help="Email/Username.")
+        self.parser.add_argument('linkingFrom', type=str, help='Origin of the linking request(?)')  # TODO: Clarify?
 
+    def get(self):
+        args = self.parser.parse_args()
+        if args["linkingFrom"] == "Operator":
+            return "Terms of services have been declared. That's just how the fineprint is."
 
+    def post(self):
+        return 500
 
 class RegisterSur(Resource):
     def __init__(self):
@@ -198,5 +217,6 @@ class StoreSlr(Resource):
 
 
 api.add_resource(UserLogin, '/login')
+api.add_resource(Terms, '/terms')
 api.add_resource(RegisterSur, '/link')
 api.add_resource(StoreSlr, '/store_slr')
