@@ -21,6 +21,7 @@
 					"bindingRequestEndPoint": null,
 					"availabilityRequestEndPoint": null,
 					"domain": "http://service_component_sink:7000",
+					"loginDomain": "http://localhost:2002",
 					"loginUri": "/slr/login",
 					"cert": "String"
 				}
@@ -306,6 +307,7 @@
 					"bindingRequestEndPoint": null,
 					"availabilityRequestEndPoint": null,
 					"domain": "http://service_component_source:7000",
+					"loginDomain": "http://localhost:2001",
 					"loginUri": "/slr/login",
 					"cert": "String"
 				}

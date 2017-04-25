@@ -4,7 +4,7 @@ import logging
 import traceback
 from json import loads
 
-from flask import Blueprint, current_app, render_template_string, make_response
+from flask import Blueprint, current_app, render_template_string, make_response, redirect
 from flask_cors import CORS
 from flask_restful import Resource, Api
 from requests import get, post
@@ -66,7 +66,7 @@ class StartSlrFlow(Resource):
 
             sq.task("Fetch service address from Service Registry")
             service_json = self.service_registry_handler.getService(service_id)
-            service_domain = service_json["serviceInstance"][0]["domain"]
+            service_domain = service_json["serviceInstance"][0]["loginDomain"] # Domain to Login of Service
             service_access_uri = service_json["serviceInstance"][0]["serviceAccessEndPoint"]["serviceAccessURI"]
             service_login_uri = service_json["serviceInstance"][0]["loginUri"]
 
@@ -81,47 +81,16 @@ class StartSlrFlow(Resource):
             session_information[code] = {"account_id": account_id, "service_id": service_id}
             self.store_session(session_information)
 
-            try:
-                service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)
-                service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
-                    code, self.uid, urlsafe_b64encode("http://localhost:5000/"), "Operator")
+            service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)
+            service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
+                code, self.uid, urlsafe_b64encode("http://localhost:5000/"), "Operator")
 
-                debug_log.info("Redirect url with parameters:\n{}{}\nCode contains: {}".format(service_endpoint,
-                                                                                               service_query,
-                                                                                               code))
-                sq.send_to("Service_Components Mgmnt", "Redirect user to Service Mockup login")
-                result = post(service_endpoint+service_query,
-                              timeout=self.request_timeout,
-                              allow_redirects=False
-                              )
-                debug_log.info("Redirect Response headers: {}".format(result.headers))
-                debug_log.info("#### Response to SLR flow end point: {}\n{}".format(result.status_code, result.text))
-
-                if not result.ok:
-                    raise DetailedHTTPException(status=result.status_code,
-                                                detail={
-                                                    "msg": "Something went wrong while Logging in with code"
-                                                           " to Service_Components Mgmnt",
-                                                    "Error from Service_Components Mgmnt": loads(result.text)},
-                                                title=result.reason)
-                else:
-
-                    location = result.headers["Location"]
-                    response = make_response(render_template_string(result.text), 302)
-                    response.headers["Location"] = location
-                    return response
-                    # return {"status": "CREATED"}, 201
-            except Timeout:
-                raise DetailedHTTPException(status=504,
-                                            title="Request to Service_Components Mgmnt failed due to TimeoutError.",
-                                            detail="Service_Components Mgmnt might be under heavy load,"
-                                                   " request for code got timeout.",
-                                            trace=traceback.format_exc(limit=100).splitlines())
-            except ConnectionError:
-                raise DetailedHTTPException(status=504,
-                                            title="Request to Service_Components Mgmnt failed due to ConnectionError.",
-                                            detail="Service_Components Mgmnt might be down or unresponsive.",
-                                            trace=traceback.format_exc(limit=100).splitlines())
+            debug_log.info("Redirect url with parameters:\n{}{}\nCode contains: {}".format(service_endpoint,
+                                                                                           service_query,
+                                                                                           code))
+            sq.send_to("UI(Operator)", "Redirect user to Service Mockup login")
+            response = make_response(redirect(service_endpoint+service_query))
+            return response
 
         except DetailedHTTPException as e:
             raise DetailedHTTPException(exception=e,

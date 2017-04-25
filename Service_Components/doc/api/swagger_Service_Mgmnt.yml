@@ -6,23 +6,6 @@ info:
 host: "example.service_mgmnt.example"
 basePath: "/api/1.2/slr"
 paths:
-  /code:
-    get:
-      tags:
-      - "Operator"
-      - "Service Management"
-      description: "Generates, store and returns unique code for the SLR flow"
-      parameters: []
-      responses:
-        200:
-          description: "Returns the code used in next steps of SLR flow. This is required\
-            \ on most endpoints that follow."
-          schema:
-            $ref: "#/definitions/CodeResponse"
-        500:
-          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
-          schema:
-            $ref: "#/definitions/errors"
   /auth:
     post:
       tags:
@@ -50,31 +33,6 @@ paths:
           schema:
             $ref: "#/definitions/errors"
 
-  /login:
-    post:
-      tags:
-      - "Operator"
-      - "Service Management"
-      description: "Login redirector, this part checks the code validy before sending\
-        \ the request to Service so it can authenticate the user."
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "Contains code and user_id"
-        required: true
-        schema:
-          $ref: "#/definitions/LoginParams"
-      responses:
-        200:
-          description: "Returns 200 OK"
-        500:
-          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
-          schema:
-            $ref: "#/definitions/errors"
   /slr:
     post:
       tags:
@@ -141,7 +99,3 @@ definitions:
       slr:
         type: object
         description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-service-linking.pdf"
-  CodeResponse:
-    properties:
-      code:
-        type: "string"

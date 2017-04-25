@@ -43,70 +43,6 @@ def timeme(method):
     return wrapper
 
 
-class GenCode(Resource):
-    def __init__(self):
-        super(GenCode, self).__init__()
-        self.helpers = Helpers(current_app.config)
-        self.storeCode = self.helpers.lock_user
-
-    @error_handler
-    def get(self):
-        code_storage = None
-        try:
-            sq.task("Generate code")
-            code = str(guid())
-            code_storage = {code: "{}{}".format("!", code)}
-            sq.task("Store code in db")
-            self.storeCode(code_storage)
-            sq.reply_to("Operator_Components Mgmnt", "Returning code")
-            return {'code': code}
-        except Exception as e:
-            if code_storage is None:
-                code_storage = "code json structure is broken."
-            raise DetailedHTTPException(exception=e,
-                                        detail={"msg": "Most likely storing code failed.", "code_json": code_storage},
-                                        title="Failure in GenCode endpoint",
-                                        trace=traceback.format_exc(limit=100).splitlines())
-
-
-class SignInRedirector(Resource):
-    def __init__(self):
-        super(SignInRedirector, self).__init__()
-        self.service_url = current_app.config["SERVICE_URL"]
-        self.helpers = Helpers(current_app.config)
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument('code', type=str, help='session code')
-        self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
-        self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
-        self.parser.add_argument('linkingFrom', type=str, help='Origin of the linking request(?)')  # TODO: Clarify?
-
-
-    @error_handler
-    def post(self): # TODO: Remove this function, its unnecessary now.
-        debug_log.info("SignInRedisrector class, method post got json:")
-        debug_log.info(request.json)
-        args = self.parser.parse_args()
-        debug_log.info('Parser got args:\n{}\nWhere redirect_url is {}'.format(dumps(args, indent=2),
-                                                                               args["return_url"]))
-
-        try:
-            sq.send_to("Service_Components", "Redirect login to Service_Components")
-            endpoint = "/api/1.2/slr/login"  # TODO: Fetch this from somewhere
-            service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
-                args["code"], args['operator_id'], args["return_url"], args["linkingFrom"]
-            )
-            return redirect("{}{}{}".format(self.service_url, endpoint, service_query), code=302)
-
-        except DetailedHTTPException as e:
-            e.trace = traceback.format_exc(limit=100).splitlines()
-            raise e
-        except Exception as e:
-            raise DetailedHTTPException(exception=e,
-                                        detail="Failed to POST code/user to Service_Components's /login",
-                                        trace=traceback.format_exc(limit=100).splitlines())
-
-
-
 class UserAuthenticated(Resource):
     def __init__(self):
         super(UserAuthenticated, self).__init__()
@@ -370,8 +306,5 @@ class StoreSLR(Resource):
         sq.reply_to("Operator_Components Mgmnt", "Return SLR's from db")
         return jsons
 
-
-api.add_resource(GenCode, '/code')
-api.add_resource(SignInRedirector, '/login')
 api.add_resource(UserAuthenticated, '/auth')
 api.add_resource(StoreSLR, '/slr')
