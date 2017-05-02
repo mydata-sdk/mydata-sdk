@@ -83,6 +83,7 @@ class StartSlrFlow(Resource):
 
             service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)
             service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
+                # TODO: Get return url from somewhere
                 code, self.uid, urlsafe_b64encode("http://localhost:5000/"), "Operator")
 
             debug_log.info("Redirect url with parameters:\n{}{}\nCode contains: {}".format(service_endpoint,

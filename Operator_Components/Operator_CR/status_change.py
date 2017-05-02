@@ -62,5 +62,4 @@ class StatusChange(Resource):
                                         trace=traceback.format_exc(limit=100).splitlines())
         return {"status": "OK"}
 
-
 api.add_resource(StatusChange, '/account_id/<string:acc_id>/service/<string:srv_id>/consent/<string:cr_id>/status/<string:new_status>')
