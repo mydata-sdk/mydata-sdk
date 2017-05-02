@@ -2,7 +2,7 @@
 from kombu import Exchange, Queue
 
 TIMEOUT = 8
-
+KEYTYPE = "EC256" # (RSA|EC256)
 KEYSIZE = 512
 
 {% if IS_SINK is defined %}

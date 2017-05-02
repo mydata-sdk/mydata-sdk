@@ -33,16 +33,25 @@ class Helpers:
         self.host = app_config["MYSQL_HOST"]
         self.cert_key_path = app_config["CERT_KEY_PATH"]
         self.keysize = app_config["KEYSIZE"]
+        self.keytype = app_config["KEYTYPE"]
         self.user = app_config["MYSQL_USER"]
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
         self.port = app_config["MYSQL_PORT"]
         self.service_id = app_config["SERVICE_ID"]
 
+
     def get_key(self):
-        keysize = self.keysize
         cert_key_path = self.cert_key_path
-        gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.service_id}
+        if self.keytype == "RSA":
+            gen3 = {"generate": "RSA", "size": self.keysize, "kid": self.service_id}
+            protti = {"alg": "RS256"}
+        elif self.keytype == "EC256":
+            gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.service_id}
+            protti = {"alg": "ES256"}
+        else:  # Defaulting to EC256
+            gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.service_id}
+            protti = {"alg": "ES256"}
         service_key = jwk.JWK(**gen3)
         try:
             with open(cert_key_path, "r") as cert_file:
@@ -54,7 +63,7 @@ class Helpers:
                 dump(service_key.export(), cert_file, indent=2)
         public_key = loads(service_key.export_public())
         full_key = loads(service_key.export())
-        protti = {"alg": "ES256"}
+
         headeri = {"kid": self.service_id, "jwk": public_key}
         return {"pub": public_key,
                 "key": full_key,

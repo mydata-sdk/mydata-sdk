@@ -363,6 +363,7 @@ class Helpers:
         self.host = app_config["MYSQL_HOST"]
         self.cert_key_path = app_config["CERT_KEY_PATH"]
         self.keysize = app_config["KEYSIZE"]
+        self.keytype = app_config["KEYTYPE"]
         self.user = app_config["MYSQL_USER"]
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
@@ -388,7 +389,15 @@ class Helpers:
     def get_key(self):
         keysize = self.keysize
         cert_key_path = self.cert_key_path
-        gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.operator_id}
+        if self.keytype == "RSA":
+            gen3 = {"generate": "RSA", "size": self.keysize, "kid": self.operator_id}
+            protti = {"alg": "RS256"}
+        elif self.keytype == "EC256":
+            gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.operator_id}
+            protti = {"alg": "ES256"}
+        else:  # Defaulting to EC256
+            gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.operator_id}
+            protti = {"alg": "ES256"}
         service_key = jwk.JWK(**gen3)
         try:
             with open(cert_key_path, "r") as cert_file:
@@ -400,7 +409,8 @@ class Helpers:
                 dump(service_key.export(), cert_file, indent=2)
         public_key = loads(service_key.export_public())
         full_key = loads(service_key.export())
-        protti = {"alg": "ES256"}
+
+
         headeri = {"kid": self.operator_id, "jwk": public_key}
         return {"pub": public_key,
                 "key": full_key,
@@ -704,7 +714,13 @@ class Helpers:
                    "pi_id": slr_tool.get_source_cr_id(),  # Resource set id that was assigned in the linked Consent Record
                    }
         key = operator_key
-        header = {"alg": "ES256"} # TODO: get alg from same place get_key gets it.
+
+        if self.keytype == "EC256":
+            header = {"alg": "ES256"}  # TODO: get alg from same place get_key gets it.
+        elif self.keytype == "RSA":
+            header = {"alg": "RS256"}
+        else:  # Defaulting to EC P-256
+            header = {"alg": "ES256"}
         token = jwt.JWT(header=header, claims=payload)
         token.make_signed_token(key)
         return token.serialize()

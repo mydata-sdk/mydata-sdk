@@ -2,7 +2,8 @@
 from kombu import Exchange, Queue
 
 TIMEOUT = 8
-KEYSIZE = 512
+KEYTYPE = "EC256" # (RSA|EC256)
+KEYSIZE = 512 # Affects only if using RSA key
 
 {% if UID is defined %}
 UID = {{ UID }}
