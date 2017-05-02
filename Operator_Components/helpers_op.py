@@ -388,19 +388,19 @@ class Helpers:
     def get_key(self):
         keysize = self.keysize
         cert_key_path = self.cert_key_path
-        gen3 = {"generate": "RSA", "size": keysize, "kid": self.operator_id}
-        operator_key = jwk.JWK(**gen3)
+        gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.operator_id}
+        service_key = jwk.JWK(**gen3)
         try:
             with open(cert_key_path, "r") as cert_file:
-                operator_key2 = jwk.JWK(**loads(load(cert_file)))
-                operator_key = operator_key2
+                service_key2 = jwk.JWK(**loads(load(cert_file)))
+                service_key = service_key2
         except Exception as e:
             debug_log.error(e)
             with open(cert_key_path, "w+") as cert_file:
-                dump(operator_key.export(), cert_file, indent=2)
-        public_key = loads(operator_key.export_public())
-        full_key = loads(operator_key.export())
-        protti = {"alg": "RS256"}
+                dump(service_key.export(), cert_file, indent=2)
+        public_key = loads(service_key.export_public())
+        full_key = loads(service_key.export())
+        protti = {"alg": "ES256"}
         headeri = {"kid": self.operator_id, "jwk": public_key}
         return {"pub": public_key,
                 "key": full_key,
@@ -704,7 +704,7 @@ class Helpers:
                    "pi_id": slr_tool.get_source_cr_id(),  # Resource set id that was assigned in the linked Consent Record
                    }
         key = operator_key
-        header = {"alg": "RS256"}
+        header = {"alg": "ES256"} # TODO: get alg from same place get_key gets it.
         token = jwt.JWT(header=header, claims=payload)
         token.make_signed_token(key)
         return token.serialize()

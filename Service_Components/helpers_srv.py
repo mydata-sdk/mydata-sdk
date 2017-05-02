@@ -42,7 +42,7 @@ class Helpers:
     def get_key(self):
         keysize = self.keysize
         cert_key_path = self.cert_key_path
-        gen3 = {"generate": "RSA", "size": keysize, "kid": self.service_id}
+        gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.service_id}
         service_key = jwk.JWK(**gen3)
         try:
             with open(cert_key_path, "r") as cert_file:
@@ -54,7 +54,7 @@ class Helpers:
                 dump(service_key.export(), cert_file, indent=2)
         public_key = loads(service_key.export_public())
         full_key = loads(service_key.export())
-        protti = {"alg": "RS256"}
+        protti = {"alg": "ES256"}
         headeri = {"kid": self.service_id, "jwk": public_key}
         return {"pub": public_key,
                 "key": full_key,
