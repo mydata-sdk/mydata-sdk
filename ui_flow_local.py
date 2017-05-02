@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
-import argparse
+import argparse, time
 from requests import get, post
 from uuid import uuid4
 
@@ -91,7 +91,7 @@ def create_service_link(operator_url, service_id):
     params_dict["Password"] = "Debuuggeri"
     print("POSTing the data to the Service Mockup Login (Simulating filling the form and hitting Submit")
     result = post(slr_flow.url.split("?")[0], json=params_dict)
-    print(result.url, result.reason, result.status_code, result.text)
+
     # if not slr_flow.ok:
     #     print("Creation of first SLR failed with status ({}) reason ({}) and the following content:\n{}".format(
     #         slr_flow.status_code,
@@ -99,8 +99,10 @@ def create_service_link(operator_url, service_id):
     #         json.dumps(json.loads(slr_flow.content), indent=2)
     #     ))
     #     raise Exception("SLR flow failed.")
-    print(slr_flow.url, slr_flow.reason, slr_flow.status_code, slr_flow.text)
-
+    if not result.ok:
+        print(result.url, result.reason, result.status_code, result.text)
+    if not slr_flow.ok:
+        print(slr_flow.url, slr_flow.reason, slr_flow.status_code, slr_flow.text)
     return
 
 
@@ -141,8 +143,28 @@ def give_consent(operator_url, sink_id, source_id):
     print(json.dumps(json.loads(req.text), indent=2))
 
     print("\n\n")
-    return
+    return js["source"]["rs_id"]
 
+def make_data_request(service_url, rs_id):
+    wait_time = 5
+    print("\n##### Make_data_request #####")
+    print("\n##### Waiting {} seconds for previous actions to complete #####".format(wait_time))
+    time.sleep(wait_time)
+    req = get(service_url + "api/1.2/sink_flow/debug_dc/{}".format(rs_id))
+    if not req.ok:
+        print("Debug Data request failed with status ({}) reason ({}) and the following content:\n{}".format(
+            req.status_code,
+            req.reason,
+            json.dumps(json.loads(req.content), indent=2)
+        ))
+        raise Exception("Debug Data flow failed.")
+
+    print(req.url, req.reason, req.status_code)
+    print("\n")
+    print(json.dumps(json.loads(json.loads(req.content)), indent=2))
+
+    print("\n\n")
+    return
 
 if __name__ == '__main__':
 
@@ -168,6 +190,15 @@ if __name__ == '__main__':
                         type=str,
                         default="http://localhost:5000/",
                         required=False)
+
+    help_string_service_url = \
+        "URL to Sink backend. Defaults to 'http://localhost:7001/'."
+    parser.add_argument("--service_url",
+                        help=help_string_service_url,
+                        type=str,
+                        default="http://localhost:7001/",
+                        required=False)
+
 
     # Skips
     help_string_skip_init = \
@@ -231,4 +262,7 @@ if __name__ == '__main__':
         create_service_link(args.operator_url, args.source_id)
 
     # Consent
-    give_consent(args.operator_url, args.sink_id, args.source_id)
+    rs_id = give_consent(args.operator_url, args.sink_id, args.source_id)
+
+    # Debug Data Flow
+    make_data_request(args.service_url, rs_id)
