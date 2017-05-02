@@ -61,7 +61,7 @@ class ConsentFormHandler(Resource):
                 "description": dataset["description"],
                 "keyword": dataset["keyword"],
                 "publisher": dataset["publisher"],
-                "purposes": dataset["purpose"]
+                "purposes": [{"title": purpose, "selected": "Bool", "required": "Bool"} for purpose in dataset["purpose"]]
             }
 
             _consent_form["sink"]["dataset"].append(item)
@@ -83,7 +83,8 @@ class ConsentFormHandler(Resource):
                                                       "serviceAccessURI"]
                                                   , dataset["distribution"][0]["accessURL"]),
 
-                }
+                },
+                "component_specification_label": dataset["title"]
             }
             _consent_form["source"]["dataset"].append(item)
 
