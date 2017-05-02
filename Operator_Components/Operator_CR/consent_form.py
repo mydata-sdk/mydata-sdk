@@ -84,7 +84,9 @@ class ConsentFormHandler(Resource):
                                                   , dataset["distribution"][0]["accessURL"]),
 
                 },
-                "component_specification_label": dataset["title"]
+                "component_specification_label": dataset["title"],
+                "selected": "Bool"
+                
             }
             _consent_form["source"]["dataset"].append(item)
 
