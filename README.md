@@ -31,7 +31,7 @@ Wait until Docker Compose stack has properly started. Last message should be
 mysql-db                  | Version: '5.6.34'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server (GPL)
 ```
 
-Now open another terminal and run the ui_flow.py
+Now open another terminal and run the ui_flow_local.py
 ```
 python ui_flow_local.py
 ```
