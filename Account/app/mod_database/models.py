@@ -2119,6 +2119,29 @@ class ServiceLinkRecord():
             self.id = last_id
             return cursor
 
+    def update_db(self, cursor=""):
+
+        sql_query = "UPDATE " + self.table_name + " SET serviceLinkRecord=%s, serviceId=%s, surrogateId=%s, operatorId=%s" \
+                                                  " WHERE id=%s AND Accounts_id=%s"
+
+        arguments = (
+            json.dumps(self.service_link_record),
+            str(self.service_id),
+            str(self.surrogate_id),
+            str(self.operator_id),
+            str(self.id),
+            int(self.account_id),
+        )
+
+        try:
+            cursor = execute_sql_update(cursor=cursor, sql_query=sql_query, arguments=arguments)
+        except Exception as exp:
+            logger.debug('sql_query: ' + repr(exp))
+            raise
+        else:
+            logger.info("SQL query executed")
+            return cursor
+
     def from_db(self, cursor=""):
 
         # TODO: Don't allow if role is only criteria
@@ -2346,6 +2369,7 @@ class ServiceLinkStatusRecord():
         return str(self.__class__.__name__) + " object " + str(self.to_json)
 
     def to_db(self, cursor=""):
+        logger.info("Executing")
 
         # sql_query = "INSERT INTO ServiceLinkRecords (serviceLinkStatusRecordId, status, serviceLinkStatusRecord, ServiceLinkRecords_id, serviceLinkRecordId, issued_at, prevRecordId) " \
         #             "VALUES (%s,%s, %s, %s, %s, %s, %s)" % \
@@ -2362,6 +2386,8 @@ class ServiceLinkStatusRecord():
                     "Accounts_id" \
                     ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 
+        logger.info("SQL query in place")
+
         arguments = (
             str(self.service_link_status_record_id),
             str(self.status),
@@ -2372,6 +2398,8 @@ class ServiceLinkStatusRecord():
             str(self.prev_record_id),
             int(self.accounts_id),
         )
+
+        logger.info("SQL query arguments in place")
 
         try:
             logger.info("Inserting to ServiceLinkStatusRecords")

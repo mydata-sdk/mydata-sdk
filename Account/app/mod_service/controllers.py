@@ -336,21 +336,22 @@ def store_slr_and_ssr(slr_entry=None, ssr_entry=None, endpoint="sign_ssr(account
         raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
 
     try:
-        cursor = slr_entry.to_db(cursor=cursor)
+        # SLR update
+        cursor = slr_entry.update_db(cursor=cursor)
 
-        # Set linking id for ssr and slr
-        slr_id = slr_entry.id
-        ssr_entry.service_link_records_id = slr_id
+        # SLR primary key to SSR
+        ssr_entry.service_link_records_id = slr_entry.id
 
+        # SSR Insert
         cursor = ssr_entry.to_db(cursor=cursor)
-
-        #data = {'slr_id': slr_id, 'ssr_id': ssr_entry.id}
 
         db.connection.commit()
     except Exception as exp:
-        logger.debug('Slr and Ssr commit failed: ' + repr(exp))
+        logger.error('Slr and Ssr commit failed: ' + repr(exp))
         db.connection.rollback()
-        logger.debug('--> rollback')
+        logger.error('--> rollback')
+        logger.error("slr_entry: " + slr_entry.log_entry)
+        logger.error("ssr_entry: " + ssr_entry.log_entry)
         raise ApiError(code=500, title="Failed to store slr and ssr", detail=repr(exp), source=endpoint)
     else:
         logger.debug('Slr and Ssr commited')

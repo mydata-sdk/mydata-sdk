@@ -585,23 +585,46 @@ class ServiceLinkStore(Resource):
             logger.debug("Could not sign Ssr: " + repr(exp))
             raise
 
-        # Store slr and ssr
-        # TODO: Get existing inited SLR from DB
+        # Get inited ServiceLinkRecord object from DB
+        try:
+            logger.info("Get inited ServiceLinkRecord object")
+            slr_inited = get_slr_record(account_id=account_id, slr_id=link_id, endpoint=endpoint)
+        except IndexError as exp:
+            error_title = "Could not find inited ServiceLinkRecord object with provided information"
+            error_detail = "ServiceLinkRecord was searched with link_id: {} and account_id {}".format(link_id, account_id)
+            logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
+            raise ApiError(code=404, title=error_title, detail=str(exp.message), source=endpoint)
+        except Exception as exp:
+            error_title = "Could not get inited ServiceLinkRecord object"
+            error_detail = "ServiceLinkRecord was searched with link_id: {} and account_id {}".format(link_id, account_id)
+            logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
+            raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
+        else:
+            logger.info("Got inited ServiceLinkRecord object")
+            logger.debug("slr_inited: " + slr_inited.log_entry)
+
         # TODO: Update inited SLR object
         # TODO: Store SLR and SSR
-        logger.info("Storing Service Link Record and Service Link Status Record")
+        logger.info("Append data to ServiceLinkRecord object")
         try:
-            slr_entry = ServiceLinkRecord(
-                service_link_record=slr,
-                service_link_record_id=link_id,
-                service_id=service_id,
-                surrogate_id=surrogate_id_from_slr,
-                operator_id=operator_id,
-                account_id=account_id
-            )
+            slr_inited.service_link_record = slr
+            slr_inited.operator_id = operator_id
+            slr_inited.service_id = service_id
+            slr_inited.surrogate_id = surrogate_id_from_slr
+
+            # slr_entry = ServiceLinkRecord(
+            #     service_link_record=slr,
+            #     service_link_record_id=link_id,
+            #     service_id=service_id,
+            #     surrogate_id=surrogate_id_from_slr,
+            #     operator_id=operator_id,
+            #     account_id=account_id
+            # )
         except Exception as exp:
-            logger.error('Could not create Service Link Record object: ' + repr(exp))
-            raise ApiError(code=500, title="Failed to create Service Link Record object", detail=repr(exp), source=endpoint)
+            error_title = "Could not append data to ServiceLinkRecord object"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "ServiceLinkRecord object: " + slr_inited.log_entry)
+            raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
 
         try:
             ssr_entry = ServiceLinkStatusRecord(
@@ -610,14 +633,15 @@ class ServiceLinkStore(Resource):
                 service_link_status_record=ssr_signed,
                 service_link_record_id=link_id,
                 issued_at=ssr_iat,
-                prev_record_id=prev_ssr_id
+                prev_record_id=prev_ssr_id,
+                accounts_id=account_id
             )
         except Exception as exp:
             logger.error('Could not create Service Link Status Record object: ' + repr(exp))
             raise ApiError(code=500, title="Failed to create Service Link Status Record object", detail=repr(exp), source=endpoint)
 
         try:
-            stored_slr_entry, stored_ssr_entry = store_slr_and_ssr(slr_entry=slr_entry, ssr_entry=ssr_entry, endpoint=str(endpoint))
+            stored_slr_entry, stored_ssr_entry = store_slr_and_ssr(slr_entry=slr_inited, ssr_entry=ssr_entry, endpoint=str(endpoint))
         except Exception as exp:
             # TODO: Catch IntegrityError
             logger.error("Could not store Service Link Record and Service Link Status Record")
@@ -633,8 +657,8 @@ class ServiceLinkStore(Resource):
             response_data = {
               "code": code,
               "data": {
-                "slr": slr_entry.to_api_dict,
-                "ssr": ssr_entry.to_api_dict
+                "slr": stored_slr_entry.to_api_dict,
+                "ssr": stored_ssr_entry.to_api_dict
               }
             }
         except Exception as exp:

@@ -17,6 +17,7 @@ from time import time
 from uuid import uuid4
 from jsonschema import validate, ValidationError, SchemaError
 from jwcrypto import jwk
+from jwcrypto import jws
 
 default_headers = {'Content-Type': 'application/json', 'Accept-Charset': 'utf-8', 'Accept': 'application/json'}
 
@@ -133,7 +134,7 @@ def generate_sl_init_sink(slr_id=None, misformatted_payload=False):
         slr_id = get_unique_string()
 
     code = str(randint(100, 10000))
-    pop_key = json.loads(gen_jwk_key(prefix="sink"))
+    pop_key, kid = json.loads(gen_jwk_key(prefix="sink"))
 
     if misformatted_payload:
         del pop_key['kty']
@@ -216,7 +217,7 @@ def generate_sl_payload(slr_id=None, operator_id=None, operator_key=None, servic
     return payload
 
 
-def generate_sl_store_payload(slr_id=None, slr_signed=None, operator_id=None, surrogate_id=None, record_id=None, misformatted_payload=False):
+def generate_sl_store_payload(operator_key=None, operator_kid=None, slr_id=None, slr_signed=None, operator_id=None, surrogate_id=None, record_id=None, misformatted_payload=False):
 
     if slr_id is None:
         raise AttributeError("Provide operator_id as parameter")
@@ -226,14 +227,21 @@ def generate_sl_store_payload(slr_id=None, slr_signed=None, operator_id=None, su
         raise AttributeError("Provide operator_id as parameter")
     if surrogate_id is None:
         raise AttributeError("Provide surrogate_id as parameter")
+    if operator_key is None:
+        raise AttributeError("Provide operator_key as parameter")
+    if operator_kid is None:
+        raise AttributeError("Provide operator_kid as parameter")
 
     if record_id is None:
         record_id = get_unique_string()
 
+    # Sign SLR on behalf of operator
+    slr_double_signed = sign_jws(jws_to_sign=slr_signed, jwk=operator_key, jwk_kid=operator_kid)
+
     sl_store_payload = {
       "code": str(randint(100, 10000)),
       "data": {
-        "slr": slr_signed,
+        "slr": slr_double_signed,
         "ssr": {
           "type": "string",
           "attributes": {
@@ -325,5 +333,25 @@ def gen_jwk_key(prefix="key"):
     except Exception as exp:
         raise
     else:
-        return jwk
+        return jwk, kid
+
+
+def sign_jws(jws_to_sign=None, jwk=None, jwk_kid=None, alg="ES256"):
+    if jws_to_sign is None:
+        raise AttributeError("Provide jws_to_sign as parameter")
+    if jwk is None:
+        raise AttributeError("Provide jwk as parameter")
+    if jwk_kid is None:
+        raise AttributeError("Provide jwk_kid as parameter")
+    if alg is None:
+        raise AttributeError("Provide alg as parameter")
+
+    unprotected_header = {'kid': jwk_kid}
+    protected_header = {'alg': alg}
+    unprotected_header_json = json.dumps(unprotected_header)
+    protected_header_json = json.dumps(protected_header)
+
+    jws_object = jws.JWS(jws_to_sign)
+    jwk_object = jwk.JWK(jwk)
+    jws_object.add_signature(key=jwk, alg=alg, header=unprotected_header_json, protected=protected_header_json)
 

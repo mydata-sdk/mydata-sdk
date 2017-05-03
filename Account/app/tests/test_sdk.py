@@ -26,7 +26,8 @@ from app.tests.schemas.schema_account import schema_account_create, schema_accou
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
-from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign
+from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
+    schema_slr_store_source, schema_slr_store_sink
 from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
 
 
@@ -39,7 +40,8 @@ class SdkTestCase(unittest.TestCase):
 
     # Operator info
     OPERATOR_ID = str(randint(100, 1000))
-    OPERATOR_KEY = json.loads(gen_jwk_key(prefix="operator"))
+    OPERATOR_KEY_JSON, OPERATOR_KID = gen_jwk_key(prefix="operator")
+    OPERATOR_KEY = json.loads(OPERATOR_KEY_JSON)
 
     # Service info
     SINK_SERVICE_ID = "srv_sink-" + str(randint(100, 1000))
@@ -675,7 +677,41 @@ class SdkTestCase(unittest.TestCase):
         print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_sign))
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store_sink))  # TODO: Check Schema
+
+        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+
+    ##########
+    ##########
+    def test_slr_store_sink_malformed(self):
+        """
+        Test Sink SLR storing - Malformed
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_store_sink_malformed")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_sink()
+        slr_data = json.loads(slr_data)
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
+        payload = generate_sl_store_payload(
+            slr_id=slr_id,
+            slr_signed=slr_data['data'],
+            operator_id=self.OPERATOR_ID,
+            surrogate_id=self.SINK_SURROGATE_ID,
+            misformatted_payload=True
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
 
         return account_id, account_api_key, sdk_api_key, slr_id, response.data
 
@@ -763,8 +799,8 @@ class SdkTestCase(unittest.TestCase):
             slr_id=slr_id,
             operator_id=self.OPERATOR_ID,
             operator_key=self.OPERATOR_KEY,
-            service_id=self.SINK_SERVICE_ID,
-            surrogate_id=self.SINK_SURROGATE_ID
+            service_id=self.SOURCE_SERVICE_ID,
+            surrogate_id=self.SOURCE_SURROGATE_ID
         )
 
         response = self.app.patch(url, data=payload, headers=request_headers)
@@ -777,7 +813,77 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # TODO: store service signed slr and ssr
+    def test_slr_store_source(self):
+        """
+        Test Source SLR storing
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_store_source")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_source()
+        slr_data = json.loads(slr_data)
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
+        payload = generate_sl_store_payload(
+            slr_id=slr_id,
+            slr_signed=slr_data['data'],
+            operator_id=self.OPERATOR_ID,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            operator_key=self.OPERATOR_KEY,
+            operator_kid=self.OPERATOR_KID
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store_source))  # TODO: Check Schema
+
+        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+
+    ##########
+    ##########
+    def test_slr_store_source_malformed(self):
+        """
+        Test Source SLR storing - Malformed
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_store_source_malformed")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_source()
+        slr_data = json.loads(slr_data)
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
+        payload = generate_sl_store_payload(
+            slr_id=slr_id,
+            slr_signed=slr_data['data'],
+            operator_id=self.OPERATOR_ID,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            misformatted_payload=True
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+
+    ##########
+    ##########
+    # TODO: SLR Status change - unsigned input
+    # TODO: SLR Status change - signed input
 
 
 if __name__ == '__main__':
