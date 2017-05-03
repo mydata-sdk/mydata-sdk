@@ -192,7 +192,7 @@ def generate_sl_payload(slr_id=None, operator_id=None, operator_key=None, servic
         raise AttributeError("Provide surrogate_id as parameter")
 
     sl_payload = {
-      "code": "string",
+      "code": str(randint(100, 10000)),
       "data": {
         "type": "string",
         "attributes": {
@@ -212,6 +212,48 @@ def generate_sl_payload(slr_id=None, operator_id=None, operator_key=None, servic
         del sl_payload['data']['attributes']['iat']
 
     payload = json.dumps(sl_payload)
+
+    return payload
+
+
+def generate_sl_store_payload(slr_id=None, slr_signed=None, operator_id=None, surrogate_id=None, record_id=None, misformatted_payload=False):
+
+    if slr_id is None:
+        raise AttributeError("Provide operator_id as parameter")
+    if slr_signed is None:
+        raise AttributeError("Provide slr_signed as parameter")
+    if operator_id is None:
+        raise AttributeError("Provide operator_id as parameter")
+    if surrogate_id is None:
+        raise AttributeError("Provide surrogate_id as parameter")
+
+    if record_id is None:
+        record_id = get_unique_string()
+
+    sl_store_payload = {
+      "code": str(randint(100, 10000)),
+      "data": {
+        "slr": slr_signed,
+        "ssr": {
+          "type": "string",
+          "attributes": {
+            "version": "1.3",
+            "record_id": record_id,
+            "surrogate_id": surrogate_id,
+            "slr_id": slr_id,
+            "sl_status": "Active",
+            "iat": get_epoch(),
+            "prev_record_id": ""
+          }
+        }
+      }
+    }
+
+    if misformatted_payload:
+        del sl_store_payload['data']['slr']['attributes']['payload']
+        del sl_store_payload['data']['ssr']['attributes']['iat']
+
+    payload = json.dumps(sl_store_payload)
 
     return payload
 

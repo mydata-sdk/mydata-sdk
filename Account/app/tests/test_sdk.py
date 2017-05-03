@@ -19,7 +19,8 @@ from flask import json
 
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, \
-    print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload
+    print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
+    generate_sl_store_payload
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
@@ -642,6 +643,39 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+
+    ##########
+    ##########
+    def test_slr_store_sink(self):
+        """
+        Test Sink SLR storing
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_store_sink")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_sink()
+        slr_data = json.loads(slr_data)
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
+        payload = generate_sl_store_payload(
+            slr_id=slr_id,
+            slr_signed=slr_data['data'],
+            operator_id=self.OPERATOR_ID,
+            surrogate_id=self.SINK_SURROGATE_ID
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_sign))
 
         return account_id, account_api_key, sdk_api_key, slr_id, response.data
 

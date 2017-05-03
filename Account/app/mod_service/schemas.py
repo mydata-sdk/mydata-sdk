@@ -208,3 +208,123 @@ schema_sl_sign = {
     ],
     "type": "object"
 }
+
+
+schema_sl_store = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions": {},
+    "id": "http://example.com/example.json",
+    "properties": {
+        "code": {
+            "type": "string"
+        },
+        "data": {
+            "properties": {
+                "slr": {
+                    "properties": {
+                        "attributes": {
+                            "properties": {
+                                "header": {
+                                    "properties": {
+                                        "kid": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "kid"
+                                    ],
+                                    "type": "object"
+                                },
+                                "payload": {
+                                    "type": "string"
+                                },
+                                "protected": {
+                                    "type": "string"
+                                },
+                                "signature": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "header",
+                                "protected",
+                                "payload",
+                                "signature"
+                            ],
+                            "type": "object"
+                        },
+                        "id": {
+                            "type": "string"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "attributes",
+                        "type",
+                        "id"
+                    ],
+                    "type": "object"
+                },
+                "ssr": {
+                    "properties": {
+                        "attributes": {
+                            "properties": {
+                                "iat": {
+                                    "type": "integer"
+                                },
+                                "prev_record_id": {
+                                    "type": "string"
+                                },
+                                "record_id": {
+                                    "type": "string"
+                                },
+                                "sl_status": {
+                                    "type": "string"
+                                },
+                                "slr_id": {
+                                    "type": "string"
+                                },
+                                "surrogate_id": {
+                                    "type": "string"
+                                },
+                                "version": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "slr_id",
+                                "surrogate_id",
+                                "sl_status",
+                                "version",
+                                "record_id",
+                                "iat",
+                                "prev_record_id"
+                            ],
+                            "type": "object"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "attributes",
+                        "type"
+                    ],
+                    "type": "object"
+                }
+            },
+            "required": [
+                "slr",
+                "ssr"
+            ],
+            "type": "object"
+        }
+    },
+    "required": [
+        "code",
+        "data"
+    ],
+    "type": "object"
+}
