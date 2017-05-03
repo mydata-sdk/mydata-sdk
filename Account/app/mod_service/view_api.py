@@ -36,7 +36,7 @@ from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jw
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord
 from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, get_surrogate_id_by_account_and_service, \
-    init_slr_sink, init_slr_source
+    init_slr_sink, init_slr_source, get_slr_record
 from app.mod_service.models import NewServiceLink, VerifyServiceLink
 from app.mod_service.schemas import schema_sl_init_sink, schema_sl_init_source, schema_sl_sign
 
@@ -221,7 +221,7 @@ class ServiceLinkSign(Resource):
     @requires_api_auth_sdk
     def patch(self, account_id, link_id):
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(api.url_for(self, account_id=account_id, link_id=link_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -272,14 +272,34 @@ class ServiceLinkSign(Resource):
             logger.debug("slr_payload from payload: " + json.dumps(slr_payload))
             logger.debug("link_id_from_payload from payload: " + link_id_from_payload)
 
-        # Verify SLR ID match
+        # Verify SLR IDs from path and payload are matching
         try:
             compare_str_ids(id=link_id, id_to_compare=link_id_from_payload)
         except ValueError as exp:
-            error_title = "SLR IDs are not matching"
+            error_title = "SLR IDs from path and payload are not matching"
             error_detail = "SLR ID from path was {} and from payload {}".format(link_id, link_id_from_payload)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("SLR IDs from path and payload are not matching")
+
+        # Get inited ServiceLinkRecord object
+        try:
+            logger.info("Get inited ServiceLinkRecord object")
+            slr_inited = get_slr_record(account_id=account_id, slr_id=link_id, endpoint=endpoint)
+        except IndexError as exp:
+            error_title = "Could not find inited ServiceLinkRecord object with provided information"
+            error_detail = "ServiceLinkRecord was searched with link_id: {} and account_id {}".format(link_id, account_id)
+            logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
+            raise ApiError(code=404, title=error_title, detail=str(exp.message), source=endpoint)
+        except Exception as exp:
+            error_title = "Could not get inited ServiceLinkRecord object"
+            error_detail = "ServiceLinkRecord was searched with link_id: {} and account_id {}".format(link_id, account_id)
+            logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
+            raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
+        else:
+            logger.info("Got inited ServiceLinkRecord object")
+            logger.debug("slr_inited: " + slr_inited.log_entry)
 
         # Sign SLR
         try:

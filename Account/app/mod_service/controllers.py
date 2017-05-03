@@ -176,6 +176,65 @@ def init_slr_sink(account_id=None, slr_id=None, pop_key=None, endpoint="init_slr
         return slr_id
 
 
+def get_slr_record(account_id=None, slr_id=None, endpoint="get_slr_record()"):
+
+    logger.info("get_slr_record()")
+
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+
+    if not isinstance(account_id, str):
+        try:
+            account_id = str(account_id)
+        except Exception:
+            raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+    if not isinstance(slr_id, str):
+        try:
+            slr_id = str(slr_id)
+        except Exception:
+            raise TypeError("slr_id MUST be str, not " + str(type(slr_id)))
+    if not isinstance(endpoint, str):
+        try:
+            endpoint = str(endpoint)
+        except Exception:
+            raise TypeError("endpoint MUST be str, not " + str(type(endpoint)))
+
+    logger.info("Creating ServiceLinkRecord object")
+    try:
+        slr_entry = ServiceLinkRecord(
+            service_link_record_id=slr_id,
+            account_id=account_id
+        )
+    except Exception as exp:
+        logger.error('Could not create Service Link Record object: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to create Service Link Record object", detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Service Link Record entry created")
+        logger.debug(slr_entry.log_entry)
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+
+    logger.info("Get ServiceLinkRecord from database")
+    try:
+        cursor = slr_entry.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Could not get ServiceLinkRecord from database"
+        error_detail = str(exp.message)
+        logger.error(error_title + " - " + error_detail)
+        raise
+    else:
+        logger.info('Got ServiceLinkRecord from database')
+        logger.debug("slr_entry: " + slr_entry.log_entry)
+        return slr_entry
+
+
 def sign_slr(account_id=None, slr_payload=None, endpoint="sign_slr(account_id, slr_payload, endpoint)"):
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")

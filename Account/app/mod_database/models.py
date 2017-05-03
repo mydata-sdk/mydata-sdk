@@ -2123,10 +2123,10 @@ class ServiceLinkRecord():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, serviceLinkRecord, Accounts_id, serviceLinkRecordId, serviceId, surrogateId, operatorId, popKey  " \
+        sql_query = "SELECT id, serviceLinkRecord, Accounts_id, serviceLinkRecordId, serviceId, surrogateId, operatorId, pop_key  " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND serviceLinkRecord LIKE %s AND serviceLinkRecordId LIKE %s AND " \
-                    "serviceId LIKE %s AND surrogateId LIKE %s AND operatorId LIKE %s AND popKey LIKE %s AND Accounts_id LIKE %s;"
+                    "serviceId LIKE %s AND surrogateId LIKE %s AND operatorId LIKE %s AND pop_key LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',

@@ -614,6 +614,39 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
+    def test_slr_sign_sink_wrong_id(self):
+        """
+        Test Sink SLR signing with wrong SLR id
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_sign_sink_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_sink()
+        slr_id = "wrong-" + slr_id
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/"
+        payload = generate_sl_payload(
+            slr_id=slr_id,
+            operator_id=self.OPERATOR_ID,
+            operator_key=self.OPERATOR_KEY,
+            service_id=self.SINK_SERVICE_ID,
+            surrogate_id=self.SINK_SURROGATE_ID
+        )
+
+        response = self.app.patch(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+
+    ##########
+    ##########
     def test_slr_sign_source(self):
         """
         Test Source SLR signing
@@ -677,7 +710,39 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # TODO: sign slr with id that does not exists
+    def test_slr_sign_source_wrong_id(self):
+        """
+        Test Source SLR signing with wrong SLR id
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_sign_source_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_source()
+        slr_id = "wrong-" + slr_id
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/"
+        payload = generate_sl_payload(
+            slr_id=slr_id,
+            operator_id=self.OPERATOR_ID,
+            operator_key=self.OPERATOR_KEY,
+            service_id=self.SINK_SERVICE_ID,
+            surrogate_id=self.SINK_SURROGATE_ID
+        )
+
+        response = self.app.patch(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+
+    ##########
+    ##########
     # TODO: store service signed slr and ssr
 
 
