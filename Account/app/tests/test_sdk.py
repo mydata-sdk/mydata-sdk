@@ -40,7 +40,7 @@ class SdkTestCase(unittest.TestCase):
 
     # Operator info
     OPERATOR_ID = str(randint(100, 1000))
-    OPERATOR_KEY_JSON, OPERATOR_KID = gen_jwk_key(prefix="operator")
+    OPERATOR_KEY_OBJECT, OPERATOR_KEY_JSON, OPERATOR_KID = gen_jwk_key(prefix="operator")
     OPERATOR_KEY = json.loads(OPERATOR_KEY_JSON)
 
     # Service info
@@ -833,7 +833,7 @@ class SdkTestCase(unittest.TestCase):
             slr_signed=slr_data['data'],
             operator_id=self.OPERATOR_ID,
             surrogate_id=self.SOURCE_SURROGATE_ID,
-            operator_key=self.OPERATOR_KEY,
+            operator_key=self.OPERATOR_KEY_OBJECT,
             operator_kid=self.OPERATOR_KID
         )
         print("payload: " + json.dumps(json.loads(payload), indent=4))

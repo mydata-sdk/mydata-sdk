@@ -11,6 +11,7 @@ __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
 """
 import json
+from base64 import urlsafe_b64decode
 from random import choice, randint
 from string import lowercase
 from time import time
@@ -134,7 +135,8 @@ def generate_sl_init_sink(slr_id=None, misformatted_payload=False):
         slr_id = get_unique_string()
 
     code = str(randint(100, 10000))
-    pop_key, kid = json.loads(gen_jwk_key(prefix="sink"))
+    pop_key_object , pop_key_json, kid = gen_jwk_key(prefix="sink")
+    pop_key = json.loads(pop_key_json)
 
     if misformatted_payload:
         del pop_key['kty']
@@ -236,14 +238,17 @@ def generate_sl_store_payload(operator_key=None, operator_kid=None, slr_id=None,
         record_id = get_unique_string()
 
     # Sign SLR on behalf of operator
-    slr_double_signed = sign_jws(jws_to_sign=slr_signed, jwk=operator_key, jwk_kid=operator_kid)
+    slr_double_signed = sign_jws(jws_to_sign=slr_signed['attributes'], jwk_key=operator_key, jwk_kid=operator_kid)
+
+    slr_data = slr_signed
+    slr_data['attributes'] = slr_double_signed
 
     sl_store_payload = {
       "code": str(randint(100, 10000)),
       "data": {
-        "slr": slr_double_signed,
+        "slr": slr_data,
         "ssr": {
-          "type": "string",
+          "type": "ServiceLinkStatusRecord",
           "attributes": {
             "version": "1.3",
             "record_id": record_id,
@@ -311,7 +316,7 @@ def gen_key_as_jwk(kid=None):
     except Exception as exp:
         raise
     else:
-        return jwk_key_json
+        return jwk_key, jwk_key_json
 
 
 def gen_jwk_key(prefix="key"):
@@ -329,18 +334,18 @@ def gen_jwk_key(prefix="key"):
     kid = prefix + "-kid-" + str(uuid4())
 
     try:
-        jwk = gen_key_as_jwk(kid=kid)
+        jwk_object, jwk_json = gen_key_as_jwk(kid=kid)
     except Exception as exp:
         raise
     else:
-        return jwk, kid
+        return jwk_object, jwk_json, kid
 
 
-def sign_jws(jws_to_sign=None, jwk=None, jwk_kid=None, alg="ES256"):
+def sign_jws(jws_to_sign=None, jwk_key=None, jwk_kid=None, alg="ES256"):
     if jws_to_sign is None:
         raise AttributeError("Provide jws_to_sign as parameter")
-    if jwk is None:
-        raise AttributeError("Provide jwk as parameter")
+    if jwk_key is None:
+        raise AttributeError("Provide jwk_key as parameter")
     if jwk_kid is None:
         raise AttributeError("Provide jwk_kid as parameter")
     if alg is None:
@@ -351,7 +356,30 @@ def sign_jws(jws_to_sign=None, jwk=None, jwk_kid=None, alg="ES256"):
     unprotected_header_json = json.dumps(unprotected_header)
     protected_header_json = json.dumps(protected_header)
 
-    jws_object = jws.JWS(jws_to_sign)
-    jwk_object = jwk.JWK(jwk)
-    jws_object.add_signature(key=jwk, alg=alg, header=unprotected_header_json, protected=protected_header_json)
+    print("JWS to Sign")
+    print(json.dumps(jws_to_sign))
+    slr_payload = jws_to_sign['payload']
+    slr_payload += '=' * (-len(slr_payload) % 4)  # Fix incorrect padding of base64 string.
+    slr_payload = urlsafe_b64decode(slr_payload.encode())
+    slr_payload = json.loads(slr_payload.decode("utf-8"))
+
+    print("SLR Decoded")
+    print(json.dumps(slr_payload))
+
+    print("Verification key")
+    verification_key_json = slr_payload["cr_keys"][0]
+    print(json.dumps(verification_key_json))
+    verification_key = jwk.JWK(**verification_key_json)
+
+    jws_object = jws.JWS()
+    jws_object.deserialize(json.dumps(jws_to_sign))
+    jws_object.verify(verification_key)  # Verifying changes the state of this object
+
+    jws_object.add_signature(key=jwk_key, alg=alg, header=unprotected_header_json, protected=protected_header_json)
+
+    jws_serialized = json.loads(jws_object.serialize())
+    print("jws_serialized")
+    print(jws_serialized)
+
+    return jws_serialized
 

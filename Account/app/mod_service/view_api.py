@@ -398,7 +398,8 @@ class ServiceLinkStore(Resource):
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
-            logger.info("SLR IDs from path and payload are not matching")
+            logger.info("SLR IDs from path and payload are matching")
+            logger.debug("SLR ID from path was {} and from payload {}".format(link_id, link_id_from_payload))
 
         ###########################
         ###########################
@@ -434,15 +435,19 @@ class ServiceLinkStore(Resource):
 
         # Decode slr payload
         try:
+            logger.info("Decoding base64 payload")
             #print (json.dumps(json_data))
             slr_payload_encoded = slr['payload']
             slr_payload_encoded += '=' * (-len(slr_payload_encoded) % 4)  # Fix incorrect padding, base64
             slr_payload_decoded = b64decode(slr_payload_encoded).replace('\\', '').replace('"{', '{').replace('}"', '}')
             slr_payload_dict = json.loads(slr_payload_decoded)
         except Exception as exp:
+            logger.error("Could not decode SLR payload: " + repr(exp))
             raise ApiError(code=400, title="Could not decode slr payload", detail=repr(exp), source=endpoint)
         else:
-            logger.debug("slr_payload_decoded: " + str(slr_payload_decoded))
+            logger.info("SLR payload decoded")
+            logger.debug("slr: " + json.dumps(slr))
+            logger.debug("slr_payload_decoded: " + json.dumps(slr_payload_dict))
 
         # Get link_id_from_slr
         try:
