@@ -618,7 +618,7 @@ class Helpers:
         #  for dataset in consent_form["sink"]["dataset"]]  # 1
         for dataset in consent_form["sink"]["dataset"]:
             for purpose in dataset["purposes"]:
-                _rules.append(purpose)
+                _rules.append(purpose["title"])
 
 
         _rules = list(set(_rules))  # Remove duplicates
