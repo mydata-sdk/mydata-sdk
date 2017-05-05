@@ -11,3 +11,12 @@ __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
 """
 
+from flask_mysqldb import MySQL
+from flask_login import LoginManager
+
+# Database
+db = MySQL()
+
+# LoginManager
+login_manager = LoginManager()
+

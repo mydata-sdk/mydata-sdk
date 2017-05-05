@@ -7,26 +7,26 @@ __author__ = "Jani Yli-Kantola"
 __copyright__ = "Digital Health Revolution (c) 2016"
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
 __date__ = 26.5.2016
 """
 
-from flask import Blueprint, render_template, make_response, flash, session, request
-from flask_restful import Resource, Api, reqparse
+from flask import Blueprint, make_response, request
+from flask_restful import Resource, Api
 
-from app import api
 from app.helpers import get_custom_logger, make_json_response, ApiError
 from app.mod_api_auth.controllers import get_account_api_key, get_api_key_sdk
 from app.mod_api_auth.helpers import ApiKeyNotFoundError
 from app.mod_auth.helpers import get_account_id_by_username_and_password
 
-logger = get_custom_logger('mod_api_auth_view_api')
+logger = get_custom_logger(__name__)
 
 # Define the blueprint: 'auth', set its url prefix: app.url/auth
 mod_api_auth = Blueprint('api_auth', __name__, template_folder='templates')
+api = Api(mod_api_auth)
 
 
 class ApiKeyUser(Resource):
@@ -89,9 +89,8 @@ class ApiKeyUser(Resource):
             logger.debug("account_id: " + str(self.account_id))
             logger.debug("api_key: " + str(api_key))
 
-
         response_data = {
-            'Api-Key': api_key,
+            'Api-Key-User': api_key,
             'account_id': str(self.account_id)
         }
 
@@ -130,15 +129,16 @@ class ApiKeySDK(Resource):
         if not auth or not self.check_basic_auth(auth.username, auth.password):
             return self.authenticate()
 
-        api_key = get_api_key_sdk()
+        api_key_sdk = get_api_key_sdk()
+        logger.debug("api_key_sdk: " + api_key_sdk)
 
         response_data = {
-            'api_key': api_key
+            'Api-Key-Sdk': api_key_sdk
         }
 
         return make_json_response(data=response_data, status_code=200)
 
 
 # Register resources
-api.add_resource(ApiKeyUser, '/api/auth/user/', endpoint='api_auth_user')
-api.add_resource(ApiKeySDK, '/api/auth/sdk/', endpoint='api_auth_sdk')
+api.add_resource(ApiKeyUser, '/external/auth/user/', endpoint='api_auth_user')
+api.add_resource(ApiKeySDK, '/internal/auth/sdk/', endpoint='api_auth_sdk')

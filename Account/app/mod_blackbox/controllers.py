@@ -7,16 +7,15 @@ __author__ = "Jani Yli-Kantola"
 __copyright__ = ""
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
 """
 import json
 from uuid import uuid4
-
-from app.mod_blackbox.helpers import append_description_to_exception, get_custom_logger
-
+from app.helpers import get_custom_logger
+from app.mod_blackbox.helpers import append_description_to_exception
 from app.mod_blackbox.services import get_sqlite_connection, get_sqlite_cursor, store_jwk_to_db, gen_key_as_jwk, \
     get_public_key_by_account_id, get_key_by_account_id, jws_json_to_object, get_key, jws_sign, log_dict_as_json, \
     jws_object_to_json, jws_verify, jws_generate
@@ -113,7 +112,7 @@ CR_CSR_PAYLOAD = {
 }
 
 
-logger = get_custom_logger('mod_blackbox_controllers')
+logger = get_custom_logger(__name__)
 
 
 def store_jwk(account_id=None, account_kid=None, account_key=None):

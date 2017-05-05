@@ -1,22 +1,26 @@
 # -*- coding: utf-8 -*-
-
+from base64 import b64encode
 from os import urandom
 
 # Statement for enabling the development environment
-DEBUG = True
+from uuid import uuid4
+
+DEBUG = False
 
 # Enable more detailed logging
 SUPER_DEBUG = True
 
 # Application URL prefix
 ## Only leading slash
-URL_PREFIX = ''
+APP_URL_PREFIX = ''
+BLUEPRINT_URL_PREFIX = "/account/api/v1.3"
 
 # Logger
 LOG_FORMATTER = '%(asctime)s - %(name)s in function %(funcName)s at line: %(lineno)s - %(levelname)s - %(message)s'
 LOG_PATH = './logs/'
 LOG_FILE = LOG_PATH + 'account.log'
 LOG_TO_FILE = False
+LOG_LEVEL = 'DEBUG'
 
 # Define the application directory
 import os
@@ -53,6 +57,9 @@ CSRF_SESSION_KEY = str(urandom(24))
 
 # Secret key for signing cookies
 SECRET_KEY = str(urandom(24))
+
+# SDK Api-Key
+SDK_API_KEY = b64encode(str(uuid4()) + "-" + str(uuid4()))
 
 # http://flask-restful-cn.readthedocs.org/en/0.3.5/reqparse.html#error-handling
 BUNDLE_ERRORS = True

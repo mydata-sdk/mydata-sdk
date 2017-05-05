@@ -5,7 +5,7 @@ __author__ = "Jani Yli-Kantola"
 __copyright__ = ""
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
@@ -100,7 +100,8 @@ class AccountAttributes(Schema):
     lastName = fields.Str(validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     email = fields.Email(required=True, validate=Length(min=STRING_MIN_LENGTH, max=STRING_MAX_LENGTH))
     dateOfBirth = fields.Date(required=True, error='Not valid date. Provide ISO8601-formatted date string.')
-    acceptTermsOfService = fields.Str(required=True, validate=Equal("True"))
+    #acceptTermsOfService = fields.Str(required=True, validate=Equal("True"))
+    acceptTermsOfService = fields.Bool(required=True, validate=Equal(True))
 
 
 class AccountData(Schema):

@@ -2,39 +2,25 @@
 
 # Import dependencies
 import json
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-from random import randint
 
 # Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash, session, request
-from flask.ext.login import login_user, login_required
-from flask_restful import Resource, Api, reqparse
-
-# Import the database object from the main app module
-from app import db, api, login_manager, app
+from flask import Blueprint, request
+from flask_restful import Resource, Api
 
 # Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError
 from app.mod_account.controllers import get_particulars, get_particular, verify_account_id_match, \
-    update_particular, get_contacts, add_contact, get_contact, update_contact, get_emails, add_email, get_email, \
-    update_email, get_telephone, update_telephone, get_telephones, add_telephone, get_settings, add_setting, get_setting, \
-    update_setting, get_event_log, get_event_logs, get_slrs, get_slr, get_slsrs, get_slsr, get_cr, get_crs, get_csrs, \
-    get_csr, export_account
+    update_particular, get_event_log, get_event_logs, get_slrs, get_slr, get_slsrs, get_slsr, get_cr, \
+    get_crs, get_csrs, get_csr, export_account, create_account, delete_account, update_setting, get_contacts, \
+    add_contact, get_contact, update_contact, get_emails, add_email, get_email, get_telephones, add_telephone, \
+    update_telephone, get_settings, add_setting, update_email, get_telephone, get_setting, get_account
 from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
     EmailsSchema, EmailsSchemaForUpdate, TelephonesSchema, TelephonesSchemaForUpdate, SettingsSchema, \
     SettingsSchemaForUpdate
-from app.mod_api_auth.controllers import gen_account_api_key, requires_api_auth_user, provideApiKey
-from app.mod_blackbox.controllers import gen_account_key
-from app.mod_database.helpers import get_db_cursor
-from app.mod_database.models import Account, LocalIdentityPWD, LocalIdentity, Salt, Particulars, Email
-
-from app.mod_api_auth.controllers import get_account_id_by_api_key
+from app.mod_api_auth.controllers import requires_api_auth_user, provide_api_key
 
 mod_account_api = Blueprint('account_api', __name__, template_folder='templates')
+account_api = Api(mod_account_api)
 
 # create logger with 'spam_application'
 logger = get_custom_logger(__name__)
@@ -46,24 +32,24 @@ class Accounts(Resource):
         """
         Example JSON
         {
-                "data": {
-                    "type": "Account",
-                    "attributes": {
-                        'firstName': 'Erkki',
-                        'lastName': 'Esimerkki',
-                        'dateOfBirth': '2016-05-31',
-                        'email': 'erkki.esimerkki@examlpe.org',
-                        'username': 'testUser',
-                        'password': 'Hello',
-                        'acceptTermsOfService': 'True'
-                    }
+            "data": {
+                "type": "Account",
+                "attributes": {
+                    'firstName': 'Erkki',
+                    'lastName': 'Esimerkki',
+                    'dateOfBirth': '2016-05-31',
+                    'email': 'erkki.esimerkki@examlpe.org',
+                    'username': 'testUser',
+                    'password': 'Hello',
+                    'acceptTermsOfService': 'True'
                 }
             }
+        }
         :return:
         """
 
         try:
-            endpoint = str(api.url_for(self))
+            endpoint = str(account_api.url_for(self))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -89,113 +75,33 @@ class Accounts(Resource):
         try:
             username = json_data['data']['attributes']['username']
             password = json_data['data']['attributes']['password']
-            firstName = json_data['data']['attributes']['firstName']
-            lastName = json_data['data']['attributes']['lastName']
+            first_name = json_data['data']['attributes']['firstName']
+            last_name = json_data['data']['attributes']['lastName']
             email_address = json_data['data']['attributes']['email']
-            dateOfBirth = json_data['data']['attributes']['dateOfBirth']
-            acceptTermsOfService = json_data['data']['attributes']['acceptTermsOfService']
-
-            global_identifier = str(uuid.uuid4())
-            salt_str = str(bcrypt.gensalt())
-            pwd_hash = bcrypt.hashpw(str(password), salt_str)
+            date_of_birth = json_data['data']['attributes']['dateOfBirth']
         except Exception as exp:
             error_title = "Could not prepare Account data"
             logger.error(error_title)
             raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
 
-        # DB cursor
-        cursor = get_db_cursor()
-
         try:
-            ###
-            # Accounts
-            logger.debug('Accounts')
-            account = Account(global_identifyer=global_identifier)
-            account.to_db(cursor=cursor)
-
-            ###
-            # localIdentityPWDs
-            logger.debug('localIdentityPWDs')
-            local_pwd = LocalIdentityPWD(password=pwd_hash)
-            local_pwd.to_db(cursor=cursor)
-
-            ###
-            # localIdentities
-            logger.debug('localIdentities')
-            local_identity = LocalIdentity(
+            account_id = create_account(
+                first_name=first_name,
+                last_name=last_name,
                 username=username,
-                pwd_id=local_pwd.id,
-                accounts_id=account.id
+                password=password,
+                email_address=email_address,
+                date_of_birth=date_of_birth,
+                endpoint=endpoint
             )
-            local_identity.to_db(cursor=cursor)
-
-            ###
-            # salts
-            logger.debug('salts')
-            salt = Salt(
-                salt=salt_str,
-                identity_id=local_identity.id
-            )
-            salt.to_db(cursor=cursor)
-
-            ###
-            # Particulars
-            logger.debug('particulars')
-            particulars = Particulars(
-                firstname=firstName,
-                lastname=lastName,
-                date_of_birth=dateOfBirth,
-                account_id=account.id
-            )
-            logger.debug("to_dict: " + repr(particulars.to_dict))
-            cursor = particulars.to_db(cursor=cursor)
-
-            ###
-            # emails
-            logger.debug('emails')
-            email = Email(
-                email=email_address,
-                type="Personal",
-                prime=1,
-                account_id=account.id
-            )
-            email.to_db(cursor=cursor)
-
-            ###
-            # Commit
-            db.connection.commit()
+        except ApiError as exp:
+            error_title = "Could not create Account"
+            logger.error(error_title + ': ' + repr(exp))
+            raise
         except Exception as exp:
             error_title = "Could not create Account"
-            logger.debug('commit failed: ' + repr(exp))
-            logger.debug('--> rollback')
-            logger.error(error_title)
-            db.connection.rollback()
+            logger.debug(error_title + ': ' + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        else:
-            logger.debug('Account commited')
-
-            try:
-                logger.info("Generating Key for Account")
-                kid = gen_account_key(account_id=account.id)
-            except Exception as exp:
-                error_title = "Could not generate Key for Account"
-                logger.debug(error_title + ': ' + repr(exp))
-                #raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-            else:
-                logger.info("Generated Key for Account with Key ID: " + str(kid))
-
-            try:
-                logger.info("Generating API Key for Account")
-                api_key = gen_account_api_key(account_id=account.id)
-            except Exception as exp:
-                error_title = "Could not generate API Key for Account"
-                logger.debug(error_title + ': ' + repr(exp))
-                #raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-            else:
-                logger.info("Generated API Key: " + str(api_key))
-
-            data = cursor.fetchall()
-            logger.debug('data: ' + repr(data))
 
         # Response data container
         try:
@@ -205,7 +111,7 @@ class Accounts(Resource):
 
             response_data['data'] = {}
             response_data['data']['type'] = "Account"
-            response_data['data']['id'] = str(account.id)
+            response_data['data']['id'] = account_id
             response_data['data']['attributes'] = json_data['data']['attributes']
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
@@ -219,21 +125,141 @@ class Accounts(Resource):
         return make_json_response(data=response_data_dict, status_code=201)
 
 
-class AccountExport(Resource):
+class Account(Resource):
     @requires_api_auth_user
     def get(self, account_id):
-        logger.info("AccountExport")
+        logger.info("Account")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Get Particulars
+        try:
+            logger.info("Fetching Account")
+            db_entries = get_account(account_id=account_id)
+        except Exception as exp:
+            error_title = "No Account found"
+            logger.error(error_title)
+            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Account Fetched")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = db_entries
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class AccountDelete(Resource):
+    # TODO: Account reactivation
+    # TODO: Create Account with same credentials
+    @requires_api_auth_user
+    def delete(self, account_id):
+        logger.info("AccountDelete")
+        try:
+            endpoint = str(account_api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key-User')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provide_api_key(endpoint=endpoint)
+        else:
+            logger.info("Api-Key: " + api_key)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("account_id: " + account_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Delete Account
+        try:
+            logger.info("Marking Account as deleted")
+            delete_account(account_id=account_id)
+        except Exception as exp:
+            error_title = "Could not mark Account as deleted"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Particulars Fetched")
+            logger.info("Particulars: ")
+
+        # TODO: Remove API-Key of Account owner
+
+        # Response data container
+        try:
+            response_data = {}
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=204)
+
+
+class AccountExport(Resource):
+    @requires_api_auth_user
+    def get(self, account_id):
+        logger.info("AccountExport")
+        try:
+            endpoint = str(account_api.url_for(self, account_id=account_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+
+        try:
+            logger.info("Fetching Api-Key from Headers")
+            api_key = request.headers.get('Api-Key-User')
+        except Exception as exp:
+            logger.error("No ApiKey in headers: " + repr(repr(exp)))
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -283,16 +309,16 @@ class AccountParticulars(Resource):
     def get(self, account_id):
         logger.info("AccountParticulars")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -343,16 +369,16 @@ class AccountParticular(Resource):
     def get(self, account_id, particulars_id):
         logger.info("AccountParticulars")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, particulars_id=particulars_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, particulars_id=particulars_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -408,16 +434,16 @@ class AccountParticular(Resource):
     def patch(self, account_id, particulars_id):
         logger.info("AccountParticular")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, particulars_id=particulars_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, particulars_id=particulars_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -528,16 +554,16 @@ class AccountContacts(Resource):
     def get(self, account_id):
         logger.info("AccountContacts")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -585,16 +611,16 @@ class AccountContacts(Resource):
     def post(self, account_id):
         logger.info("AccountContacts")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -671,16 +697,16 @@ class AccountContact(Resource):
     def get(self, account_id, contacts_id):
         logger.info("AccountContact")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, contacts_id=contacts_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, contacts_id=contacts_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -736,16 +762,16 @@ class AccountContact(Resource):
     def patch(self, account_id, contacts_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountContact")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, contacts_id=contacts_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, contacts_id=contacts_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -856,16 +882,16 @@ class AccountEmails(Resource):
     def get(self, account_id):
         logger.info("AccountEmails")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -913,16 +939,16 @@ class AccountEmails(Resource):
     def post(self, account_id):
         logger.info("AccountEmails")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -999,16 +1025,16 @@ class AccountEmail(Resource):
     def get(self, account_id, emails_id):
         logger.info("AccountEmail")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, emails_id=emails_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, emails_id=emails_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1064,16 +1090,16 @@ class AccountEmail(Resource):
     def patch(self, account_id, emails_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountEmail")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, emails_id=emails_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, emails_id=emails_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1185,16 +1211,16 @@ class AccountTelephones(Resource):
     def get(self, account_id):
         logger.info("AccountTelephones")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1242,16 +1268,16 @@ class AccountTelephones(Resource):
     def post(self, account_id):
         logger.info("AccountTelephones")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1328,16 +1354,16 @@ class AccountTelephone(Resource):
     def get(self, account_id, telephones_id):
         logger.info("AccountTelephone")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, telephones_id=telephones_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, telephones_id=telephones_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1393,16 +1419,16 @@ class AccountTelephone(Resource):
     def patch(self, account_id, telephones_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountTelephone")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, telephones_id=telephones_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, telephones_id=telephones_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1514,16 +1540,16 @@ class AccountSettings(Resource):
     def get(self, account_id):
         logger.info("AccountSettings")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1571,16 +1597,16 @@ class AccountSettings(Resource):
     def post(self, account_id):
         logger.info("AccountSettings")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1657,16 +1683,16 @@ class AccountSetting(Resource):
     def get(self, account_id, settings_id):
         logger.info("AccountSetting")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, settings_id=settings_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, settings_id=settings_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1722,16 +1748,16 @@ class AccountSetting(Resource):
     def patch(self, account_id, settings_id):  # TODO: Should be PATCH instead of PUT
         logger.info("AccountSetting")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, settings_id=settings_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, settings_id=settings_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1843,16 +1869,16 @@ class AccountEventLogs(Resource):
     def get(self, account_id):
         logger.info("AccountEventLogs")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1902,16 +1928,16 @@ class AccountEventLog(Resource):
     def get(self, account_id, event_log_id):
         logger.info("AccountEventLog")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, event_log_id=event_log_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, event_log_id=event_log_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -1969,16 +1995,16 @@ class AccountServiceLinkRecords(Resource):
     def get(self, account_id):
         logger.info("AccountServiceLinkRecords")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2028,16 +2054,16 @@ class AccountServiceLinkRecord(Resource):
     def get(self, account_id, slr_id):
         logger.info("AccountServiceLinkRecord")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2095,16 +2121,16 @@ class AccountServiceLinkStatusRecords(Resource):
     def get(self, account_id, slr_id):
         logger.info("AccountServiceLinkStatusRecords")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2167,16 +2193,16 @@ class AccountServiceLinkStatusRecord(Resource):
     def get(self, account_id, slr_id, slsr_id):
         logger.info("AccountServiceLinkStatusRecord")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id, slsr_id=slsr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id, slsr_id=slsr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2247,16 +2273,16 @@ class AccountConsentRecords(Resource):
     def get(self, account_id, slr_id):
         logger.info("AccountConsentRecords")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2319,16 +2345,16 @@ class AccountConsentRecord(Resource):
     def get(self, account_id, slr_id, cr_id):
         logger.info("AccountConsentRecord")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2399,16 +2425,16 @@ class AccountConsentStatusRecords(Resource):
     def get(self, account_id, slr_id, cr_id):
         logger.info("AccountConsentStatusRecords")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2480,16 +2506,16 @@ class AccountConsentStatusRecord(Resource):
     def get(self, account_id, slr_id, cr_id, csr_id):
         logger.info("AccountConsentStatusRecord")
         try:
-            endpoint = str(api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id, csr_id=csr_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, slr_id=slr_id, cr_id=cr_id, csr_id=csr_id))
         except Exception as exp:
             endpoint = str(__name__)
 
         try:
             logger.info("Fetching Api-Key from Headers")
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
         except Exception as exp:
             logger.error("No ApiKey in headers: " + repr(repr(exp)))
-            return provideApiKey(endpoint=endpoint)
+            return provide_api_key(endpoint=endpoint)
         else:
             logger.info("Api-Key: " + api_key)
 
@@ -2563,31 +2589,31 @@ class AccountConsentStatusRecord(Resource):
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
 
-
-
 # Register resources
-api.add_resource(Accounts, '/api/accounts/', '/', endpoint='/api/accounts/')
-api.add_resource(AccountExport, '/api/accounts/<string:account_id>/export/', endpoint='account-export')
-api.add_resource(AccountParticulars, '/api/accounts/<string:account_id>/particulars/', endpoint='account-particulars')
-api.add_resource(AccountParticular, '/api/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')
-api.add_resource(AccountContacts, '/api/accounts/<string:account_id>/contacts/', endpoint='account-contacts')
-api.add_resource(AccountContact, '/api/accounts/<string:account_id>/contacts/<string:contacts_id>/', endpoint='account-contact')
-api.add_resource(AccountEmails, '/api/accounts/<string:account_id>/emails/', endpoint='account-emails')
-api.add_resource(AccountEmail, '/api/accounts/<string:account_id>/emails/<string:emails_id>/', endpoint='account-email')
-api.add_resource(AccountTelephones, '/api/accounts/<string:account_id>/telephones/', endpoint='account-telephones')
-api.add_resource(AccountTelephone, '/api/accounts/<string:account_id>/telephones/<string:telephones_id>/', endpoint='account-telephone')
-api.add_resource(AccountSettings, '/api/accounts/<string:account_id>/settings/', endpoint='account-settings')
-api.add_resource(AccountSetting, '/api/accounts/<string:account_id>/settings/<string:settings_id>/', endpoint='account-setting')
-api.add_resource(AccountEventLogs, '/api/accounts/<string:account_id>/logs/events/', endpoint='account-events')
-api.add_resource(AccountEventLog, '/api/accounts/<string:account_id>/logs/events/<string:event_log_id>/', endpoint='account-event')
-api.add_resource(AccountServiceLinkRecords, '/api/accounts/<string:account_id>/servicelinks/', endpoint='account-slrs')
-api.add_resource(AccountServiceLinkRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/', endpoint='account-slr')
-api.add_resource(AccountServiceLinkStatusRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/', endpoint='account-slsrs')
-api.add_resource(AccountServiceLinkStatusRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/<string:slsr_id>/', endpoint='account-slsr')
-api.add_resource(AccountConsentRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/', endpoint='account-crs')
-api.add_resource(AccountConsentRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/', endpoint='account-cr')
-api.add_resource(AccountConsentStatusRecords, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/', endpoint='account-csrs')
-api.add_resource(AccountConsentStatusRecord, '/api/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/<string:csr_id>/', endpoint='account-csr')
+account_api.add_resource(Accounts, '/accounts/', endpoint='accounts')
+account_api.add_resource(Account, '/accounts/<string:account_id>/', endpoint='account-get')
+account_api.add_resource(AccountDelete, '/accounts/<string:account_id>/', endpoint='account-delete')
+account_api.add_resource(AccountExport, '/accounts/<string:account_id>/export/', endpoint='account-export')
+account_api.add_resource(AccountParticulars, '/accounts/<string:account_id>/particulars/', endpoint='account-particulars')
+account_api.add_resource(AccountParticular, '/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')
+account_api.add_resource(AccountContacts, '/accounts/<string:account_id>/contacts/', endpoint='account-contacts')  # TODO: To-be removed
+account_api.add_resource(AccountContact, '/accounts/<string:account_id>/contacts/<string:contacts_id>/', endpoint='account-contact')
+account_api.add_resource(AccountEmails, '/accounts/<string:account_id>/emails/', endpoint='account-emails')
+account_api.add_resource(AccountEmail, '/accounts/<string:account_id>/emails/<string:emails_id>/', endpoint='account-email')
+account_api.add_resource(AccountTelephones, '/accounts/<string:account_id>/telephones/', endpoint='account-telephones')
+account_api.add_resource(AccountTelephone, '/accounts/<string:account_id>/telephones/<string:telephones_id>/', endpoint='account-telephone')
+account_api.add_resource(AccountSettings, '/accounts/<string:account_id>/settings/', endpoint='account-settings')
+account_api.add_resource(AccountSetting, '/accounts/<string:account_id>/settings/<string:settings_id>/', endpoint='account-setting')
+account_api.add_resource(AccountEventLogs, '/accounts/<string:account_id>/logs/events/', endpoint='account-events')
+account_api.add_resource(AccountEventLog, '/accounts/<string:account_id>/logs/events/<string:event_log_id>/', endpoint='account-event')
+account_api.add_resource(AccountServiceLinkRecords, '/accounts/<string:account_id>/servicelinks/', endpoint='account-slrs')
+account_api.add_resource(AccountServiceLinkRecord, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/', endpoint='account-slr')
+account_api.add_resource(AccountServiceLinkStatusRecords, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/', endpoint='account-slsrs')
+account_api.add_resource(AccountServiceLinkStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/<string:slsr_id>/', endpoint='account-slsr')
+account_api.add_resource(AccountConsentRecords, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/', endpoint='account-crs')
+account_api.add_resource(AccountConsentRecord, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/', endpoint='account-cr')
+account_api.add_resource(AccountConsentStatusRecords, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/', endpoint='account-csrs')
+account_api.add_resource(AccountConsentStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/<string:csr_id>/', endpoint='account-csr')
 
 
 

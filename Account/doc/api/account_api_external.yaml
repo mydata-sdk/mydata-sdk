@@ -4,19 +4,17 @@ info:
   title: 'Digital Health Revolution - MyData Account'
   description:
     ' #### MyData-SDK - MyData Account API - External '
-  version: '1.2.1'
+  version: '1.3'
   contact:
     url: 'https://github.com/HIIT/mydata-stack'
   license:
     name: 'MIT License (MIT)'
     url: 'https://opensource.org/licenses/MIT'
 
-host: 127.0.0.1:8080
-
 schemes:
   - https
 
-basePath: '/api'
+basePath: '/api/v1.3/external/'
 
 consumes:
   - application/json
@@ -159,13 +157,10 @@ paths:
           description: Service Unavailable
           schema:
             $ref: '#/definitions/errors'
-
-
-  /accounts/{account_id}/tiny/:
-    get:
+    delete:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch tiny Account'
+      summary: 'Remove MyData Account by ID'
 
       parameters:
         - name: account_id
@@ -178,16 +173,8 @@ paths:
         - Account
 
       responses:
-        '200':
-          description: Account fetched
-          schema:
-            $ref: '#/definitions/tinyAccountResponse'
         '204':
-          description: No Account with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
+          description: Account deleted
         '401':
           description: Unauthorized
           schema:
@@ -198,10 +185,6 @@ paths:
             $ref: '#/definitions/errors'
         '500':
           description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
           schema:
             $ref: '#/definitions/errors'
 
@@ -1892,24 +1875,8 @@ definitions:
       attributes:
         type: object
         properties:
-          Particulars:
-            $ref: '#/definitions/particular'
-          Contacts:
-            type: array
-            items:
-              $ref: '#/definitions/contact'
-          Telephones:
-            type: array
-            items:
-              $ref: '#/definitions/telephone'
-          Emails:
-            type: array
-            items:
-              $ref: '#/definitions/email'
-          Settings:
-            type: array
-            items:
-              $ref: '#/definitions/setting'
+          activated:
+            type: boolean
 
   tinyAccount:
     type: object
@@ -2216,13 +2183,6 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/account'
-
-
-  tinyAccountResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/tinyAccount'
 
 
   particularsResponse:

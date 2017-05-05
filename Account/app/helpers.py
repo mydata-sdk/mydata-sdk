@@ -5,7 +5,7 @@ __author__ = "Jani Yli-Kantola"
 __copyright__ = ""
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
@@ -15,11 +15,15 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 from os.path import isdir
 from datetime import datetime
-from functools import wraps
+from flask import json, request
 
-from flask import json
-
+#
 # https://docs.python.org/3/howto/urllib2.html#httperror
+from jsonschema import Draft4Validator
+from jsonschema import SchemaError
+from jsonschema import ValidationError
+from jsonschema import validate
+
 http_responses = {
     100: ('Continue', 'Request received, please continue'),
     101: ('Switching Protocols', 'Switching to new protocol; obey Upgrade header'),
@@ -70,7 +74,7 @@ http_responses = {
 def get_custom_logger(logger_name='default_logger'):
     # TODO: Is it ok to import here?
     from os import mkdir
-    from app import app
+    from flask import current_app
 
     # Logging levels
     # CRITICAL
@@ -81,35 +85,46 @@ def get_custom_logger(logger_name='default_logger'):
     # NOTSET
 
     # If there is no directory './logs', it will be created
-    if app.config["LOG_PATH"] != "./":
-        if not isdir(app.config["LOG_PATH"]):
+    if current_app.config["LOG_PATH"] != "./":
+        if not isdir(current_app.config["LOG_PATH"]):
             try:
-                mkdir(app.config["LOG_PATH"])
-                print("Creating LOG_PATH: '{}'.".format(app.config["LOG_PATH"]))
+                mkdir(current_app.config["LOG_PATH"])
+                print("Creating LOG_PATH: '{}'.".format(current_app.config["LOG_PATH"]))
             except IOError:
-                print("LOG_PATH: '{}' already exists.".format(app.config["LOG_PATH"]))
+                print("LOG_PATH: '{}' already exists.".format(current_app.config["LOG_PATH"]))
             except Exception as e:
-                print("LOG_PATH: '{}' could not be created. Exception: {}.".format(app.config["LOG_PATH"], repr(e)))
+                print("LOG_PATH: '{}' could not be created. Exception: {}.".format(current_app.config["LOG_PATH"], repr(e)))
 
     logger = logging.getLogger(logger_name)
 
     if len(logger.handlers) == 0:
         # TODO: This can not be correct solution
-        logger.setLevel(logging.DEBUG)
+        if current_app.config["LOG_LEVEL"] == 'DEBUG':
+            logger.setLevel(logging.DEBUG)
+        elif current_app.config["LOG_LEVEL"] == 'INFO':
+            logger.setLevel(logging.INFO)
+        elif current_app.config["LOG_LEVEL"] == 'WARNING':
+            logger.setLevel(logging.WARNING)
+        elif current_app.config["LOG_LEVEL"] == 'ERROR':
+            logger.setLevel(logging.ERROR)
+        elif current_app.config["LOG_LEVEL"] == 'CRITICAL':
+            logger.setLevel(logging.CRITICAL)
+        else:
+            logger.setLevel(logging.NOTSET)
 
         # create formatter
-        formatter = logging.Formatter(app.config["LOG_FORMATTER"])
+        formatter = logging.Formatter(current_app.config["LOG_FORMATTER"])
 
         # console handler
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.DEBUG)
+        #console_handler.setLevel(logging.DEBUG)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
         # file handler
-        if app.config["LOG_TO_FILE"]:
-            file_handler = TimedRotatingFileHandler(app.config["LOG_FILE"], when="midnight", interval=1, backupCount=10, utc=True)
-            file_handler.setLevel(logging.DEBUG)
+        if current_app.config["LOG_TO_FILE"]:
+            file_handler = TimedRotatingFileHandler(current_app.config["LOG_FILE"], when="midnight", interval=1, backupCount=10, utc=True)
+            #file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
 
@@ -222,3 +237,84 @@ def get_utc_time():
     """
 
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def validate_json(json_object=None, json_schema=None):
+    """
+    Validate json with jsonschema library
+    :param json_object:
+    :param json_schema:
+    :return:
+    """
+    if json_object is None:
+        raise AttributeError("Provide json_object as parameter")
+    if json_schema is None:
+        raise AttributeError("Provide json_schema as parameter")
+
+    try:
+        validate(json_object, json_schema)
+    except ValidationError as exp:
+        validator = Draft4Validator(json_schema)
+        errors = sorted(validator.iter_errors(json_object), key=lambda e: e.path)
+
+        error_list = []
+        error_dict = {}
+
+        for error in errors:
+            # Path where error occurred
+            error_path = ""
+            error_path_list = list(error.schema_path)
+            count_1 = error_path_list.count("properties")
+            count_2 = error_path_list.count("required")
+            for index in range(count_1):
+                error_path_list.remove("properties")
+            for index in range(count_2):
+                error_path_list.remove("required")
+            for path_item in error_path_list:
+                error_path = error_path + "." + path_item
+            error_path = str(error_path)[1:]
+            if len(error_path) == 0:
+                error_path = "root"
+            error_string = str(error.message) + " at " + error_path
+            error_list.append(error_string)
+
+        for index in range(len(error_list)):
+            error_dict[index] = error_list[index]
+
+        raise ApiError(code=400, title="ValidationError", detail=error_dict, source=request.path)
+    except SchemaError as exp:
+        raise ApiError(code=500, title="Invalid JSON Schema in Schema validator", detail=repr(exp), source=request.path)
+    except Exception as exp:
+        raise ApiError(code=500, title="Unexpected error", detail=repr(exp), source=request.path)
+    else:
+        return True
+
+
+def compare_str_ids(id=None, id_to_compare=None, endpoint="compare_str_ids()"):
+    if id is None:
+        raise AttributeError("Provide id as parameter")
+    if id_to_compare is None:
+        raise AttributeError("Provide account_id_to_compare as parameter")
+
+    if not isinstance(id, str):
+        try:
+            id = str(id)
+        except Exception:
+            raise TypeError("account_id MUST be str, not " + str(type(id)))
+    if not isinstance(id_to_compare, str):
+        try:
+            id_to_compare = str(id_to_compare)
+        except Exception:
+            raise TypeError("id_to_compare MUST be str, not " + str(type(id_to_compare)))
+    if not isinstance(endpoint, str):
+        try:
+            endpoint = str(endpoint)
+        except Exception:
+            raise TypeError("endpoint MUST be str, not " + str(type(endpoint)))
+
+    # Check if IDs are matching
+    if id != id_to_compare:
+        raise ValueError('IDs not matching')
+    else:
+        return True
+
