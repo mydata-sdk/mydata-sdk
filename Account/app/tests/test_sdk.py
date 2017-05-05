@@ -684,7 +684,7 @@ class SdkTestCase(unittest.TestCase):
         print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))  # TODO: Check Schema
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))
 
         return account_id, account_api_key, sdk_api_key, slr_id, response.data
 
@@ -849,7 +849,7 @@ class SdkTestCase(unittest.TestCase):
         print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))  # TODO: Check Schema
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))
 
         return account_id, account_api_key, sdk_api_key, slr_id
 
