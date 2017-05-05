@@ -219,26 +219,24 @@ def generate_sl_payload(slr_id=None, operator_id=None, operator_key=None, servic
     return payload
 
 
-def generate_sl_store_payload(operator_key=None, operator_kid=None, slr_id=None, slr_signed=None, operator_id=None, surrogate_id=None, record_id=None, misformatted_payload=False):
+def generate_sl_store_payload(service_key=None, service_kid=None, slr_id=None, slr_signed=None, surrogate_id=None, record_id=None, misformatted_payload=False):
 
     if slr_id is None:
         raise AttributeError("Provide operator_id as parameter")
     if slr_signed is None:
         raise AttributeError("Provide slr_signed as parameter")
-    if operator_id is None:
-        raise AttributeError("Provide operator_id as parameter")
     if surrogate_id is None:
         raise AttributeError("Provide surrogate_id as parameter")
-    if operator_key is None:
-        raise AttributeError("Provide operator_key as parameter")
-    if operator_kid is None:
-        raise AttributeError("Provide operator_kid as parameter")
+    if service_key is None:
+        raise AttributeError("Provide service_key as parameter")
+    if service_kid is None:
+        raise AttributeError("Provide service_kid as parameter")
 
     if record_id is None:
         record_id = get_unique_string()
 
-    # Sign SLR on behalf of operator
-    slr_double_signed = sign_jws(jws_to_sign=slr_signed['attributes'], jwk_key=operator_key, jwk_kid=operator_kid)
+    # Sign SLR on behalf of service
+    slr_double_signed = sign_jws(jws_to_sign=slr_signed['attributes'], jwk_key=service_key, jwk_kid=service_kid)
 
     slr_data = slr_signed
     slr_data['attributes'] = slr_double_signed

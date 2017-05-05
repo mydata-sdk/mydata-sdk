@@ -2057,7 +2057,8 @@ class ServiceLinkRecord():
         dictionary = {}
         dictionary['type'] = "ServiceLinkRecord"
         dictionary['id'] = str(self.service_link_record_id)
-        dictionary['attributes'] = self.to_dict_external
+        #dictionary['attributes'] = self.to_dict_external
+        dictionary['attributes'] = self.service_link_record
         return dictionary
 
     @property
@@ -2343,7 +2344,8 @@ class ServiceLinkStatusRecord():
         dictionary = {}
         dictionary['type'] = "ServiceLinkStatusRecord"
         dictionary['id'] = str(self.service_link_status_record_id)
-        dictionary['attributes'] = self.to_dict_external
+        #dictionary['attributes'] = self.to_dict_external
+        dictionary['attributes'] = self.service_link_status_record
         return dictionary
 
     @property

@@ -108,7 +108,7 @@ schema_slr_sign = {
 }
 
 
-schema_slr_store_sink = {
+schema_slr_store = {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "definitions": {},
   "id": "http://example.com/example.json",
@@ -122,338 +122,90 @@ schema_slr_store_sink = {
           "properties": {
             "attributes": {
               "properties": {
-                "operator_id": {
+                "payload": {
                   "type": "string"
                 },
-                "pop_key": {
+                "signatures": {
+                  "items": {
+                    "properties": {
+                      "header": {
+                        "properties": {
+                          "kid": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kid"
+                        ],
+                        "type": "object"
+                      },
+                      "protected": {
+                        "type": "string"
+                      },
+                      "signature": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "header",
+                      "protected",
+                      "signature"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "signatures",
+                "payload"
+              ],
+              "type": "object"
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "attributes",
+            "type",
+            "id"
+          ],
+          "type": "object"
+        },
+        "ssr": {
+          "properties": {
+            "attributes": {
+              "properties": {
+                "header": {
                   "properties": {
-                    "crv": {
-                      "type": "string"
-                    },
-                    "cvr": {
-                      "type": "string"
-                    },
-                    "d": {
-                      "type": "string"
-                    },
                     "kid": {
                       "type": "string"
-                    },
-                    "kty": {
-                      "type": "string"
-                    },
-                    "x": {
-                      "type": "string"
-                    },
-                    "y": {
-                      "type": "string"
                     }
                   },
                   "required": [
-                    "crv",
-                    "d",
-                    "cvr",
-                    "y",
-                    "x",
-                    "kid",
-                    "kty"
+                    "kid"
                   ],
                   "type": "object"
                 },
-                "service_id": {
+                "payload": {
                   "type": "string"
                 },
-                "service_link_record": {
-                  "properties": {
-                    "header": {
-                      "properties": {
-                        "kid": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "kid"
-                      ],
-                      "type": "object"
-                    },
-                    "payload": {
-                      "type": "string"
-                    },
-                    "protected": {
-                      "type": "string"
-                    },
-                    "signature": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "header",
-                    "protected",
-                    "payload",
-                    "signature"
-                  ],
-                  "type": "object"
-                },
-                "service_link_record_id": {
+                "protected": {
                   "type": "string"
                 },
-                "surrogate_id": {
+                "signature": {
                   "type": "string"
                 }
               },
               "required": [
-                "operator_id",
-                "surrogate_id",
-                "service_link_record",
-                "service_id",
-                "pop_key",
-                "service_link_record_id"
-              ],
-              "type": "object"
-            },
-            "id": {
-              "type": "string"
-            },
-            "type": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "attributes",
-            "type",
-            "id"
-          ],
-          "type": "object"
-        },
-        "ssr": {
-          "properties": {
-            "attributes": {
-              "properties": {
-                "issued_at": {
-                  "type": "integer"
-                },
-                "prev_record_id": {
-                  "type": "string"
-                },
-                "service_link_record_id": {
-                  "type": "string"
-                },
-                "service_link_status_record": {
-                  "properties": {
-                    "header": {
-                      "properties": {
-                        "kid": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "kid"
-                      ],
-                      "type": "object"
-                    },
-                    "payload": {
-                      "type": "string"
-                    },
-                    "protected": {
-                      "type": "string"
-                    },
-                    "signature": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "header",
-                    "protected",
-                    "payload",
-                    "signature"
-                  ],
-                  "type": "object"
-                },
-                "service_link_status_record_id": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "service_link_status_record_id",
-                "status",
-                "service_link_status_record",
-                "issued_at",
-                "prev_record_id",
-                "service_link_record_id"
-              ],
-              "type": "object"
-            },
-            "id": {
-              "type": "string"
-            },
-            "type": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "attributes",
-            "type",
-            "id"
-          ],
-          "type": "object"
-        }
-      },
-      "required": [
-        "slr",
-        "ssr"
-      ],
-      "type": "object"
-    }
-  },
-  "required": [
-    "code",
-    "data"
-  ],
-  "type": "object"
-}
-
-schema_slr_store_source = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "definitions": {},
-  "id": "http://example.com/example.json",
-  "properties": {
-    "code": {
-      "type": "string"
-    },
-    "data": {
-      "properties": {
-        "slr": {
-          "properties": {
-            "attributes": {
-              "properties": {
-                "operator_id": {
-                  "type": "string"
-                },
-                "service_id": {
-                  "type": "string"
-                },
-                "service_link_record": {
-                  "properties": {
-                    "header": {
-                      "properties": {
-                        "kid": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "kid"
-                      ],
-                      "type": "object"
-                    },
-                    "payload": {
-                      "type": "string"
-                    },
-                    "protected": {
-                      "type": "string"
-                    },
-                    "signature": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "header",
-                    "protected",
-                    "payload",
-                    "signature"
-                  ],
-                  "type": "object"
-                },
-                "service_link_record_id": {
-                  "type": "string"
-                },
-                "surrogate_id": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "operator_id",
-                "surrogate_id",
-                "service_link_record",
-                "service_id",
-                "service_link_record_id"
-              ],
-              "type": "object"
-            },
-            "id": {
-              "type": "string"
-            },
-            "type": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "attributes",
-            "type",
-            "id"
-          ],
-          "type": "object"
-        },
-        "ssr": {
-          "properties": {
-            "attributes": {
-              "properties": {
-                "issued_at": {
-                  "type": "integer"
-                },
-                "prev_record_id": {
-                  "type": "string"
-                },
-                "service_link_record_id": {
-                  "type": "string"
-                },
-                "service_link_status_record": {
-                  "properties": {
-                    "header": {
-                      "properties": {
-                        "kid": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "kid"
-                      ],
-                      "type": "object"
-                    },
-                    "payload": {
-                      "type": "string"
-                    },
-                    "protected": {
-                      "type": "string"
-                    },
-                    "signature": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "header",
-                    "protected",
-                    "payload",
-                    "signature"
-                  ],
-                  "type": "object"
-                },
-                "service_link_status_record_id": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "service_link_status_record_id",
-                "status",
-                "service_link_status_record",
-                "issued_at",
-                "prev_record_id",
-                "service_link_record_id"
+                "header",
+                "protected",
+                "payload",
+                "signature"
               ],
               "type": "object"
             },

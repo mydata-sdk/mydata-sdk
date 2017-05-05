@@ -1261,8 +1261,6 @@ definitions:
       kid:
         type: string
         description: "Key identifier"
-      jwk:
-        $ref: '#/definitions/jwk'
 
   JWSProtectedHeader:
     type: string

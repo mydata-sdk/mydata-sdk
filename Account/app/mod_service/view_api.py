@@ -21,6 +21,8 @@ from random import randint
 
 # Import flask dependencies
 import time
+
+from _mysql_exceptions import IntegrityError
 from flask import Blueprint, render_template, make_response, flash, session, request, jsonify, url_for, json, current_app
 from flask_login import login_user, login_required
 from flask_restful import Resource, Api, reqparse
@@ -380,9 +382,10 @@ class ServiceLinkStore(Resource):
             slr = json_data['data']['slr']['attributes']
             ssr_payload_dict = json_data['data']['ssr']['attributes']
         except Exception as exp:
-            error_title = "Could not get data from payload"
-            logger.error(error_title + ": " + str(exp.message))
-            raise ApiError(code=500, title="Could not get elements from payload", detail=str(exp.message), source=endpoint)
+            error_title = "Could not get data from request payload"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("code from payload: " + code)
             logger.debug("slr from payload: " + json.dumps(slr))
@@ -401,38 +404,6 @@ class ServiceLinkStore(Resource):
             logger.info("SLR IDs from path and payload are matching")
             logger.debug("SLR ID from path was {} and from payload {}".format(link_id, link_id_from_payload))
 
-        ###########################
-        ###########################
-        # Validate payload content
-        # schema = VerifyServiceLink()
-        # schema_validation_result = schema.load(json_data)
-        #
-        # # Check validation errors
-        # if schema_validation_result.errors:
-        #     raise ApiError(code=400, title="Invalid payload", detail=dict(schema_validation_result.errors), source=endpoint)
-        # else:
-        #     logger.debug("JSON validation -> OK")
-
-        ######
-        # SLR
-        ######
-        #
-        # Get slr
-        # try:
-        #     slr = json_data['data']['slr']['attributes']['slr']
-        # except Exception as exp:
-        #     raise ApiError(code=400, title="Could not fetch slr from json", detail=repr(exp), source=endpoint)
-        # else:
-        #     logger.debug("Got slr: " + json.dumps(slr))
-        #
-        # # Get surrogate_id
-        # try:
-        #     surrogate_id = json_data['data']['surrogate_id']['attributes']['surrogate_id']
-        # except Exception as exp:
-        #     raise ApiError(code=400, title="Could not fetch surrogate id from json", detail=repr(exp), source=endpoint)
-        # else:
-        #     logger.debug("Got surrogate_id: " + str(surrogate_id))
-
         # Decode slr payload
         try:
             logger.info("Decoding base64 payload")
@@ -442,8 +413,10 @@ class ServiceLinkStore(Resource):
             slr_payload_decoded = b64decode(slr_payload_encoded).replace('\\', '').replace('"{', '{').replace('}"', '}')
             slr_payload_dict = json.loads(slr_payload_decoded)
         except Exception as exp:
-            logger.error("Could not decode SLR payload: " + repr(exp))
-            raise ApiError(code=400, title="Could not decode slr payload", detail=repr(exp), source=endpoint)
+            error_title = "Could not decode Service Link Record payload"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.info("SLR payload decoded")
             logger.debug("slr: " + json.dumps(slr))
@@ -453,7 +426,10 @@ class ServiceLinkStore(Resource):
         try:
             link_id_from_slr = slr_payload_dict['link_id']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch service link record id from Service Link", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch service link record id from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got link_id_from_slr: " + str(link_id_from_slr))
 
@@ -472,7 +448,10 @@ class ServiceLinkStore(Resource):
         try:
             service_id = slr_payload_dict['service_id']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch service id from json", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch service_id from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got service_id: " + str(service_id))
 
@@ -480,7 +459,10 @@ class ServiceLinkStore(Resource):
         try:
             operator_id = slr_payload_dict['operator_id']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch operator id from json", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch operator_id from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got operator_id: " + str(operator_id))
 
@@ -488,25 +470,21 @@ class ServiceLinkStore(Resource):
         try:
             surrogate_id_from_slr = slr_payload_dict['surrogate_id']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch surrogate_id from slr", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch surrogate_id from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got surrogate_id_from_slr: " + str(surrogate_id_from_slr))
-
-        #######
-        # Ssr
-        #######
-        #
-        # Get ssr payload
-        # try:
-        #     ssr_payload = json_data['data']['ssr']['attributes']
-        # except Exception as exp:
-        #     raise ApiError(code=400, title="Could not fetch ssr from json", detail=repr(exp), source=endpoint)
 
         # Get ssr_id
         try:
             ssr_id = ssr_payload_dict['record_id']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch record_id from ssr_payload", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch record_id from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got ssr_id: " + str(ssr_id))
 
@@ -514,7 +492,10 @@ class ServiceLinkStore(Resource):
         try:
             ssr_status = ssr_payload_dict['sl_status']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch sl_status from ssr_payload", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch sl_status from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got ssr_status: " + str(ssr_status))
 
@@ -522,7 +503,10 @@ class ServiceLinkStore(Resource):
         try:
             link_id_from_ssr = ssr_payload_dict['slr_id']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch link_id_from_ssr from ssr_payload", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch link_id_from_ssr from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got link_id_from_ssr: " + str(link_id_from_ssr))
 
@@ -530,7 +514,10 @@ class ServiceLinkStore(Resource):
         try:
             prev_ssr_id = ssr_payload_dict['prev_record_id']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch prev_ssr_id from ssr_payload", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch prev_ssr_id from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got prev_ssr_id: " + str(prev_ssr_id))
 
@@ -538,7 +525,10 @@ class ServiceLinkStore(Resource):
         try:
             ssr_iat = int(ssr_payload_dict['iat'])
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch iat from ssr_payload", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch iat from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got iat: " + str(prev_ssr_id))
 
@@ -546,7 +536,10 @@ class ServiceLinkStore(Resource):
         try:
             surrogate_id_from_ssr = ssr_payload_dict['surrogate_id']
         except Exception as exp:
-            raise ApiError(code=400, title="Could not fetch surrogate_id from ssr", detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch surrogate_id from Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.debug("Got surrogate_id_from_ssr: " + str(surrogate_id_from_ssr))
 
@@ -565,8 +558,8 @@ class ServiceLinkStore(Resource):
         try:
             compare_str_ids(id=surrogate_id_from_slr, id_to_compare=surrogate_id_from_ssr)
         except ValueError as exp:
-            error_title = "Surrogate IDs from slr and ssr are not matching"
-            error_detail = "Surrogate ID from slr was {} and from ssr {}".format(surrogate_id_from_slr, surrogate_id_from_ssr)
+            error_title = "Surrogate IDs from Service Link Record and Service Link Status Record are not matching"
+            error_detail = "Surrogate ID from Service Link Record was {} and from Service Link Status Record {}".format(surrogate_id_from_slr, surrogate_id_from_ssr)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -576,19 +569,23 @@ class ServiceLinkStore(Resource):
         try:
             slr_verified = verify_jws_signature_with_jwk(account_id=account_id, jws_json_to_verify=json.dumps(slr))
         except Exception as exp:
-            logger.error("Could not verify Account owner's signature in Service Link Record: " + repr(exp))
-            raise ApiError(code=500, title="Failed to verify Account owner's signature in Service Link Record", detail=repr(exp), source=endpoint)
+            error_title = "Could not verify Account owner's signature in Service Link Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.info('Service Link Record verified')
             logger.info('Verification passed: ' + str(slr_verified))
 
-        # Sign Ssr
+        # Sign ServiceLinkStatusRecord
         try:
+            logger.info("Signing ServiceLinkStatusRecord")
             ssr_signed = sign_ssr(account_id=account_id, ssr_payload=ssr_payload_dict, endpoint=str(endpoint))
         except Exception as exp:
-            logger.error("Could not sign Ssr")
-            logger.debug("Could not sign Ssr: " + repr(exp))
-            raise
+            error_title = "Could not sign ServiceLinkStatusRecord"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
 
         # Get inited ServiceLinkRecord object from DB
         try:
@@ -608,30 +605,24 @@ class ServiceLinkStore(Resource):
             logger.info("Got inited ServiceLinkRecord object")
             logger.debug("slr_inited: " + slr_inited.log_entry)
 
-        # TODO: Update inited SLR object
-        # TODO: Store SLR and SSR
-        logger.info("Append data to ServiceLinkRecord object")
         try:
+            logger.info("Append data to ServiceLinkRecord object")
             slr_inited.service_link_record = slr
             slr_inited.operator_id = operator_id
             slr_inited.service_id = service_id
             slr_inited.surrogate_id = surrogate_id_from_slr
-
-            # slr_entry = ServiceLinkRecord(
-            #     service_link_record=slr,
-            #     service_link_record_id=link_id,
-            #     service_id=service_id,
-            #     surrogate_id=surrogate_id_from_slr,
-            #     operator_id=operator_id,
-            #     account_id=account_id
-            # )
         except Exception as exp:
             error_title = "Could not append data to ServiceLinkRecord object"
             error_detail = str(exp.message)
             logger.error(error_title + " - " + error_detail + ": " + "ServiceLinkRecord object: " + slr_inited.log_entry)
             raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
+        else:
+            logger.info("Appended data to ServiceLinkRecord object")
+            logger.debug("ServiceLinkRecord object: " + slr_inited.log_entry)
 
+        # Create ServiceLinkStatusRecord object
         try:
+            logger.info("Creating ServiceLinkStatusRecord object")
             ssr_entry = ServiceLinkStatusRecord(
                 service_link_status_record_id=ssr_id,
                 status=ssr_status,
@@ -642,16 +633,28 @@ class ServiceLinkStore(Resource):
                 accounts_id=account_id
             )
         except Exception as exp:
-            logger.error('Could not create Service Link Status Record object: ' + repr(exp))
-            raise ApiError(code=500, title="Failed to create Service Link Status Record object", detail=repr(exp), source=endpoint)
+            error_title = "Could not create Service Link Status Record object"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
+        else:
+            logger.info("Created ServiceLinkStatusRecord object")
+            logger.debug("ServiceLinkStatusRecord object: " + ssr_entry.log_entry)
 
+        # Store Service Link Record and Service Link Status Record
         try:
+            logger.info("Storing Service Link Record and Service Link Status Record")
             stored_slr_entry, stored_ssr_entry = store_slr_and_ssr(slr_entry=slr_inited, ssr_entry=ssr_entry, endpoint=str(endpoint))
+        except IntegrityError as exp:
+            error_title = "Could not store Service Link Record and Service Link Status Record"
+            error_detail = "Record with provided ID already exists"
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=409, title=error_title, detail=str(exp.message), source=endpoint)
         except Exception as exp:
-            # TODO: Catch IntegrityError
-            logger.error("Could not store Service Link Record and Service Link Status Record")
-            logger.debug("Could not store SLR and Ssr: " + repr(exp))
-            raise
+            error_title = "Could not store Service Link Record and Service Link Status Record"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.info("Stored Service Link Record and Service Link Status Record")
             logger.debug("stored_slr_entry: " + stored_slr_entry.log_entry)
@@ -667,8 +670,10 @@ class ServiceLinkStore(Resource):
               }
             }
         except Exception as exp:
-            logger.error('Could not prepare response data: ' + repr(exp))
-            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+            error_title = "Could not prepare response data"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + error_detail + ": " + "Exception: " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
@@ -678,61 +683,62 @@ class ServiceLinkStore(Resource):
         return make_json_response(data=response_data_dict, status_code=201)
 
 
-class ServiceSurrogate(Resource):
-    @requires_api_auth_user
-    @requires_api_auth_sdk
-    def get(self, account_id, service_id):
-
-        try:
-            endpoint = str(api.url_for(self, account_id=account_id, service_id=service_id))
-        except Exception as exp:
-            endpoint = str(__name__)
-
-        try:
-            api_key = request.headers.get('Api-Key')
-        except Exception as exp:
-            logger.error("No ApiKey in headers")
-            logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provide_api_key(endpoint=endpoint)
-
-        try:
-            account_id = str(account_id)
-        except Exception as exp:
-            raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
-
-        try:
-            service_id = str(service_id)
-        except Exception as exp:
-            raise ApiError(code=400, title="Unsupported service_id", detail=repr(exp), source=endpoint)
-
-        try:
-            surrogate_id = get_surrogate_id_by_account_and_service(account_id=account_id, service_id=service_id, endpoint=endpoint)
-        except IndexError as exp:
-            raise ApiError(code=404, title="Nothing could not be found with provided information", detail=repr(exp), source=endpoint)
-        except Exception as exp:
-            logger.error('Could not get surrogate_id: ' + repr(exp))
-            raise ApiError(code=500, title="Could not get surrogate_id", detail=repr(exp), source=endpoint)
-        else:
-            logger.debug('Got surrogate_id: ' + repr(surrogate_id))
-
-        # Response data container
-        try:
-            response_data = {}
-            response_data['data'] = {}
-
-            response_data['data']['surrogate_id'] = {}
-            response_data['data']['surrogate_id']['type'] = "SurrogateId"
-            response_data['data']['surrogate_id']['attributes'] = surrogate_id
-        except Exception as exp:
-            logger.error('Could not prepare response data: ' + repr(exp))
-            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
-        else:
-            logger.info('Response data ready')
-            logger.debug('response_data: ' + repr(response_data))
-
-        response_data_dict = dict(response_data)
-        logger.debug('response_data_dict: ' + repr(response_data_dict))
-        return make_json_response(data=response_data_dict, status_code=200)
+# TODO: Is this needed?
+# class ServiceSurrogate(Resource):
+#     @requires_api_auth_user
+#     @requires_api_auth_sdk
+#     def get(self, account_id, service_id):
+#
+#         try:
+#             endpoint = str(api.url_for(self, account_id=account_id, service_id=service_id))
+#         except Exception as exp:
+#             endpoint = str(__name__)
+#
+#         try:
+#             api_key = request.headers.get('Api-Key')
+#         except Exception as exp:
+#             logger.error("No ApiKey in headers")
+#             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
+#             return provide_api_key(endpoint=endpoint)
+#
+#         try:
+#             account_id = str(account_id)
+#         except Exception as exp:
+#             raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+#
+#         try:
+#             service_id = str(service_id)
+#         except Exception as exp:
+#             raise ApiError(code=400, title="Unsupported service_id", detail=repr(exp), source=endpoint)
+#
+#         try:
+#             surrogate_id = get_surrogate_id_by_account_and_service(account_id=account_id, service_id=service_id, endpoint=endpoint)
+#         except IndexError as exp:
+#             raise ApiError(code=404, title="Nothing could not be found with provided information", detail=repr(exp), source=endpoint)
+#         except Exception as exp:
+#             logger.error('Could not get surrogate_id: ' + repr(exp))
+#             raise ApiError(code=500, title="Could not get surrogate_id", detail=repr(exp), source=endpoint)
+#         else:
+#             logger.debug('Got surrogate_id: ' + repr(surrogate_id))
+#
+#         # Response data container
+#         try:
+#             response_data = {}
+#             response_data['data'] = {}
+#
+#             response_data['data']['surrogate_id'] = {}
+#             response_data['data']['surrogate_id']['type'] = "SurrogateId"
+#             response_data['data']['surrogate_id']['attributes'] = surrogate_id
+#         except Exception as exp:
+#             logger.error('Could not prepare response data: ' + repr(exp))
+#             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+#         else:
+#             logger.info('Response data ready')
+#             logger.debug('response_data: ' + repr(response_data))
+#
+#         response_data_dict = dict(response_data)
+#         logger.debug('response_data_dict: ' + repr(response_data_dict))
+#         return make_json_response(data=response_data_dict, status_code=200)
 
 
 

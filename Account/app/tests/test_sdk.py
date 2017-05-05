@@ -27,7 +27,7 @@ from app.tests.schemas.schema_account import schema_account_create, schema_accou
     schema_account_create_tos, schema_account_auth, schema_account_get
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
-    schema_slr_store_source, schema_slr_store_sink
+    schema_slr_store
 from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
 
 
@@ -43,11 +43,17 @@ class SdkTestCase(unittest.TestCase):
     OPERATOR_KEY_OBJECT, OPERATOR_KEY_JSON, OPERATOR_KID = gen_jwk_key(prefix="operator")
     OPERATOR_KEY = json.loads(OPERATOR_KEY_JSON)
 
-    # Service info
+    # Sink Service
     SINK_SERVICE_ID = "srv_sink-" + str(randint(100, 1000))
-    SINK_SURROGATE_ID = "surrogate-" + str(randint(100, 1000))
+    SINK_SURROGATE_ID = "sink-surrogate-" + str(randint(100, 1000))
+    SINK_KEY_OBJECT, SINK_KEY_JSON, SINK_KID = gen_jwk_key(prefix="srv_sink")
+    SINK_KEY = json.loads(SINK_KEY_JSON)
+
+    # Source Service
     SOURCE_SERVICE_ID = "srv_source-" + str(randint(100, 1000))
-    SOURCE_SURROGATE_ID = "surrogate-" + str(randint(100, 1000))
+    SOURCE_SURROGATE_ID = "source-surrogate-" + str(randint(100, 1000))
+    SOURCE_KEY_OBJECT, SOURCE_KEY_JSON, SOURCE_KID = gen_jwk_key(prefix="srv_sink")
+    SOURCE_KEY = json.loads(SOURCE_KEY_JSON)
 
     def setUp(self):
         """
@@ -668,8 +674,9 @@ class SdkTestCase(unittest.TestCase):
         payload = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
-            operator_id=self.OPERATOR_ID,
-            surrogate_id=self.SINK_SURROGATE_ID
+            surrogate_id=self.SINK_SURROGATE_ID,
+            service_key=self.SINK_KEY_OBJECT,
+            service_kid=self.SINK_KID
         )
         print("payload: " + json.dumps(json.loads(payload), indent=4))
 
@@ -677,7 +684,7 @@ class SdkTestCase(unittest.TestCase):
         print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store_sink))  # TODO: Check Schema
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))  # TODO: Check Schema
 
         return account_id, account_api_key, sdk_api_key, slr_id, response.data
 
@@ -701,8 +708,9 @@ class SdkTestCase(unittest.TestCase):
         payload = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
-            operator_id=self.OPERATOR_ID,
             surrogate_id=self.SINK_SURROGATE_ID,
+            service_key=self.SINK_KEY_OBJECT,
+            service_kid=self.SINK_KID,
             misformatted_payload=True
         )
         print("payload: " + json.dumps(json.loads(payload), indent=4))
@@ -831,10 +839,9 @@ class SdkTestCase(unittest.TestCase):
         payload = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
-            operator_id=self.OPERATOR_ID,
             surrogate_id=self.SOURCE_SURROGATE_ID,
-            operator_key=self.OPERATOR_KEY_OBJECT,
-            operator_kid=self.OPERATOR_KID
+            service_key=self.SOURCE_KEY_OBJECT,
+            service_kid=self.SOURCE_KID
         )
         print("payload: " + json.dumps(json.loads(payload), indent=4))
 
@@ -842,9 +849,9 @@ class SdkTestCase(unittest.TestCase):
         print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store_source))  # TODO: Check Schema
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))  # TODO: Check Schema
 
-        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+        return account_id, account_api_key, sdk_api_key, slr_id
 
     ##########
     ##########
@@ -866,8 +873,9 @@ class SdkTestCase(unittest.TestCase):
         payload = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
-            operator_id=self.OPERATOR_ID,
             surrogate_id=self.SOURCE_SURROGATE_ID,
+            service_key=self.SOURCE_KEY_OBJECT,
+            service_kid=self.SOURCE_KID,
             misformatted_payload=True
         )
         print("payload: " + json.dumps(json.loads(payload), indent=4))
@@ -878,10 +886,45 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
 
-        return account_id, account_api_key, sdk_api_key, slr_id, response.data
+        return account_id, account_api_key, sdk_api_key, slr_id
 
     ##########
     ##########
+    def test_slr_store_wrong_id(self):
+        """
+        Test SLR storing with wrong ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_store_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_source()
+        slr_data = json.loads(slr_data)
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
+        payload = generate_sl_store_payload(
+            slr_id=slr_id,
+            slr_signed=slr_data['data'],
+            surrogate_id=self.SINK_SURROGATE_ID,
+            service_key=self.SOURCE_KEY_OBJECT,
+            service_kid=self.SOURCE_KID
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    # TODO: SLR Account owner signature verification fails
     # TODO: SLR Status change - unsigned input
     # TODO: SLR Status change - signed input
 
