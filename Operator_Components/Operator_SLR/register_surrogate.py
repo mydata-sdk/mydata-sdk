@@ -91,6 +91,7 @@ class RegisterSurrogate(Resource):
             account_id = session_data["account_id"]
             self.payload["service_id"] = session_data["service_id"]
             service_info = self.service_registry_handler.getService(self.payload["service_id"])
+            # TODO: Use serviceType field added into ServiceDescription
             service_type = service_info["serviceDescription"]["serviceDataDescription"][0]["dataset"][0]["serviceDataType"]
 
             # Check Surrogate_ID exists.

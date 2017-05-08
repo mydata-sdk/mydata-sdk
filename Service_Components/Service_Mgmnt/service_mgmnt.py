@@ -43,9 +43,9 @@ def timeme(method):
     return wrapper
 
 
-class UserAuthenticated(Resource):
+class GenerateSurrogateId(Resource):
     def __init__(self):
-        super(UserAuthenticated, self).__init__()
+        super(GenerateSurrogateId, self).__init__()
         keysize = current_app.config["KEYSIZE"]
         cert_key_path = current_app.config["CERT_KEY_PATH"]
         self.helpers = Helpers(current_app.config)
@@ -126,7 +126,8 @@ class StartServiceLinking(Resource):
         debug_log.debug("StartServiceLinking got parameter:\n {}".format(args))
         data = {"surrogate_id": args["surrogate_id"], "code": args["code"]}
         if self.is_sink:
-            data["token_key"] = self.service_key["pub"]
+            data["token_key"] = self.service_key["pub"]  # TODO: Onko implementoitava 1.3 mukaisesti siten että
+            # operaattori, service, käyttäjä kohtaiset pop avaimet?
         sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
         endpoint = "/api/1.2/slr/link"  # Todo: this needs to be fetched from somewhere
         result = post("{}{}".format(self.operator_url, endpoint), json=data)
@@ -137,9 +138,6 @@ class StartServiceLinking(Resource):
                                             "msg": "Something went wrong while posting to Operator_SLR for /link",
                                             "Error from Operator_SLR": loads(result.text)},
                                         title=result.reason)
-
-
-
 
 
 def verifyJWS(json_JWS):
@@ -162,13 +160,13 @@ def verifyJWS(json_JWS):
             json_JWS = loads(json_JWS)
 
         if json_JWS.get("header", False):  # Only one signature
-            if (verify(json_web_signature, json_JWS["header"])):
+            if verify(json_web_signature, json_JWS["header"]):
                 return True
             return False
         elif json_JWS.get("signatures", False):  # Multiple signatures
             signatures = json_JWS["signatures"]
             for signature in signatures:
-                if (verify(json_web_signature, signature["header"])):
+                if verify(json_web_signature, signature["header"]):
                     return True
         return False
     except Exception as e:
@@ -323,6 +321,6 @@ class StoreSLR(Resource):
         sq.reply_to("Operator_Components Mgmnt", "Return SLR's from db")
         return jsons
 
-api.add_resource(UserAuthenticated, '/auth')
+api.add_resource(GenerateSurrogateId, '/auth')
 api.add_resource(StartServiceLinking, '/linking')
 api.add_resource(StoreSLR, '/slr')
