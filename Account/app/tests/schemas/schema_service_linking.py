@@ -237,3 +237,149 @@ schema_slr_store = {
   ],
   "type": "object"
 }
+
+
+schema_slr_listing = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "items": {
+        "properties": {
+          "attributes": {
+            "properties": {
+              "payload": {
+                "type": "string"
+              },
+              "signatures": {
+                "items": {
+                  "properties": {
+                    "header": {
+                      "properties": {
+                        "kid": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kid"
+                      ],
+                      "type": "object"
+                    },
+                    "protected": {
+                      "type": "string"
+                    },
+                    "signature": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "header",
+                    "protected",
+                    "signature"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "signatures",
+              "payload"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "attributes",
+          "type",
+          "id"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+
+
+schema_slr = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "attributes": {
+          "properties": {
+            "payload": {
+              "type": "string"
+            },
+            "signatures": {
+              "items": {
+                "properties": {
+                  "header": {
+                    "properties": {
+                      "kid": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kid"
+                    ],
+                    "type": "object"
+                  },
+                  "protected": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "header",
+                  "protected",
+                  "signature"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "signatures",
+            "payload"
+          ],
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "attributes",
+        "type",
+        "id"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+

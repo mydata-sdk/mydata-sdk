@@ -66,7 +66,38 @@ paths:
           schema:
             $ref: '#/definitions/error'
             
-            
+  /auth/sdk/account/{account_id}/info/:
+    get:
+      security:
+        - BasicAuth: []
+      summary: 'Verify Account API Key'
+      description: 'Verify that API Key belongs to specified user'
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+
+      tags:
+        - Auth
+
+      responses:
+        '200':
+          description: Account object
+          schema:
+            $ref: '#/definitions/accountInfo'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
   /accounts/{account_id}/servicelinks/:
     get:
       security:
@@ -102,8 +133,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/init/sink/:
     post:
       security:
@@ -145,7 +176,7 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
+
   /accounts/{account_id}/servicelinks/init/source/:
     post:
       security:
@@ -187,8 +218,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/{link_id}/:
     patch:
       security:
@@ -278,8 +309,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/{link_id}/store/:
     post:
       security:
@@ -330,8 +361,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/{link_id}/statuses/:
     post:
       security:
@@ -426,8 +457,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/{link_id}/statuses/signed/:
     post:
       security:
@@ -478,8 +509,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/{link_id}/statuses/{status_id}/:
     get:
       security:
@@ -525,8 +556,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/{link_id}/statuses/last/:
     get:
       security:
@@ -620,8 +651,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/{link_id}/consents/:
     get:
       security:
@@ -671,8 +702,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/servicelinks/{link_id}/consents/last/:
     get:
       security:
@@ -718,8 +749,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/:
     get:
       security:
@@ -765,8 +796,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/:
     get:
       security:
@@ -807,8 +838,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/statuses/:
     post:
       security:
@@ -898,8 +929,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/statuses/signed/:
     post:
       security:
@@ -950,8 +981,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/statuses/{status_id}/:
     get:
       security:
@@ -997,8 +1028,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/statuses/last/:
     get:
       security:
@@ -1074,8 +1105,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /services/{service_id}/servicelinks/:
     get:
       security:
@@ -1116,8 +1147,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /services/{service_id}/servicelinks/{link_id}/:
     get:
       security:
@@ -1158,8 +1189,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /services/{service_id}/servicelinks/{link_id}/consents/:
     get:
       security:
@@ -1200,8 +1231,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /services/{service_id}/servicelinks/{link_id}/consents/{consent_id}/:
     get:
       security:
@@ -1247,9 +1278,23 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
 definitions:
+  accountInfo:
+    type: object
+    properties:
+      type:
+        type: string
+        description: Resource type 'Account'
+      id:
+        type: integer
+        description: Account ID
+      attributes:
+        type: object
+
+
+
   jwk:
     type: object
     description: "Cryptographic key presented as JSON Web Key (JWK) as defined in RFC 7517"
