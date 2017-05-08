@@ -261,21 +261,22 @@ def verify_account_id_match(account_id=None, api_key=None, account_id_to_compare
         else:
             logger.info("account_id_by_api_key: " + str(account_id_by_api_key))
             account_id_to_compare = account_id_by_api_key
-            error_title = "Authenticated Account ID not matching with Account ID that was provided with request"
+            error_detail = "Authenticated Account ID not matching with Account ID that was provided with request"
     elif account_id_to_compare is not None:
         logger.info("account_id_to_compare provided as parameter")
-        error_title = "Account ID in payload not matching with Account ID that was provided with request"
+        error_detail = "Account ID in payload not matching with Account ID that was provided with request"
 
     # Check if Account IDs are matching
     logger.info("Check if Account IDs are matching")
     logger.info("account_id: " + str(account_id))
     logger.info("account_id_to_compare: " + str(account_id_to_compare))
     if str(account_id) != str(account_id_to_compare):
-        logger.error(error_title)
+        logger.error(error_detail)
         raise ApiError(
             code=403,
-            title=error_title,
-            source=endpoint
+            title="Forbidden",
+            source=endpoint,
+            detail=error_detail
         )
     else:
         logger.info("Account IDs are matching")

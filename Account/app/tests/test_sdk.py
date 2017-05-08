@@ -24,7 +24,7 @@ from app.tests.controller import is_json, validate_json, account_create, default
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
-    schema_account_create_tos, schema_account_auth, schema_account_get
+    schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
     schema_slr_store, schema_slr_listing, schema_slr
@@ -397,6 +397,32 @@ class SdkTestCase(unittest.TestCase):
 
     # TODO: Test Account authentication with deleted Account
     # TODO: Test Resource fetching with removed Account
+
+    ##########
+    ##########
+    def test_sdk_account_info(self):
+        """
+        Verify User-API-Key belongs to specified user
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_sdk_account_info")
+
+        account_api_key, account_id = self.test_account_authentication()
+        sdk_api_key = self.test_sdk_auth()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/auth/sdk/account/" + str(account_id) + "/info/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_sdk_info))
+
+        return account_id, account_api_key, sdk_api_key
 
     ##########
     ##########

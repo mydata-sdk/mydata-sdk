@@ -11,6 +11,40 @@ __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
 """
 
+
+schema_account_sdk_info = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "properties": {
+    "data": {
+      "properties": {
+        "attributes": {
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "Account"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "attributes",
+        "type",
+        "id"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+
+
 schema_account_get = {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "properties": {
