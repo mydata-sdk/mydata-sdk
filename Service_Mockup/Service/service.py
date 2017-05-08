@@ -140,6 +140,26 @@ class UserLogin(Resource):
             else:
                 return False
 
+        def link_surrogate_id(json_response, user_id):
+            try:  # Remove this check once debugging is done. TODO
+                response_user_id = self.helpers.get_user_id_with_code(request.json["code"])
+                if response_user_id == user_id:
+                    pass
+                else:
+                    raise DetailedHTTPException(
+                        status=403,
+                        detail={"msg": "Response was for different user_id than expected."
+                                 },
+                        title="User ID mismatch."
+                    )
+                debug_log.info("We got surrogate_id {} for user_id {}".format(json_response["surrogate_id"], user_id))
+                debug_log.info(dumps(json_response, indent=2))
+                self.helpers.storeSurrogateJSON({user_id: json_response})
+                return json_response["surrogate_id"]
+            except Exception as e:
+                debug_log.exception(e)
+                pass
+
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin POST args contain:\n {}".format(dumps(args, indent=2)))
         login_was_successfull = auth_user(args["Email"], args["Password"])
@@ -147,12 +167,13 @@ class UserLogin(Resource):
         debug_log.info(dumps(request.json, indent=2))
         user_id = encode64(args["Email"])  # TODO: Placeholder for actual login.
         code = args["code"]
-        response = {"code": code, "user_id": user_id}
         self.helpers.store_code_user({code: user_id})
 
         debug_log.info("User logged in with id ({})".format(format(user_id)))
+
         endpoint = "/api/1.2/slr/auth"  # TODO: This needs to be fetched from somewhere.
-        result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=response)
+        data = {"code": code, "user_id": user_id, "operator_id": args["operator_id"]}
+        result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=data)
         if not result.ok:
             raise DetailedHTTPException(status=result.status_code,
                                         detail={
@@ -161,33 +182,24 @@ class UserLogin(Resource):
                                             "Error from Service_Components Mgmnt": loads(result.text)},
                                         title=result.reason)
         debug_log.info(result.text)
+        surrogate_id = link_surrogate_id(loads(result.text), user_id)  # Returns surrogate_id for convenience
+        endpoint = "/api/1.2/slr/linking"  # TODO: This needs to be fetched from somewhere.
+
+        data = {"code": code,
+                "operator_id": args["operator_id"],
+                "return_url": args["return_url"],
+                "surrogate_id": surrogate_id}
+        linking_result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=data)
+        debug_log.debug("Service Linking resulted in:\n {}\n {}".format(linking_result.status_code,
+                                                                        linking_result.text))
+
         return redirect("{}".format(decode64(args["return_url"])), code=302)
 
-
-class Terms(Resource):
-    def __init__(self):
-        super(Terms, self).__init__()
-        self.helpers = Helpers(current_app.config)
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument('code', type=str, help='session code')
-        self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
-        self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
-        self.parser.add_argument('Password', type=str, help="Password for user.")
-        self.parser.add_argument('Email', type=str, help="Email/Username.")
-        self.parser.add_argument('linkingFrom', type=str, help='Origin of the linking request(?)')  # TODO: Clarify?
-
-    def get(self):
-        args = self.parser.parse_args()
-        if args["linkingFrom"] == "Operator":
-            return "Terms of services have been declared. That's just how the fineprint is."
-
-    def post(self):
-        return 500
 
 class RegisterSur(Resource):
     def __init__(self):
         super(RegisterSur, self).__init__()
-        self.db_path = current_app.config["DATABASE_PATH"]
+#        self.db_path = current_app.config["DATABASE_PATH"]
         self.helpers = Helpers(current_app.config)
 
     @timeme
@@ -217,6 +229,5 @@ class StoreSlr(Resource):
 
 
 api.add_resource(UserLogin, '/login')
-api.add_resource(Terms, '/terms')
 api.add_resource(RegisterSur, '/link')
 api.add_resource(StoreSlr, '/store_slr')

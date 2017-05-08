@@ -175,9 +175,9 @@ services:
       - SERVICE_MGMNT_URL="http://service_component_source:7000"
       - VIRTUAL_HOST=localhost.srvmockup
       - MYSQL_HOST='mysql-db'
-      - MYSQL_USER='serviceMockup'
+      - MYSQL_USER='MockupSource'
       - MYSQL_PASSWORD='MynorcA'
-      - MYSQL_DB='db_Service_Mockup'
+      - MYSQL_DB='db_Service_Mockup_Source'
       - MYSQL_PORT=3306
     ports:
       - '2001:2000'
@@ -200,9 +200,9 @@ services:
       - SERVICE_MGMNT_URL="http://service_component_sink:7000"
       - VIRTUAL_HOST=localhost.srvmockupSink
       - MYSQL_HOST='mysql-db'
-      - MYSQL_USER='serviceMockup'
+      - MYSQL_USER='MockupSink'
       - MYSQL_PASSWORD='MynorcA'
-      - MYSQL_DB='db_Service_Mockup'
+      - MYSQL_DB='db_Service_Mockup_Sink'
       - MYSQL_PORT=3306
     networks:
       - mydata_sdk_demo_network

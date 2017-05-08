@@ -11,21 +11,21 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 -- Schema mydb
 -- -----------------------------------------------------
 -- -----------------------------------------------------
--- Schema db_Service_Mockup
+-- Schema db_Service_Mockup_Source
 -- -----------------------------------------------------
 
 -- -----------------------------------------------------
--- Schema db_Service_Mockup
+-- Schema db_Service_Mockup_Source
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `db_Service_Mockup` DEFAULT CHARACTER SET latin1 ;
-USE `db_Service_Mockup` ;
+CREATE SCHEMA IF NOT EXISTS `db_Service_Mockup_Source` DEFAULT CHARACTER SET latin1 ;
+USE `db_Service_Mockup_Source` ;
 
 -- -----------------------------------------------------
--- Table `db_Service_Mockup`.`code_and_user_mapping`
+-- Table `db_Service_Mockup_Source`.`code_and_user_mapping`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Service_Mockup`.`code_and_user_mapping` ;
+DROP TABLE IF EXISTS `db_Service_Mockup_Source`.`code_and_user_mapping` ;
 
-CREATE TABLE IF NOT EXISTS `db_Service_Mockup`.`code_and_user_mapping` (
+CREATE TABLE IF NOT EXISTS `db_Service_Mockup_Source`.`code_and_user_mapping` (
   `code` LONGTEXT NOT NULL,
   `user_id` LONGTEXT NOT NULL,
   PRIMARY KEY (`code`(255)))
@@ -34,11 +34,11 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `db_Service_Mockup`.`storage`
+-- Table `db_Service_Mockup_Source`.`storage`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Service_Mockup`.`storage` ;
+DROP TABLE IF EXISTS `db_Service_Mockup_Source`.`storage` ;
 
-CREATE TABLE IF NOT EXISTS `db_Service_Mockup`.`storage` (
+CREATE TABLE IF NOT EXISTS `db_Service_Mockup_Source`.`storage` (
   `ID` LONGTEXT NOT NULL,
   `json` LONGTEXT NOT NULL,
   PRIMARY KEY (`ID`(255)))
@@ -47,11 +47,11 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `db_Service_Mockup`.`surrogate_and_user_mapping`
+-- Table `db_Service_Mockup_Source`.`surrogate_and_user_mapping`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `db_Service_Mockup`.`surrogate_and_user_mapping` ;
+DROP TABLE IF EXISTS `db_Service_Mockup_Source`.`surrogate_and_user_mapping` ;
 
-CREATE TABLE IF NOT EXISTS `db_Service_Mockup`.`surrogate_and_user_mapping` (
+CREATE TABLE IF NOT EXISTS `db_Service_Mockup_Source`.`surrogate_and_user_mapping` (
   `user_id` LONGTEXT NOT NULL,
   `surrogate_id` LONGTEXT NOT NULL,
   PRIMARY KEY (`user_id`(255)))
@@ -63,6 +63,6 @@ SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
-CREATE USER 'serviceMockup'@'%' IDENTIFIED BY 'MynorcA';
-GRANT CREATE TEMPORARY TABLES, DELETE, DROP, INSERT, LOCK TABLES, SELECT, UPDATE ON db_Service_Mockup.* TO 'serviceMockup'@'%';
+CREATE USER 'MockupSource'@'%' IDENTIFIED BY 'MynorcA';
+GRANT CREATE TEMPORARY TABLES, DELETE, DROP, INSERT, LOCK TABLES, SELECT, UPDATE ON db_Service_Mockup_Source.* TO 'MockupSource'@'%';
 FLUSH PRIVILEGES;

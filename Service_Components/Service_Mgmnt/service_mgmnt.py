@@ -61,12 +61,13 @@ class UserAuthenticated(Resource):
     @error_handler
     def post(self):
         try:
-            # TODO: Check that process is not ongoing for given user
+            # TODO: Verify this requests comes from Service Mockup(Is this our responsibility?)
             # This is now the point we want to double check that similar flow is not going on already for said user.
             debug_log.info("UserAuthenticated class, method post got json:")
             debug_log.info(request.json)
-            user_id = request.json["user_id"]  # TODO: We get user_id from mockup (currently guid) but don't use it?
+            user_id = request.json["user_id"]
             code = request.json["code"]
+            operator_id = request.json["operator_id"]
 
             sq.task("Checking if user_id is locked already.")
             user_is_locked = self.helpers.check_lock(user_id)
@@ -84,37 +85,15 @@ class UserAuthenticated(Resource):
 
                 sq.task("Generate surrogate_id.")
                 # TODO: Some logic to surrogate_id's?
-                surrogate_id = "{}_{}".format(str(guid()), code)
+                # code as part of surrogate_id is practically for debugging reasons and servers no other purpose
+                surrogate_id = "{}_{}".format(operator_id, code)
 
                 sq.task("Link code to generated surrogate_id")
                 self.helpers.add_surrogate_id_to_code(user_id, request.json["code"], surrogate_id)
 
-                data = {"surrogate_id": surrogate_id, "code": request.json["code"]}
-                if self.is_sink:
-                    data["token_key"] = self.service_key["pub"]
-
                 sq.send_to("Service_Mockup", "Send surrogate_id to Service_Mockup")
-                endpoint = "/api/1.2/slr/link" # Todo: This needs to be fetched from somewhere
                 content_json = {"code": code, "surrogate_id": surrogate_id}
-                result_service = post("{}{}".format(self.service_url, endpoint), json=content_json)
-                if not result_service.ok:
-                    raise DetailedHTTPException(status=result_service.status_code,
-                                                detail={
-                                                    "msg": "Something went wrong while posting to Service_Mockup for /link",
-                                                    "Error from Service_Mockup": loads(result_service.text)},
-                                                title=result_service.reason)
-
-                sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
-                endpoint = "/api/1.2/slr/link" # Todo: this needs to be fetched from somewhere
-                result = post("{}{}".format(self.operator_url, endpoint), json=data)
-                debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
-                if not result.ok:
-                    raise DetailedHTTPException(status=result.status_code,
-                                                detail={
-                                                    "msg": "Something went wrong while posting to Operator_SLR for /link",
-                                                    "Error from Operator_SLR": loads(result.text)},
-                                                title=result.reason)
-
+                return content_json
         except DetailedHTTPException as e:
             e.trace = traceback.format_exc(limit=100).splitlines()
             raise e
@@ -122,6 +101,44 @@ class UserAuthenticated(Resource):
             raise DetailedHTTPException(exception=e,
                                         detail="Something failed in generating and delivering Surrogate_ID.",
                                         trace=traceback.format_exc(limit=100).splitlines())
+
+
+class StartServiceLinking(Resource):
+    def __init__(self):
+        super(StartServiceLinking, self).__init__()
+        self.helpers = Helpers(current_app.config)
+        self.service_key = self.helpers.get_key()
+        self.is_sink = current_app.config["IS_SINK"]
+        self.is_source = current_app.config["IS_SOURCE"]
+        self.service_url = current_app.config["SERVICE_URL"]
+        self.operator_url = current_app.config["OPERATOR_URL"]
+        self.lock_wait_time = current_app.config["LOCK_WAIT_TIME"]
+
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('code', type=str, help='session code')
+        self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
+        self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
+        self.parser.add_argument('surrogate_id', type=str, help="surrogate ID")
+        #self.parser.add_argument('service_id', type=str, help="Service's ID")  # Seems unnecessary to the flow.
+
+    def post(self):
+        args = self.parser.parse_args()
+        debug_log.debug("StartServiceLinking got parameter:\n {}".format(args))
+        data = {"surrogate_id": args["surrogate_id"], "code": args["code"]}
+        if self.is_sink:
+            data["token_key"] = self.service_key["pub"]
+        sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
+        endpoint = "/api/1.2/slr/link"  # Todo: this needs to be fetched from somewhere
+        result = post("{}{}".format(self.operator_url, endpoint), json=data)
+        debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
+        if not result.ok:
+            raise DetailedHTTPException(status=result.status_code,
+                                        detail={
+                                            "msg": "Something went wrong while posting to Operator_SLR for /link",
+                                            "Error from Operator_SLR": loads(result.text)},
+                                        title=result.reason)
+
+
 
 
 
@@ -307,4 +324,5 @@ class StoreSLR(Resource):
         return jsons
 
 api.add_resource(UserAuthenticated, '/auth')
+api.add_resource(StartServiceLinking, '/linking')
 api.add_resource(StoreSLR, '/slr')

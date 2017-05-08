@@ -180,6 +180,7 @@ class Helpers:
         debug_log.info("Locking user_id({}) for SLR creation".format(user_id))
         db.close()
 
+    # TODO: Refactor name to be more meaningful
     def add_surrogate_id_to_code(self, user_id, code, surrogate_id):
         """
         Link code with a surrogate_id
