@@ -12,8 +12,7 @@ SUPER_DEBUG = True
 
 # Application URL prefix
 ## Only leading slash
-APP_URL_PREFIX = ''
-BLUEPRINT_URL_PREFIX = "/account/api/v1.3"
+APP_URL_PREFIX = "/account/api/v1.3"
 
 # Logger
 LOG_FORMATTER = '%(asctime)s - %(name)s in function %(funcName)s at line: %(lineno)s - %(levelname)s - %(message)s'

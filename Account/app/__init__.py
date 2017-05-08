@@ -76,11 +76,11 @@ def create_app(config_filename='config'):
         from app.mod_system.view_api import mod_system
 
         # URL Prefixs
-        prefix_api_auth = current_app.config["BLUEPRINT_URL_PREFIX"]
-        prefix_api_account = current_app.config["BLUEPRINT_URL_PREFIX"] + "/" + "external"
-        prefix_api_service = current_app.config["BLUEPRINT_URL_PREFIX"] + "/" + "internal"
-        prefix_api_authorization = current_app.config["BLUEPRINT_URL_PREFIX"] + "/" + "internal"
-        prefix_api_system = current_app.config["BLUEPRINT_URL_PREFIX"] + "/" + "internal"
+        prefix_api_auth = current_app.config["APP_URL_PREFIX"]
+        prefix_api_account = current_app.config["APP_URL_PREFIX"] + "/" + "external"
+        prefix_api_service = current_app.config["APP_URL_PREFIX"] + "/" + "internal"
+        prefix_api_authorization = current_app.config["APP_URL_PREFIX"] + "/" + "internal"
+        prefix_api_system = current_app.config["APP_URL_PREFIX"] + "/" + "internal"
 
         # Register blueprint(s)
         current_app.register_blueprint(mod_api_auth, url_prefix=prefix_api_auth)
