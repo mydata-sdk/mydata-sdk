@@ -684,6 +684,11 @@ class ServiceLinkStore(Resource):
         else:
             logger.info('Service Link Record verified')
             logger.info('Verification passed: ' + str(slr_verified))
+            if not slr_verified:
+                error_title = "Account owner's signature in Service Link Record was invalid"
+                error_detail = "Service Link Record was not signed by specified Account Owner or signature has been corrupted."
+                logger.error(error_title + " - " + error_detail)
+                raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
 
         # Sign ServiceLinkStatusRecord
         try:
