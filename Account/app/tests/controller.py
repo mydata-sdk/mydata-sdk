@@ -272,6 +272,42 @@ def generate_sl_store_payload(service_key=None, service_kid=None, slr_id=None, s
 
     return payload
 
+
+def generate_sls_store_payload(slr_id=None, surrogate_id=None, record_id=None, status="Active", prev_record_id=None, misformatted_payload=False):
+
+    if slr_id is None:
+        raise AttributeError("Provide operator_id as parameter")
+    if surrogate_id is None:
+        raise AttributeError("Provide surrogate_id as parameter")
+    if prev_record_id is None:
+        raise AttributeError("Provide prev_record_id as parameter")
+
+    if record_id is None:
+        record_id = get_unique_string()
+
+    sl_store_payload = {
+        "data": {
+            "type": "ServiceLinkStatusRecord",
+            "attributes": {
+                "version": "1.3",
+                "record_id": record_id,
+                "surrogate_id": surrogate_id,
+                "slr_id": slr_id,
+                "sl_status": status,
+                "iat": get_epoch(),
+                "prev_record_id": prev_record_id
+            }
+        }
+    }
+
+    if misformatted_payload:
+        del sl_store_payload['data']['slr']['attributes']['payload']
+        del sl_store_payload['data']['ssr']['attributes']['iat']
+
+    payload = json.dumps(sl_store_payload)
+
+    return payload
+
 #############
 #############
 # JWS & JWK #

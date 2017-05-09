@@ -339,3 +339,64 @@ schema_sl_store = {
   ],
   "type": "object"
 }
+
+
+schema_sls_to_sign_by_account = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "attributes": {
+          "properties": {
+            "iat": {
+              "type": "integer"
+            },
+            "prev_record_id": {
+              "type": "string"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "sl_status": {
+              "type": "string"
+            },
+            "slr_id": {
+              "type": "string"
+            },
+            "surrogate_id": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "slr_id",
+            "surrogate_id",
+            "sl_status",
+            "version",
+            "record_id",
+            "iat",
+            "prev_record_id"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "attributes",
+        "type"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+

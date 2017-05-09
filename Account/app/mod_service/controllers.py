@@ -359,6 +359,33 @@ def store_slr_and_ssr(slr_entry=None, ssr_entry=None, endpoint="sign_ssr(account
         return slr_entry, ssr_entry
 
 
+def store_ssr(ssr_entry=None, endpoint="store_ssr()"):
+    if ssr_entry is None:
+        raise AttributeError("Provide ssr_entry as parameter")
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+
+    try:
+        # SSR Insert
+        cursor = ssr_entry.to_db(cursor=cursor)
+        db.connection.commit()
+    except Exception as exp:
+        logger.error('Slr and Ssr commit failed: ' + repr(exp))
+        db.connection.rollback()
+        logger.error('--> rollback')
+        logger.error("ssr_entry: " + ssr_entry.log_entry)
+        raise ApiError(code=500, title="Failed to store slr and ssr", detail=repr(exp), source=endpoint)
+    else:
+        logger.debug('Ssr commited')
+        logger.debug("ssr_entry: " + ssr_entry.log_entry)
+        return ssr_entry
+
+
 def get_surrogate_id_by_account_and_service(account_id=None, service_id=None, endpoint="(get_surrogate_id_by_account_and_Service)"):
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
