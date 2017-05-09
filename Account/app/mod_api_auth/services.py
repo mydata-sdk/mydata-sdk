@@ -7,7 +7,7 @@ __author__ = "Jani Yli-Kantola"
 __copyright__ = "Digital Health Revolution (c) 2016"
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
@@ -15,16 +15,18 @@ __date__ = 26.5.2016
 """
 import json
 import os
-
 import sqlite3
-
-from app.mod_api_auth.helpers import get_custom_logger, append_description_to_exception, ApiKeyNotFoundError, \
+from app.helpers import get_custom_logger
+from app.mod_api_auth.helpers import append_description_to_exception, ApiKeyNotFoundError, \
     AccountIdNotFoundError
 
-logger = get_custom_logger('mod_api_auth_services')
+logger = get_custom_logger(__name__)
 
 DELIMITTER = '/'
-DATABASE = os.path.dirname(os.path.abspath(__file__)) + DELIMITTER + 'apiauth.sqlite'
+DATABASE_BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+DATABASE_DIRECTORY = DELIMITTER + 'db'
+DATABASE_FILE = DELIMITTER + 'apiauth.sqlite'
+DATABASE = DATABASE_BASE_PATH + DATABASE_DIRECTORY + DATABASE_FILE
 
 
 def log_dict_as_json(data=None, pretty=0, lineno=None):
@@ -96,6 +98,16 @@ def get_sqlite_connection():
     else:
         logger.debug("init_db = True")
         init_db = True
+        # If there is no db directory it will be created
+        if DATABASE_DIRECTORY != "./":
+            if not os.path.isdir(DATABASE_DIRECTORY):
+                try:
+                    os.mkdir(DATABASE_DIRECTORY)
+                    print("Creating LOG_PATH: '{}'.".format(DATABASE_DIRECTORY))
+                except IOError:
+                    print("LOG_PATH: '{}' already exists.".format(DATABASE_DIRECTORY))
+                except Exception as e:
+                    print("LOG_PATH: '{}' could not be created. Exception: {}.".format(DATABASE_DIRECTORY, repr(e)))
 
     try:
         connection = sqlite3.connect(DATABASE)
@@ -334,7 +346,7 @@ def clear_apikey_sqlite_db():
         logger.error('get_sqlite_connection: ' + repr(exp))
         raise
 
-    sql_query = '''DELETE FROM api_keys WHERE account_id > 3;'''
+    sql_query = '''DELETE FROM api_keys;'''
 
     try:
         logger.info('Clearing database')

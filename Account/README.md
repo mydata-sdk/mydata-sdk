@@ -4,6 +4,9 @@
 # MyData Account
 This is a part of MyData SDK implementation of MyData Architecture.
 
+## Version
+This is version 1.3
+
 ## High level prerequisites
 - [Flask](http://flask.pocoo.org/)
 - [Flask-RESTful](http://flask-restful.readthedocs.io)

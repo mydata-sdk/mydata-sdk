@@ -66,8 +66,39 @@ paths:
           schema:
             $ref: '#/definitions/error'
             
-            
-  /accounts/{account_id}/link/:
+  /auth/sdk/account/{account_id}/info/:
+    get:
+      security:
+        - BasicAuth: []
+      summary: 'Verify Account API Key'
+      description: 'Verify that API Key belongs to specified user'
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+
+      tags:
+        - Auth
+
+      responses:
+        '200':
+          description: Account object
+          schema:
+            $ref: '#/definitions/accountInfo'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/servicelinks/:
     get:
       security:
         - apiKeyClient: []
@@ -102,9 +133,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/init/sink/:
+
+
+  /accounts/{account_id}/servicelinks/init/sink/:
     post:
       security:
         - apiKeyClient: []
@@ -145,8 +176,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-  /accounts/{account_id}/links/init/source/:
+
+  /accounts/{account_id}/servicelinks/init/source/:
     post:
       security:
         - apiKeyClient: []
@@ -187,9 +218,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/{link_id}/:
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/:
     patch:
       security:
         - apiKeyClient: []
@@ -278,9 +309,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/{link_id}/store/:
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/store/:
     post:
       security:
         - apiKeyClient: []
@@ -330,9 +361,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/{link_id}/statuses/:
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/:
     post:
       security:
         - apiKeyClient: []
@@ -426,9 +457,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/{link_id}/statuses/signed/:
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/signed/:
     post:
       security:
         - apiKeyClient: []
@@ -478,9 +509,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/{link_id}/statuses/{status_id}/:
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/{status_id}/:
     get:
       security:
         - apiKeyClient: []
@@ -525,9 +556,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/{link_id}/statuses/last/:
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/last/:
     get:
       security:
         - apiKeyClient: []
@@ -569,7 +600,7 @@ paths:
             $ref: '#/definitions/error'
 
 
-  /accounts/{account_id}/links/{source_link_id}/{sink_link_id}/consents/:
+  /accounts/{account_id}/servicelinks/{source_link_id}/{sink_link_id}/consents/:
     post:
       security:
         - apiKeyClient: []
@@ -620,9 +651,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/{link_id}/consents/:
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/:
     get:
       security:
         - apiKeyClient: []
@@ -671,9 +702,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /accounts/{account_id}/links/{link_id}/consents/last/:
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/last/:
     get:
       security:
         - apiKeyClient: []
@@ -718,8 +749,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/:
     get:
       security:
@@ -765,8 +796,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/:
     get:
       security:
@@ -807,8 +838,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/statuses/:
     post:
       security:
@@ -898,8 +929,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/statuses/signed/:
     post:
       security:
@@ -950,8 +981,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/statuses/{status_id}/:
     get:
       security:
@@ -997,8 +1028,8 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
   /accounts/{account_id}/consents/{consent_id}/statuses/last/:
     get:
       security:
@@ -1074,9 +1105,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /services/{service_id}/links/:
+
+
+  /services/{service_id}/servicelinks/:
     get:
       security:
         - apiKeyClient: []
@@ -1116,9 +1147,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /services/{service_id}/links/{link_id}/:
+
+
+  /services/{service_id}/servicelinks/{link_id}/:
     get:
       security:
         - apiKeyClient: []
@@ -1158,9 +1189,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /services/{service_id}/links/{link_id}/consents/:
+
+
+  /services/{service_id}/servicelinks/{link_id}/consents/:
     get:
       security:
         - apiKeyClient: []
@@ -1200,9 +1231,9 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
-  /services/{service_id}/links/{link_id}/consents/{consent_id}/:
+
+
+  /services/{service_id}/servicelinks/{link_id}/consents/{consent_id}/:
     get:
       security:
         - apiKeyClient: []
@@ -1247,9 +1278,23 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
-            
+
+
 definitions:
+  accountInfo:
+    type: object
+    properties:
+      type:
+        type: string
+        description: Resource type 'Account'
+      id:
+        type: integer
+        description: Account ID
+      attributes:
+        type: object
+
+
+
   jwk:
     type: object
     description: "Cryptographic key presented as JSON Web Key (JWK) as defined in RFC 7517"
@@ -1261,8 +1306,6 @@ definitions:
       kid:
         type: string
         description: "Key identifier"
-      jwk:
-        $ref: '#/definitions/jwk'
 
   JWSProtectedHeader:
     type: string
