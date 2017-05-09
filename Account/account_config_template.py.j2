@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from base64 import b64encode
+import os
 from os import urandom
+from uuid import uuid4
 
-# Statement for enabling the development environment
 DEBUG = True
 
 # Enable more detailed logging
@@ -14,7 +16,7 @@ SUPER_DEBUG = True
 {% if URL_PREFIX is defined %}
 URL_PREFIX = {{ URL_PREFIX }}
 {% else %}
-URL_PREFIX = ''
+URL_PREFIX = '/account/api/v1.3'
 {% endif %}
 
 
@@ -24,10 +26,10 @@ LOG_FORMATTER = '%(asctime)s - %(name)s in function %(funcName)s at line: %(line
 LOG_PATH = './logs/'
 LOG_FILE = LOG_PATH + 'account.log'
 LOG_TO_FILE = False
+LOG_LEVEL = 'DEBUG'
 
 
 # Define the application directory
-import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -97,10 +99,10 @@ CSRF_ENABLED = True
 
 # Use a secure, unique and absolutely secret key for
 # signing the data.
-CSRF_SESSION_KEY = str(urandom(24))
+CSRF_SESSION_KEY = str(os.urandom(24))
 
 # Secret key for signing cookies
-SECRET_KEY = str(urandom(24))
+SECRET_KEY = str(os.urandom(24))
 
 # SDK Api-Key
 SDK_API_KEY = b64encode(str(uuid4()) + "-" + str(uuid4()))
