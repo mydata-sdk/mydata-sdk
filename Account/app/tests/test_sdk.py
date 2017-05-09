@@ -20,7 +20,7 @@ from flask import json
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, \
     print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
-    generate_sl_store_payload, generate_sls_store_payload
+    generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
@@ -1400,9 +1400,9 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_slsr_store_source(self):
+    def test_ssr_store_source(self):
         """
-        Test Source SLSR storing
+        Test Source SSR storing
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
         print_test_title(test_name="test_slsr_store_source")
@@ -1427,6 +1427,108 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_ssr_store_source_malformed(self):
+        """
+        Test Source SSR storing with malformed payload
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_ssr_store_source_malformed")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/statuses/"
+        payload = generate_sls_store_payload(
+            slr_id=slr_id,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            prev_record_id=slsr_id,
+            status="Removed",
+            misformatted_payload=True
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_ssr_store_source_signed(self):
+        """
+        Test Source SSR storing with signed SSR
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slsr_store_source_signed")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/statuses/signed/"
+        payload = generate_signed_ssr_store_payload(
+            slr_id=slr_id,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            prev_record_id=slsr_id,
+            status="Removed",
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_ssr_store_source_signed_malformed(self):
+        """
+        Test Source SSR storing with signed SSR with malformed payload
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_ssr_store_source_signed_malformed")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/statuses/signed/"
+        payload = generate_signed_ssr_store_payload(
+            slr_id=slr_id,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            prev_record_id=slsr_id,
+            status="Removed",
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT,
+            misformatted_payload=True
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
 
         return account_id, account_api_key, sdk_api_key, slr_id
 

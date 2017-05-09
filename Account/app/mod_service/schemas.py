@@ -400,3 +400,117 @@ schema_sls_to_sign_by_account = {
   "type": "object"
 }
 
+
+schema_sls_signed_by_operator = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "ssr": {
+          "properties": {
+            "attributes": {
+              "properties": {
+                "header": {
+                  "properties": {
+                    "kid": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kid"
+                  ],
+                  "type": "object"
+                },
+                "payload": {
+                  "type": "string"
+                },
+                "protected": {
+                  "type": "string"
+                },
+                "signature": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "header",
+                "protected",
+                "payload",
+                "signature"
+              ],
+              "type": "object"
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "attributes",
+            "type",
+            "id"
+          ],
+          "type": "object"
+        },
+        "ssr_payload": {
+          "properties": {
+            "attributes": {
+              "properties": {
+                "iat": {
+                  "type": "integer"
+                },
+                "prev_record_id": {
+                  "type": "string"
+                },
+                "record_id": {
+                  "type": "string"
+                },
+                "sl_status": {
+                  "type": "string"
+                },
+                "slr_id": {
+                  "type": "string"
+                },
+                "surrogate_id": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "slr_id",
+                "surrogate_id",
+                "sl_status",
+                "version",
+                "record_id",
+                "iat",
+                "prev_record_id"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "attributes"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "ssr_payload",
+        "ssr"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+
+
+

@@ -384,7 +384,7 @@ paths:
           required: true
         - name: payload
           in: body
-          description: "Payload for Service Link Status Record to sign by Account Owner. If 'operatorSigned' query parameter is false, this parameter is required."
+          description: "Payload for Service Link Status Record to sign by Account Owner."
           required: true
           schema:
             $ref: '#/definitions/newServiceLinkStatusRequest'
@@ -1298,7 +1298,7 @@ definitions:
   jwk:
     type: object
     description: "Cryptographic key presented as JSON Web Key (JWK) as defined in RFC 7517"
-        
+
   JWSUnprotectedHeader:
     type: object
     description: "JWS Unprotected Header"
@@ -1310,7 +1310,7 @@ definitions:
   JWSProtectedHeader:
     type: string
     description: 'JWS Protected Header'
-    
+
   error:
     type: object
     properties:
@@ -1336,7 +1336,7 @@ definitions:
       Api-Key:
         type: string
         description: ApiKey
-        
+
   SinkServiceLinkInit:
     type: object
     properties:
@@ -1354,7 +1354,7 @@ definitions:
                 description: 'Service Link ID'
               pop_key:
                 $ref: '#/definitions/jwk'
-        
+
   SourceServiceLinkInit:
     type: object
     properties:
@@ -1370,7 +1370,7 @@ definitions:
               slr_id:
                 type: string
                 description: 'Service Link ID'
-        
+
   ServiceLinkInitResponse:
     type: object
     properties:
@@ -1386,7 +1386,7 @@ definitions:
               slr_id:
                 type: string
                 description: 'Service Link ID'
-        
+
 
   newSlr:
     type: object
@@ -1413,7 +1413,7 @@ definitions:
           iat:
             type: integer
             format: int32
-            
+
   Slr:
     type: object
     properties:
@@ -1458,8 +1458,8 @@ definitions:
           signature:
             type: string
             description: "JWS Signature"
-            
-  
+
+
   SlrDoubleSigned:
     type: object
     properties:
@@ -1599,7 +1599,7 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/SlrDoubleSigned'
-        
+
   ServiceLinkArray:
     type: object
     properties:
@@ -1613,12 +1613,36 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/newSsr'
-        
+
   newServiceLinkStatusSignedRequest:
     type: object
     properties:
       data:
-        $ref: '#/definitions/Ssr'
+        type: object
+        properties:
+          ssr:
+            $ref: '#/definitions/Ssr'
+          ssr_payload:
+            type: object
+            properties:
+              attributes:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  record_id:
+                    type: string
+                  surrogate_id:
+                    type: string
+                  slr_id:
+                    type: string
+                  sl_status:
+                    type: string
+                  iat:
+                    type: integer
+                    format: int32
+                  prev_record_id:
+                    type: string
 
   ServiceLinkStatusResponse:
     type: object

@@ -301,10 +301,65 @@ def generate_sls_store_payload(slr_id=None, surrogate_id=None, record_id=None, s
     }
 
     if misformatted_payload:
-        del sl_store_payload['data']['slr']['attributes']['payload']
-        del sl_store_payload['data']['ssr']['attributes']['iat']
+        del sl_store_payload['data']['attributes']['version']
+        del sl_store_payload['data']['attributes']['iat']
 
     payload = json.dumps(sl_store_payload)
+
+    return payload
+
+
+def generate_signed_ssr_store_payload(slr_id=None, surrogate_id=None, record_id=None, status="Active", prev_record_id=None, operator_key=None, operator_kid=None, misformatted_payload=False):
+
+    if slr_id is None:
+        raise AttributeError("Provide operator_id as parameter")
+    if surrogate_id is None:
+        raise AttributeError("Provide surrogate_id as parameter")
+    if prev_record_id is None:
+        raise AttributeError("Provide prev_record_id as parameter")
+    if operator_key is None:
+        raise AttributeError("Provide operator_key as parameter")
+    if operator_kid is None:
+        raise AttributeError("Provide operator_kid as parameter")
+
+    if record_id is None:
+        record_id = get_unique_string()
+
+    ssr = {
+        "data": {
+            "type": "ServiceLinkStatusRecord",
+            "attributes": {
+                "version": "1.3",
+                "record_id": record_id,
+                "surrogate_id": surrogate_id,
+                "slr_id": slr_id,
+                "sl_status": status,
+                "iat": get_epoch(),
+                "prev_record_id": prev_record_id
+            }
+        }
+    }
+
+    # Sign SSR on behalf of operator
+    ssr_signed = sign_payload_jws(payload_to_sign=ssr['data']['attributes'], jwk_key=operator_key, jwk_kid=operator_kid)
+
+    ssr_payload = {
+      "data": {
+        "ssr": {
+          "type": "ServiceLinkStatusRecord",
+          "id": record_id,
+          "attributes": ssr_signed
+        },
+        "ssr_payload": {
+          "attributes": ssr['data']['attributes']
+        }
+      }
+    }
+
+    if misformatted_payload:
+        del ssr_payload['data']['ssr_payload']['attributes']['surrogate_id']
+
+    payload = json.dumps(ssr_payload)
 
     return payload
 
@@ -413,6 +468,31 @@ def sign_jws(jws_to_sign=None, jwk_key=None, jwk_kid=None, alg="ES256"):
     jws_object.deserialize(json.dumps(jws_to_sign))
     jws_object.verify(verification_key)  # Verifying changes the state of this object
 
+    jws_object.add_signature(key=jwk_key, alg=alg, header=unprotected_header_json, protected=protected_header_json)
+
+    jws_serialized = json.loads(jws_object.serialize())
+    print("jws_serialized")
+    print(jws_serialized)
+
+    return jws_serialized
+
+
+def sign_payload_jws(payload_to_sign=None, jwk_key=None, jwk_kid=None, alg="ES256"):
+    if payload_to_sign is None:
+        raise AttributeError("Provide payload_to_sign as parameter")
+    if jwk_key is None:
+        raise AttributeError("Provide jwk_key as parameter")
+    if jwk_kid is None:
+        raise AttributeError("Provide jwk_kid as parameter")
+    if alg is None:
+        raise AttributeError("Provide alg as parameter")
+
+    unprotected_header = {'kid': jwk_kid}
+    protected_header = {'alg': alg}
+    unprotected_header_json = json.dumps(unprotected_header)
+    protected_header_json = json.dumps(protected_header)
+
+    jws_object = jws.JWS(json.dumps(payload_to_sign))
     jws_object.add_signature(key=jwk_key, alg=alg, header=unprotected_header_json, protected=protected_header_json)
 
     jws_serialized = json.loads(jws_object.serialize())
