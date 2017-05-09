@@ -396,9 +396,6 @@ class SdkTestCase(unittest.TestCase):
         response = self.app.delete(url, headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 204, msg=response.data)
 
-    # TODO: Test Account authentication with deleted Account
-    # TODO: Test Resource fetching with removed Account
-
     ##########
     ##########
     def test_sdk_account_info(self):
@@ -1534,7 +1531,8 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # TODO: SLR Status change - signed input
+    # TODO: Test Account authentication with deleted Account
+    # TODO: Test Resource fetching with removed Account
 
 
 if __name__ == '__main__':
