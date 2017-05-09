@@ -81,7 +81,7 @@ class SdkTestCase(unittest.TestCase):
         :return:
         """
         print_test_title(test_name="test_system_running")
-        url = self.API_PREFIX_INTERNAL + '/system/status/'
+        url = '/system/status/'
 
         response = self.app.get(url)
         unittest.TestCase.assertEqual(self, response.status_code, 200)
@@ -96,7 +96,7 @@ class SdkTestCase(unittest.TestCase):
         :return:
         """
         print_test_title(test_name="test_system_routes")
-        url = self.API_PREFIX_INTERNAL + '/system/routes/'
+        url = '/system/routes/'
 
         response = self.app.get(url)
         unittest.TestCase.assertEqual(self, response.status_code, 200)
@@ -132,7 +132,7 @@ class SdkTestCase(unittest.TestCase):
         :return:
         """
         print_test_title(test_name="test_clear_db_positive")
-        response = self.app.get(self.API_PREFIX_INTERNAL + '/system/db/clear/')
+        response = self.app.get('/system/db/clear/')
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_db_clear))
@@ -319,6 +319,7 @@ class SdkTestCase(unittest.TestCase):
         print_test_title(test_name="test_account_create_positive")
 
         account_json, account_username, account_password = account_create()
+        print(account_json)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
@@ -751,6 +752,41 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
+    def test_slr_store_sink_malformed_signature(self):
+        """
+        Test Sink SLR storing - Signature verification fails
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_store_sink_malformed_signature")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_sink()
+        slr_data = json.loads(slr_data)
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
+        payload = generate_sl_store_payload(
+            slr_id=slr_id,
+            slr_signed=slr_data['data'],
+            surrogate_id=self.SINK_SURROGATE_ID,
+            service_key=self.SINK_KEY_OBJECT,
+            service_kid=self.SINK_KID,
+            misformatted_signature=True
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
     def test_slr_sign_source(self):
         """
         Test Source SLR signing
@@ -916,6 +952,41 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
+    def test_slr_store_source_malformed_signature(self):
+        """
+        Test Source SLR storing - Signature verification fails
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_slr_store_source_malformed_signature")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_source()
+        slr_data = json.loads(slr_data)
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
+        payload = generate_sl_store_payload(
+            slr_id=slr_id,
+            slr_signed=slr_data['data'],
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            service_key=self.SOURCE_KEY_OBJECT,
+            service_kid=self.SOURCE_KID,
+            misformatted_signature=True
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
     def test_slr_store_wrong_id(self):
         """
         Test SLR storing with wrong ID
@@ -1000,7 +1071,6 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # TODO: SLR Account owner signature verification fails
     # TODO: SLR Status change - unsigned input
     # TODO: SLR Status change - signed input
     # TODO: SLR Fetch - Statuses
