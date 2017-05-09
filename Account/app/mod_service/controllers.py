@@ -23,7 +23,7 @@ from app.app_modules import db
 # Import services
 from app.helpers import get_custom_logger, ApiError, get_utc_time
 from app.mod_blackbox.controllers import get_account_public_key, generate_and_sign_jws
-from app.mod_database.helpers import get_db_cursor, get_slr_ids, get_slsr_ids, get_last_slsr_id
+from app.mod_database.helpers import get_db_cursor, get_slr_ids, get_slsr_ids, get_last_slsr_id, get_slr_ids_by_service
 
 # create logger with 'spam_application'
 from app.mod_database.models import SurrogateId, ServiceLinkRecord, ServiceLinkStatusRecord
@@ -478,6 +478,95 @@ def get_slrs(account_id=None):
         # TODO: try-except needed?
         logger.info("Getting slr with slr_id: " + str(id))
         db_entry_dict = get_slr(account_id=account_id, slr_id=id)
+        db_entry_list.append(db_entry_dict)
+        logger.info("slr object added to list: " + json.dumps(db_entry_dict))
+
+    return db_entry_list
+
+
+def get_slr_for_service(service_id=None, slr_id=None, cursor=None):
+    """
+    Get one slr entry from database by Service ID and Service Link Record ID
+    :param account_id:
+    :param slr_id:
+    :return: dict
+    """
+    if service_id is None:
+        raise AttributeError("Provide service_id as parameter")
+    if id is None:
+        raise AttributeError("Provide id as parameter")
+    if cursor is None:
+        # Get DB cursor
+        try:
+            cursor = get_db_cursor()
+        except Exception as exp:
+            logger.error('Could not get database cursor: ' + repr(exp))
+            raise
+
+    try:
+        db_entry_object = ServiceLinkRecord(service_id=service_id, service_link_record_id=slr_id)
+    except Exception as exp:
+        error_title = "Failed to create slr object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("slr object created: " + db_entry_object.log_entry)
+
+    # Get slr from DB
+    try:
+        cursor = db_entry_object.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Failed to fetch slr from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("slr fetched")
+        logger.info("slr fetched from db: " + db_entry_object.log_entry)
+
+    return db_entry_object.to_api_dict
+
+
+def get_slrs_for_service(service_id=None, account_id=""):
+    """
+    Get all slr -entries related to service
+    :param service_id:
+    :param account_id:
+    :return: List of dicts
+    """
+    if service_id is None:
+        raise AttributeError("Provide service_id as parameter")
+    logger.info("service_id: " + str(service_id))
+    logger.info("account_id: " + str(account_id))
+
+    # Get table name
+    logger.info("Create slr")
+    db_entry_object = ServiceLinkRecord()
+    logger.info(db_entry_object.log_entry)
+    logger.info("Get table name")
+    table_name = db_entry_object.table_name
+    logger.info("Got table name: " + str(table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get primary keys for slr
+    try:
+        cursor, id_list = get_slr_ids_by_service(cursor=cursor, service_id=service_id, account_id=account_id, table_name=table_name)
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get slrs from database
+    logger.info("Get slrs from database")
+    db_entry_list = []
+    for id in id_list:
+        # TODO: try-except needed?
+        logger.info("Getting slr with slr_id: " + str(id))
+        db_entry_dict = get_slr_for_service(service_id=service_id, slr_id=id)
         db_entry_list.append(db_entry_dict)
         logger.info("slr object added to list: " + json.dumps(db_entry_dict))
 

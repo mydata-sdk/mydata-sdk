@@ -455,6 +455,51 @@ def get_slr_ids(cursor=None, account_id=None, table_name=None):
         return cursor, id_list
 
 
+def get_slr_ids_by_service(cursor=None, service_id=None, account_id="", table_name=None):
+    logger.info("Executing")
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if service_id is None:
+        raise AttributeError("Provide service_id as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT serviceLinkRecordId " \
+                "FROM " + table_name + " " \
+                "WHERE serviceId LIKE %s AND Accounts_id LIKE %s;"
+
+    arguments = (
+        '%' + str(service_id) + '%',
+        '%' + str(account_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+        #logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data)
+        logger.info("Got data_list: " + repr(data_list))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i][0])
+        logger.info("Formatted data_list: " + repr(data_list))
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
+
+
 def get_slsr_ids(cursor=None, slr_id=None, table_name=None):
     logger.info("Executing")
     if cursor is None:
