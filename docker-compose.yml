@@ -32,7 +32,7 @@ services:
       - MYSQL_PASSWORD='wr8gabrA'
       - MYSQL_DB='MyDataAccount'
       - MYSQL_PORT=3306
-      - URL_PREFIX=''
+      - URL_PREFIX='/account/api/v1.3'
 #      - SERVER_NAME=''
 #      - VIRTUAL_HOST=localhost
     ports:
@@ -53,6 +53,7 @@ services:
       - redis
     environment:
       - PYTHONUNBUFFERED='true'
+      - DEBUG_MODE=False
       - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
       - ACCOUNT_MANAGEMENT_USER="test_sdk"
       - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"

@@ -13,7 +13,7 @@ def error_handler(method):
         app = import_module(method.__module__)
         api = app.api
         try:  # If we get DetailedHTTPException we want to show some additional debug to it
-            try:  # Incase we fail with something else then DetailedHTTPException, wrap it in one, else raise it.
+            try:  # Incase we fail with something else than DetailedHTTPException, wrap it in one, else raise it.
                 result = method(self, *args, **kw)
                 return result
             except DetailedHTTPException as e:
@@ -40,11 +40,13 @@ def error_handler(method):
                 print(dumps(e.error, indent=2))
                 return e.error, e.code
             else:
-                return {"errors": {"detail": e.detail,
-                                   "title": e.title,
-                                   "source": e.source,
-                                   "status": status_codes._codes[e.code][0].replace("_", " ").capitalize(),
-                                   "code": str(e.code)}}, e.code
+                response = {"errors": {"detail": e.detail,
+                                       "title": e.title,
+                                       "source": e.source,
+                                       "status": status_codes._codes[e.code][0].replace("_", " ").capitalize(),
+                                       "code": str(e.code)}}, e.code
+                print(dumps(response, indent=2))
+                return response
 
     return wrapper
 

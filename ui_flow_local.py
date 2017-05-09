@@ -17,8 +17,16 @@ Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
 # Sends JSON-payloads to Account that create three new accounts.
 # Needed in order to start_ui_flow() -function to work.
 def initialize(account_url):
+
+    def get_api_key(account_url=account_url, account=("pasi", "0nk0va"), endpoint="external/auth/user/"):
+        print("\nFetching Account Key for account '{}'".format(account[0]))
+        api_json = get(account_url+endpoint, auth=account).text
+        print("Received following key:\n {}".format(api_json))
+        return api_json
+
     username = "example_username-" + str(uuid4())
     password = "example_password"
+    create_endpoint = "external/accounts/"
 
     print ("\n##### CREATE USER ACCOUNTS #####")
     print("NOTE: Throws an error if run for second time as you cannot "
@@ -34,11 +42,11 @@ def initialize(account_url):
             'email': username + '@examlpe.org',
             'username': username,
             'password': password,
-            'acceptTermsOfService': 'True'
+            'acceptTermsOfService': True
             }
           }
         }
-    resp = post(account_url + 'api/accounts/',
+    resp = post(account_url + create_endpoint,
                 json=user_data)
     print(resp.status_code, resp.reason, resp.text, resp.url)
     print(json.dumps(json.loads(resp.text), indent=2))
@@ -48,7 +56,7 @@ def initialize(account_url):
     user_data["data"]["attributes"]["email"] = "iso.pasi@example.org"
     user_data["data"]["attributes"]["username"] = "pasi"
     user_data["data"]["attributes"]["password"] = "0nk0va"
-    resp = post(account_url + 'api/accounts/',
+    resp = post(account_url + create_endpoint,
                 json=user_data)
     print(resp.status_code, resp.reason, resp.text, resp.url)
     print(json.dumps(json.loads(resp.text), indent=2))
@@ -58,7 +66,7 @@ def initialize(account_url):
     user_data["data"]["attributes"]["email"] = "dude.dudeson@example.org"
     user_data["data"]["attributes"]["username"] = "mydata"
     user_data["data"]["attributes"]["password"] = "Hello"
-    resp = post(account_url + 'api/accounts/',
+    resp = post(account_url + create_endpoint,
                 json=user_data)
     print(resp.status_code, resp.reason, resp.text, resp.url)
     print(json.dumps(json.loads(resp.text), indent=2))
@@ -68,6 +76,7 @@ def initialize(account_url):
     # post(operator_url + 'api/accounts/', json={"firstName": "Dude", "lastName": "Dudeson", "dateOfBirth": "31-05-2016",
     #                                            "email": "dude.dudeson@examlpe.org", "username": "mydata",
     #                                            "password": "Hello", "acceptTermsOfService": "True"})
+    get_api_key()
     return
 
 # TODO: Refactor and return something.
@@ -180,7 +189,7 @@ if __name__ == '__main__':
     parser.add_argument("--account_url",
                         help=help_string_account_url,
                         type=str,
-                        default="http://localhost:8080/",
+                        default="http://localhost:8080/account/api/v1.3/",
                         required=False)
 
     help_string_operator_url = \

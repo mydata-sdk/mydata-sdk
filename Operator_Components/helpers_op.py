@@ -119,7 +119,7 @@ class AccountManagerHandler:
     def get_AuthTokenInfo(self, cr_id):
         req = get(self.url + self.endpoint["auth_token"]
                   .replace("{sink_cr_id}", cr_id),
-                  headers={'Api-Key': self.token}, timeout=self.timeout)
+                  headers={'Api-Key-SDK': self.token}, timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
         else:
@@ -136,7 +136,7 @@ class AccountManagerHandler:
 
         req = get(self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
                                                                                                     service_id),
-                  headers={'Api-Key': self.token},
+                  headers={'Api-Key-SDK': self.token},
                   timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
@@ -152,7 +152,7 @@ class AccountManagerHandler:
         debug_log.debug("" + endpoint_url)
 
         req = get(endpoint_url,
-                  headers={'Api-Key': self.token},
+                  headers={'Api-Key-SDK': self.token},
                   timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
@@ -171,7 +171,7 @@ class AccountManagerHandler:
         debug_log.debug("" + endpoint_url)
         payload = {"data": {"attributes": payload, "type": "ConsentStatusRecord"}}
         req = post(endpoint_url, json=payload,
-                   headers={'Api-Key': self.token},
+                   headers={'Api-Key-SDK': self.token},
                    timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
