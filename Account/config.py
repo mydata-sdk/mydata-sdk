@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from base64 import b64encode
-from os import urandom
-
-# Statement for enabling the development environment
+import os
 from uuid import uuid4
 
 DEBUG = False
@@ -22,7 +20,6 @@ LOG_TO_FILE = False
 LOG_LEVEL = 'DEBUG'
 
 # Define the application directory
-import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Define the database
@@ -52,10 +49,10 @@ CSRF_ENABLED = True
 
 # Use a secure, unique and absolutely secret key for
 # signing the data.
-CSRF_SESSION_KEY = str(urandom(24))
+CSRF_SESSION_KEY = str(os.urandom(24))
 
 # Secret key for signing cookies
-SECRET_KEY = str(urandom(24))
+SECRET_KEY = str(os.urandom(24))
 
 # SDK Api-Key
 SDK_API_KEY = b64encode(str(uuid4()) + "-" + str(uuid4()))
