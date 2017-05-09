@@ -23,7 +23,7 @@ from app.app_modules import db
 # Import services
 from app.helpers import get_custom_logger, ApiError, get_utc_time
 from app.mod_blackbox.controllers import get_account_public_key, generate_and_sign_jws
-from app.mod_database.helpers import get_db_cursor, get_slr_ids, get_slsr_ids
+from app.mod_database.helpers import get_db_cursor, get_slr_ids, get_slsr_ids, get_last_slsr_id
 
 # create logger with 'spam_application'
 from app.mod_database.models import SurrogateId, ServiceLinkRecord, ServiceLinkStatusRecord
@@ -613,3 +613,106 @@ def get_slsrs(account_id=None, slr_id=None):
         logger.info("slsr object added to list: " + json.dumps(db_entry_dict))
 
     return db_entry_list
+
+
+def get_last_slr_status(account_id=None, slr_id=None, endpoint="get_last_slr_status()"):
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+
+    # Init ServiceLinkRecord Object
+    try:
+        logger.info("Create ServiceLinkRecord object")
+        slr_entry = ServiceLinkRecord(service_link_record_id=slr_id, account_id=account_id)
+        logger.info(slr_entry.log_entry)
+    except Exception as exp:
+        error_title = "Failed to create Service Link Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("slr_entry: " + slr_entry.log_entry)
+
+    # Get ServiceLinkRecord from DB
+    try:
+        cursor = slr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "Service Link Status Record not found with provided information."
+        error_detail = "Account ID was {} and Service Link Record ID was {}.".format(account_id, slr_id)
+        logger.error(error_title + " " + error_detail + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to fetch Service Link Record from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
+    else:
+        logger.debug("slr_entry: " + slr_entry.log_entry)
+
+    # Create ServiceLinkStatusRecord object
+    try:
+        slsr_entry = ServiceLinkStatusRecord()
+    except Exception as exp:
+        error_title = "Failed to create ServiceLinkStatusRecord object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("slsr_entry: " + slsr_entry.log_entry)
+
+    # Get database table name for ServiceLinkStatusRecord
+    try:
+        logger.info("Get ServiceLinkStatusRecord table name")
+        slsr_table_name = slsr_entry.table_name
+    except Exception as exp:
+        error_title = "Failed to get ServiceLinkStatusRecord table name"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Got ServiceLinkStatusRecord table name: " + str(slsr_table_name))
+
+    # Get ServiceLinkStatusRecord ID
+    try:
+        cursor, slsr_id = get_last_slsr_id(cursor=cursor, slr_id=slr_id, table_name=slsr_table_name)
+    except IndexError as exp:
+        error_title = "ServiceLinkStatusRecord not found from DB with given Consent Record ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to get last ServiceLinkStatusRecord ID from database"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("slsr_id: " + str(slsr_id))
+
+    # Append ID to ServiceLinkStatusRecord Object
+    try:
+        logger.info("Append ID to ServiceLinkStatusRecord object: " + slsr_entry.log_entry)
+        slsr_entry.consent_status_record_id = slsr_id
+    except Exception as exp:
+        error_title = "Failed to append ID to ServiceLinkStatusRecord object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Appended ID to ServiceLinkStatusRecord object: " + slsr_entry.log_entry)
+
+    # Get ServiceLinkStatusRecord from DB
+    try:
+        cursor = slsr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "ServiceLinkStatusRecord not found from DB with given ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to fetch ServiceLinkStatusRecord from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("slsr_entry: " + slsr_entry.log_entry)
+
+    return slsr_entry.to_api_dict

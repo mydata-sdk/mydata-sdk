@@ -497,6 +497,47 @@ def get_slsr_ids(cursor=None, slr_id=None, table_name=None):
         return cursor, id_list
 
 
+def get_last_slsr_id(cursor=None, slr_id=None, table_name=None):
+    logger.info("Executing")
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if slr_id is None:
+        raise AttributeError("Provide slr_id as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+
+    sql_query = "SELECT serviceLinkStatusRecordId " \
+                "FROM " + table_name + " " \
+                "WHERE serviceLinkRecordId LIKE %s " \
+                "ORDER BY id DESC " \
+                "LIMIT 1;"
+
+    arguments = (
+        '%' + str(slr_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data[0])
+        logger.info("Got data_list: " + repr(data_list))
+
+        entry_id = str(data_list[0])
+        logger.info("Got entry_id: " + repr(entry_id))
+
+        return cursor, entry_id
+
+
 def get_cr_ids(cursor=None, slr_id=None, table_name=None):
     logger.info("Executing")
     if cursor is None:

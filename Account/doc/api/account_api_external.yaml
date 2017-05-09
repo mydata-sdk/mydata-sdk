@@ -25,7 +25,7 @@ produces:
 securityDefinitions:
   externalApiKeyAuth:
     type: apiKey
-    name: Api-Key
+    name: Api-Key-User
     in: header
     description: Authentication using apiKey for external use
 

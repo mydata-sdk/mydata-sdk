@@ -38,7 +38,7 @@ from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jw
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord
 from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, get_surrogate_id_by_account_and_service, \
-    init_slr_sink, init_slr_source, get_slr_record, get_slrs, get_slr, get_slsrs, get_slsr
+    init_slr_sink, init_slr_source, get_slr_record, get_slrs, get_slr, get_slsrs, get_slsr, get_last_slr_status
 from app.mod_service.models import NewServiceLink, VerifyServiceLink
 from app.mod_service.schemas import schema_sl_init_sink, schema_sl_init_source, schema_sl_sign, schema_sl_store
 
@@ -1051,6 +1051,71 @@ class ApiServiceLinkStatusRecord(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
+class ApiLastServiceLinkStatusRecord(Resource):
+    @requires_api_auth_user
+    @requires_api_auth_sdk
+    def get(self, account_id, link_id):
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id, link_id=link_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching User API Key")
+        api_key_user = get_user_api_key(endpoint=endpoint)
+        logger.debug("api_key_user: " + api_key_user)
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("Account ID from path: " + account_id)
+
+        try:
+            link_id = str(link_id)
+        except Exception as exp:
+            error_title = "Unsupported link_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("link_id: " + link_id)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key_user, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Get last Service Link Status Record
+        try:
+            last_slsr_dict = get_last_slr_status(account_id=account_id, slr_id=link_id, endpoint=endpoint)
+        except Exception as exp:
+            error_title = "Failed to get last Service Link Status Record of Service Link"
+            logger.error(error_title + ": " + repr(exp))
+            raise
+        else:
+            logger.debug("Service Link Status Record: " + json.dumps(last_slsr_dict))
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = last_slsr_dict
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + json.dumps(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
 # TODO: Is this needed?
 # class ServiceSurrogate(Resource):
 #     @requires_api_auth_user
@@ -1118,5 +1183,6 @@ api.add_resource(ApiServiceLinkStore, '/accounts/<string:account_id>/servicelink
 api.add_resource(ApiServiceLinkRecords, '/accounts/<string:account_id>/servicelinks/', endpoint='slr_listing')
 api.add_resource(ApiServiceLinkStatusRecords, '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/', endpoint='slr_status_listing')
 api.add_resource(ApiServiceLinkStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/<string:status_id>/', endpoint='slr_status')
+api.add_resource(ApiLastServiceLinkStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/last/', endpoint='slr_status_last')
 # api.add_resource(ServiceSurrogate, '/accounts/<string:account_id>/services/<string:service_id>/surrogate/', endpoint='surrogate_id')  # TODO: Is this needed?
 
