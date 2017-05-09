@@ -1,10 +1,8 @@
 swagger: '2.0'
-
 info:
-  title: 'Digital Health Revolution - MyData Account'
-  description:
-    ' #### MyData-SDK - MyData Account API - Internal '
-  version: '1.2.1'
+  version: 'v1.3'
+  title: 'MyData Account'
+  description: 'MyData-SDK - MyData Account API - Internal'
   contact:
     url: 'https://github.com/HIIT/mydata-stack'
   license:
@@ -14,7 +12,7 @@ info:
 schemes:
   - https
 
-basePath: '/api/'
+basePath: '/account/api/v1.3/internal/'
 
 consumes:
   - application/json
@@ -23,17 +21,22 @@ produces:
   - application/json
 
 securityDefinitions:
-
-  internalApiKeyAuth:
-    type: apiKey
-    name: Api-Key
-    in: header
-    description: Authentication using apiKey for internal use
-
   BasicAuth:
     type: basic
     description: HTTP Basic Auth
-
+    
+  apiKeyClient:
+    type: apiKey
+    name: "api-key-client"
+    description: "Defines client that is performing operations. Possible clients is Operator's SDK Component"
+    in: header
+    
+  apiKeyUser:
+    type: apiKey
+    name: "api-key-user"
+    description: "Defines user that is performing operations. Possible user's are MyData Account Owner's"
+    in: header
+    
 externalDocs:
   description: 'External documentation'
   url: 'https://github.com/HIIT/mydata-stack'
@@ -43,39 +46,34 @@ paths:
     get:
       security:
         - BasicAuth: []
-      description: 'Get ApiKey for internal use'
+      summary: 'Client Authentication'
+      description: 'Authenticate Client to make requests to API'
 
       tags:
         - Auth
-        - ApiKey
 
       responses:
         '200':
-          description: ApiKey for internal use
+          description: Clinet API Key
           schema:
             $ref: '#/definitions/apiKeyResponse'
         '400':
-          description: Bad Request
+          description: 'Bad Request'
           schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
         '500':
-          description: Internal Server error
+          description: 'General Error'
           schema:
-            $ref: '#/definitions/errors'
-
-  /account/{account_id}/servicelink/:
-    post:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/link/:
+    get:
       security:
-        - internalApiKeyAuth: []
-      description: "Constructs Service Link Record based on provided Service Link Record payload. Signs constructed Service Link Record with Account owner's key."
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'List Service Link Records'
+      description: "Fetch list of Service Link Records"
 
       parameters:
         - name: account_id
@@ -83,16 +81,142 @@ paths:
           type: string
           description: 'Account ID'
           required: true
-        - name: newSL
+
+      tags:
+        - Service Linking - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Service Link Records'
+          schema:
+            $ref: '#/definitions/ServiceLinkArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/init/sink/:
+    post:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Init Service Linking - Sink'
+      description: "Stores Service Link ID to Account with PoP Key."
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: payload
           in: body
-          description: 'Payloads for Service Link Record and Service Link Status Record'
+          description: 'Service Link ID and Services PoP Key'
+          required: true
+          schema:
+            $ref: '#/definitions/SinkServiceLinkInit'
+
+      tags:
+        - Service Linking - Create
+
+      responses:
+        '201':
+          description: 'Service Link ID stored'
+          schema:
+            $ref: '#/definitions/ServiceLinkInitResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '409':
+          description: 'Entry already exists'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+  /accounts/{account_id}/links/init/source/:
+    post:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Init Service Linking - Source'
+      description: "Stores Service Link ID to Account"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: payload
+          in: body
+          description: 'Service Link ID and Services PoP Key'
+          required: true
+          schema:
+            $ref: '#/definitions/SourceServiceLinkInit'
+
+      tags:
+        - Service Linking - Create
+
+      responses:
+        '201':
+          description: 'Service Link ID stored'
+          schema:
+            $ref: '#/definitions/ServiceLinkInitResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '409':
+          description: 'Entry already exists'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/{link_id}/:
+    patch:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Sign Service Link'
+      description: "Signs constructed Service Link Record with Account owner's key."
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: payload
+          in: body
+          description: 'Payload for Service Link Record'
           required: true
           schema:
             $ref: '#/definitions/newServiceLinkRequest'
 
       tags:
-        - ServiceLink
-        - Sign
+        - Service Linking - Create
 
       responses:
         '201':
@@ -100,26 +224,68 @@ paths:
           schema:
             $ref: '#/definitions/newServiceLinkResponse'
         '400':
-          description: Bad Request
+          description: 'Bad Request'
           schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
           schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
+            $ref: '#/definitions/error'
+        '409':
+          description: 'Entry already exists'
           schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
         '500':
-          description: Internal Server error
+          description: 'General Error'
           schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Service Link Record'
+      description: "Fetch Service Link Record by Service Link ID"
 
-  /account/{account_id}/servicelink/verify/:
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+
+      tags:
+        - Service Linking - Fetch
+
+      responses:
+        '200':
+          description: 'Service Link Record'
+          schema:
+            $ref: '#/definitions/ServiceLinkResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/{link_id}/store/:
     post:
       security:
-        - internalApiKeyAuth: []
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Store Service Link Record'
       description: "Verifies the integrity of provided Service Link Record. If verification passes Service Link Status Record is constructed and signed with Account owner's key. Finally both records are stored."
 
       parameters:
@@ -128,45 +294,51 @@ paths:
           type: string
           description: 'Account ID'
           required: true
-        - name: SlToVerify
+        - name: link_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: payload
           in: body
-          description: 'Payloads for Consent Record and Consent Status Record'
+          description: 'Payloads for Service Link Record and Service Link Status Record'
           required: true
           schema:
-            $ref: '#/definitions/verifySlRequest'
+            $ref: '#/definitions/storeSlRequest'
 
       tags:
-        - ServiceLink
-        - Verify
+        - Service Linking - Create
 
       responses:
         '200':
-          description: 'Consent Record and Consent Status Record created'
+          description: 'Service Link Record and Service Link Status Record created'
           schema:
-            $ref: '#/definitions/verifySlrResponse'
+            $ref: '#/definitions/storeSlrResponse'
         '400':
-          description: Bad Request
+          description: 'Bad Request'
           schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
           schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
+            $ref: '#/definitions/error'
+        '409':
+          description: 'Entry already exists'
           schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
         '500':
-          description: Internal Server error
+          description: 'General Error'
           schema:
-            $ref: '#/definitions/errors'
-
-
-  /account/{account_id}/service/{service_id}/surrogate/:
-    get:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/{link_id}/statuses/:
+    post:
       security:
-        - internalApiKeyAuth: []
-      description: 'Get stored surrogate ID and Service Link Record ID for Account and Service'
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Issue Service Link Status Change'
+      description: "Constructs Service Link Status Record based on provided Service Link Status Record payload. Signs constructed Service Link Status Record with Account owner's key. Finally Service Link Status Record is stored."
 
       parameters:
         - name: account_id
@@ -174,44 +346,235 @@ paths:
           type: string
           description: 'Account ID'
           required: true
-        - name: service_id
+        - name: link_id
           in: path
           type: string
-          description: 'Service ID'
+          description: 'Service Link ID'
           required: true
+        - name: payload
+          in: body
+          description: "Payload for Service Link Status Record to sign by Account Owner. If 'operatorSigned' query parameter is false, this parameter is required."
+          required: true
+          schema:
+            $ref: '#/definitions/newServiceLinkStatusRequest'
 
       tags:
-        - Surrogate
-        - ServiceLink
-        - Consent
+        - Service Linking - Create
 
       responses:
         '201':
-          description: 'Surrogate ID'
+          description: 'Service Link Status Record created'
           schema:
-            $ref: '#/definitions/surrogateResponse'
+            $ref: '#/definitions/ServiceLinkStatusResponse'
         '400':
-          description: Bad Request
+          description: 'Bad Request'
           schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
           schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
+            $ref: '#/definitions/error'
+        '409':
+          description: 'Entry already exists'
           schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
         '500':
-          description: Internal Server error
+          description: 'General Error'
           schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Service Link Status Records'
+      description: "Fetch list of Service Link Status Records"
 
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Service Link Status Record ID"
+          required: false
 
-  /account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/:
+      tags:
+        - Service Linking - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Service Link Status Records'
+          schema:
+            $ref: '#/definitions/ServiceLinkStatusArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/{link_id}/statuses/signed/:
     post:
       security:
-        - internalApiKeyAuth: []
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Store signed Service Link Status Record'
+      description: "Stores Service Link Status Record signed by Operator."
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: payload
+          in: body
+          description: "Service Link Status Record signed by Operator."
+          required: true
+          schema:
+            $ref: '#/definitions/newServiceLinkStatusSignedRequest'
+
+      tags:
+        - Service Linking - Create
+
+      responses:
+        '201':
+          description: 'Service Link Status Record created'
+          schema:
+            $ref: '#/definitions/ServiceLinkStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '409':
+          description: 'Entry already exists'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/{link_id}/statuses/{status_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Service Link Status'
+      description: "Fetch Service Link Status Record by ID"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: status_id
+          in: path
+          type: string
+          description: 'Service Link Status ID'
+          required: true
+
+      tags:
+        - Service Linking - Fetch
+
+      responses:
+        '200':
+          description: 'Service Link Status Record'
+          schema:
+            $ref: '#/definitions/ServiceLinkStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/{link_id}/statuses/last/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get last Service Link Status Record'
+      description: "Fetch last Service Link Status Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+
+      tags:
+        - Service Linking - Fetch
+
+      responses:
+        '200':
+          description: 'Service Link Status Record'
+          schema:
+            $ref: '#/definitions/ServiceLinkStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No Service Link with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/links/{source_link_id}/{sink_link_id}/consents/:
+    post:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Give Consent'
       description: "Constructs Consent Record's and Consent Status Record's based on provided payloads for Source and Sink services. Signs constructed record's with Account owner's key. After signing records are stored."
 
       parameters:
@@ -220,15 +583,15 @@ paths:
           type: string
           description: 'Account ID'
           required: true
-        - name: source_slr_id
+        - name: source_link_id
           in: path
           type: string
           description: 'Service link record ID of Source service'
           required: true
-        - name: sink_slr_id
+        - name: sink_link_id
           in: path
           type: string
-          description: 'Service link record ID of Sink service'
+          description: 'Service Link Record ID of Sink Service'
           required: true
         - name: consent_data
           in: body
@@ -238,7 +601,7 @@ paths:
             $ref: '#/definitions/newConsentRequest'
 
       tags:
-        - Consent
+        - Consenting - Create
 
       responses:
         '201':
@@ -246,212 +609,666 @@ paths:
           schema:
             $ref: '#/definitions/newConsentResponse'
         '400':
-          description: Bad Request
+          description: 'Bad Request'
           schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
           schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
         '500':
-          description: Internal Server error
+          description: 'General Error'
           schema:
-            $ref: '#/definitions/errors'
-
-
-  /consent/{sink_cr_id}/authorizationtoken/:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/{link_id}/consents/:
     get:
       security:
-        - internalApiKeyAuth: []
-      description: "Provides information needed to construct Authorization token."
-
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Records'
+      description: "List Consent Records related to Service Link Record"
       parameters:
-        - name: sink_cr_id
+        - name: account_id
           in: path
           type: string
-          description: "Consent Record ID of Sink service"
+          description: 'Account ID'
           required: true
-
-      tags:
-        - Consent
-        - Authorizationtoken
-
-      responses:
-        '200':
-          description: 'Base data for authorization tokens'
-          schema:
-            $ref: '#/definitions/AuthorizationTokenResponse'
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server error
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /consent/{cr_id}/status/last/:
-    get:
-      security:
-        - internalApiKeyAuth: []
-      description: "Get last Status Record of Consent"
-
-      parameters:
-        - name: cr_id
+        - name: link_id
           in: path
           type: string
-          description: "Consent Record ID"
+          description: 'Service Link ID'
           required: true
-
-      tags:
-        - Consent
-        - Authorizationtoken
-
-      responses:
-        '200':
-          description: 'Last Status Record of Consent'
-          schema:
-            $ref: '#/definitions/ConsentStatusRecordResponse'
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server error
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /consent/{cr_id}/status/:
-    get:
-      security:
-        - internalApiKeyAuth: []
-      description: "Get missing Consent Status Records"
-
-      parameters:
-        - name: cr_id
-          in: path
-          type: string
-          description: "Consent Record ID"
-          required: true
-        - name: csr_id
+        - name: status_id
           in: query
           type: string
           description: "Last valid Consent Status Record ID"
-          required: true
+          required: false
+        - name: getConsentPairs
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
 
       tags:
-        - Consent
-        - Status
+        - Consenting - Fetch
 
       responses:
         '200':
-          description: 'Array of Consent Status Record objects'
+          description: 'Array of Consent Records'
           schema:
-            $ref: '#/definitions/MissingConsentStatusRecordResponse'
+            $ref: '#/definitions/ConsentArray'
         '400':
-          description: Bad Request
+          description: 'Bad Request'
           schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No Service Link with provided ID'
           schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
         '500':
-          description: Internal Server error
+          description: 'General Error'
           schema:
-            $ref: '#/definitions/errors'
-
-    post:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/links/{link_id}/consents/last/:
+    get:
       security:
-        - internalApiKeyAuth: []
-      description: "Issue new status"
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Las Consent Record'
+      description: "Fetch Last Consent Record related to Service Link Record"
 
       parameters:
-        - name: cr_id
+        - name: account_id
           in: path
           type: string
-          description: "Consent Record ID"
+          description: 'Account ID'
           required: true
-        - name: csr_payload
-          in: body
-          description: "Consent Record payload"
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
           required: true
-          schema:
-            $ref: '#/definitions/newConsentStatus'
+        - name: getConsentPairs
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
 
       tags:
-        - Consent
-        - Status
+        - Consenting - Fetch
 
       responses:
         '200':
-          description: 'New Consent Status Record'
+          description: 'Array of Consent Records'
           schema:
-            $ref: '#/definitions/ConsentStatusRecordResponse'
+            $ref: '#/definitions/ConsentResponse'
         '400':
-          description: Bad Request
+          description: 'Bad Request'
           schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No Service Link with provided ID'
           schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
         '500':
-          description: Internal Server error
+          description: 'General Error'
           schema:
-            $ref: '#/definitions/errors'
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/consents/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Records'
+      description: "Fetch list of Consent Records related to Account"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Consent Status Record ID"
+          required: false
+        - name: getConsentPairs
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Records'
+          schema:
+            $ref: '#/definitions/ConsentArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/consents/{consent_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Record'
+      description: "Fetch Consent Record by ID"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Record'
+          schema:
+            $ref: '#/definitions/ConsentResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No Service Link with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/consents/{consent_id}/statuses/:
+    post:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Issue Consent Status change'
+      description: "Constructs Consent Status Record based on provided Consent Status Record payload. Signs constructed Consent Status Record with Account owner's key. Finally Consent Status Record is stored."
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: payload
+          in: body
+          description: "Payload for Consent Status Record to sign by Account Owner. If 'operatorSigned' query parameter is false, this parameter is required."
+          required: true
+          schema:
+            $ref: '#/definitions/newConsentStatusRequest'
+
+      tags:
+        - Consenting - Create
+
+      responses:
+        '201':
+          description: 'Consent Status Record created'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '409':
+          description: 'Entry already exists'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Status Records'
+      description: "Fetch list of Consent Status Records"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Status Records'
+          schema:
+            $ref: '#/definitions/ConsentStatusArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/consents/{consent_id}/statuses/signed/:
+    post:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Store signed Consent Status Record'
+      description: "Stores Consent Status Record signed by Operator."
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: payload
+          in: body
+          description: "Consent Status Record signed by Operator"
+          required: true
+          schema:
+            $ref: '#/definitions/newConsentStatusSignedRequest'
+
+      tags:
+        - Consenting - Create
+
+      responses:
+        '201':
+          description: 'Consent Status Record created'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '409':
+          description: 'Entry already exists'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/consents/{consent_id}/statuses/{status_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Status Record'
+      description: "Fetch Consent Status Record by ID"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: status_id
+          in: path
+          type: string
+          description: 'Consent Status ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /accounts/{account_id}/consents/{consent_id}/statuses/last/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get last Consent Status Record'
+      description: "Fetch last Consent Status Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
 
 
+  /consents/{consent_id}/authorisationtoken/:
+    get:
+      security:
+        - apiKeyClient: []
+      summary: 'Data for Authorisation token'
+      description: "Fetch data needed to construct Authorisation token."
+      parameters:
+        - name: consent_id
+          in: path
+          type: string
+          description: "Consent Record ID of Sink Service"
+          required: true
+
+      tags:
+        - Data Connection
+
+      responses:
+        '200':
+          description: 'Base data for Authorisation token'
+          schema:
+            $ref: '#/definitions/AuthorisationTokenResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /services/{service_id}/links/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Service Link Records'
+      description: "Fetch list of Service Link Records related to Service"
+
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          description: 'Service ID'
+          required: true
+        - name: account_id
+          in: query
+          type: string
+          description: 'Filter by Account ID'
+          required: false
+
+      tags:
+        - Service Linking - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Service Link Records'
+          schema:
+            $ref: '#/definitions/ServiceLinkArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /services/{service_id}/links/{link_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Service Link Record'
+      description: "Fetch Service Link Record related to Service"
+
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          description: 'Service ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+
+      tags:
+        - Service Linking - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Service Link Records'
+          schema:
+            $ref: '#/definitions/ServiceLinkResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /services/{service_id}/links/{link_id}/consents/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Records'
+      description: "Fetch list of Consent Records related to Service Service Link Record"
+
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          description: 'Service ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Records'
+          schema:
+            $ref: '#/definitions/ConsentArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
+  /services/{service_id}/links/{link_id}/consents/{consent_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Record'
+      description: "Consent Record related to Service Link and Service"
+
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          description: 'Service ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Records'
+          schema:
+            $ref: '#/definitions/ConsentResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+            
+            
 definitions:
-
-  AuthorizationTokenResponse:
+  jwk:
     type: object
+    description: "Cryptographic key presented as JSON Web Key (JWK) as defined in RFC 7517"
+        
+  JWSUnprotectedHeader:
+    type: object
+    description: "JWS Unprotected Header"
     properties:
-      data:
-        type: object
-        properties:
-          source:
-            type: object
-            properties:
-              consentRecord:
-                  $ref: '#/definitions/ConsentRecord'
-          sink:
-            type: object
-            properties:
-              serviceLinkRecord:
-                  $ref: '#/definitions/Slr'
+      kid:
+        type: string
+        description: "Key identifier"
+      jwk:
+        $ref: '#/definitions/jwk'
 
-  errors:
+  JWSProtectedHeader:
+    type: string
+    description: 'JWS Protected Header'
+    
+  error:
     type: object
     properties:
       status:
@@ -476,6 +1293,57 @@ definitions:
       Api-Key:
         type: string
         description: ApiKey
+        
+  SinkServiceLinkInit:
+    type: object
+    properties:
+      code:
+        type: string
+        description: 'Code'
+      data:
+        type: object
+        properties:
+          attributes:
+            type: object
+            properties:
+              slr_id:
+                type: string
+                description: 'Service Link ID'
+              pop_key:
+                $ref: '#/definitions/jwk'
+        
+  SourceServiceLinkInit:
+    type: object
+    properties:
+      code:
+        type: string
+        description: 'Code'
+      data:
+        type: object
+        properties:
+          attributes:
+            type: object
+            properties:
+              slr_id:
+                type: string
+                description: 'Service Link ID'
+        
+  ServiceLinkInitResponse:
+    type: object
+    properties:
+      code:
+        type: string
+        description: 'Code'
+      data:
+        type: object
+        properties:
+          attributes:
+            type: object
+            properties:
+              slr_id:
+                type: string
+                description: 'Service Link ID'
+        
 
   newSlr:
     type: object
@@ -485,18 +1353,24 @@ definitions:
         description: "Resource type: 'ServiceLinkRecord'"
       attributes:
         type: object
-        description: 'Payload for Service Link Record - [MyData Service Linking Specification] (https://github.com/HIIT/mydata-stack)'
-
-  newSlSr:
-    type: object
-    properties:
-      type:
-        type: string
-        description: "Resource type: 'ServiceLinkStatusRecord'"
-      attributes:
-        type: object
-        description: 'Payload for Service Link Status Record - [MyData Service Linking Specification] (https://github.com/HIIT/mydata-stack)'
-
+        description: 'Partial Payload for Service Link Record'
+        properties:
+          version:
+            type: string
+          link_id:
+            type: string
+          operator_id:
+            type: string
+          service_id:
+            type: string
+          surrogate_id:
+            type: string
+          operator_key:
+            $ref: '#/definitions/jwk'
+          iat:
+            type: integer
+            format: int32
+            
   Slr:
     type: object
     properties:
@@ -508,10 +1382,116 @@ definitions:
         description: "ID of resource"
       attributes:
         type: object
+        description: 'Service Link Record as JSON Web Signature (JWS)'
         properties:
-          slr:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
             type: object
-            description: 'Service Link Record as JWS - [MyData Service Linking Specification] (https://github.com/HIIT/mydata-stack)'
+            description: 'JWS Payload. Base64url encoded.'
+            properties:
+              version:
+                type: string
+              link_id:
+                type: string
+              operator_id:
+                type: string
+              service_id:
+                type: string
+              surrogate_id:
+                type: string
+              operator_key:
+                $ref: '#/definitions/jwk'
+              cr_keys:
+                description: 'JSON Web Key (JWK) Set Structure '
+                type: array
+                items:
+                  $ref: '#/definitions/jwk'
+              iat:
+                type: integer
+                format: int32
+          signature:
+            type: string
+            description: "JWS Signature"
+            
+  
+  SlrDoubleSigned:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'ServiceLinkRecord'"
+      id:
+        type: string
+        description: "ID of resource"
+      attributes:
+        type: object
+        description: 'Service Link Record as JSON Web Signature (JWS)'
+        properties:
+          payload:
+            type: object
+            description: 'JWS Payload. Base64url encoded.'
+            properties:
+              version:
+                type: string
+              link_id:
+                type: string
+              operator_id:
+                type: string
+              service_id:
+                type: string
+              surrogate_id:
+                type: string
+              operator_key:
+                $ref: '#/definitions/jwk'
+              cr_keys:
+                description: 'JSON Web Key (JWK) Set Structure '
+                type: array
+                items:
+                  $ref: '#/definitions/jwk'
+              iat:
+                type: integer
+                format: int32
+          signatures:
+            type: array
+            items:
+              type: object
+              properties:
+                header:
+                  $ref: '#/definitions/JWSUnprotectedHeader'
+                protected:
+                  $ref: '#/definitions/JWSProtectedHeader'
+                signature:
+                  type: string
+                  description: "JWS Signature"
+
+  newSsr:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'ServiceLinkStatusRecord'"
+      attributes:
+        type: object
+        description: 'Partial Payload for Service Link Record'
+        properties:
+          version:
+            type: string
+          record_id:
+            type: string
+          surrogate_id:
+            type: string
+          slr_id:
+            type: string
+          sl_status:
+            type: string
+          iat:
+            type: integer
+            format: int32
+          prev_record_id:
+            type: string
 
   Ssr:
     type: object
@@ -524,10 +1504,34 @@ definitions:
         description: "ID of resource"
       attributes:
         type: object
+        description: 'Service Link Status Record as JSON Web Signature (JWS)'
         properties:
-          ssr:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
             type: object
-            description: 'Service Link Status Record as JWS - [MyData Service Linking Specification] (https://github.com/HIIT/mydata-stack)'
+            description: 'JWS Payload. Base64url encoded.'
+            properties:
+              version:
+                type: string
+              record_id:
+                type: string
+              surrogate_id:
+                type: string
+              slr_id:
+                type: string
+              sl_status:
+                type: string
+              iat:
+                type: integer
+                format: int32
+              prev_record_id:
+                type: string
+          signature:
+            type: string
+            description: "JWS Signature"
 
   newServiceLinkRequest:
     type: object
@@ -536,12 +1540,7 @@ definitions:
         type: string
         description: 'Code'
       data:
-        type: object
-        properties:
-          slr:
-              $ref: '#/definitions/newSlr'
-          surrogate_id:
-            $ref: '#/definitions/SurrogateId'
+        $ref: '#/definitions/newSlr'
 
   newServiceLinkResponse:
     type: object
@@ -550,14 +1549,49 @@ definitions:
         type: string
         description: 'Code'
       data:
-        type: object
-        properties:
-          slr:
-              $ref: '#/definitions/Slr'
-          surrogate_id:
-            $ref: '#/definitions/SurrogateId'
+        $ref: '#/definitions/Slr'
 
-  verifySlRequest:
+  ServiceLinkResponse:
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/SlrDoubleSigned'
+        
+  ServiceLinkArray:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/SlrDoubleSigned'
+
+  newServiceLinkStatusRequest:
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/newSsr'
+        
+  newServiceLinkStatusSignedRequest:
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/Ssr'
+
+  ServiceLinkStatusResponse:
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/Ssr'
+
+  ServiceLinkStatusArray:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/Ssr'
+
+  storeSlRequest:
     type: object
     properties:
       code:
@@ -567,13 +1601,11 @@ definitions:
         type: object
         properties:
           slr:
-              $ref: '#/definitions/Slr'
+              $ref: '#/definitions/SlrDoubleSigned'
           ssr:
-            $ref: '#/definitions/newSlSr'
-          surrogate_id:
-            $ref: '#/definitions/SurrogateId'
+            $ref: '#/definitions/newSsr'
 
-  verifySlrResponse:
+  storeSlrResponse:
     type: object
     properties:
       code:
@@ -583,54 +1615,189 @@ definitions:
         type: object
         properties:
           slr:
-              $ref: '#/definitions/Slr'
+              $ref: '#/definitions/SlrDoubleSigned'
           ssr:
             $ref: '#/definitions/Ssr'
-          surrogate_id:
-            $ref: '#/definitions/SurrogateId'
 
-  SurrogateId:
+
+  consentPayloadSource:
     type: object
+    description: 'Payload for Consent Record'
     properties:
-      type:
-        type: string
-        description: "Resource type: 'SurrogateId'"
-      attributes:
+      common_part:
         type: object
         properties:
+          version:
+            type: string
+          cr_id:
+            type: string
           surrogate_id:
             type: string
-            description: 'Surrogate ID'
-          servicelinkrecord_id:
+          slr_id:
             type: string
-            description: 'Service Link Record ID'
-          service_id:
+          operator:
             type: string
-            description: 'Service ID'
-          account_id:
+          subject_id:
             type: string
-            description: 'Account ID'
-
-
-  surrogateResponse:
-    type: object
-    properties:
-      data:
+          role:
+            type: string
+          iat:
+            type: integer
+            format: int32
+          nbf:
+            type: integer
+            format: int32
+          exp:
+            type: integer
+            format: int32
+          rs_description:
+            type: object
+            properties:
+              resource_set:
+                type: object
+                properties:
+                  rs_id:
+                    type: string
+                  dataset:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        dataset_id:
+                          type: string
+                        distribution_id:
+                          type: string
+                        distribution_url:
+                          type: string
+      role_specific_part:
         type: object
         properties:
+          pop_key:
+            $ref: '#/definitions/jwk'
+          token_issuer_key:
+            $ref: '#/definitions/jwk'
+      consent_receipt_part:
+        type: object
+        properties:
+          ki_cr:
+            type: object
+            description: 'Kantara CR'
+      extension_part:
+        type: object
+        properties:
+          extensions:
+            type: object
+            description: 'None for this release'
+
+  consentPayloadSink:
+    type: object
+    description: 'Payload for Consent Record'
+    properties:
+      common_part:
+        type: object
+        properties:
+          version:
+            type: string
+          cr_id:
+            type: string
           surrogate_id:
-            $ref: '#/definitions/SurrogateId'
+            type: string
+          slr_id:
+            type: string
+          operator:
+            type: string
+          subject_id:
+            type: string
+          role:
+            type: string
+          iat:
+            type: integer
+            format: int32
+          nbf:
+            type: integer
+            format: int32
+          exp:
+            type: integer
+            format: int32
+          rs_description:
+            type: object
+            properties:
+              resource_set:
+                type: object
+                properties:
+                  rs_id:
+                    type: string
+                  dataset:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        dataset_id:
+                          type: string
+                        distribution_id:
+                          type: string
+                        distribution_url:
+                          type: string
+      role_specific_part:
+        type: object
+        properties:
+          source_cr_id:
+            type: string
+          usage_rules:
+            type: array
+            items:
+              type: string
+      consent_receipt_part:
+        type: object
+        properties:
+          ki_cr:
+            type: object
+            description: 'Kantara CR'
+      extension_part:
+        type: object
+        properties:
+          extensions:
+            type: object
+            description: 'None for this release'
 
-
-  newConsent:
+  newConsentSource:
     type: object
     properties:
       type:
         type: string
         description: "Resource type: 'ConsentRecord'"
       attributes:
-        type: object
-        description: 'Payload for Consent Record - [MyData Authorization Specification] (https://github.com/HIIT/mydata-stack)'
+        $ref: '#/definitions/consentPayloadSource'
+        
+        
+  consentStatusPayload:
+    type: object
+    description: 'Consent Status Record Payload'
+    properties:
+      version:
+        type: string
+      record_id:
+        type: string
+      surrogate_id:
+        type: string
+      cr_id:
+        type: string
+      consent_status:
+        type: string
+      iat:
+        type: integer
+        format: int32
+      prev_record_id:
+        type: string
+
+  newConsentSink:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'ConsentRecord'"
+      attributes:
+        $ref: '#/definitions/consentPayloadSink'
 
   newConsentStatus:
     type: object
@@ -639,10 +1806,9 @@ definitions:
         type: string
         description: "Resource type: 'ConsentStatusRecord'"
       attributes:
-        type: object
-        description: 'Payload for Consent Status Record - [MyData Authorization Specification] (https://github.com/HIIT/mydata-stack)'
+        $ref: '#/definitions/consentStatusPayload'
 
-  ConsentRecord:
+  ConsentRecordSource:
     type: object
     properties:
       type:
@@ -653,11 +1819,66 @@ definitions:
         description: "ID of resource"
       attributes:
         type: object
+        description: 'Consent Record as JSON Web Signature (JWS)'
         properties:
-          cr:
-            type: object
-            description: 'Consent Record as JWS - [MyData Authorization Specification] (https://github.com/HIIT/mydata-stack)'
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
+            $ref: '#/definitions/consentPayloadSource'
+          signature:
+            type: string
+            description: "JWS Signature"
 
+  ConsentRecordSink:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'ConsentRecord'"
+      id:
+        type: string
+        description: "ID of resource"
+      attributes:
+        type: object
+        description: 'Consent Record as JSON Web Signature (JWS)'
+        properties:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
+            $ref: '#/definitions/consentPayloadSink'
+          signature:
+            type: string
+            description: "JWS Signature"
+
+  ConsentRecordGeneral:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'ConsentRecord'"
+      id:
+        type: string
+        description: "ID of resource"
+      attributes:
+        type: object
+        description: 'Consent Record as JSON Web Signature (JWS)'
+        properties:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
+            type: 'object'
+            description: 'Base64 encoded object containing either consentPayloadSource or consentPayloadSink object. For detailed descriptions of these objects check Models section.'
+          signature:
+            type: string
+            description: "JWS Signature"
+            
+            
   ConsentStatusRecord:
     type: object
     properties:
@@ -669,10 +1890,17 @@ definitions:
         description: "ID of resource"
       attributes:
         type: object
+        description: 'Consent Status Record as JSON Web Signature (JWS)'
         properties:
-          csr:
-            type: object
-            description: 'Consent Status Record as JWS - [MyData Authorization Specification] (https://github.com/HIIT/mydata-stack)'
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
+            $ref: '#/definitions/consentStatusPayload'
+          signature:
+            type: string
+            description: "JWS Signature"
 
   newConsentRequest:
     type: object
@@ -684,14 +1912,14 @@ definitions:
             type: object
             properties:
               consentRecordPayload:
-                  $ref: '#/definitions/newConsent'
+                  $ref: '#/definitions/newConsentSource'
               consentStatusRecordPayload:
                 $ref: '#/definitions/newConsentStatus'
           sink:
             type: object
             properties:
               consentRecordPayload:
-                  $ref: '#/definitions/newConsent'
+                  $ref: '#/definitions/newConsentSink'
               consentStatusRecordPayload:
                 $ref: '#/definitions/newConsentStatus'
 
@@ -705,29 +1933,64 @@ definitions:
             type: object
             properties:
               consentRecord:
-                  $ref: '#/definitions/ConsentRecord'
+                  $ref: '#/definitions/ConsentRecordSource'
               consentStatusRecord:
                 $ref: '#/definitions/ConsentStatusRecord'
           sink:
             type: object
             properties:
               consentRecord:
-                  $ref: '#/definitions/ConsentRecord'
+                  $ref: '#/definitions/ConsentRecordSink'
               consentStatusRecord:
                 $ref: '#/definitions/ConsentStatusRecord'
 
-
-  ConsentStatusRecordResponse:
+  ConsentResponse:
     type: object
     properties:
       data:
-       $ref: '#/definitions/ConsentStatusRecord'
+        $ref: '#/definitions/ConsentRecordGeneral'
 
-
-  MissingConsentStatusRecordResponse:
+  ConsentArray:
     type: object
     properties:
       data:
-       type: array
-       items:
+        type: array
+        items:
+          $ref: '#/definitions/ConsentResponse'
+
+  newConsentStatusRequest:
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/newConsentStatus'
+        
+  newConsentStatusSignedRequest:
+    type: object
+    properties:
+      data:
         $ref: '#/definitions/ConsentStatusRecord'
+
+  ConsentStatusResponse:
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/ConsentStatusRecord'
+
+  ConsentStatusArray:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/ConsentStatusRecord'
+          
+  AuthorisationTokenResponse:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          consentRecord:
+              $ref: '#/definitions/ConsentRecordGeneral'
+          serviceLinkRecord:
+              $ref: '#/definitions/Slr'
