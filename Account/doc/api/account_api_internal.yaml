@@ -27,16 +27,16 @@ securityDefinitions:
     
   apiKeyClient:
     type: apiKey
-    name: "api-key-client"
+    name: "Api-Key-Sdk"
     description: "Defines client that is performing operations. Possible clients is Operator's SDK Component"
     in: header
-    
+
   apiKeyUser:
     type: apiKey
-    name: "api-key-user"
+    name: "Api-Key-User"
     description: "Defines user that is performing operations. Possible user's are MyData Account Owner's"
     in: header
-    
+
 externalDocs:
   description: 'External documentation'
   url: 'https://github.com/HIIT/mydata-stack'
@@ -65,7 +65,7 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
-            
+
   /auth/sdk/account/{account_id}/info/:
     get:
       security:
