@@ -14,9 +14,9 @@ SUPER_DEBUG = True
 # Application URL prefix
 ## Only leading slash
 {% if URL_PREFIX is defined %}
-URL_PREFIX = {{ URL_PREFIX }}
+APP_URL_PREFIX = {{ URL_PREFIX }}
 {% else %}
-URL_PREFIX = '/account/api/v1.3'
+APP_URL_PREFIX = '/account/api/v1.3'
 {% endif %}
 
 
