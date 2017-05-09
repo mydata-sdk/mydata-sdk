@@ -1003,6 +1003,11 @@ class SdkTestCase(unittest.TestCase):
     # TODO: SLR Account owner signature verification fails
     # TODO: SLR Status change - unsigned input
     # TODO: SLR Status change - signed input
+    # TODO: SLR Fetch - Statuses
+    # TODO: SLR Fetch - Status by ID
+    # TODO: SLR Fetch - Latest Status
+    # TODO: SLR Fetch - List by Service
+    # TODO: SLR Fetch - Service by ID
 
 
 if __name__ == '__main__':
