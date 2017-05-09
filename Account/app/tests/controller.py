@@ -219,7 +219,7 @@ def generate_sl_payload(slr_id=None, operator_id=None, operator_key=None, servic
     return payload
 
 
-def generate_sl_store_payload(service_key=None, service_kid=None, slr_id=None, slr_signed=None, surrogate_id=None, record_id=None, misformatted_payload=False):
+def generate_sl_store_payload(service_key=None, service_kid=None, slr_id=None, slr_signed=None, surrogate_id=None, record_id=None, misformatted_payload=False, misformatted_signature=False):
 
     if slr_id is None:
         raise AttributeError("Provide operator_id as parameter")
@@ -263,6 +263,10 @@ def generate_sl_store_payload(service_key=None, service_kid=None, slr_id=None, s
     if misformatted_payload:
         del sl_store_payload['data']['slr']['attributes']['payload']
         del sl_store_payload['data']['ssr']['attributes']['iat']
+
+    if misformatted_signature:
+        sl_store_payload['data']['slr']['attributes']['signatures'][0]['signature'] = get_unique_string()
+        sl_store_payload['data']['slr']['attributes']['signatures'][1]['signature'] = get_unique_string()
 
     payload = json.dumps(sl_store_payload)
 
