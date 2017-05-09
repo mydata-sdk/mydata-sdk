@@ -14,7 +14,7 @@ info:
 schemes:
   - https
 
-basePath: '/api/v1.3/external/'
+basePath: '/account/api/v1.3/external/'
 
 consumes:
   - application/json
