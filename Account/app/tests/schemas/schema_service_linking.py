@@ -383,3 +383,127 @@ schema_slr = {
   "type": "object"
 }
 
+
+schema_slr_status_listing = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "items": {
+        "properties": {
+          "attributes": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "kid": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kid"
+                ],
+                "type": "object"
+              },
+              "payload": {
+                "type": "string"
+              },
+              "protected": {
+                "type": "string"
+              },
+              "signature": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "header",
+              "protected",
+              "payload",
+              "signature"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "attributes",
+          "type",
+          "id"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+
+schema_slr_status = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "attributes": {
+          "properties": {
+            "header": {
+              "properties": {
+                "kid": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kid"
+              ],
+              "type": "object"
+            },
+            "payload": {
+              "type": "string"
+            },
+            "protected": {
+              "type": "string"
+            },
+            "signature": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "header",
+            "protected",
+            "payload",
+            "signature"
+          ],
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "attributes",
+        "type",
+        "id"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+
+
+

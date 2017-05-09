@@ -27,7 +27,7 @@ from app.tests.schemas.schema_account import schema_account_create, schema_accou
     schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
-    schema_slr_store, schema_slr_listing, schema_slr
+    schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status
 from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
 
 
@@ -1071,13 +1071,140 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # TODO: SLR Status change - unsigned input
-    # TODO: SLR Status change - signed input
-    # TODO: SLR Fetch - Statuses
-    # TODO: SLR Fetch - Status by ID
+    def test_fetch_slr_wrong_id(self):
+        """
+        Test Fetch SLR with wrong slr id
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        slr_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id_wrong) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_status_listing(self):
+        """
+        Test Fetch SLR status listing
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_status_listing")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status_listing))
+        response_data_dicy = json.loads(response.data)
+        slsr_id = response_data_dicy['data'][0]['id']
+        return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_status_listing_wrong_id(self):
+        """
+        Test Fetch SLR status listing with wrong slr_id
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_status_listing_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        slr_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id_wrong) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_status(self):
+        """
+        Test Fetch SLR status by ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_status")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/" + str(slsr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_status_wrong_id(self):
+        """
+        Test Fetch SLR status by wrong ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_status_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        slrs_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/" + str(slrs_id_wrong) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
+
+    ##########
+    ##########
     # TODO: SLR Fetch - Latest Status
     # TODO: SLR Fetch - List by Service
     # TODO: SLR Fetch - Service by ID
+    # TODO: SLR Status change - unsigned input
+    # TODO: SLR Status change - signed input
 
 
 if __name__ == '__main__':
