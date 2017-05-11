@@ -1628,27 +1628,27 @@ class ApiServiceLinkRecordsForService(Resource):
             logger.debug("Service ID from path: " + service_id)
 
         try:
-            account_id = request.args.get('account_id', None)
-            if account_id is not None:
-                account_id = str(account_id)
+            surrogate_id = request.args.get('surrogate_id', None)
+            if surrogate_id is not None:
+                surrogate_id = str(surrogate_id)
         except Exception as exp:
-            raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+            raise ApiError(code=400, title="Unsupported surrogate_id", detail=repr(exp), source=endpoint)
         else:
-            if account_id is not None:
-                logger.info("Account ID from query params: " + account_id)
+            if surrogate_id is not None:
+                logger.info("Surrogate ID from query params: " + surrogate_id)
             else:
-                logger.info("No Account ID in query params")
+                logger.info("No Surrogate ID in query params")
 
         # Get ServiceLinkRecords
         try:
             logger.info("Fetching ServiceLinkRecords")
-            if account_id is None:
+            if surrogate_id is None:
                 db_entries = get_slrs_for_service(service_id=service_id)
             else:
-                db_entries = get_slrs_for_service(service_id=service_id, account_id=account_id)
+                db_entries = get_slrs_for_service(service_id=service_id, surrogate_id=surrogate_id)
         except IndexError as exp:
             error_title = "Service Link Record not found with provided information"
-            error_detail = "Service ID was {}".format(service_id)
+            error_detail = "Service ID was {} and Surrogate ID was {}".format(service_id, surrogate_id)
             logger.error(error_title + " - " + error_detail + ": " + repr(exp))
             raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
         except Exception as exp:

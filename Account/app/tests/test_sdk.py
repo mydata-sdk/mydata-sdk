@@ -1274,19 +1274,19 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_fetch_slr_listing_for_service_with_account_id(self):
+    def test_fetch_slr_listing_for_service_with_surrogate_id(self):
         """
-        Test Fetch SLR listing for Service
+        Test Fetch SLR listing for Service with Surrogate ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_listing_for_service_with_account_id")
+        print_test_title(test_name="test_fetch_slr_listing_for_service_with_surrogate_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
-        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/?account_id=" + str(account_id)
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/?surrogate_id=" + str(self.SOURCE_SURROGATE_ID)
 
         response = self.app.get(url, headers=request_headers)
         print("response.data: " + json.dumps(json.loads(response.data), indent=4))
@@ -1298,7 +1298,31 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_fetch_slr_listing_for_service_wrong_id(self):
+    def test_fetch_slr_listing_for_service_with_wrong_surrogate_id(self):
+        """
+        Test Fetch SLR listing for Service with wrong Surrogate ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_listing_for_service_with_wrong_surrogate_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/?surrogate_id=" + str(self.SINK_SURROGATE_ID)
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_listing_for_service_wrong_service_id(self):
         """
         Test Fetch SLR listing for Service with wrong ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
