@@ -746,7 +746,7 @@ paths:
       security:
         - apiKeyClient: []
         - apiKeyUser: []
-      summary: 'Get Las Consent Record'
+      summary: 'Get Last Consent Record'
       description: "Fetch Last Consent Record related to Service Link Record"
 
       parameters:
@@ -807,7 +807,7 @@ paths:
           type: string
           description: "Last valid Consent Status Record ID"
           required: false
-        - name: getConsentPairs
+        - name: getConsentPair
           in: query
           type: boolean
           description: "If true also Consent pairs will be fetched"
@@ -854,6 +854,11 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
+        - name: getConsentPair
+          in: query
+          type: boolean
+          description: "If true also Consent pair will be fetched"
+          required: false
 
       tags:
         - Consenting - Fetch
@@ -1247,6 +1252,11 @@ paths:
           type: string
           description: 'Service Link ID'
           required: true
+        - name: getConsentPair
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
 
       tags:
         - Consenting - Fetch
@@ -1294,6 +1304,11 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
+        - name: getConsentPair
+          in: query
+          type: boolean
+          description: "If true also Consent pair will be fetched"
+          required: false
 
       tags:
         - Consenting - Fetch
@@ -1896,8 +1911,8 @@ definitions:
         description: "Resource type: 'ConsentRecord'"
       attributes:
         $ref: '#/definitions/consentPayloadSource'
-        
-        
+
+
   consentStatusPayload:
     type: object
     description: 'Consent Status Record Payload'
@@ -2005,8 +2020,8 @@ definitions:
           signature:
             type: string
             description: "JWS Signature"
-            
-            
+
+
   ConsentStatusRecord:
     type: object
     properties:
@@ -2039,16 +2054,16 @@ definitions:
           source:
             type: object
             properties:
-              consentRecordPayload:
+              consent_record_payload:
                   $ref: '#/definitions/newConsentSource'
-              consentStatusRecordPayload:
+              consent_status_record_payload:
                 $ref: '#/definitions/newConsentStatus'
           sink:
             type: object
             properties:
-              consentRecordPayload:
+              consent_record_payload:
                   $ref: '#/definitions/newConsentSink'
-              consentStatusRecordPayload:
+              consent_status_record_payload:
                 $ref: '#/definitions/newConsentStatus'
 
   newConsentResponse:

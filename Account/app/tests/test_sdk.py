@@ -20,7 +20,7 @@ from flask import json
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, \
     print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
-    generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload
+    generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload, generate_consent_payload
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
@@ -1574,6 +1574,47 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_surrogate))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_give_consent(self):
+        """
+        Test Give Consent
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_give_consent")
+
+        source_account_id, source_account_api_key, source_sdk_api_key, source_slr_id, source_ssr_id = self.test_slr_store_source()
+        sink_account_id, sink_account_api_key, sink_sdk_api_key, sink_slr_id, sink_ssr_id = self.test_slr_store_sink()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(source_account_api_key)
+        request_headers['Api-Key-Sdk'] = str(source_sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(source_account_id) + "/servicelinks/" + source_slr_id + "/" + source_slr_id + "/consents/"
+        payload = generate_consent_payload(
+                source_surrogate_id=self.SOURCE_SURROGATE_ID,
+                source_slr_id=None,
+                operator_id=None,
+                source_subject_id=None,
+                source_role=None,
+                sink_pop_key=None,
+                operator_pub_key=None,
+                sink_surrogate_id=None,
+                sink_slr_id=None,
+                sink_subject_id=None,
+                sink_role=None,
+                misformatted_payload=False
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
 
         return account_id, account_api_key, sdk_api_key, slr_id
 
