@@ -69,7 +69,8 @@ paths:
   /auth/sdk/account/{account_id}/info/:
     get:
       security:
-        - BasicAuth: []
+        - apiKeyClient: []
+        - apiKeyUser: []
       summary: 'Verify Account API Key'
       description: 'Verify that API Key belongs to specified user'
 
@@ -81,13 +82,49 @@ paths:
           required: true
 
       tags:
-        - Auth
+        - Info
 
       responses:
         '200':
           description: Account object
           schema:
             $ref: '#/definitions/accountInfo'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+  /services/{service_id}/surrogates/{surrogate_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+      summary: 'Verify Account API Key'
+      description: 'Verify that API Key belongs to specified user'
+
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          description: 'Service ID'
+          required: true
+        - name: surrogate_id
+          in: path
+          type: string
+          description: 'Surrogate ID'
+          required: true
+
+      tags:
+        - Info
+
+      responses:
+        '200':
+          description: Surrogate object
+          schema:
+            $ref: '#/definitions/surrogate'
         '400':
           description: 'Bad Request'
           schema:
@@ -1121,10 +1158,10 @@ paths:
           type: string
           description: 'Service ID'
           required: true
-        - name: account_id
+        - name: surrogate_id
           in: query
           type: string
-          description: 'Filter by Account ID'
+          description: 'Filter by Surrogate ID'
           required: false
 
       tags:
@@ -1281,19 +1318,43 @@ paths:
 
 
 definitions:
+
+  surrogate:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          type:
+            type: string
+            description: Resource type 'Surrogate'
+          id:
+            type: string
+            description: Surrogate ID
+          attributes:
+            type: object
+            properties:
+              account_id:
+                type: integer
+                description: "Account ID"
+              service_id:
+                type: string
+                description: "Service ID"
+
   accountInfo:
     type: object
     properties:
-      type:
-        type: string
-        description: Resource type 'Account'
-      id:
-        type: integer
-        description: Account ID
-      attributes:
+      data:
         type: object
-
-
+        properties:
+          type:
+            type: string
+            description: Resource type 'Account'
+          id:
+            type: integer
+            description: Account ID
+          attributes:
+            type: object
 
   jwk:
     type: object

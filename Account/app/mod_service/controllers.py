@@ -401,6 +401,40 @@ def get_surrogate_id_by_account_and_service(account_id=None, service_id=None, en
         return sur_id_obj.to_dict
 
 
+def get_account_id_by_service_and_surrogate_id(surrogate_id=None, service_id=None, endpoint="(get_surrogate_id_by_account_and_Service)"):
+    if surrogate_id is None:
+        raise AttributeError("Provide surrogate_id as parameter")
+    if service_id is None:
+        raise AttributeError("Provide service_id as parameter")
+
+    # Create Surrogate id object
+    try:
+        surrogate_object = SurrogateId(service_id=service_id, surrogate_id=surrogate_id)
+    except Exception as exp:
+        logger.error('Could not create Surrogate object: ' + repr(exp))
+        raise
+    else:
+        logger.info("Surrogate object created")
+        logger.debug("Surrogate object: " + surrogate_object.log_entry)
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    try:
+        cursor = surrogate_object.from_db(cursor=cursor)
+    except Exception as exp:
+        logger.error('Could not get Surrogate object from db: ' + repr(exp))
+        raise
+    else:
+        logger.info("Surrogate object fetched")
+        logger.debug("Surrogate object: " + surrogate_object.log_entry)
+        return surrogate_object
+
+
 ##################################
 ###################################
 # Service Link Records
@@ -534,17 +568,17 @@ def get_slr_for_service(service_id=None, slr_id=None, cursor=None):
     return db_entry_object.to_api_dict
 
 
-def get_slrs_for_service(service_id=None, account_id=""):
+def get_slrs_for_service(service_id=None, surrogate_id=""):
     """
     Get all slr -entries related to service
     :param service_id:
-    :param account_id:
+    :param surrogate_id:
     :return: List of dicts
     """
     if service_id is None:
         raise AttributeError("Provide service_id as parameter")
     logger.info("service_id: " + str(service_id))
-    logger.info("account_id: " + str(account_id))
+    logger.info("surrogate_id: " + str(surrogate_id))
 
     # Get table name
     logger.info("Create slr")
@@ -563,7 +597,7 @@ def get_slrs_for_service(service_id=None, account_id=""):
 
     # Get primary keys for slr
     try:
-        cursor, id_list = get_slr_ids_by_service(cursor=cursor, service_id=service_id, account_id=account_id, table_name=table_name)
+        cursor, id_list = get_slr_ids_by_service(cursor=cursor, service_id=service_id, surrogate_id=surrogate_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise

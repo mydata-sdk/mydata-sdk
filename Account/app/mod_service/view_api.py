@@ -31,7 +31,7 @@ from app.mod_blackbox.controllers import verify_jws_signature_with_jwk
 from app.mod_database.models import ServiceLinkStatusRecord
 from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, init_slr_sink, init_slr_source, \
     get_slr_record, get_slrs, get_slr, get_slsrs, get_slsr, get_last_slr_status, get_slrs_for_service, \
-    get_slr_for_service, store_ssr
+    get_slr_for_service, store_ssr, get_surrogate_id_by_account_and_service, get_account_id_by_service_and_surrogate_id
 from app.mod_service.schemas import schema_sl_init_sink, schema_sl_init_source, schema_sl_sign, schema_sl_store, \
     schema_sls_to_sign_by_account, schema_sls_signed_by_operator
 
@@ -1184,7 +1184,6 @@ class ApiServiceLinkStatusRecords(Resource):
 
 
 class ApiServiceLinkStatusRecordsSigned(Resource):
-    @requires_api_auth_user
     @requires_api_auth_sdk
     def post(self, account_id, link_id):
         """
@@ -1628,27 +1627,27 @@ class ApiServiceLinkRecordsForService(Resource):
             logger.debug("Service ID from path: " + service_id)
 
         try:
-            account_id = request.args.get('account_id', None)
-            if account_id is not None:
-                account_id = str(account_id)
+            surrogate_id = request.args.get('surrogate_id', None)
+            if surrogate_id is not None:
+                surrogate_id = str(surrogate_id)
         except Exception as exp:
-            raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+            raise ApiError(code=400, title="Unsupported surrogate_id", detail=repr(exp), source=endpoint)
         else:
-            if account_id is not None:
-                logger.info("Account ID from query params: " + account_id)
+            if surrogate_id is not None:
+                logger.info("Surrogate ID from query params: " + surrogate_id)
             else:
-                logger.info("No Account ID in query params")
+                logger.info("No Surrogate ID in query params")
 
         # Get ServiceLinkRecords
         try:
             logger.info("Fetching ServiceLinkRecords")
-            if account_id is None:
+            if surrogate_id is None:
                 db_entries = get_slrs_for_service(service_id=service_id)
             else:
-                db_entries = get_slrs_for_service(service_id=service_id, account_id=account_id)
+                db_entries = get_slrs_for_service(service_id=service_id, surrogate_id=surrogate_id)
         except IndexError as exp:
             error_title = "Service Link Record not found with provided information"
-            error_detail = "Service ID was {}".format(service_id)
+            error_detail = "Service ID was {} and Surrogate ID was {}".format(service_id, surrogate_id)
             logger.error(error_title + " - " + error_detail + ": " + repr(exp))
             raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
         except Exception as exp:
@@ -1746,62 +1745,67 @@ class ApiServiceLinkRecordForService(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
-# TODO: Is this needed?
-# class ServiceSurrogate(Resource):
-#     @requires_api_auth_user
-#     @requires_api_auth_sdk
-#     def get(self, account_id, service_id):
-#
-#         try:
-#             endpoint = str(api.url_for(self, account_id=account_id, service_id=service_id))
-#         except Exception as exp:
-#             endpoint = str(__name__)
-#
-#         try:
-#             api_key = request.headers.get('Api-Key')
-#         except Exception as exp:
-#             logger.error("No ApiKey in headers")
-#             logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-#             return provide_api_key(endpoint=endpoint)
-#
-#         try:
-#             account_id = str(account_id)
-#         except Exception as exp:
-#             raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
-#
-#         try:
-#             service_id = str(service_id)
-#         except Exception as exp:
-#             raise ApiError(code=400, title="Unsupported service_id", detail=repr(exp), source=endpoint)
-#
-#         try:
-#             surrogate_id = get_surrogate_id_by_account_and_service(account_id=account_id, service_id=service_id, endpoint=endpoint)
-#         except IndexError as exp:
-#             raise ApiError(code=404, title="Nothing could not be found with provided information", detail=repr(exp), source=endpoint)
-#         except Exception as exp:
-#             logger.error('Could not get surrogate_id: ' + repr(exp))
-#             raise ApiError(code=500, title="Could not get surrogate_id", detail=repr(exp), source=endpoint)
-#         else:
-#             logger.debug('Got surrogate_id: ' + repr(surrogate_id))
-#
-#         # Response data container
-#         try:
-#             response_data = {}
-#             response_data['data'] = {}
-#
-#             response_data['data']['surrogate_id'] = {}
-#             response_data['data']['surrogate_id']['type'] = "SurrogateId"
-#             response_data['data']['surrogate_id']['attributes'] = surrogate_id
-#         except Exception as exp:
-#             logger.error('Could not prepare response data: ' + repr(exp))
-#             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
-#         else:
-#             logger.info('Response data ready')
-#             logger.debug('response_data: ' + repr(response_data))
-#
-#         response_data_dict = dict(response_data)
-#         logger.debug('response_data_dict: ' + repr(response_data_dict))
-#         return make_json_response(data=response_data_dict, status_code=200)
+class Surrogate(Resource):
+    @requires_api_auth_sdk
+    def get(self, service_id, surrogate_id):
+        """
+        Fetch Account ID for Service Id - Surrogate ID pair
+
+        :param service_id:
+        :param surrogate_id:
+        :return: JSON object
+        """
+        try:
+            endpoint = str(api.url_for(self, service_id=service_id, surrogate_id=surrogate_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        try:
+            service_id = str(service_id)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported service_id", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("Service ID from path: " + service_id)
+
+        try:
+            surrogate_id = str(surrogate_id)
+        except Exception as exp:
+            error_title = "Unsupported surrogate_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("Surrogate ID from path: " + surrogate_id)
+
+        try:
+            surrogate_object = get_account_id_by_service_and_surrogate_id(surrogate_id=surrogate_id, service_id=service_id, endpoint=endpoint)
+        except IndexError as exp:
+            raise ApiError(code=404, title="Surrogate object could not be found with provided information", detail=repr(exp), source=endpoint)
+        except Exception as exp:
+            logger.error('Could not get Surrogate object: ' + repr(exp))
+            raise ApiError(code=500, title="Could not get SurrogateId object", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug('Got Surrogate object: ' + surrogate_object.log_entry)
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = surrogate_object.to_api_dict
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
 
 
 
@@ -1817,6 +1821,6 @@ api.add_resource(ApiServiceLinkStatusRecord, '/accounts/<string:account_id>/serv
 api.add_resource(ApiLastServiceLinkStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/last/', endpoint='slr_status_last')
 api.add_resource(ApiServiceLinkRecordsForService, '/services/<string:service_id>/servicelinks/', endpoint='slr_listing_for_service')
 api.add_resource(ApiServiceLinkRecordForService, '/services/<string:service_id>/servicelinks/<string:link_id>/', endpoint='slr_for_service')
-# api.add_resource(ServiceSurrogate, '/accounts/<string:account_id>/services/<string:service_id>/surrogate/', endpoint='surrogate_id')  # TODO: Is this needed?
+api.add_resource(Surrogate, '/services/<string:service_id>/surrogates/<string:surrogate_id>/', endpoint='surrogate')
 
 
