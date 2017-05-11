@@ -181,12 +181,11 @@ class AccountInfo(Resource):
         # Response data container
         try:
             response_data = {
-                "code": "string",
-                "data": {
-                    "type": "Account",
-                    "id": account_id,
-                    "attributes": {}
-                }
+              "data": {
+                "type": "Account",
+                "id": account_id,
+                "attributes": {}
+              }
             }
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))

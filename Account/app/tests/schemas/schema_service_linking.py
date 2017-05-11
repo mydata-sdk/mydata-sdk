@@ -505,5 +505,47 @@ schema_slr_status = {
   "type": "object"
 }
 
+schema_surrogate = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "attributes": {
+          "properties": {
+            "account_id": {
+              "type": "integer"
+            },
+            "service_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "service_id",
+            "account_id"
+          ],
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "attributes",
+        "type",
+        "id"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
 
 

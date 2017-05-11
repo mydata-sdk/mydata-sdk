@@ -27,7 +27,7 @@ from app.tests.schemas.schema_account import schema_account_create, schema_accou
     schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
-    schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status
+    schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status, schema_surrogate
 from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
 
 
@@ -1327,7 +1327,7 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR listing for Service with wrong ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_listing_for_Service")
+        print_test_title(test_name="test_fetch_slr_listing_for_service_wrong_service_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1352,7 +1352,7 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR for Service
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_for_Service")
+        print_test_title(test_name="test_fetch_slr_for_service")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1426,7 +1426,7 @@ class SdkTestCase(unittest.TestCase):
         Test Source SSR storing
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slsr_store_source")
+        print_test_title(test_name="test_ssr_store_source")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
 
@@ -1491,7 +1491,7 @@ class SdkTestCase(unittest.TestCase):
         Test Source SSR storing with signed SSR
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slsr_store_source_signed")
+        print_test_title(test_name="test_ssr_store_source_signed")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
 
@@ -1550,6 +1550,30 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_surrogate_object(self):
+        """
+        Test Fetch Surrogate object
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_surrogate_object")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/surrogates/" + str(self.SOURCE_SURROGATE_ID) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_surrogate))
 
         return account_id, account_api_key, sdk_api_key, slr_id
 

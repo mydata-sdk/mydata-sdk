@@ -401,6 +401,40 @@ def get_surrogate_id_by_account_and_service(account_id=None, service_id=None, en
         return sur_id_obj.to_dict
 
 
+def get_account_id_by_service_and_surrogate_id(surrogate_id=None, service_id=None, endpoint="(get_surrogate_id_by_account_and_Service)"):
+    if surrogate_id is None:
+        raise AttributeError("Provide surrogate_id as parameter")
+    if service_id is None:
+        raise AttributeError("Provide service_id as parameter")
+
+    # Create Surrogate id object
+    try:
+        surrogate_object = SurrogateId(service_id=service_id, surrogate_id=surrogate_id)
+    except Exception as exp:
+        logger.error('Could not create Surrogate object: ' + repr(exp))
+        raise
+    else:
+        logger.info("Surrogate object created")
+        logger.debug("Surrogate object: " + surrogate_object.log_entry)
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    try:
+        cursor = surrogate_object.from_db(cursor=cursor)
+    except Exception as exp:
+        logger.error('Could not get Surrogate object from db: ' + repr(exp))
+        raise
+    else:
+        logger.info("Surrogate object fetched")
+        logger.debug("Surrogate object: " + surrogate_object.log_entry)
+        return surrogate_object
+
+
 ##################################
 ###################################
 # Service Link Records
