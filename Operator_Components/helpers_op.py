@@ -86,14 +86,31 @@ from requests import get, post
 from json import loads
 from core import DetailedHTTPException
 
+
+def get_am(current_app, headers):
+    debug_log.info("Creating AccountManagerHandler, got headers:\n{}".format(headers))
+    am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
+    am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
+    am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
+    timeout = current_app.config["TIMEOUT"]
+
+    return AccountManagerHandler(am_url, am_user, am_password, timeout, headers=headers)
+
 class AccountManagerHandler:
-    def __init__(self, account_management_url, account_management_username, account_management_password, timeout):
+    def __init__(self, account_management_url,
+                 account_management_username,
+                 account_management_password,
+                 timeout,
+                 headers):
+        self.headers = headers
         self.username = account_management_username
         self.password = account_management_password  # possibly we don't need this here, does it matter?
         self.url = account_management_url
+        self.user_key = None
         self.timeout = timeout
         self.endpoint = {
-            "token":        "api/auth/sdk/",
+            "key_sdk":    "account/api/v1.3/internal/auth/sdk/",
+            "verify_user":"account/api/v1.3/internal/auth/sdk/account/{account_id}/info/",
             "surrogate":    "api/account/{account_id}/service/{service_id}/surrogate/",
             "sign_slr":     "api/account/{account_id}/servicelink/",
             "verify_slr":   "api/account/{account_id}/servicelink/verify/",
@@ -101,13 +118,15 @@ class AccountManagerHandler:
             "consent":      "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
             "auth_token":   "api/consent/{sink_cr_id}/authorizationtoken/",
             "last_csr":     "api/consent/{cr_id}/status/last/",
-            "new_csr":      "api/consent/{cr_id}/status/"} # Works as path to GET missing csr and POST new ones
-        req = get(self.url + self.endpoint["token"], auth=(self.username, self.password), timeout=timeout)
+            "new_csr":      "api/consent/{cr_id}/status/"}  # Works as path to GET missing csr and POST new ones
 
+
+
+        req = get(self.url + self.endpoint["key_sdk"], auth=(self.username, self.password), timeout=timeout)
         # check if the request for token succeeded
         debug_log.debug("{}  {}  {}".format(req.status_code, req.reason, req.text))
         if req.ok:
-            self.token = loads(req.text)["api_key"]
+            self.token = loads(req.text)["Api-Key-Sdk"]
         else:
             raise DetailedHTTPException(status=req.status_code,
                                         detail={"msg": "Getting account management token failed.",
@@ -115,6 +134,33 @@ class AccountManagerHandler:
                                         title=req.reason)
 
             # Here could be some code to setup where AccountManager is located etc, get these from ServiceRegistry?
+
+    def url_constructor(self, endpoint="", replace=("", "")):
+        if len(replace[1]) > 0:
+            url = self.url + self.endpoint[endpoint].replace(replace[0], replace[1])
+            debug_log.debug("Constructed url: ".format(url))
+            return url
+        else:
+            url = self.url + self.endpoint[endpoint]
+            return url
+
+    def verify_user_key(self, account_id):
+        try:
+            user_key = self.headers["Api-Key-User"]
+            url = self.url_constructor("verify_user", ("{account_id}", account_id))
+            query = get(url, headers={"Api-Key-Sdk": self.token, "Api-Key-User": user_key}, timeout=self.timeout)
+
+            if query.ok:
+                debug_log.debug("User key verified successfully!")
+                self.user_key = user_key
+                return True
+            else:
+                debug_log.info("User key couldn't be verified.")
+                return False
+        except KeyError as e:
+            debug_log.debug("Couldn't find user key from headers.")
+            debug_log.exception(e)
+            raise e
 
     def get_AuthTokenInfo(self, cr_id):
         req = get(self.url + self.endpoint["auth_token"]
@@ -192,7 +238,7 @@ class AccountManagerHandler:
         debug_log.debug("" + endpoint_url)
         payload = {"csr_id": csr_id}
         req = get(endpoint_url, params=payload,
-                   headers={'Api-Key': self.token},
+                   headers={'Api-Key-SDK': self.token},
                    timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
@@ -211,7 +257,7 @@ class AccountManagerHandler:
     def sign_slr(self, template, account_id):
         templu = template
         req = post(self.url + self.endpoint["sign_slr"].replace("{account_id}", account_id), json=templu,
-                   headers={'Api-Key': self.token}, timeout=self.timeout)
+                   headers={'Api-Key-SDK': self.token}, timeout=self.timeout)
         debug_log.debug("API token: {}".format(self.token))
         debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
@@ -261,7 +307,7 @@ class AccountManagerHandler:
         debug_log.info("Template sent to Account Manager:")
         debug_log.info(dumps(templa, indent=2))
         req = post(self.url + self.endpoint["verify_slr"].replace("{account_id}", account_id), json=templa,
-                   headers={'Api-Key': self.token}, timeout=self.timeout)
+                   headers={'Api-Key-SDK': self.token}, timeout=self.timeout)
         return req
 
     def signAndstore(self, sink_cr, sink_csr, source_cr, source_csr, account_id):
@@ -308,7 +354,7 @@ class AccountManagerHandler:
                    .replace("{source_slr_id}", slr_id_source).
                    replace("{sink_slr_id}", slr_id_sink),
                    json=template,
-                   headers={'Api-Key': self.token},
+                   headers={'Api-Key-SDK': self.token},
                    timeout=self.timeout)
         debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:

@@ -53,7 +53,7 @@ services:
       - redis
     environment:
       - PYTHONUNBUFFERED='true'
-      - DEBUG_MODE=False
+      - DEBUG_MODE=True
       - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
       - ACCOUNT_MANAGEMENT_USER="test_sdk"
       - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"

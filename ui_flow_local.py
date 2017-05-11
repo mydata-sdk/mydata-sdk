@@ -76,14 +76,16 @@ def initialize(account_url):
     # post(operator_url + 'api/accounts/', json={"firstName": "Dude", "lastName": "Dudeson", "dateOfBirth": "31-05-2016",
     #                                            "email": "dude.dudeson@examlpe.org", "username": "mydata",
     #                                            "password": "Hello", "acceptTermsOfService": "True"})
-    get_api_key()
-    return
+
+    return json.loads(get_api_key())
 
 # TODO: Refactor and return something.
 # Creates two Service Links by making a GET-request to Operator backend.
-def create_service_link(operator_url, service_id):
+def create_service_link(operator_url, service_id, user_key):
     print("\n##### CREATE A SERVICE LINK #####")
-    slr_flow = get(operator_url + "api/1.2/slr/account/2/service/"+service_id)
+    print("User key is: {}".format(user_key["Api-Key-User"]))
+    slr_flow = get(operator_url + "api/1.2/slr/account/2/service/"+service_id,
+                   headers={"Api-Key-User": user_key["Api-Key-User"]})
     #print(slr_flow.history)
     print("We made a request to:", slr_flow.history[0].url)
     print("It returned us url:", slr_flow.url)
@@ -263,12 +265,12 @@ if __name__ == '__main__':
 
     if not args.skip_init:
         # Do not skip init
-        initialize(args.account_url)
+        user_key = initialize(args.account_url)
 
     # SLR
     if not args.skip_slr:
-        create_service_link(args.operator_url, args.sink_id)
-        create_service_link(args.operator_url, args.source_id)
+        create_service_link(args.operator_url, args.sink_id, user_key)
+        create_service_link(args.operator_url, args.source_id, user_key)
 
     # Consent
     rs_id = give_consent(args.operator_url, args.sink_id, args.source_id)

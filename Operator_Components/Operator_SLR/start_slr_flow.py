@@ -6,12 +6,12 @@ from json import loads
 
 from flask import Blueprint, current_app, render_template_string, make_response, redirect
 from flask_cors import CORS
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, request
 from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
 from base64 import urlsafe_b64encode
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am
 from uuid import uuid4 as guid
 import time
 '''
@@ -32,6 +32,7 @@ api_SLR_Start = Blueprint("api_SLR_Start", __name__)
 CORS(api_SLR_Start)
 api = Api()
 api.init_app(api_SLR_Start)
+
 
 # Logger stuff
 debug_log = logging.getLogger("debug")
@@ -59,14 +60,17 @@ class StartSlrFlow(Resource):
         """
         debug_log.info("#### Request to start SLR flow with parameters: account_id ({}), service_id ({})"
                        .format(account_id, service_id))
-        try:
 
+        try:
+            AM = get_am(current_app, request.headers)
+            key_check = AM.verify_user_key(account_id)
+            debug_log.info("Verifying User Key resulted: {}".format(key_check))
             # We need to store some session information for later parts of flow.
             session_information = {}
 
             sq.task("Fetch service address from Service Registry")
             service_json = self.service_registry_handler.getService(service_id)
-            service_domain = service_json["serviceInstance"][0]["loginDomain"] # Domain to Login of Service
+            service_domain = service_json["serviceInstance"][0]["loginDomain"]  # Domain to Login of Service
             service_access_uri = service_json["serviceInstance"][0]["serviceAccessEndPoint"]["serviceAccessURI"]
             service_login_uri = service_json["serviceInstance"][0]["loginUri"]
 
