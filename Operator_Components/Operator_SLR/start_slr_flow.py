@@ -65,6 +65,7 @@ class StartSlrFlow(Resource):
             AM = get_am(current_app, request.headers)
             key_check = AM.verify_user_key(account_id)
             debug_log.info("Verifying User Key resulted: {}".format(key_check))
+
             # We need to store some session information for later parts of flow.
             session_information = {}
 
@@ -82,7 +83,9 @@ class StartSlrFlow(Resource):
                            .format(code, account_id, service_id))
 
             sq.task("Store session_information to database")
-            session_information[code] = {"account_id": account_id, "service_id": service_id}
+            session_information[code] = {"account_id": account_id,
+                                         "service_id": service_id,
+                                         "user_key": request.headers["Api-Key-User"]}
             self.store_session(session_information)
 
             service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)

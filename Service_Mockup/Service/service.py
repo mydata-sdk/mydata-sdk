@@ -130,7 +130,6 @@ class UserLogin(Resource):
     # operator_id = args["operator_id"],
     # return_url = args["return_url"],
     # linkingFrom = args["linkingFrom"]
-    @timeme
     @error_handler
     def post(self):
         def auth_user(username, password):
@@ -158,7 +157,6 @@ class UserLogin(Resource):
                 return json_response["surrogate_id"]
             except Exception as e:
                 debug_log.exception(e)
-                pass
 
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin POST args contain:\n {}".format(dumps(args, indent=2)))
@@ -211,7 +209,7 @@ class RegisterSur(Resource):
             debug_log.info(dumps(request.json, indent=2))
             self.helpers.storeSurrogateJSON({user_id: request.json})
         except Exception as e:
-            pass
+            debug_log.exception(e)
 
 
 class StoreSlr(Resource):

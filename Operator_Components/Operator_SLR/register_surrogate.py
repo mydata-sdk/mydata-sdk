@@ -12,7 +12,7 @@ from flask_restful import Resource, Api
 from requests import post
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am
 
 # Flask init
 api_SLR_RegisterSur = Blueprint("api_SLR_RegisterSur", __name__)
@@ -65,30 +65,31 @@ class RegisterSurrogate(Resource):
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
         self.timeout = current_app.config["TIMEOUT"]
 
-        try:
-            self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
-        except Exception as e:
-            debug_log.exception(e)
-            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}"
-                           .format(repr(e)))
-
     @error_handler
     def post(self):
         try:
+
             debug_log.info("RegisterSurrogate method post got following parameters as json:\n{}"
                            .format(dumps(request.json, indent=2)))
             sq.task("Load json payload as object")
             js = request.json
 
             sq.task("Load account_id and service_id from database")
+            code = js["code"]
             stored_session_from_db = self.Helpers.query_db_multiple("select json from session_store where code=%s;",
-                                                   (js["code"],),
-                                                   one=True)[0]
+                                                                    (code,),
+                                                                    one=True)[0]
             debug_log.debug("Type of session data fetched from db is: {}".format(type(stored_session_from_db)))
             debug_log.debug("The session data contains: {}".format(stored_session_from_db))
             session_data = loads(stored_session_from_db)
             debug_log.debug("{}  {}".format(type(stored_session_from_db), stored_session_from_db))
             account_id = session_data["account_id"]
+
+            # Get Account Manager Handler
+            AM = get_am(current_app, request.headers)
+            key_check = AM.verify_user_key(account_id, user_key=session_data["user_key"])
+            debug_log.info("Verifying User Key resulted: {}".format(key_check))
+
             self.payload["service_id"] = session_data["service_id"]
             service_info = self.service_registry_handler.getService(self.payload["service_id"])
             # TODO: Use serviceType field added into ServiceDescription
@@ -117,11 +118,15 @@ class RegisterSurrogate(Resource):
                                                     "json": js})
 
             # Create template
-            self.payload["link_id"] = str(guid())
             # TODO: Currently you can generate endlessly new slr even if one exists already
+            if service_type == "input":
+
+                result = AM.init_slr(code, pop_key=token_key)
+            else:
+                result = AM.init_slr(code)
 
             sq.task("Fill template for Account Manager")
-            template = {"code": js["code"],
+            template = {"code": code,
                         "data": {
                             "slr": {
                                 "type": "ServiceLinkRecord",
@@ -155,7 +160,7 @@ class RegisterSurrogate(Resource):
             # Parse JSON form Account Manager to format Service_Mgmnt understands.
             try:
                 req = {"data":
-                           {"code": js["code"],
+                           {"code": code,
                             },
                        "slr": reply["data"]["slr"]["attributes"]["slr"]
                        }

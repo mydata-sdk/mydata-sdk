@@ -107,11 +107,12 @@ class AccountManagerHandler:
         self.password = account_management_password  # possibly we don't need this here, does it matter?
         self.url = account_management_url
         self.user_key = None
+        self.account_id = None
         self.timeout = timeout
         self.endpoint = {
-            "key_sdk":    "account/api/v1.3/internal/auth/sdk/",
-            "verify_user":"account/api/v1.3/internal/auth/sdk/account/{account_id}/info/",
-            "surrogate":    "api/account/{account_id}/service/{service_id}/surrogate/",
+            "key_sdk":      "account/api/v1.3/internal/auth/sdk/",
+            "verify_user":  "account/api/v1.3/internal/auth/sdk/account/{account_id}/info/",
+            "surrogate":    "api/account/{account_id}/service/{service_id}/surrogate/",  # Removed
             "sign_slr":     "api/account/{account_id}/servicelink/",
             "verify_slr":   "api/account/{account_id}/servicelink/verify/",
             "sign_consent": "api/account/consent/sign/",
@@ -142,17 +143,20 @@ class AccountManagerHandler:
             return url
         else:
             url = self.url + self.endpoint[endpoint]
+            debug_log.debug("Constructed url: ".format(url))
             return url
 
-    def verify_user_key(self, account_id):
+    def verify_user_key(self, account_id, user_key=None):
         try:
-            user_key = self.headers["Api-Key-User"]
+            if user_key is None:
+                user_key = self.headers["Api-Key-User"]
             url = self.url_constructor("verify_user", ("{account_id}", account_id))
             query = get(url, headers={"Api-Key-Sdk": self.token, "Api-Key-User": user_key}, timeout=self.timeout)
 
             if query.ok:
                 debug_log.debug("User key verified successfully!")
                 self.user_key = user_key
+                self.account_id = account_id
                 return True
             else:
                 debug_log.info("User key couldn't be verified.")
@@ -161,6 +165,50 @@ class AccountManagerHandler:
             debug_log.debug("Couldn't find user key from headers.")
             debug_log.exception(e)
             raise e
+
+    def init_slr(self, code, pop_key=None):
+        debug_log.debug("")
+        def get_link_id():
+            return str(guid())
+
+        template = {
+            "code": code,
+            "data": {
+                "attributes": {
+                    "slr_id": None,
+                }
+            }
+        }
+        def init(link_id, template, retry=True):
+            template["data"]["atrributes"]["slr_id"] = link_id
+            if pop_key is None:
+                debug_log.debug(
+                    "Filled template for init Source SLR at Account:\n  {}".format(dumps(template, indent=2)))
+                url = self.url_constructor("init_slr_source", ("{account_id}", self.account_id))
+            else:
+                template["data"]["attributes"]["pop_key"] = pop_key
+                debug_log.debug("Filled template for init Sink SLR at Account:\n  {}".format(dumps(template, indent=2)))
+                url = self.url_constructor("init_slr_sink", ("{account_id}", self.account_id))
+            query = get(url,
+                        headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                        timeout=self.timeout,
+                        json=template)
+            if query.status_code == 201:
+                return query
+            elif query.status_code == 409:
+                debug_log.info("Collision, generating new link_id and retrying.")
+                if retry:
+                    return init(link_id=get_link_id(), template=template, retry=False)
+                raise DetailedHTTPException(title="Couldn't generate unique Service Link ID",
+                                            status=500)
+            else:
+                raise DetailedHTTPException(title="Error Occurred while storing slr_id",
+                                            status=500)
+
+        return init(get_link_id(), template)
+
+
+
 
     def get_AuthTokenInfo(self, cr_id):
         req = get(self.url + self.endpoint["auth_token"]
