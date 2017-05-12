@@ -30,7 +30,7 @@ logger.setLevel(logging.INFO)
 
 debug_log = logging.getLogger("debug")
 logging.basicConfig()
-debug_log.setLevel(logging.INFO)
+debug_log.setLevel(logging.DEBUG)
 
 from instance.settings import OPERATOR_ROOT_PATH, OPERATOR_CR_PATH, OPERATOR_SLR_PATH
 

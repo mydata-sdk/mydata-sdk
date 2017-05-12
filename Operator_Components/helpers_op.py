@@ -110,16 +110,18 @@ class AccountManagerHandler:
         self.account_id = None
         self.timeout = timeout
         self.endpoint = {
-            "key_sdk":      "account/api/v1.3/internal/auth/sdk/",
-            "verify_user":  "account/api/v1.3/internal/auth/sdk/account/{account_id}/info/",
-            "surrogate":    "api/account/{account_id}/service/{service_id}/surrogate/",  # Removed
-            "sign_slr":     "api/account/{account_id}/servicelink/",
-            "verify_slr":   "api/account/{account_id}/servicelink/verify/",
-            "sign_consent": "api/account/consent/sign/",
-            "consent":      "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
-            "auth_token":   "api/consent/{sink_cr_id}/authorizationtoken/",
-            "last_csr":     "api/consent/{cr_id}/status/last/",
-            "new_csr":      "api/consent/{cr_id}/status/"}  # Works as path to GET missing csr and POST new ones
+            "key_sdk":          "account/api/v1.3/internal/auth/sdk/",
+            "verify_user":      "account/api/v1.3/internal/auth/sdk/account/{account_id}/info/",
+            "init_slr_sink":    "account/api/v1.3/internal/accounts/{account_id}/servicelinks/init/sink/",
+            "init_slr_source":  "account/api/v1.3/internal/accounts/{account_id}/servicelinks/init/source/",
+            "surrogate":        "api/account/{account_id}/service/{service_id}/surrogate/",  # Removed
+            "sign_slr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}",
+            "verify_slr":       "api/account/{account_id}/servicelink/verify/",
+            "sign_consent":     "api/account/consent/sign/",
+            "consent":          "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
+            "auth_token":       "api/consent/{sink_cr_id}/authorizationtoken/",
+            "last_csr":         "api/consent/{cr_id}/status/last/",
+            "new_csr":          "api/consent/{cr_id}/status/"}  # Works as path to GET missing csr and POST new ones
 
 
 
@@ -180,19 +182,20 @@ class AccountManagerHandler:
             }
         }
         def init(link_id, template, retry=True):
-            template["data"]["atrributes"]["slr_id"] = link_id
+            template["data"]["attributes"]["slr_id"] = link_id
             if pop_key is None:
                 debug_log.debug(
                     "Filled template for init Source SLR at Account:\n  {}".format(dumps(template, indent=2)))
                 url = self.url_constructor("init_slr_source", ("{account_id}", self.account_id))
             else:
+                debug_log.info("Pop key is type {} and contains: \n{}".format(type(pop_key), pop_key))
                 template["data"]["attributes"]["pop_key"] = pop_key
                 debug_log.debug("Filled template for init Sink SLR at Account:\n  {}".format(dumps(template, indent=2)))
                 url = self.url_constructor("init_slr_sink", ("{account_id}", self.account_id))
-            query = get(url,
-                        headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
-                        timeout=self.timeout,
-                        json=template)
+            query = post(url,
+                         headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                         timeout=self.timeout,
+                         json=template)
             if query.status_code == 201:
                 return query
             elif query.status_code == 409:
@@ -305,7 +308,7 @@ class AccountManagerHandler:
     def sign_slr(self, template, account_id):
         templu = template
         req = post(self.url + self.endpoint["sign_slr"].replace("{account_id}", account_id), json=templu,
-                   headers={'Api-Key-SDK': self.token}, timeout=self.timeout)
+                   headers={'Api-Key-Sdk': self.token}, timeout=self.timeout)
         debug_log.debug("API token: {}".format(self.token))
         debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:

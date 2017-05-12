@@ -120,10 +120,11 @@ class RegisterSurrogate(Resource):
             # Create template
             # TODO: Currently you can generate endlessly new slr even if one exists already
             if service_type == "input":
-
                 result = AM.init_slr(code, pop_key=token_key)
             else:
                 result = AM.init_slr(code)
+
+
 
             sq.task("Fill template for Account Manager")
             template = {"code": code,
