@@ -20,7 +20,7 @@ schema_consent_new = {
       "properties": {
         "sink": {
           "properties": {
-            "consentRecordPayload": {
+            "consent_record_payload": {
               "properties": {
                 "attributes": {
                   "properties": {
@@ -175,7 +175,7 @@ schema_consent_new = {
               ],
               "type": "object"
             },
-            "consentStatusRecordPayload": {
+            "consent_status_record_payload": {
               "properties": {
                 "attributes": {
                   "properties": {
@@ -224,14 +224,14 @@ schema_consent_new = {
             }
           },
           "required": [
-            "consentRecordPayload",
-            "consentStatusRecordPayload"
+            "consent_record_payload",
+            "consent_status_record_payload"
           ],
           "type": "object"
         },
         "source": {
           "properties": {
-            "consentRecordPayload": {
+            "consent_record_payload": {
               "properties": {
                 "attributes": {
                   "properties": {
@@ -385,7 +385,7 @@ schema_consent_new = {
               ],
               "type": "object"
             },
-            "consentStatusRecordPayload": {
+            "consent_status_record_payload": {
               "properties": {
                 "attributes": {
                   "properties": {
@@ -434,8 +434,8 @@ schema_consent_new = {
             }
           },
           "required": [
-            "consentRecordPayload",
-            "consentStatusRecordPayload"
+            "consent_record_payload",
+            "consent_status_record_payload"
           ],
           "type": "object"
         }

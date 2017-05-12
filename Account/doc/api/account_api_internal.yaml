@@ -2075,16 +2075,16 @@ definitions:
           source:
             type: object
             properties:
-              consentRecord:
+              consent_record:
                   $ref: '#/definitions/ConsentRecordSource'
-              consentStatusRecord:
+              consent_status_record:
                 $ref: '#/definitions/ConsentStatusRecord'
           sink:
             type: object
             properties:
-              consentRecord:
+              consent_record:
                   $ref: '#/definitions/ConsentRecordSink'
-              consentStatusRecord:
+              consent_status_record:
                 $ref: '#/definitions/ConsentStatusRecord'
 
   ConsentResponse:

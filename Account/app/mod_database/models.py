@@ -2729,7 +2729,8 @@ class ConsentRecord():
         dictionary = {}
         dictionary['type'] = "ConsentRecord"
         dictionary['id'] = str(self.consent_id)
-        dictionary['attributes'] = self.to_dict_external
+        #dictionary['attributes'] = self.to_dict_external
+        dictionary['attributes'] = self.consent_record
         return dictionary
 
     @property
@@ -2988,7 +2989,8 @@ class ConsentStatusRecord():
         dictionary = {}
         dictionary['type'] = "ConsentStatusRecord"
         dictionary['id'] = str(self.consent_status_record_id)
-        dictionary['attributes'] = self.to_dict_external
+        #dictionary['attributes'] = self.to_dict_external
+        dictionary['attributes'] = self.consent_status_record
         return dictionary
 
     @property

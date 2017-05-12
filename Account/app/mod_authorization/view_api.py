@@ -129,18 +129,9 @@ class APIAccountServiceConsent(Resource):
             source_consent_subject_id = str(source_consent_payload['common_part']['subject_id'])
             source_consent_role = str(source_consent_payload['common_part']['role'])
             source_consent_rs_id = str(source_consent_payload['common_part']['rs_description']['resource_set']['rs_id'])
-
-            # Consent Status Record
-            source_status_payload = json_data['data']['source']['consent_status_record_payload']['attributes']
-            source_status_record_id = str(source_status_payload['common_part']['record_id'])
-            source_status_surrogate_id = str(source_status_payload['common_part']['surrogate_id'])
-            source_status_cr_id = str(source_status_payload['common_part']['cr_id'])
-            source_status_consent_status = str(source_status_payload['common_part']['consent_status'])
-            source_status_iat = int(source_status_payload['common_part']['iat'])
-            source_status_prev_record_id = str(source_status_payload['common_part']['prev_record_id'])
         except Exception as exp:
-            error_title = "Could not Consent data of Source Service"
-            error_detail = str(exp.message)
+            error_title = "Could not Consent Record data of Source Service"
+            error_detail = str(exp.__class__.__name__) + " - " + str(exp.message)
             logger.error(error_title + " - " + error_detail)
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -150,6 +141,22 @@ class APIAccountServiceConsent(Resource):
             logger.debug("source_consent_subject_id from payload: " + source_consent_subject_id)
             logger.debug("source_consent_role from payload: " + source_consent_role)
             logger.debug("source_consent_rs_id from payload: " + source_consent_rs_id)
+
+        try:
+            # Consent Status Record
+            source_status_payload = json_data['data']['source']['consent_status_record_payload']['attributes']
+            source_status_record_id = str(source_status_payload['record_id'])
+            source_status_surrogate_id = str(source_status_payload['surrogate_id'])
+            source_status_cr_id = str(source_status_payload['cr_id'])
+            source_status_consent_status = str(source_status_payload['consent_status'])
+            source_status_iat = int(source_status_payload['iat'])
+            source_status_prev_record_id = str(source_status_payload['prev_record_id'])
+        except Exception as exp:
+            error_title = "Could not Consent Status Record data of Source Service"
+            error_detail = str(exp.__class__.__name__) + " - " + str(exp.message)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
+        else:
             logger.debug("source_status_record_id from payload: " + source_status_record_id)
             logger.debug("source_status_surrogate_id from payload: " + source_status_surrogate_id)
             logger.debug("source_status_cr_id from payload: " + source_status_cr_id)
@@ -173,7 +180,7 @@ class APIAccountServiceConsent(Resource):
             compare_str_ids(id=source_consent_cr_id, id_to_compare=source_status_cr_id)
         except ValueError as exp:
             error_title = "Source Service Consent IDs from payload are not matching"
-            error_detail = "SLR ID from path was {} and from payload {}".format(source_consent_cr_id, source_status_cr_id)
+            error_detail = "Consent ID from Consent payload was {} and from Consent Status payload {}".format(source_consent_cr_id, source_status_cr_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -184,7 +191,7 @@ class APIAccountServiceConsent(Resource):
             compare_str_ids(id=source_consent_surrogate_id, id_to_compare=source_status_surrogate_id)
         except ValueError as exp:
             error_title = "Source Service Surrogate IDs from payload are not matching"
-            error_detail = "SLR ID from path was {} and from payload {}".format(source_consent_surrogate_id, source_status_surrogate_id)
+            error_detail = "Surrogate ID from Consent payload was {} and from Consent Status payload {}".format(source_consent_surrogate_id, source_status_surrogate_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -193,25 +200,16 @@ class APIAccountServiceConsent(Resource):
         #  Sink
         try:
             # Consent Record
-            sink_consent_payload = json_data['data']['source']['consent_record_payload']['attributes']
+            sink_consent_payload = json_data['data']['sink']['consent_record_payload']['attributes']
             sink_consent_cr_id = str(sink_consent_payload['common_part']['cr_id'])
             sink_consent_surrogate_id = str(sink_consent_payload['common_part']['surrogate_id'])
             sink_consent_slr_id = str(sink_consent_payload['common_part']['slr_id'])
             sink_consent_subject_id = str(sink_consent_payload['common_part']['subject_id'])
             sink_consent_role = str(sink_consent_payload['common_part']['role'])
             sink_consent_rs_id = str(sink_consent_payload['common_part']['rs_description']['resource_set']['rs_id'])
-
-            # Consent Status Record
-            sink_status_payload = json_data['data']['source']['consent_status_record_payload']['attributes']
-            sink_status_record_id = str(sink_status_payload['common_part']['record_id'])
-            sink_status_surrogate_id = str(sink_status_payload['common_part']['surrogate_id'])
-            sink_status_cr_id = str(sink_status_payload['common_part']['cr_id'])
-            sink_status_consent_status = str(sink_status_payload['common_part']['consent_status'])
-            sink_status_iat = int(sink_status_payload['common_part']['iat'])
-            sink_status_prev_record_id = str(sink_status_payload['common_part']['prev_record_id'])
         except Exception as exp:
-            error_title = "Could not Consent data of Sink Service"
-            error_detail = str(exp.message)
+            error_title = "Could not Consent Record data of Sink Service"
+            error_detail = str(exp.__class__.__name__) + " - " + str(exp.message)
             logger.error(error_title + " - " + error_detail)
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -221,6 +219,22 @@ class APIAccountServiceConsent(Resource):
             logger.debug("sink_consent_subject_id from payload: " + sink_consent_subject_id)
             logger.debug("sink_consent_role from payload: " + sink_consent_role)
             logger.debug("sink_consent_rs_id from payload: " + sink_consent_rs_id)
+
+        try:
+            # Consent Status Record
+            sink_status_payload = json_data['data']['sink']['consent_status_record_payload']['attributes']
+            sink_status_record_id = str(sink_status_payload['record_id'])
+            sink_status_surrogate_id = str(sink_status_payload['surrogate_id'])
+            sink_status_cr_id = str(sink_status_payload['cr_id'])
+            sink_status_consent_status = str(sink_status_payload['consent_status'])
+            sink_status_iat = int(sink_status_payload['iat'])
+            sink_status_prev_record_id = str(sink_status_payload['prev_record_id'])
+        except Exception as exp:
+            error_title = "Could not Consent Status Record data of Sink Service"
+            error_detail = str(exp.__class__.__name__) + " - " + str(exp.message)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
+        else:
             logger.debug("sink_status_record_id from payload: " + sink_status_record_id)
             logger.debug("sink_status_surrogate_id from payload: " + sink_status_surrogate_id)
             logger.debug("sink_status_cr_id from payload: " + sink_status_cr_id)
@@ -233,7 +247,7 @@ class APIAccountServiceConsent(Resource):
             compare_str_ids(id=sink_link_id, id_to_compare=sink_consent_slr_id)
         except ValueError as exp:
             error_title = "Sink Service SLR IDs from path and payload are not matching"
-            error_detail = "SLR ID from path was {} and from payload {}".format(source_link_id, source_consent_slr_id)
+            error_detail = "SLR ID from path was {} and from payload {}".format(sink_link_id, sink_consent_slr_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -244,7 +258,7 @@ class APIAccountServiceConsent(Resource):
             compare_str_ids(id=sink_consent_cr_id, id_to_compare=sink_status_cr_id)
         except ValueError as exp:
             error_title = "Sink Service Consent IDs from payload are not matching"
-            error_detail = "SLR ID from path was {} and from payload {}".format(source_consent_cr_id, source_status_cr_id)
+            error_detail = "Consent ID from Consent payload was {} and from Consent Status payload {}".format(sink_consent_cr_id, sink_status_cr_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -255,7 +269,7 @@ class APIAccountServiceConsent(Resource):
             compare_str_ids(id=sink_consent_surrogate_id, id_to_compare=sink_status_surrogate_id)
         except ValueError as exp:
             error_title = "Sink Service Surrogate IDs from payload are not matching"
-            error_detail = "SLR ID from path was {} and from payload {}".format(source_consent_surrogate_id, source_status_surrogate_id)
+            error_detail = "Surrogate ID from Consent payload was {} and from Consent Status payload {}".format(sink_consent_surrogate_id, sink_status_surrogate_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -361,7 +375,8 @@ class APIAccountServiceConsent(Resource):
                 resource_set_id=source_consent_rs_id,
                 service_link_record_id=source_consent_slr_id,
                 subject_id=source_consent_subject_id,
-                role=source_consent_role
+                role=source_consent_role,
+                accounts_id=account_id
             )
         except Exception as exp:
             error_title = "Failed to create Source's Consent Record object"
@@ -382,7 +397,8 @@ class APIAccountServiceConsent(Resource):
                 resource_set_id=sink_consent_rs_id,
                 service_link_record_id=sink_consent_slr_id,
                 subject_id=sink_consent_subject_id,
-                role=sink_consent_role
+                role=sink_consent_role,
+                accounts_id=account_id
             )
         except Exception as exp:
             error_title = "Failed to create Sink's Consent Record object"
@@ -402,7 +418,8 @@ class APIAccountServiceConsent(Resource):
                 consent_status_record=source_csr_signed,
                 consent_record_id=source_status_cr_id,
                 issued_at=source_status_iat,
-                prev_record_id=source_status_prev_record_id
+                prev_record_id=source_status_prev_record_id,
+                accounts_id=account_id
             )
         except Exception as exp:
             error_title = "Failed to create Source's Consent Status Record object"
@@ -422,7 +439,8 @@ class APIAccountServiceConsent(Resource):
                 consent_status_record=sink_csr_signed,
                 consent_record_id=sink_status_cr_id,
                 issued_at=sink_status_iat,
-                prev_record_id=sink_status_prev_record_id
+                prev_record_id=sink_status_prev_record_id,
+                accounts_id=account_id
             )
         except Exception as exp:
             error_title = "Failed to create Sink's Consent Status Record object"
@@ -773,7 +791,7 @@ class CrStatus(Resource):
 
 
 # Register resources
-api.add_resource(APIAccountServiceConsent, '/accounts/<string:account_id>/servicelinks/<string:source_slr_id>/<string:sink_slr_id>/consents/', endpoint='mydata-authorization')
+api.add_resource(APIAccountServiceConsent, '/accounts/<string:account_id>/servicelinks/<string:source_link_id>/<string:sink_link_id>/consents/', endpoint='mydata-authorization')
 
 api.add_resource(LastCrStatus, '/consents/<string:cr_id>/statuses/last/', endpoint='mydata-last-cr')
 api.add_resource(CrStatus, '/consents/<string:cr_id>/statuses/', endpoint='mydata-csr')

@@ -20,11 +20,12 @@ from flask import json
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, \
     print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
-    generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload
+    generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload, generate_consent_payload
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
+from app.tests.schemas.schema_authorisation import schema_give_consent
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
     schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status, schema_surrogate
@@ -1588,130 +1589,164 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # def test_for_same_account_linking(self):
-    #     """
-    #     Link two services for same Account
-    #     :return: account_id, account_api_key, sdk_api_key, slr_id
-    #     """
-    #     print_test_title(test_name="test_for_same_account_linking")
-    #
-    #     # Create and Authenticate Account
-    #     user_api_key, account_id = self.test_account_authentication()
-    #
-    #     # Authenticate Operataor-SDK
-    #     sdk_api_key = self.test_sdk_auth()
-    #
-    #     # Authentication for following requests
-    #     request_headers = default_headers
-    #     request_headers['Api-Key-Sdk'] = str(sdk_api_key)
-    #     request_headers['Api-Key-User'] = str(user_api_key)
-    #
-    #     # Service Link Init for Source Service
-    #     source_slr_init_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/source/"
-    #     source_slr_payload, source_slr_code, source_slr_id = generate_sl_init_source()
-    #     response = self.app.post(source_slr_init_url, data=source_slr_payload, headers=request_headers)
-    #     print("response.data: " + json.dumps(json.loads(response.data), indent=4))
-    #     unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
-    #     unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-    #     unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_init))
-    #
-    #     # Service Link Init for Sink Service
-    #     sink_slr_init_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/sink/"
-    #     sink_slr_payload, sink_slr_code, sink_slr_id = generate_sl_init_sink()
-    #     response = self.app.post(sink_slr_init_url, data=source_slr_payload, headers=request_headers)
-    #     print("response.data: " + json.dumps(json.loads(response.data), indent=4))
-    #     unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
-    #     unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-    #     unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_init))
-    #
-    #
-    #     def slr_sign(request_headers=None, user_id=None, slr_id=None, surrogate_id=None, service_id=None, operator_id=None, operator_key=None):
-    #         """
-    #         Reqest Account to sign Service Link
-    #         :param request_headers:
-    #         :param user_id:
-    #         :param slr_id:
-    #         :param surrogate_id:
-    #         :param service_id:
-    #         :param operator_id:
-    #         :param operator_key:
-    #         :return: response.data
-    #         """
-    #         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(user_id) + "/servicelinks/" + str(slr_id) + "/"
-    #         payload = generate_sl_payload(
-    #             slr_id=slr_id,
-    #             operator_id=operator_key,
-    #             operator_key=operator_id,
-    #             service_id=service_id,
-    #             surrogate_id=surrogate_id
-    #         )
-    #
-    #         response = self.app.patch(url, data=payload, headers=request_headers)
-    #         print("response.data: " + json.dumps(json.loads(response.data), indent=4))
-    #         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
-    #         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-    #         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_sign))
-    #
-    #         return response.data
-    #
+    def test_for_account_link_services(self):
+        """
+        Link two services for same Account
+        :return: account_id, user_api_key, sdk_api_key, source_slr_id, sink_slr_id
+        """
+        print_test_title(test_name="test_for_account_link_services")
 
-        # Test Main
+        # Create and Authenticate Account
+        print("##############################")
+        print("Create and Authenticate Account")
+        account_api_key, account_id = self.test_account_authentication()
 
+        # Authenticate Operator-SDK
+        print("##############################")
+        print("Authenticate Operator-SDK")
+        sdk_api_key = self.test_sdk_auth()
 
+        # Authentication for following requests
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        request_headers['Api-Key-User'] = str(account_api_key)
 
+        # Service Link Init for Source Service
+        print("##############################")
+        print("Source - Service Linking - Init")
+        source_slr_init_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/source/"
+        source_slr_init_payload, source_slr_code, source_slr_id = generate_sl_init_source()
+        source_slr_init_response = self.app.post(source_slr_init_url, data=source_slr_init_payload, headers=request_headers)
+        print("source_slr_init_response.data: " + json.dumps(json.loads(source_slr_init_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, source_slr_init_response.status_code, 201, msg=source_slr_init_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=source_slr_init_response.data), msg=source_slr_init_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(source_slr_init_response.data, schema_slr_init))
 
+        # Service Link Init for Sink Service
+        print("##############################")
+        print("Sink - Service Linking - Init")
+        sink_slr_init_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/sink/"
+        sink_slr_init_payload, sink_slr_code, sink_slr_id, sink_slr_pop_key = generate_sl_init_sink()
+        sink_slr_init_response = self.app.post(sink_slr_init_url, data=sink_slr_init_payload, headers=request_headers)
+        print("sink_slr_init_response.data: " + json.dumps(json.loads(sink_slr_init_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, sink_slr_init_response.status_code, 201, msg=sink_slr_init_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=sink_slr_init_response.data), msg=sink_slr_init_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(sink_slr_init_response.data, schema_slr_init))
 
-        # url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/surrogates/" + str(self.SOURCE_SURROGATE_ID) + "/"
-        #
-        # response = self.app.get(url, headers=request_headers)
-        # print("response.data: " + json.dumps(json.loads(response.data), indent=4))
-        # unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
-        # unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        # unittest.TestCase.assertTrue(self, validate_json(response.data, schema_surrogate))
-        #
-        # return account_id, account_api_key, sdk_api_key, slr_id
+        # Account Owner's signature for Service Link of Source Service
+        print("##############################")
+        print("Source - Service Linking - Sign")
+        source_slr_sign_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/"
+        source_slr_sign_payload = generate_sl_payload(
+                slr_id=source_slr_id,
+                operator_id=self.OPERATOR_ID,
+                operator_key=self.OPERATOR_KEY_PUBLIC,
+                service_id=self.SOURCE_SERVICE_ID,
+                surrogate_id=self.SOURCE_SURROGATE_ID
+            )
+        source_slr_sign_response = self.app.patch(source_slr_sign_url, data=source_slr_sign_payload, headers=request_headers)
+        print("source_slr_response.data: " + json.dumps(json.loads(source_slr_sign_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, source_slr_sign_response.status_code, 201, msg=source_slr_sign_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=source_slr_sign_response.data), msg=source_slr_sign_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(source_slr_sign_response.data, schema_slr_sign))
 
+        # Account Owner's signature for Service Link of Sink Service
+        print("##############################")
+        print("Sink - Service Linking - Sign")
+        sink_slr_sign_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(sink_slr_id) + "/"
+        sink_slr_sign_payload = generate_sl_payload(
+                slr_id=sink_slr_id,
+                operator_id=self.OPERATOR_ID,
+                operator_key=self.OPERATOR_KEY_PUBLIC,
+                service_id=self.SINK_SERVICE_ID,
+                surrogate_id=self.SINK_SURROGATE_ID
+            )
+        sink_slr_sign_response = self.app.patch(sink_slr_sign_url, data=sink_slr_sign_payload, headers=request_headers)
+        print("sink_slr_response.data: " + json.dumps(json.loads(sink_slr_sign_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, sink_slr_sign_response.status_code, 201, msg=sink_slr_sign_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=sink_slr_sign_response.data), msg=sink_slr_sign_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(sink_slr_sign_response.data, schema_slr_sign))
+
+        # Store Service Link of Source Service
+        print("##############################")
+        print("Source - Service Linking - Store")
+        source_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/store/"
+        source_slr_store_payload = generate_sl_store_payload(
+            slr_id=source_slr_id,
+            slr_signed=json.loads(source_slr_sign_response.data)['data'],
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            service_key=self.SOURCE_KEY_OBJECT,
+            service_kid=self.SOURCE_KID
+        )
+        print("source_slr_store_payload: " + json.dumps(json.loads(source_slr_store_payload), indent=4))
+        source_slr_store_response = self.app.post(source_slr_store_url, data=source_slr_store_payload, headers=request_headers)
+        print("source_slr_store_response.data: " + json.dumps(json.loads(source_slr_store_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, source_slr_store_response.status_code, 201, msg=source_slr_store_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=source_slr_store_response.data), msg=source_slr_store_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(source_slr_store_response.data, schema_slr_store))
+        source_ssr_id = json.loads(source_slr_store_response.data)['data']['ssr']['id']
+
+        # Store Service Link of Sink Service
+        print("##############################")
+        print("Sink - Service Linking - Store")
+        sink_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + sink_slr_id + "/store/"
+        sink_slr_store_payload = generate_sl_store_payload(
+            slr_id=sink_slr_id,
+            slr_signed=json.loads(sink_slr_sign_response.data)['data'],
+            surrogate_id=self.SINK_SURROGATE_ID,
+            service_key=self.SINK_KEY_OBJECT,
+            service_kid=self.SINK_KID
+        )
+        print("sink_slr_store_payload: " + json.dumps(json.loads(sink_slr_store_payload), indent=4))
+        sink_slr_store_response = self.app.post(sink_slr_store_url, data=sink_slr_store_payload, headers=request_headers)
+        print("sink_slr_store_response.data: " + json.dumps(json.loads(sink_slr_store_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, sink_slr_store_response.status_code, 201, msg=sink_slr_store_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=sink_slr_store_response.data), msg=sink_slr_store_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(sink_slr_store_response.data, schema_slr_store))
+        sink_ssr_id = json.loads(sink_slr_store_response.data)['data']['ssr']['id']
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id
 
     ##########
     ##########
-    # def test_give_consent(self):
-    #     """
-    #     Test Give Consent
-    #     :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
-    #     """
-    #     print_test_title(test_name="test_give_consent")
-    #
-    #     source_account_id, source_account_api_key, source_sdk_api_key, source_slr_id, source_ssr_id = self.test_slr_store_source()
-    #     sink_account_id, sink_account_api_key, sink_sdk_api_key, sink_slr_id, sink_ssr_id = self.test_slr_store_sink()
-    #
-    #     request_headers = default_headers
-    #     request_headers['Api-Key-User'] = str(source_account_api_key)
-    #     request_headers['Api-Key-Sdk'] = str(source_sdk_api_key)
-    #
-    #     url = self.API_PREFIX_INTERNAL + "/accounts/" + str(source_account_id) + "/servicelinks/" + source_slr_id + "/" + source_slr_id + "/consents/"
-    #     payload = generate_consent_payload(
-    #             source_surrogate_id=self.SOURCE_SURROGATE_ID,
-    #             source_slr_id=None,
-    #             operator_id=None,
-    #             source_subject_id=None,
-    #             source_role=None,
-    #             sink_pop_key=None,
-    #             operator_pub_key=None,
-    #             sink_surrogate_id=None,
-    #             sink_slr_id=None,
-    #             sink_subject_id=None,
-    #             sink_role=None,
-    #             misformatted_payload=False
-    #     )
-    #     print("payload: " + json.dumps(json.loads(payload), indent=4))
-    #
-    #     response = self.app.post(url, data=payload, headers=request_headers)
-    #     print("response.data: " + json.dumps(json.loads(response.data), indent=4))
-    #     unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
-    #     unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-    #     unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
-    #
-    #     return account_id, account_api_key, sdk_api_key, slr_id
+    def test_for_account_give_consent(self):
+        """
+        Give Consent
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_for_account_give_consent")
+
+        # Give Consent
+        print("##############################")
+        print("Give Consent")
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
+        give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
+                source_surrogate_id=self.SOURCE_SURROGATE_ID,
+                source_slr_id=source_slr_id,
+                operator_id=self.OPERATOR_ID,
+                source_subject_id=self.SOURCE_SERVICE_ID,
+                sink_pop_key=self.SINK_KEY_PUBLIC,
+                operator_pub_key=self.OPERATOR_KEY_PUBLIC,
+                sink_surrogate_id=self.SINK_SURROGATE_ID,
+                sink_slr_id=sink_slr_id,
+                sink_subject_id=self.SINK_SERVICE_ID,
+                misformatted_payload=False
+        )
+        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
+
+        give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
+        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, give_consent_response.status_code, 201, msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_give_consent))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
     ##########

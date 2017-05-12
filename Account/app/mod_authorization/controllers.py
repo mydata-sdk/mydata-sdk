@@ -232,7 +232,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             cursor = source_slr_entry.from_db(cursor=cursor)
         except Exception as exp:
             error_title = "Failed to fetch Service Link Record of Source Service from DB"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise IndexError(error_title + " - " + error_detail)
         else:
@@ -244,7 +244,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             cursor = sink_slr_entry.from_db(cursor=cursor)
         except Exception as exp:
             error_title = "Failed to fetch Service Link Record of Sink Service from DB"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise IndexError(error_title + " - " + error_detail)
         else:
@@ -256,7 +256,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             source_cr_entry.service_link_records_id = source_slr_entry.id
         except Exception as exp:
             error_title = "Failed to fetch Service Link Record ID of Source Service"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise KeyError(error_title + " - " + error_detail)
         else:
@@ -268,7 +268,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             sink_cr_entry.service_link_records_id = sink_slr_entry.id
         except Exception as exp:
             error_title = "Failed to fetch Service Link Record ID of Sink Service"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise KeyError(error_title + " - " + error_detail)
         else:
@@ -280,7 +280,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             cursor = source_cr_entry.to_db(cursor=cursor)
         except Exception as exp:
             error_title = "Failed to store Consent Record of Source Service"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise RuntimeError(error_title + " - " + error_detail)
         else:
@@ -292,7 +292,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             source_csr_entry.consent_records_id = source_cr_entry.id
         except Exception as exp:
             error_title = "Failed to link Consent Record of Source Service with Consent Status Record"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise KeyError(error_title + " - " + error_detail)
         else:
@@ -304,7 +304,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             cursor = source_csr_entry.to_db(cursor=cursor)
         except Exception as exp:
             error_title = "Failed to store Consent Status Record of Source Service"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise RuntimeError(error_title + " - " + error_detail)
         else:
@@ -316,7 +316,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             cursor = sink_cr_entry.to_db(cursor=cursor)
         except Exception as exp:
             error_title = "Failed to store Consent Record of Sink Service"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise RuntimeError(error_title + " - " + error_detail)
         else:
@@ -328,7 +328,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             sink_csr_entry.consent_records_id = sink_cr_entry.id
         except Exception as exp:
             error_title = "Failed to link Consent Record of Sink Service with Consent Status Record"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise KeyError(error_title + " - " + error_detail)
         else:
@@ -340,7 +340,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             cursor = sink_csr_entry.to_db(cursor=cursor)
         except Exception as exp:
             error_title = "Failed to store Consent Staus Record of Sink Service"
-            error_detail = str(exp.message)
+            error_detail = repr(exp)
             logger.error(error_title + ": " + repr(exp))
             raise RuntimeError(error_title + " - " + error_detail)
         else:

@@ -369,31 +369,47 @@ def generate_consent_payload(
         source_slr_id=None,
         operator_id=None,
         source_subject_id=None,
-        source_role=None,
+        source_role="Source",
         sink_pop_key=None,
         operator_pub_key=None,
         sink_surrogate_id=None,
         sink_slr_id=None,
         sink_subject_id=None,
-        sink_role=None,
+        sink_role="Sink",
         misformatted_payload=False
 ):
 
-    # if slr_id is None:
-    #     raise AttributeError("Provide operator_id as parameter")
-    # if surrogate_id is None:
-    #     raise AttributeError("Provide surrogate_id as parameter")
-    # if prev_record_id is None:
-    #     raise AttributeError("Provide prev_record_id as parameter")
-    # if operator_key is None:
-    #     raise AttributeError("Provide operator_key as parameter")
-    # if operator_kid is None:
-    #     raise AttributeError("Provide operator_kid as parameter")
+    if source_surrogate_id is None:
+        raise AttributeError("Provide source_surrogate_id as parameter")
+    if source_slr_id is None:
+        raise AttributeError("Provide source_slr_id as parameter")
+    if operator_id is None:
+        raise AttributeError("Provide operator_id as parameter")
+    if source_subject_id is None:
+        raise AttributeError("Provide source_subject_id as parameter")
+    if source_role is None:
+        raise AttributeError("Provide source_role as parameter")
+    if sink_pop_key is None:
+        raise AttributeError("Provide sink_pop_key as parameter")
+    if operator_pub_key is None:
+        raise AttributeError("Provide operator_pub_key as parameter")
+    if sink_surrogate_id is None:
+        raise AttributeError("Provide sink_surrogate_id as parameter")
+    if sink_slr_id is None:
+        raise AttributeError("Provide sink_slr_id as parameter")
+    if sink_subject_id is None:
+        raise AttributeError("Provide sink_subject_id as parameter")
+    if sink_role is None:
+        raise AttributeError("Provide sink_role as parameter")
 
-    source_cr_id = get_unique_string()
-    source_csr_id = get_unique_string()
-    sink_cr_id = get_unique_string()
-    sink_csr_id = get_unique_string()
+    source_cr_id = "source-" + get_unique_string()
+    source_csr_id = "source-" + get_unique_string()
+    sink_cr_id = "sink-" + get_unique_string()
+    sink_csr_id = "sink-" + get_unique_string()
+
+    iat = get_epoch()
+    nbf = iat
+    exp = iat + 1000
 
     consent_payload = {
       "data": {
@@ -403,15 +419,15 @@ def generate_consent_payload(
             "attributes": {
               "common_part": {
                 "version": "1.3",
-                "cr_id": "string",
+                "cr_id": source_cr_id,
                 "surrogate_id": source_surrogate_id,
                 "slr_id": source_slr_id,
                 "operator": operator_id,
                 "subject_id": source_subject_id,
                 "role": source_role,
-                "iat": get_epoch(),
-                "nbf": get_epoch(),
-                "exp": get_epoch(),
+                "iat": iat,
+                "nbf": nbf,
+                "exp": exp,
                 "rs_description": {
                   "resource_set": {
                     "rs_id": get_unique_string(),
@@ -462,9 +478,9 @@ def generate_consent_payload(
                 "operator": operator_id,
                 "subject_id": sink_subject_id,
                 "role": sink_role,
-                "iat": get_epoch(),
-                "nbf": get_epoch(),
-                "exp": get_epoch(),
+                "iat": iat,
+                "nbf": nbf,
+                "exp": exp,
                 "rs_description": {
                   "resource_set": {
                     "rs_id": get_unique_string(),
@@ -516,7 +532,7 @@ def generate_consent_payload(
 
     payload = json.dumps(consent_payload)
 
-    return payload
+    return payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id
 
 #############
 #############
