@@ -27,12 +27,6 @@ schema_sl_init_sink = {
                                 "crv": {
                                     "type": "string"
                                 },
-                                "cvr": {
-                                    "type": "string"
-                                },
-                                "d": {
-                                    "type": "string"
-                                },
                                 "kid": {
                                     "type": "string"
                                 },
@@ -48,8 +42,6 @@ schema_sl_init_sink = {
                             },
                             "required": [
                                 "crv",
-                                "d",
-                                "cvr",
                                 "y",
                                 "x",
                                 "kid",
@@ -140,12 +132,6 @@ schema_sl_sign = {
                                 "crv": {
                                     "type": "string"
                                 },
-                                "cvr": {
-                                    "type": "string"
-                                },
-                                "d": {
-                                    "type": "string"
-                                },
                                 "kid": {
                                     "type": "string"
                                 },
@@ -161,8 +147,6 @@ schema_sl_sign = {
                             },
                             "required": [
                                 "crv",
-                                "d",
-                                "cvr",
                                 "y",
                                 "x",
                                 "kid",
