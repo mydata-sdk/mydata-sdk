@@ -135,8 +135,8 @@ def generate_sl_init_sink(slr_id=None, misformatted_payload=False):
         slr_id = get_unique_string()
 
     code = str(randint(100, 10000))
-    pop_key_object , pop_key_json, kid = gen_jwk_key(prefix="sink")
-    pop_key = json.loads(pop_key_json)
+    pop_key_object, pop_key_private_json, pop_key_public_json, kid = gen_jwk_key(prefix="sink")
+    pop_key = json.loads(pop_key_public_json)
 
     if misformatted_payload:
         del pop_key['kty']
@@ -363,6 +363,161 @@ def generate_signed_ssr_store_payload(slr_id=None, surrogate_id=None, record_id=
 
     return payload
 
+
+def generate_consent_payload(
+        source_surrogate_id=None,
+        source_slr_id=None,
+        operator_id=None,
+        source_subject_id=None,
+        source_role=None,
+        sink_pop_key=None,
+        operator_pub_key=None,
+        sink_surrogate_id=None,
+        sink_slr_id=None,
+        sink_subject_id=None,
+        sink_role=None,
+        misformatted_payload=False
+):
+
+    # if slr_id is None:
+    #     raise AttributeError("Provide operator_id as parameter")
+    # if surrogate_id is None:
+    #     raise AttributeError("Provide surrogate_id as parameter")
+    # if prev_record_id is None:
+    #     raise AttributeError("Provide prev_record_id as parameter")
+    # if operator_key is None:
+    #     raise AttributeError("Provide operator_key as parameter")
+    # if operator_kid is None:
+    #     raise AttributeError("Provide operator_kid as parameter")
+
+    source_cr_id = get_unique_string()
+    source_csr_id = get_unique_string()
+    sink_cr_id = get_unique_string()
+    sink_csr_id = get_unique_string()
+
+    consent_payload = {
+      "data": {
+        "source": {
+          "consent_record_payload": {
+            "type": "ConsentRecord",
+            "attributes": {
+              "common_part": {
+                "version": "1.3",
+                "cr_id": "string",
+                "surrogate_id": source_surrogate_id,
+                "slr_id": source_slr_id,
+                "operator": operator_id,
+                "subject_id": source_subject_id,
+                "role": source_role,
+                "iat": get_epoch(),
+                "nbf": get_epoch(),
+                "exp": get_epoch(),
+                "rs_description": {
+                  "resource_set": {
+                    "rs_id": get_unique_string(),
+                    "dataset": [
+                      {
+                        "dataset_id": get_unique_string(),
+                        "distribution_id": get_unique_string(),
+                        "distribution_url": get_unique_string()
+                      }
+                    ]
+                  }
+                }
+              },
+              "role_specific_part": {
+                "pop_key": sink_pop_key,
+                "token_issuer_key": operator_pub_key
+              },
+              "consent_receipt_part": {
+                "ki_cr": {}
+              },
+              "extension_part": {
+                "extensions": {}
+              }
+            }
+          },
+          "consent_status_record_payload": {
+            "type": "ConsentStatusRecord",
+            "attributes": {
+              "version": "1.3",
+              "record_id": source_csr_id,
+              "surrogate_id": source_surrogate_id,
+              "cr_id": source_cr_id,
+              "consent_status": "Active",
+              "iat": get_epoch(),
+              "prev_record_id": "NULL"
+            }
+          }
+        },
+        "sink": {
+          "consent_record_payload": {
+            "type": "ConsentRecord",
+            "attributes": {
+              "common_part": {
+                "version": "1.3",
+                "cr_id": sink_cr_id,
+                "surrogate_id": sink_surrogate_id,
+                "slr_id": sink_slr_id,
+                "operator": operator_id,
+                "subject_id": sink_subject_id,
+                "role": sink_role,
+                "iat": get_epoch(),
+                "nbf": get_epoch(),
+                "exp": get_epoch(),
+                "rs_description": {
+                  "resource_set": {
+                    "rs_id": get_unique_string(),
+                    "dataset": [
+                      {
+                        "dataset_id": get_unique_string(),
+                        "distribution_id": get_unique_string(),
+                        "distribution_url": get_unique_string()
+                      }
+                    ]
+                  }
+                }
+              },
+              "role_specific_part": {
+                "source_cr_id": "string",
+                "usage_rules": [
+                  "Rule 1",
+                  "Rule 2",
+                  "Rule 3",
+                  "Rule 4"
+                ]
+              },
+              "consent_receipt_part": {
+                "ki_cr": {}
+              },
+              "extension_part": {
+                "extensions": {}
+              }
+            }
+          },
+          "consent_status_record_payload": {
+            "type": "ConsentStatusRecord",
+            "attributes": {
+              "version": "1.3",
+              "record_id": sink_csr_id,
+              "surrogate_id": sink_surrogate_id,
+              "cr_id": sink_cr_id,
+              "consent_status": "Active",
+              "iat": get_epoch(),
+              "prev_record_id": "NULL"
+            }
+          }
+        }
+      }
+    }
+
+    if misformatted_payload:
+        del consent_payload['data']['ssr_payload']['attributes']['surrogate_id']
+
+    payload = json.dumps(consent_payload)
+
+    return payload
+
 #############
 #############
 # JWS & JWK #
@@ -381,11 +536,12 @@ def jwk_object_to_json(jwk_object=None):
         raise AttributeError("Provide jwk_object as parameter")
 
     try:
-        jwk_json = jwk_object.export()
+        jwk_private_json = jwk_object.export()
+        jwk_public_json = jwk_object.export(private_key=False)
     except Exception as exp:
         raise
     else:
-        return jwk_json
+        return jwk_private_json, jwk_public_json
 
 
 def gen_key_as_jwk(kid=None):
@@ -405,11 +561,11 @@ def gen_key_as_jwk(kid=None):
 
     try:
         jwk_key = jwk.JWK(**gen)
-        jwk_key_json = jwk_object_to_json(jwk_object=jwk_key)
+        jwk_key_private_json, jwk_key_public_json = jwk_object_to_json(jwk_object=jwk_key)
     except Exception as exp:
         raise
     else:
-        return jwk_key, jwk_key_json
+        return jwk_key, jwk_key_private_json, jwk_key_public_json
 
 
 def gen_jwk_key(prefix="key"):
@@ -427,11 +583,11 @@ def gen_jwk_key(prefix="key"):
     kid = prefix + "-kid-" + str(uuid4())
 
     try:
-        jwk_object, jwk_json = gen_key_as_jwk(kid=kid)
+        jwk_object, jwk_private_json, jwk_public_json = gen_key_as_jwk(kid=kid)
     except Exception as exp:
         raise
     else:
-        return jwk_object, jwk_json, kid
+        return jwk_object, jwk_private_json, jwk_public_json, kid
 
 
 def sign_jws(jws_to_sign=None, jwk_key=None, jwk_kid=None, alg="ES256"):

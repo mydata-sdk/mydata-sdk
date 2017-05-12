@@ -379,7 +379,7 @@ class ApiServiceLink(Resource):
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
-            logger.info("SLR IDs from path and payload are not matching")
+            logger.info("SLR IDs from path and payload are matching")
 
         # Get inited ServiceLinkRecord object
         try:
