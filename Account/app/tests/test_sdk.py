@@ -1712,7 +1712,7 @@ class SdkTestCase(unittest.TestCase):
     def test_for_account_give_consent(self):
         """
         Give Consent
-        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
         print_test_title(test_name="test_for_account_give_consent")
 
@@ -1745,6 +1745,277 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 201, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_give_consent))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_give_consent_malformed(self):
+        """
+        Give Consent - With incorrect payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_give_consent_malformed")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
+        give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
+                source_surrogate_id=self.SOURCE_SURROGATE_ID,
+                source_slr_id=source_slr_id,
+                operator_id=self.OPERATOR_ID,
+                source_subject_id=self.SOURCE_SERVICE_ID,
+                sink_pop_key=self.SINK_KEY_PUBLIC,
+                operator_pub_key=self.OPERATOR_KEY_PUBLIC,
+                sink_surrogate_id=self.SINK_SURROGATE_ID,
+                sink_slr_id=sink_slr_id,
+                sink_subject_id=self.SINK_SERVICE_ID,
+                misformatted_payload=True
+        )
+        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
+
+        give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
+        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_dict))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_give_consent_wrong_source_surrogate_id(self):
+        """
+        Give Consent - With incorrect payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_give_consent_wrong_source_surrogate_id")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
+        give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
+                source_surrogate_id="wrong-id",
+                source_slr_id=source_slr_id,
+                operator_id=self.OPERATOR_ID,
+                source_subject_id=self.SOURCE_SERVICE_ID,
+                sink_pop_key=self.SINK_KEY_PUBLIC,
+                operator_pub_key=self.OPERATOR_KEY_PUBLIC,
+                sink_surrogate_id=self.SINK_SURROGATE_ID,
+                sink_slr_id=sink_slr_id,
+                sink_subject_id=self.SINK_SERVICE_ID,
+                misformatted_payload=False
+        )
+        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
+
+        give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
+        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_give_consent_wrong_sink_surrogate_id(self):
+        """
+        Give Consent - With incorrect payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_give_consent_wrong_sink_surrogate_id")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
+        give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
+                source_surrogate_id=self.SOURCE_SURROGATE_ID,
+                source_slr_id=source_slr_id,
+                operator_id=self.OPERATOR_ID,
+                source_subject_id=self.SOURCE_SERVICE_ID,
+                sink_pop_key=self.SINK_KEY_PUBLIC,
+                operator_pub_key=self.OPERATOR_KEY_PUBLIC,
+                sink_surrogate_id="wrong_id",
+                sink_slr_id=sink_slr_id,
+                sink_subject_id=self.SINK_SERVICE_ID,
+                misformatted_payload=False
+        )
+        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
+
+        give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
+        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_give_consent_wrong_source_slr_id(self):
+        """
+        Give Consent - With incorrect payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_give_consent_wrong_source_slr_id")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
+        give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
+                source_surrogate_id=self.SOURCE_SURROGATE_ID,
+                #source_slr_id=source_slr_id,
+                source_slr_id="wrong_id",
+                operator_id=self.OPERATOR_ID,
+                source_subject_id=self.SOURCE_SERVICE_ID,
+                sink_pop_key=self.SINK_KEY_PUBLIC,
+                operator_pub_key=self.OPERATOR_KEY_PUBLIC,
+                sink_surrogate_id=self.SINK_SURROGATE_ID,
+                sink_slr_id=sink_slr_id,
+                sink_subject_id=self.SINK_SERVICE_ID,
+                misformatted_payload=False
+        )
+        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
+
+        give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
+        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_give_consent_wrong_sink_slr_id(self):
+        """
+        Give Consent - With incorrect payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_give_consent_wrong_sink_slr_id")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
+        give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
+                source_surrogate_id=self.SOURCE_SURROGATE_ID,
+                source_slr_id=source_slr_id,
+                operator_id=self.OPERATOR_ID,
+                source_subject_id=self.SOURCE_SERVICE_ID,
+                sink_pop_key=self.SINK_KEY_PUBLIC,
+                operator_pub_key=self.OPERATOR_KEY_PUBLIC,
+                sink_surrogate_id=self.SINK_SURROGATE_ID,
+                sink_slr_id="wrong_id",
+                sink_subject_id=self.SINK_SERVICE_ID,
+                misformatted_payload=False
+        )
+        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
+
+        give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
+        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_give_consent_wrong_source_cr_id_pair(self):
+        """
+        Give Consent - With incorrect payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_give_consent_wrong_source_cr_id_pair")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
+        give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
+                source_surrogate_id=self.SOURCE_SURROGATE_ID,
+                source_slr_id=source_slr_id,
+                operator_id=self.OPERATOR_ID,
+                source_subject_id=self.SOURCE_SERVICE_ID,
+                sink_pop_key=self.SINK_KEY_PUBLIC,
+                operator_pub_key=self.OPERATOR_KEY_PUBLIC,
+                sink_surrogate_id=self.SINK_SURROGATE_ID,
+                sink_slr_id=sink_slr_id,
+                sink_subject_id=self.SINK_SERVICE_ID,
+                misformatted_payload=False,
+                source_cr_id_fault=True,
+                sink_cr_id_fault=False
+        )
+        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
+
+        give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
+        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_give_consent_wrong_sink_cr_id_pair(self):
+        """
+        Give Consent - With incorrect payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_give_consent_wrong_sink_cr_id_pair")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
+        give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
+                source_surrogate_id=self.SOURCE_SURROGATE_ID,
+                source_slr_id=source_slr_id,
+                operator_id=self.OPERATOR_ID,
+                source_subject_id=self.SOURCE_SERVICE_ID,
+                sink_pop_key=self.SINK_KEY_PUBLIC,
+                operator_pub_key=self.OPERATOR_KEY_PUBLIC,
+                sink_surrogate_id=self.SINK_SURROGATE_ID,
+                sink_slr_id=sink_slr_id,
+                sink_subject_id=self.SINK_SERVICE_ID,
+                misformatted_payload=False,
+                source_cr_id_fault=False,
+                sink_cr_id_fault=True
+        )
+        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
+
+        give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
+        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 

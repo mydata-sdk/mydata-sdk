@@ -232,7 +232,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             cursor = source_slr_entry.from_db(cursor=cursor)
         except Exception as exp:
             error_title = "Failed to fetch Service Link Record of Source Service from DB"
-            error_detail = repr(exp)
+            error_detail = str(exp.message)
             logger.error(error_title + ": " + repr(exp))
             raise IndexError(error_title + " - " + error_detail)
         else:
@@ -244,7 +244,7 @@ def store_cr_and_csr(source_slr_entry=None, sink_slr_entry=None, source_cr_entry
             cursor = sink_slr_entry.from_db(cursor=cursor)
         except Exception as exp:
             error_title = "Failed to fetch Service Link Record of Sink Service from DB"
-            error_detail = repr(exp)
+            error_detail = str(exp.message)
             logger.error(error_title + ": " + repr(exp))
             raise IndexError(error_title + " - " + error_detail)
         else:

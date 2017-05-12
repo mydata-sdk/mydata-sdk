@@ -208,7 +208,7 @@ class APIAccountServiceConsent(Resource):
             sink_consent_role = str(sink_consent_payload['common_part']['role'])
             sink_consent_rs_id = str(sink_consent_payload['common_part']['rs_description']['resource_set']['rs_id'])
         except Exception as exp:
-            error_title = "Could not Consent Record data of Sink Service"
+            error_title = "Could not get Consent Record data of Sink Service"
             error_detail = str(exp.__class__.__name__) + " - " + str(exp.message)
             logger.error(error_title + " - " + error_detail)
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
@@ -230,7 +230,7 @@ class APIAccountServiceConsent(Resource):
             sink_status_iat = int(sink_status_payload['iat'])
             sink_status_prev_record_id = str(sink_status_payload['prev_record_id'])
         except Exception as exp:
-            error_title = "Could not Consent Status Record data of Sink Service"
+            error_title = "Could not get Consent Status Record data of Sink Service"
             error_detail = str(exp.__class__.__name__) + " - " + str(exp.message)
             logger.error(error_title + " - " + error_detail)
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
@@ -468,7 +468,7 @@ class APIAccountServiceConsent(Resource):
             error_title = "Could not store Consent Records and Consent Status Records"
             error_detail = str(exp.message)
             logger.error(error_title + " - " + repr(exp))
-            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+            raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         except KeyError as exp:
             error_title = "Could not store Consent Records and Consent Status Records"
             error_detail = str(exp.message)

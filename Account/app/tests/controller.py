@@ -376,7 +376,9 @@ def generate_consent_payload(
         sink_slr_id=None,
         sink_subject_id=None,
         sink_role="Sink",
-        misformatted_payload=False
+        misformatted_payload=False,
+        source_cr_id_fault=False,
+        sink_cr_id_fault=False
 ):
 
     if source_surrogate_id is None:
@@ -401,11 +403,24 @@ def generate_consent_payload(
         raise AttributeError("Provide sink_subject_id as parameter")
     if sink_role is None:
         raise AttributeError("Provide sink_role as parameter")
+    if source_cr_id_fault is None:
+        raise AttributeError("Provide source_cr_id_fault as parameter")
+    if sink_cr_id_fault is None:
+        raise AttributeError("Provide sink_cr_id_fault as parameter")
 
     source_cr_id = "source-" + get_unique_string()
     source_csr_id = "source-" + get_unique_string()
+    if source_cr_id_fault:
+        source_status_cr_id = "wrong-" + source_cr_id
+    else:
+        source_status_cr_id = source_cr_id
+
     sink_cr_id = "sink-" + get_unique_string()
     sink_csr_id = "sink-" + get_unique_string()
+    if sink_cr_id_fault:
+        sink_status_cr_id = "wrong-" + sink_cr_id
+    else:
+        sink_status_cr_id = sink_cr_id
 
     iat = get_epoch()
     nbf = iat
@@ -459,9 +474,9 @@ def generate_consent_payload(
               "version": "1.3",
               "record_id": source_csr_id,
               "surrogate_id": source_surrogate_id,
-              "cr_id": source_cr_id,
+              "cr_id": source_status_cr_id,
               "consent_status": "Active",
-              "iat": get_epoch(),
+              "iat": iat,
               "prev_record_id": "NULL"
             }
           }
@@ -517,9 +532,9 @@ def generate_consent_payload(
               "version": "1.3",
               "record_id": sink_csr_id,
               "surrogate_id": sink_surrogate_id,
-              "cr_id": sink_cr_id,
+              "cr_id": sink_status_cr_id,
               "consent_status": "Active",
-              "iat": get_epoch(),
+              "iat": iat,
               "prev_record_id": "NULL"
             }
           }
@@ -528,7 +543,7 @@ def generate_consent_payload(
     }
 
     if misformatted_payload:
-        del consent_payload['data']['ssr_payload']['attributes']['surrogate_id']
+        del consent_payload['data']['source']['consent_status_record_payload']['attributes']['iat']
 
     payload = json.dumps(consent_payload)
 
