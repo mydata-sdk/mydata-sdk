@@ -20,14 +20,14 @@ from flask import json
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, \
     print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
-    generate_sl_store_payload
+    generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
-    schema_slr_store, schema_slr_listing, schema_slr
+    schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status, schema_surrogate
 from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
 
 
@@ -395,9 +395,6 @@ class SdkTestCase(unittest.TestCase):
 
         response = self.app.delete(url, headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 204, msg=response.data)
-
-    # TODO: Test Account authentication with deleted Account
-    # TODO: Test Resource fetching with removed Account
 
     ##########
     ##########
@@ -1071,13 +1068,519 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # TODO: SLR Status change - unsigned input
-    # TODO: SLR Status change - signed input
-    # TODO: SLR Fetch - Statuses
-    # TODO: SLR Fetch - Status by ID
-    # TODO: SLR Fetch - Latest Status
-    # TODO: SLR Fetch - List by Service
-    # TODO: SLR Fetch - Service by ID
+    def test_fetch_slr_wrong_id(self):
+        """
+        Test Fetch SLR with wrong slr id
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        slr_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id_wrong) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_status_listing(self):
+        """
+        Test Fetch SLR status listing
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_status_listing")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status_listing))
+        response_data_dict = json.loads(response.data)
+        slsr_id = response_data_dict['data'][0]['id']
+        return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_status_listing_wrong_id(self):
+        """
+        Test Fetch SLR status listing with wrong slr_id
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_status_listing_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        slr_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id_wrong) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_status(self):
+        """
+        Test Fetch SLR status by ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_status")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/" + str(slsr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_status_wrong_id(self):
+        """
+        Test Fetch SLR status by wrong ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_status_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        slrs_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/" + str(slrs_id_wrong) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_last_status(self):
+        """
+        Test Fetch SLR last status
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_last_status")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/last/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+        response_data_dict = json.loads(response.data)
+        slsr_id_from_response = response_data_dict['data']['id']
+
+        return account_id, account_api_key, sdk_api_key, slr_id, slsr_id_from_response
+
+    ##########
+    ##########
+    def test_fetch_slr_last_status_wrong_id(self):
+        """
+        Test Fetch SLR last status with wrong slr id
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_last_status_wrong_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        slr_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id_wrong) + "/statuses/last/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_listing_for_service(self):
+        """
+        Test Fetch SLR listing for Service
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_listing_for_service")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_listing))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_listing_for_service_with_surrogate_id(self):
+        """
+        Test Fetch SLR listing for Service with Surrogate ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_listing_for_service_with_surrogate_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/?surrogate_id=" + str(self.SOURCE_SURROGATE_ID)
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_listing))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_listing_for_service_with_wrong_surrogate_id(self):
+        """
+        Test Fetch SLR listing for Service with wrong Surrogate ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_listing_for_service_with_wrong_surrogate_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/?surrogate_id=" + str(self.SINK_SURROGATE_ID)
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_listing_for_service_wrong_service_id(self):
+        """
+        Test Fetch SLR listing for Service with wrong ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_listing_for_service_wrong_service_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        service_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + service_id_wrong + "/servicelinks/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_for_service(self):
+        """
+        Test Fetch SLR for Service
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_for_service")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(slr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_for_service_wrong_service_id(self):
+        """
+        Test Fetch SLR for Service with wrong Service ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_for_service_wrong_service_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        service_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + service_id_wrong + "/servicelinks/" + str(slr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_slr_for_service_wrong_link_id(self):
+        """
+        Test Fetch SLR for Service with wrong Link ID
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_slr_for_service_wrong_link_id")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+        slr_id_wrong = str(randint(100, 10000))
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(slr_id_wrong) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_ssr_store_source(self):
+        """
+        Test Source SSR storing
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_ssr_store_source")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/statuses/"
+        payload = generate_sls_store_payload(
+            slr_id=slr_id,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            prev_record_id=slsr_id,
+            status="Removed"
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_ssr_store_source_malformed(self):
+        """
+        Test Source SSR storing with malformed payload
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_ssr_store_source_malformed")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/statuses/"
+        payload = generate_sls_store_payload(
+            slr_id=slr_id,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            prev_record_id=slsr_id,
+            status="Removed",
+            misformatted_payload=True
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_ssr_store_source_signed(self):
+        """
+        Test Source SSR storing with signed SSR
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_ssr_store_source_signed")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/statuses/signed/"
+        payload = generate_signed_ssr_store_payload(
+            slr_id=slr_id,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            prev_record_id=slsr_id,
+            status="Removed",
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_ssr_store_source_signed_malformed(self):
+        """
+        Test Source SSR storing with signed SSR with malformed payload
+        :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
+        """
+        print_test_title(test_name="test_ssr_store_source_signed_malformed")
+
+        account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/statuses/signed/"
+        payload = generate_signed_ssr_store_payload(
+            slr_id=slr_id,
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            prev_record_id=slsr_id,
+            status="Removed",
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT,
+            misformatted_payload=True
+        )
+        print("payload: " + json.dumps(json.loads(payload), indent=4))
+
+        response = self.app.post(url, data=payload, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    def test_fetch_surrogate_object(self):
+        """
+        Test Fetch Surrogate object
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+        print_test_title(test_name="test_fetch_surrogate_object")
+
+        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/surrogates/" + str(self.SOURCE_SURROGATE_ID) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_surrogate))
+
+        return account_id, account_api_key, sdk_api_key, slr_id
+
+    ##########
+    ##########
+    # TODO: Test Account authentication with deleted Account
+    # TODO: Test Resource fetching with removed Account
 
 
 if __name__ == '__main__':

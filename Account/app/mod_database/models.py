@@ -2491,11 +2491,13 @@ class SurrogateId():
     table_name = ""
     deleted = ""
 
-    def __init__(self, service_id=None, account_id=None, deleted=0, table_name="MyDataAccount.ServiceLinkRecords"):
+    def __init__(self, service_id=None, account_id=None, surrogate_id=None, deleted=0, table_name="MyDataAccount.ServiceLinkRecords"):
         if service_id is not None:
             self.service_id = service_id
         if account_id is not None:
             self.account_id = account_id
+        if surrogate_id is not None:
+            self.surrogate_id = surrogate_id
         if table_name is not None:
             self.table_name = table_name
         if deleted is not None:
@@ -2526,20 +2528,30 @@ class SurrogateId():
         self.account_id = value
 
     @property
+    def surrogate_id(self):
+        return self.surrogate_id
+
+    @surrogate_id.setter
+    def surrogate_id(self, value):
+        self.surrogate_id = value
+
+    @property
     def to_dict(self):
         return self.__dict__
 
     @property
     def to_dict_external(self):
         dictionary = self.to_dict
-        del dictionary['id']
+        del dictionary['surrogate_id']
+        del dictionary['table_name']
+        del dictionary['deleted']
         return dictionary
 
     @property
     def to_api_dict(self):
         dictionary = {}
-        dictionary['type'] = "SurrogateId"
-        dictionary['id'] = str(self.id)
+        dictionary['type'] = "Surrogate"
+        dictionary['id'] = str(self.surrogate_id)
         dictionary['attributes'] = self.to_dict_external
         return dictionary
 
@@ -2553,13 +2565,13 @@ class SurrogateId():
 
     def from_db(self, cursor=""):
 
-        sql_query = "SELECT surrogateId, serviceLinkRecordId " \
+        sql_query = "SELECT surrogateId, serviceId, Accounts_id " \
                     "FROM " + self.table_name + " " \
-                    "WHERE serviceId LIKE %s AND Accounts_id LIKE %s ORDER BY id DESC LIMIT 1;"
+                    "WHERE serviceId LIKE %s AND surrogateId LIKE %s ORDER BY id DESC LIMIT 1;"
 
         arguments = (
             '%' + str(self.service_id) + '%',
-            '%' + str(self.account_id) + '%',
+            '%' + str(self.surrogate_id) + '%',
         )
 
         try:
@@ -2570,13 +2582,15 @@ class SurrogateId():
         else:
             logger.debug("Got data: " + repr(data))
             if len(data) == 0:
-                raise IndexError("Surrogate Id and serviceLinkRecordId could not be found with provided information")
+                raise IndexError("Account could not be found with provided information")
             if len(data[0]):
                 self.surrogate_id = data[0][0]
-                self.servicelinkrecord_id = data[0][1]
+                self.service_id = data[0][1]
+                self.account_id = data[0][2]
             else:
                 self.surrogate_id = data[0]
-                self.servicelinkrecord_id = data[1]
+                self.service_id = data[1]
+                self.account_id = data[2]
             return cursor
 
 
