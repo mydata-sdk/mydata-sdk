@@ -135,8 +135,8 @@ def generate_sl_init_sink(slr_id=None, misformatted_payload=False):
         slr_id = get_unique_string()
 
     code = str(randint(100, 10000))
-    pop_key_object , pop_key_json, kid = gen_jwk_key(prefix="sink")
-    pop_key = json.loads(pop_key_json)
+    pop_key_object, pop_key_private_json, pop_key_public_json, kid = gen_jwk_key(prefix="sink")
+    pop_key = json.loads(pop_key_public_json)
 
     if misformatted_payload:
         del pop_key['kty']
@@ -536,11 +536,12 @@ def jwk_object_to_json(jwk_object=None):
         raise AttributeError("Provide jwk_object as parameter")
 
     try:
-        jwk_json = jwk_object.export()
+        jwk_private_json = jwk_object.export()
+        jwk_public_json = jwk_object.export(private_key=False)
     except Exception as exp:
         raise
     else:
-        return jwk_json
+        return jwk_private_json, jwk_public_json
 
 
 def gen_key_as_jwk(kid=None):
@@ -560,11 +561,11 @@ def gen_key_as_jwk(kid=None):
 
     try:
         jwk_key = jwk.JWK(**gen)
-        jwk_key_json = jwk_object_to_json(jwk_object=jwk_key)
+        jwk_key_private_json, jwk_key_public_json = jwk_object_to_json(jwk_object=jwk_key)
     except Exception as exp:
         raise
     else:
-        return jwk_key, jwk_key_json
+        return jwk_key, jwk_key_private_json, jwk_key_public_json
 
 
 def gen_jwk_key(prefix="key"):
@@ -582,11 +583,11 @@ def gen_jwk_key(prefix="key"):
     kid = prefix + "-kid-" + str(uuid4())
 
     try:
-        jwk_object, jwk_json = gen_key_as_jwk(kid=kid)
+        jwk_object, jwk_private_json, jwk_public_json = gen_key_as_jwk(kid=kid)
     except Exception as exp:
         raise
     else:
-        return jwk_object, jwk_json, kid
+        return jwk_object, jwk_private_json, jwk_public_json, kid
 
 
 def sign_jws(jws_to_sign=None, jwk_key=None, jwk_kid=None, alg="ES256"):
