@@ -10,7 +10,7 @@ from flask_cors import CORS
 from flask_restful import Resource, Api
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import AccountManagerHandler, Helpers, Sequences
+from helpers_op import AccountManagerHandler, Helpers, Sequences, get_am
 
 # Flask init
 api_SLR_Verify = Blueprint("api_SLR_blueprint", __name__)
@@ -35,7 +35,6 @@ Operator_Components Mgmnt->Operator_Components Mgmnt: Load slr and code from jso
 Operator_Components Mgmnt->Account Manager: Verify SLR at Account Manager.
 Operator_Components Mgmnt-->Service_Components Mgmnt: 201, SLR VERIFIED
 '''
-
 
 class VerifySLR(Resource):
     def __init__(self):
@@ -88,8 +87,12 @@ class VerifySLR(Resource):
             ##
             sq.task("Load account_id from database")
             query = self.Helpers.query_db("select * from session_store where code=%s;", (code,))
-            session_info = loads(query)
-            account_id = session_info["account_id"]
+            session_data = loads(query)
+            account_id = session_data["account_id"]
+
+            AM = get_am(current_app, request.headers)
+            key_check = AM.verify_user_key(account_id, user_key=session_data["user_key"])
+            debug_log.info("Verifying User Key resulted: {}".format(key_check))
 
             debug_log.info("################Verify########################")
             debug_log.info(dumps(request.json))
@@ -97,7 +100,7 @@ class VerifySLR(Resource):
 
             sq.send_to("Account Manager", "Verify SLR at Account Manager.")
             try:
-                reply = self.AM.verify_slr(slr_payload, code, slr, account_id)
+                reply = AM.verify_slr(slr_payload, code, slr, account_id)
             except AttributeError as e:
                 raise DetailedHTTPException(status=502,
                                             title="It would seem initiating Account Manager Handler has failed.",

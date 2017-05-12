@@ -221,9 +221,25 @@ class StoreSlr(Resource):
     @timeme
     @error_handler
     def post(self):
+        def decode_payload(payload):
+            #sq.task("Fix possible incorrect padding in payload")
+            payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
+            debug_log.info("After padding fix :{}".format(payload))
+
+            #sq.task("Decode SLR payload and store it into object")
+            debug_log.info(payload.encode())
+            content = decode64(payload.encode())
+
+            #sq.task("Load decoded payload as python dict")
+            payload = loads(content.decode("utf-8"))
+            debug_log.info("Decoded SLR payload:")
+            debug_log.info(type(payload))
+            debug_log.info(dumps(payload, indent=2))
+            return payload
         debug_log.info(dumps(request.json, indent=2))
         store = request.json
-        self.helpers.storeJSON({store["data"]["surrogate_id"]: store})
+        payload = decode_payload(store["data"]["slr"]["attributes"]["payload"])
+        self.helpers.storeJSON({payload["surrogate_id"]: store})
 
 
 api.add_resource(UserLogin, '/login')

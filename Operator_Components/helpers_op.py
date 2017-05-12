@@ -11,6 +11,14 @@ from flask_restful import Api
 
 import db_handler as db_handler
 
+
+from jwcrypto import jwt, jwk
+from json import dumps, dump, load
+from uuid import uuid4 as guid
+from requests import get, post, patch
+from json import loads
+from core import DetailedHTTPException
+
 # Logging
 debug_log = logging.getLogger("debug")
 
@@ -79,12 +87,7 @@ def register_blueprints(app, package_name, package_path):
     return rv, apis
 
 
-from jwcrypto import jwt, jwk
-from json import dumps, dump, load
-from uuid import uuid4 as guid
-from requests import get, post
-from json import loads
-from core import DetailedHTTPException
+
 
 
 def get_am(current_app, headers):
@@ -114,9 +117,9 @@ class AccountManagerHandler:
             "verify_user":      "account/api/v1.3/internal/auth/sdk/account/{account_id}/info/",
             "init_slr_sink":    "account/api/v1.3/internal/accounts/{account_id}/servicelinks/init/sink/",
             "init_slr_source":  "account/api/v1.3/internal/accounts/{account_id}/servicelinks/init/source/",
-            "surrogate":        "api/account/{account_id}/service/{service_id}/surrogate/",  # Removed
-            "sign_slr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}",
-            "verify_slr":       "api/account/{account_id}/servicelink/verify/",
+            "surrogate":        "api/account/{account_id}/service/{service_id}/surrogate/",  # Changed
+            "sign_slr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
+            "verify_slr":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/store/",
             "sign_consent":     "api/account/consent/sign/",
             "consent":          "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
             "auth_token":       "api/consent/{sink_cr_id}/authorizationtoken/",
@@ -197,7 +200,7 @@ class AccountManagerHandler:
                          timeout=self.timeout,
                          json=template)
             if query.status_code == 201:
-                return query
+                return link_id
             elif query.status_code == 409:
                 debug_log.info("Collision, generating new link_id and retrying.")
                 if retry:
@@ -306,9 +309,10 @@ class AccountManagerHandler:
                                         title=req.reason)
 
     def sign_slr(self, template, account_id):
-        templu = template
-        req = post(self.url + self.endpoint["sign_slr"].replace("{account_id}", account_id), json=templu,
-                   headers={'Api-Key-Sdk': self.token}, timeout=self.timeout)
+        req = patch(self.url + self.endpoint["sign_slr"]
+                    .replace("{account_id}", self.account_id)
+                    .replace("{link_id}", template["data"]["attributes"]["link_id"]), json=template,
+                    headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key}, timeout=self.timeout)
         debug_log.debug("API token: {}".format(self.token))
         debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
@@ -327,14 +331,13 @@ class AccountManagerHandler:
             "code": code,
             "data": {
                 "slr": {
-                    "attributes": {
-                        "slr": slr,
-                    },
+                    "attributes": slr,
+                    "id": payload["link_id"],
                     "type": "ServiceLinkRecord",
                 },
                 "ssr": {
                     "attributes": {
-                        "version": "1.2",
+                        "version": "1.3",
                         "surrogate_id": payload["surrogate_id"],
                         "record_id": str(guid()),
                         "account_id": account_id,
@@ -345,20 +348,14 @@ class AccountManagerHandler:
                     },
                     "type": "ServiceLinkStatusRecord"
                 },
-                "surrogate_id": {
-                    "attributes": {
-                        "account_id": "2",
-                        "service_id": payload["service_id"],
-                        "surrogate_id": payload["surrogate_id"]
-                    },
-                    "type": "SurrogateId"
-                }
             }
         }
         debug_log.info("Template sent to Account Manager:")
         debug_log.info(dumps(templa, indent=2))
-        req = post(self.url + self.endpoint["verify_slr"].replace("{account_id}", account_id), json=templa,
-                   headers={'Api-Key-SDK': self.token}, timeout=self.timeout)
+        req = post(self.url + self.endpoint["verify_slr"]
+                   .replace("{account_id}", account_id)
+                   .replace("{link_id}", payload["link_id"]), json=templa,
+                   headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key}, timeout=self.timeout)
         return req
 
     def signAndstore(self, sink_cr, sink_csr, source_cr, source_csr, account_id):

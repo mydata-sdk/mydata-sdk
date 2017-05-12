@@ -211,18 +211,8 @@ class StoreSLR(Resource):
     @timeme
     @error_handler
     def post(self):
-        try:
-            debug_log.info("StoreSLR class method post got json:")
-            debug_log.info(dumps(request.json, indent=2))
 
-            sq.task("Load SLR to object")
-            slr = request.json["slr"]
-            debug_log.info("SLR STORE:\n", slr)
-
-            sq.task("Load slr payload as object")
-            payload = slr["payload"]
-            debug_log.info("Before padding fix:{}".format(payload))
-
+        def decode_payload(payload):
             sq.task("Fix possible incorrect padding in payload")
             payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
             debug_log.info("After padding fix :{}".format(payload))
@@ -236,6 +226,21 @@ class StoreSLR(Resource):
             debug_log.info("Decoded SLR payload:")
             debug_log.info(type(payload))
             debug_log.info(dumps(payload, indent=2))
+            return payload
+
+        try:
+            debug_log.info("StoreSLR class method post got json:")
+            debug_log.info(dumps(request.json, indent=2))
+
+            sq.task("Load SLR to object")
+            slr = request.json["slr"]
+            debug_log.info("SLR STORE:\n", slr)
+
+            sq.task("Load slr payload as object")
+            payload = slr["payload"]
+            debug_log.info("Before padding fix:{}".format(payload))
+
+            payload = decode_payload(payload)
 
             sq.task("Fetch surrogate_id from decoded SLR payload")
             surrogate_id = payload["surrogate_id"].encode()
@@ -303,10 +308,18 @@ class StoreSLR(Resource):
             sq.task("Store following SLR into db")
             store = loads(loads(result.text))
             debug_log.debug(dumps(store, indent=2))
-            self.helpers.storeJSON({store["data"]["surrogate_id"]: store})
-            endpoint = "/api/1.2/slr/store_slr"
-            debug_log.info("Posting SLR for storage in Service Mockup")
-            result = post("{}{}".format(self.service_url, endpoint), json=store)  # Send copy to Service_Components
+            payload = decode_payload(store["data"]["slr"]["attributes"]["payload"])
+            if surrogate_id == payload["surrogate_id"]:
+                self.helpers.storeJSON({payload["surrogate_id"]: store})
+                endpoint = "/api/1.2/slr/store_slr"
+                debug_log.info("Posting SLR for storage in Service Mockup")
+                result = post("{}{}".format(self.service_url, endpoint), json=store)  # Send copy to Service_Components
+            else:
+                raise DetailedHTTPException(status=500,
+                                            detail={
+                                                "msg": "Surrogate id mismatch",
+                                                "surrogate id's didn't match between requests.": loads(result.text)},
+                                            title=result.reason)
         else:
             raise DetailedHTTPException(status=result.status_code,
                                         detail={"msg": "Something went wrong while verifying SLR with Operator_SLR.",

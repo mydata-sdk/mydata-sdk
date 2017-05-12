@@ -48,14 +48,14 @@ class RegisterSurrogate(Resource):
 
         self.payload = \
             {
-                "version": "1.2",
+                "version": "1.3",
                 "link_id": "",
                 "operator_id": operator_id,
                 "service_id": "",
                 "surrogate_id": "",
                 "operator_key": self.operator_key["pub"],
                 "cr_keys": "",
-                "iat": int(time.time()),
+                "iat": 0,  # Set below once we know link_id
             }
         debug_log.info("SLR payload in init is: \n{}".format(dumps(self.payload, indent=2)))
         self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
@@ -124,25 +124,18 @@ class RegisterSurrogate(Resource):
             else:
                 result = AM.init_slr(code)
 
+            self.payload["link_id"] = result
+            self.payload["iat"] = int(time.time())
 
 
             sq.task("Fill template for Account Manager")
+
             template = {"code": code,
                         "data": {
-                            "slr": {
-                                "type": "ServiceLinkRecord",
-                                "attributes": self.payload,
-                                   },
-                                "surrogate_id": {
-                                    "type": "SurrogateId",
-                                    "attributes":{
-                                        "surrogate_id": self.payload["surrogate_id"],
-                                        "service_id": self.payload["service_id"],
-                                        "account_id": account_id
-                                    }
-                                }
-                            },
-                         }
+                            "type": "ServiceLinkRecord",
+                            "attributes": self.payload
+                            }
+                        }
 
             debug_log.info("########### Template for Account Manager #")
             debug_log.info(dumps(template, indent=2))
@@ -150,7 +143,7 @@ class RegisterSurrogate(Resource):
 
             sq.send_to("Account Manager", "Sign SLR at Account Manager")
             try:
-                reply = self.AM.sign_slr(template, account_id)
+                reply = AM.sign_slr(template, account_id)
             except AttributeError as e:
                 raise DetailedHTTPException(status=502,
                                             title="It would seem initiating Account Manager Handler has failed.",
@@ -163,7 +156,7 @@ class RegisterSurrogate(Resource):
                 req = {"data":
                            {"code": code,
                             },
-                       "slr": reply["data"]["slr"]["attributes"]["slr"]
+                       "slr": reply["data"]["attributes"]
                        }
 
                 debug_log.info("SLR in format sent to Service Mgmnt: {}".format(dumps(req, indent=2)))
