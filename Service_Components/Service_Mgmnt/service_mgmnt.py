@@ -132,7 +132,9 @@ class StartServiceLinking(Resource):
         endpoint = "/api/1.2/slr/link"  # Todo: this needs to be fetched from somewhere
         result = post("{}{}".format(self.operator_url, endpoint), json=data)
         debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
-        if result.status_code == 500:
+        if result.ok:
+            return result.text, 201
+        elif result.status_code == 500:
             raise DetailedHTTPException(status=500,
                                         detail={"msg": "Linking Service has failed due to server side issue."},
                                         title="Could not link Service.")
@@ -142,6 +144,7 @@ class StartServiceLinking(Resource):
                                             "msg": "Something went wrong while posting to Operator_SLR for /link",
                                             "Error from Operator_SLR": loads(result.text)},
                                         title=result.reason)
+
 
 
 def verifyJWS(json_JWS):
@@ -325,6 +328,7 @@ class StoreSLR(Resource):
                                         detail={"msg": "Something went wrong while verifying SLR with Operator_SLR.",
                                                 "Error from Operator_SLR": loads(result.text)},
                                         title=result.reason)
+        return store, 201
 
     @timeme
     @error_handler

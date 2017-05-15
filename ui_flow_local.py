@@ -92,16 +92,16 @@ def create_service_link(operator_url, service_id, user_key):
     print("Extracting parameters from the url...")
     params = slr_flow.url.split("/")[-1].split("?")[-1].split("&")
     params_dict = {}
-    for item in params: # This is done bit funny to avoid losing paddings from return_url
+    for item in params:  # This is done bit funny to avoid losing paddings from return_url
         key = item.split("=")[0]
         value = item.split("{}{}".format(key, "="))[1]
         params_dict[key] = value
     print(json.dumps(params_dict, indent=2))
     print("Adding Debug Credentials to the data for posting..")
-    params_dict["Email"] = "Debuggeri"
-    params_dict["Password"] = "Debuuggeri"
+    params_dict["Email"] = "Matti"
+    params_dict["Password"] = "Uusio"
     print("POSTing the data to the Service Mockup Login (Simulating filling the form and hitting Submit")
-    result = post(slr_flow.url.split("?")[0], json=params_dict)
+    result = post(slr_flow.url.split("?")[0], json=params_dict, auth=(params_dict["Email"], params_dict["Password"""]))
 
     # if not slr_flow.ok:
     #     print("Creation of first SLR failed with status ({}) reason ({}) and the following content:\n{}".format(
@@ -220,9 +220,24 @@ if __name__ == '__main__':
                         required=False)
 
     help_string_skip_slr = \
-        "Should account init be skipped. Init is done by default. Specify this flag to skip init."
+        "Should slr creation be skipped. SLR flow is done by default. Specify this flag to skip it."
     parser.add_argument("--skip_slr",
                         help=help_string_skip_slr,
+                        action="store_true",
+                        required=False)
+
+    help_string_skip_consent = \
+        "Should consent flow be skipped. It is done by default. Specify this flag to skip it."
+    parser.add_argument("--skip_consent",
+                        help=help_string_skip_consent,
+                        action="store_true",
+                        required=False)
+
+
+    help_string_skip_data = \
+        "Should data flow be skipped. It is done by default. Specify this flag to skip it."
+    parser.add_argument("--skip_data",
+                        help=help_string_skip_data,
                         action="store_true",
                         required=False)
 
@@ -273,7 +288,9 @@ if __name__ == '__main__':
         create_service_link(args.operator_url, args.source_id, user_key)
 
     # Consent
-    rs_id = give_consent(args.operator_url, args.sink_id, args.source_id)
+    if not args.skip_consent:
+        rs_id = give_consent(args.operator_url, args.sink_id, args.source_id)
 
-    # Debug Data Flow
-    make_data_request(args.service_url, rs_id)
+        # Debug Data Flow
+        if not args.skip_data:
+            make_data_request(args.service_url, rs_id)

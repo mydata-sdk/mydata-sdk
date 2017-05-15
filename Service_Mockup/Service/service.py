@@ -50,9 +50,34 @@ token_key = jwk.JWK(**gen)
 templ = {Service_ID: {"cr_keys": loads(token_key.export_public())}}
 
 
-# post("http://localhost:6666/key", json=templ)
-# op_key = loads(get("http://localhost:6666/key/"+"OPR-ID-RANDOM").text)
-# Operator_pub = jwk.JWK(**op_key)
+from functools import wraps
+from flask import request, Response
+
+
+def check_auth(username, password):
+    """This function is called to check if a username /
+    password combination is valid.
+    """
+    return username == 'Matti' and password == 'Uusio'
+
+
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return Response(
+    'Could not verify your access level for that URL.\n'
+    'You have to login with proper credentials', 401,
+    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
 
 
 def timeme(method):
@@ -80,6 +105,7 @@ class UserLogin(Resource):
         self.parser.add_argument('linkingFrom', type=str, help='Origin of the linking request(?)')  # TODO: Clarify?
 
     @error_handler
+    @requires_auth
     def get(self):
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin GET got args: \n{}".format(dumps(args, indent=2)))
@@ -92,19 +118,7 @@ class UserLogin(Resource):
         <html><header></header><body>
                     <form class="form-horizontal" action="" method="POST">
               <fieldset>
-                <legend>Login to {{provider}}</legend>
-                <div class="form-group">
-                  <label for="inputEmail" class="col-lg-1 control-label">Email</label>
-                  <div class="col-lg-10">
-                    <input class="form-control" id="inputEmail" placeholder="Email" name="Email" type="text">
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="inputPassword" class="col-lg-1 control-label">Password</label>
-                  <div class="col-lg-10">
-                    <input class="form-control" id="inputPassword" placeholder="Password" name="Password" type="password">
-                  </div>
-                </div>
+                <legend>Link {{provider}} with Operator({{ operator_id }})</legend>
                 <div class="form-group">
                   <div class="col-lg-10 col-lg-offset-1">
                     <button type="reset" class="btn btn-default">Cancel</button>
@@ -113,7 +127,7 @@ class UserLogin(Resource):
                 </div>
               </fieldset>
               <div {{ fromOperator }}>
-                <p> By signing in you agree to the <a href="#LinkToToS">Terms of Service</a></p>
+                <p> By linking service to Operator, you agree to the <a href="#LinkToToS">Terms of Service</a></p>
               </div>
               <input type="hidden" name="code" value="{{ code }}">
               <input type="hidden" name="return_url" value="{{ return_url }}">
@@ -130,18 +144,12 @@ class UserLogin(Resource):
     # operator_id = args["operator_id"],
     # return_url = args["return_url"],
     # linkingFrom = args["linkingFrom"]
+    @requires_auth
     @error_handler
     def post(self):
-        def auth_user(username, password):
-            if (username is not None and len(username) > 0) and (password is not None and len(password) > 0):
-
-                return True
-            else:
-                return False
-
         def link_surrogate_id(json_response, user_id):
             try:  # Remove this check once debugging is done. TODO
-                response_user_id = self.helpers.get_user_id_with_code(request.json["code"])
+                response_user_id = self.helpers.get_user_id_with_code(args["code"])
                 if response_user_id == user_id:
                     pass
                 else:
@@ -160,10 +168,8 @@ class UserLogin(Resource):
 
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin POST args contain:\n {}".format(dumps(args, indent=2)))
-        login_was_successfull = auth_user(args["Email"], args["Password"])
-        debug_log.info("Login in with given credentials resulted in: {}".format(login_was_successfull))
         debug_log.info(dumps(request.json, indent=2))
-        user_id = encode64(args["Email"])  # TODO: Placeholder for actual login.
+        user_id = encode64(request.authorization.username)  # TODO: Placeholder for actual login.
         code = args["code"]
         self.helpers.store_code_user({code: user_id})
 
@@ -180,17 +186,20 @@ class UserLogin(Resource):
                                             "Error from Service_Components Mgmnt": loads(result.text)},
                                         title=result.reason)
         debug_log.info(result.text)
-        surrogate_id = link_surrogate_id(loads(result.text), user_id)  # Returns surrogate_id for convenience
-        endpoint = "/api/1.2/slr/linking"  # TODO: This needs to be fetched from somewhere.
+        try:
+            surrogate_id = link_surrogate_id(loads(result.text), user_id)  # Returns surrogate_id for convenience
+            endpoint = "/api/1.2/slr/linking"  # TODO: This needs to be fetched from somewhere.
 
-        data = {"code": code,
-                "operator_id": args["operator_id"],
-                "return_url": args["return_url"],
-                "surrogate_id": surrogate_id}
-        linking_result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=data)
-        debug_log.debug("Service Linking resulted in:\n {}\n {}".format(linking_result.status_code,
-                                                                        linking_result.text))
+            data = {"code": code,
+                    "operator_id": args["operator_id"],
+                    "return_url": args["return_url"],
+                    "surrogate_id": surrogate_id}
+            linking_result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=data)
+            debug_log.debug("Service Linking resulted in:\n {}\n {}".format(linking_result.status_code,
+                                                                            linking_result.text))
 
+        except Exception as e:
+            raise e
         return redirect("{}".format(decode64(args["return_url"])), code=302)
 
 

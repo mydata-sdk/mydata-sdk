@@ -165,7 +165,9 @@ class AccountManagerHandler:
                 return True
             else:
                 debug_log.info("User key couldn't be verified.")
-                return False
+                raise DetailedHTTPException(status=403,
+                                            detail={"msg": "Couldn't authenticate to account with given key."},
+                                            title="Forbidden, invalid or expired auth key.")
         except KeyError as e:
             debug_log.debug("Couldn't find user key from headers.")
             debug_log.exception(e)

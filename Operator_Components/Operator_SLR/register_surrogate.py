@@ -76,9 +76,16 @@ class RegisterSurrogate(Resource):
 
             sq.task("Load account_id and service_id from database")
             code = js["code"]
-            stored_session_from_db = self.Helpers.query_db_multiple("select json from session_store where code=%s;",
+            try:
+                stored_session_from_db = self.Helpers.query_db_multiple("select json from session_store where code=%s;",
                                                                     (code,),
                                                                     one=True)[0]
+            except TypeError as e:
+                debug_log.info("Failed restoring session from DB with code '{}'".format(code))
+                debug_log.exception(e)
+                raise DetailedHTTPException(status=403,
+                                            detail={"msg": "Invalid or expired session"},
+                                            title="Invalid session")
             debug_log.debug("Type of session data fetched from db is: {}".format(type(stored_session_from_db)))
             debug_log.debug("The session data contains: {}".format(stored_session_from_db))
             session_data = loads(stored_session_from_db)
@@ -188,5 +195,6 @@ class RegisterSurrogate(Resource):
         except Exception as e:
             raise DetailedHTTPException(title="Creation of SLR has failed.", exception=e,
                                         trace=traceback.format_exc(limit=100).splitlines())
+        return response.text, 201
 
 api.add_resource(RegisterSurrogate, '/link')
