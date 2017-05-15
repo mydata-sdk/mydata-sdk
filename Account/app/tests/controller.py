@@ -567,6 +567,129 @@ def generate_consent_payload(
 
     return payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id
 
+
+def generate_consent_status_payload(
+        surrogate_id=None,
+        cr_id=None,
+        consent_status=None,
+        prev_record_id=None,
+        misformatted_payload=False,
+        cr_id_fault=False
+):
+    if surrogate_id is None:
+        raise AttributeError("Provide surrogate_id as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if consent_status is None:
+        raise AttributeError("Provide consent_status as parameter")
+    if prev_record_id is None:
+        raise AttributeError("Provide prev_record_id as parameter")
+    if cr_id_fault is None:
+        raise AttributeError("Provide cr_id_fault as parameter")
+
+    # Status record ID
+    record_id = "status-" + get_unique_string()
+
+    # CR id mismatch
+    if cr_id_fault:
+        cr_id = "wrong-" + cr_id
+
+    iat = get_epoch()
+
+    consent_payload = {
+      "data": {
+        "type": "ConsentStatusRecord",
+        "attributes": {
+          "version": "1.3",
+          "record_id": record_id,
+          "surrogate_id": surrogate_id,
+          "cr_id": cr_id,
+          "consent_status": consent_status,
+          "iat": iat,
+          "prev_record_id": prev_record_id
+        }
+      }
+    }
+
+    if misformatted_payload:
+        del consent_payload['data']['attributes']['iat']
+
+    payload = json.dumps(consent_payload)
+
+    return payload, record_id
+
+
+def generate_consent_status_payload_signed(
+        surrogate_id=None,
+        cr_id=None,
+        consent_status=None,
+        prev_record_id=None,
+        misformatted_payload=False,
+        cr_id_fault=False,
+        operator_key=None,
+        operator_kid=None
+):
+    if surrogate_id is None:
+        raise AttributeError("Provide surrogate_id as parameter")
+    if cr_id is None:
+        raise AttributeError("Provide cr_id as parameter")
+    if consent_status is None:
+        raise AttributeError("Provide consent_status as parameter")
+    if prev_record_id is None:
+        raise AttributeError("Provide prev_record_id as parameter")
+    if cr_id_fault is None:
+        raise AttributeError("Provide cr_id_fault as parameter")
+    if operator_key is None:
+        raise AttributeError("Provide operator_key as parameter")
+    if operator_kid is None:
+        raise AttributeError("Provide operator_kid as parameter")
+
+    # Status record ID
+    record_id = "status-" + get_unique_string()
+
+    # CR id mismatch
+    if cr_id_fault:
+        cr_id = "wrong-" + cr_id
+
+    iat = get_epoch()
+
+    csr_payload = {
+      "data": {
+        "type": "ConsentStatusRecord",
+        "attributes": {
+          "version": "1.3",
+          "record_id": record_id,
+          "surrogate_id": surrogate_id,
+          "cr_id": cr_id,
+          "consent_status": consent_status,
+          "iat": iat,
+          "prev_record_id": prev_record_id
+        }
+      }
+    }
+
+    csr_signed = sign_payload_jws(payload_to_sign=csr_payload['data']['attributes'], jwk_key=operator_key, jwk_kid=operator_kid)
+
+    payload = {
+        "data": {
+            "csr": {
+                "type": "ServiceLinkStatusRecord",
+                "id": record_id,
+                "attributes": csr_signed
+            },
+            "csr_payload": {
+                "attributes": csr_payload['data']['attributes']
+            }
+        }
+    }
+
+    if misformatted_payload:
+        del payload['data']['csr_payload']['attributes']['consent_status']
+
+    payload = json.dumps(payload)
+
+    return payload, record_id
+
 #############
 #############
 # JWS & JWK #

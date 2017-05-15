@@ -20,12 +20,13 @@ from flask import json
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, \
     print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
-    generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload, generate_consent_payload
+    generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload, generate_consent_payload, \
+    generate_consent_status_payload, sign_jws, generate_consent_status_payload_signed
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
-from app.tests.schemas.schema_authorisation import schema_give_consent
+from app.tests.schemas.schema_authorisation import schema_give_consent, schema_consent_status_change
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
     schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status, schema_surrogate
@@ -1826,12 +1827,12 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_for_account_give_consent_wrong_sink_surrogate_id(self):
+    def test_for_account_give_consent_unknown_sink_surrogate_id(self):
         """
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_wrong_sink_surrogate_id")
+        print_test_title(test_name="test_for_account_give_consent_unknown_sink_surrogate_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -1847,7 +1848,7 @@ class SdkTestCase(unittest.TestCase):
                 source_subject_id=self.SOURCE_SERVICE_ID,
                 sink_pop_key=self.SINK_KEY_PUBLIC,
                 operator_pub_key=self.OPERATOR_KEY_PUBLIC,
-                sink_surrogate_id="wrong_id",
+                sink_surrogate_id="unknown",
                 sink_slr_id=sink_slr_id,
                 sink_subject_id=self.SINK_SERVICE_ID,
                 misformatted_payload=False
@@ -1864,12 +1865,12 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_for_account_give_consent_wrong_source_slr_id(self):
+    def test_for_account_give_consent_unknown_source_slr_id(self):
         """
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_wrong_source_slr_id")
+        print_test_title(test_name="test_for_account_give_consent_unknown_source_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -1881,7 +1882,7 @@ class SdkTestCase(unittest.TestCase):
         give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
                 source_surrogate_id=self.SOURCE_SURROGATE_ID,
                 #source_slr_id=source_slr_id,
-                source_slr_id="wrong_id",
+                source_slr_id="unknown",
                 operator_id=self.OPERATOR_ID,
                 source_subject_id=self.SOURCE_SERVICE_ID,
                 sink_pop_key=self.SINK_KEY_PUBLIC,
@@ -2104,6 +2105,370 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self,validate_json(give_consent_response.data, schema_request_error_detail_as_str))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_source(self):
+        """
+        Change Consent Status - Source Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_source")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + source_cr_id + "/statuses/"
+        consent_status_change_payload, source_csr_id_new = generate_consent_status_payload(
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            cr_id=source_cr_id,
+            consent_status="Paused",
+            prev_record_id=source_csr_id,
+            misformatted_payload=False,
+            cr_id_fault=False
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_consent_status_change))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_sink(self):
+        """
+        Change Consent Status - Sink Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id, sink_csr_id_new
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_sink")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + sink_cr_id + "/statuses/"
+        consent_status_change_payload, sink_csr_id_new = generate_consent_status_payload(
+            surrogate_id=self.SINK_SURROGATE_ID,
+            cr_id=sink_cr_id,
+            consent_status="Paused",
+            prev_record_id=sink_csr_id,
+            misformatted_payload=False,
+            cr_id_fault=False
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_consent_status_change))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id, sink_csr_id_new
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_incorrect_cr_id(self):
+        """
+        Change Consent Status - Faulty payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_incorrect_cr_id")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + source_cr_id + "/statuses/"
+        consent_status_change_payload, source_csr_id_new = generate_consent_status_payload(
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            cr_id=source_cr_id,
+            consent_status="Paused",
+            prev_record_id=source_csr_id,
+            misformatted_payload=False,
+            cr_id_fault=True
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_incorrect_payload(self):
+        """
+        Change Consent Status - Faulty payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_incorrect_payload")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + source_cr_id + "/statuses/"
+        consent_status_change_payload, source_csr_id_new = generate_consent_status_payload(
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            cr_id=source_cr_id,
+            consent_status="Paused",
+            prev_record_id=source_csr_id,
+            misformatted_payload=True,
+            cr_id_fault=False
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_dict))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_unknown_consent(self):
+        """
+        Change Consent Status - Faulty payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_unknown_consent")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        source_cr_id = "unknown-" + source_cr_id
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + source_cr_id + "/statuses/"
+        consent_status_change_payload, source_csr_id_new = generate_consent_status_payload(
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            cr_id=source_cr_id,
+            consent_status="Paused",
+            prev_record_id=source_csr_id,
+            misformatted_payload=False,
+            cr_id_fault=False
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_signed_source(self):
+        """
+        Change Consent Status by Operator - Source Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_signed_source")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + source_cr_id + "/statuses/signed/"
+        consent_status_change_payload, source_csr_id_new = generate_consent_status_payload_signed(
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            cr_id=source_cr_id,
+            consent_status="Paused",
+            prev_record_id=source_csr_id,
+            misformatted_payload=False,
+            cr_id_fault=False,
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_consent_status_change))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_signed_sink(self):
+        """
+        Change Consent Status by Operator - Sink Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id, sink_csr_id_new
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_signed_sink")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_signed_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + sink_cr_id + "/statuses/signed/"
+        consent_status_change_payload, sink_csr_id_new = generate_consent_status_payload_signed(
+            surrogate_id=self.SINK_SURROGATE_ID,
+            cr_id=sink_cr_id,
+            consent_status="Paused",
+            prev_record_id=sink_csr_id,
+            misformatted_payload=False,
+            cr_id_fault=False,
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_consent_status_change))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id, sink_csr_id_new
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_signed_incorrect_payload(self):
+        """
+        Change Consent Status by Operator - Faulty payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_signed_incorrect_payload")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + source_cr_id + "/statuses/signed/"
+        consent_status_change_payload, source_csr_id_new = generate_consent_status_payload_signed(
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            cr_id=source_cr_id,
+            consent_status="Paused",
+            prev_record_id=source_csr_id,
+            misformatted_payload=True,
+            cr_id_fault=False,
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_dict))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_signed_incorrect_cr_id(self):
+        """
+        Change Consent Status by Operator - Faulty payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_signed_incorrect_cr_id")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + source_cr_id + "/statuses/signed/"
+        consent_status_change_payload, source_csr_id_new = generate_consent_status_payload_signed(
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            cr_id=source_cr_id,
+            consent_status="Paused",
+            prev_record_id=source_csr_id,
+            misformatted_payload=False,
+            cr_id_fault=True,
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_change_consent_status_signed_unknown_cr_id(self):
+        """
+        Change Consent Status by Operator - Faulty payload
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+        """
+        print_test_title(test_name="test_for_account_change_consent_status_signed_unknown_cr_id")
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        source_cr_id = "unknown-" + source_cr_id
+
+        # Change Consent Status of Source Service
+        consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + source_cr_id + "/statuses/signed/"
+        consent_status_change_payload, source_csr_id_new = generate_consent_status_payload_signed(
+            surrogate_id=self.SOURCE_SURROGATE_ID,
+            cr_id=source_cr_id,
+            consent_status="Paused",
+            prev_record_id=source_csr_id,
+            misformatted_payload=False,
+            cr_id_fault=False,
+            operator_kid=self.OPERATOR_KID,
+            operator_key=self.OPERATOR_KEY_OBJECT
+        )
+        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
+
+        consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
+        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
+        unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
+        unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
     ##########
