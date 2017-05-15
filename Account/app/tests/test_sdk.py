@@ -2472,7 +2472,6 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # TODO: Consent Pairs
     # TODO: Test Account authentication with deleted Account
     # TODO: Test Resource fetching with removed Account
 
