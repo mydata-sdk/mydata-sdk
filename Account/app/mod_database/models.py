@@ -2605,11 +2605,12 @@ class ConsentRecord():
     subject_id = None
     service_link_records_id = None
     role = None
+    consent_pair_id = None
     accounts_id = None
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", consent_record="", consent_id="", surrogate_id="", resource_set_id="", service_link_record_id="", subject_id="", service_link_records_id="", role="", accounts_id="", deleted=0, table_name="MyDataAccount.ConsentRecords"):
+    def __init__(self, id="", consent_record="", consent_id="", surrogate_id="", resource_set_id="", service_link_record_id="", subject_id="", service_link_records_id="", role="", consent_pair_id="", accounts_id="", deleted=0, table_name="MyDataAccount.ConsentRecords"):
         self.id = id
         self.consent_record = consent_record
         self.surrogate_id = surrogate_id
@@ -2619,6 +2620,7 @@ class ConsentRecord():
         self.subject_id = subject_id
         self.service_link_records_id = service_link_records_id
         self.role = role
+        self.consent_pair_id = consent_pair_id
         if accounts_id is not None:
             self.accounts_id = accounts_id
         if table_name is not None:
@@ -2703,6 +2705,14 @@ class ConsentRecord():
         self.role = value
 
     @property
+    def consent_pair_id(self):
+        return self.consent_pair_id
+
+    @consent_pair_id.setter
+    def consent_pair_id(self, value):
+        self.consent_pair_id = value
+
+    @property
     def accounts_id(self):
         return self.accounts_id
 
@@ -2729,7 +2739,8 @@ class ConsentRecord():
         dictionary = {}
         dictionary['type'] = "ConsentRecord"
         dictionary['id'] = str(self.consent_id)
-        dictionary['attributes'] = self.to_dict_external
+        #dictionary['attributes'] = self.to_dict_external
+        dictionary['attributes'] = self.consent_record
         return dictionary
 
     @property
@@ -2765,8 +2776,9 @@ class ConsentRecord():
                     "subjectId, " \
                     "ServiceLinkRecords_id," \
                     "role," \
+                    "consentPairId," \
                     "Accounts_id" \
-                    ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                    ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
         arguments = (
             json.dumps(self.consent_record),
@@ -2777,6 +2789,7 @@ class ConsentRecord():
             str(self.subject_id),
             int(self.service_link_records_id),
             str(self.role),
+            str(self.consent_pair_id),
             int(self.accounts_id),
         )
 
@@ -2794,11 +2807,11 @@ class ConsentRecord():
 
         # TODO: Don't allow if role is only criteria
 
-        sql_query = "SELECT id, consentRecord, ServiceLinkRecords_id, surrogateId, consentRecordId, ResourceSetId, serviceLinkRecordId, subjectId, role, Accounts_id " \
+        sql_query = "SELECT id, consentRecord, ServiceLinkRecords_id, surrogateId, consentRecordId, ResourceSetId, serviceLinkRecordId, subjectId, role, consentPairId, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND ServiceLinkRecords_id LIKE %s AND surrogateId LIKE %s AND " \
                     "consentRecordId LIKE %s AND ResourceSetId LIKE %s AND serviceLinkRecordId LIKE %s AND " \
-                    "subjectId LIKE %s AND role LIKE %s AND Accounts_id LIKE %s;"
+                    "subjectId LIKE %s AND role LIKE %s AND consentPairId LIKE %s AND Accounts_id LIKE %s;"
 
         arguments = (
             '%' + str(self.id) + '%',
@@ -2809,6 +2822,7 @@ class ConsentRecord():
             '%' + str(self.service_link_record_id) + '%',
             '%' + str(self.subject_id) + '%',
             '%' + str(self.role) + '%',
+            '%' + str(self.consent_pair_id) + '%',
             '%' + str(self.accounts_id) + '%',
         )
 
@@ -2831,7 +2845,8 @@ class ConsentRecord():
                 self.service_link_record_id = data[0][6]
                 self.subject_id = data[0][7]
                 self.role = data[0][8]
-                self.accounts_id = data[0][9]
+                self.consent_pair_id = data[0][9]
+                self.accounts_id = data[0][10]
             else:
                 self.id = data[0]
                 self.consent_record = data[1]
@@ -2842,7 +2857,8 @@ class ConsentRecord():
                 self.service_link_record_id = data[6]
                 self.subject_id = data[7]
                 self.role = data[8]
-                self.accounts_id = data[9]
+                self.consent_pair_id = data[9]
+                self.accounts_id = data[10]
 
             try:
                 cr_copy = self.consent_record
@@ -2988,7 +3004,8 @@ class ConsentStatusRecord():
         dictionary = {}
         dictionary['type'] = "ConsentStatusRecord"
         dictionary['id'] = str(self.consent_status_record_id)
-        dictionary['attributes'] = self.to_dict_external
+        #dictionary['attributes'] = self.to_dict_external
+        dictionary['attributes'] = self.consent_status_record
         return dictionary
 
     @property

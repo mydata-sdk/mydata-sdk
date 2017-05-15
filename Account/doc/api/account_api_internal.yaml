@@ -2075,16 +2075,16 @@ definitions:
           source:
             type: object
             properties:
-              consentRecord:
+              consent_record:
                   $ref: '#/definitions/ConsentRecordSource'
-              consentStatusRecord:
+              consent_status_record:
                 $ref: '#/definitions/ConsentStatusRecord'
           sink:
             type: object
             properties:
-              consentRecord:
+              consent_record:
                   $ref: '#/definitions/ConsentRecordSink'
-              consentStatusRecord:
+              consent_status_record:
                 $ref: '#/definitions/ConsentStatusRecord'
 
   ConsentResponse:
@@ -2106,12 +2106,36 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/newConsentStatus'
-        
+
   newConsentStatusSignedRequest:
     type: object
     properties:
       data:
-        $ref: '#/definitions/ConsentStatusRecord'
+        type: object
+        properties:
+          csr:
+            $ref: '#/definitions/ConsentStatusRecord'
+          csr_payload:
+            type: object
+            properties:
+              attributes:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  record_id:
+                    type: string
+                  surrogate_id:
+                    type: string
+                  cr_id:
+                    type: string
+                  consent_status:
+                    type: string
+                  iat:
+                    type: integer
+                    format: int32
+                  prev_record_id:
+                    type: string
 
   ConsentStatusResponse:
     type: object
