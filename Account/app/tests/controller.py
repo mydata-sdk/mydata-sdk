@@ -378,7 +378,9 @@ def generate_consent_payload(
         sink_role="Sink",
         misformatted_payload=False,
         source_cr_id_fault=False,
-        sink_cr_id_fault=False
+        sink_cr_id_fault=False,
+        source_surrogate_id_fault=False,
+        sink_surrogate_id_fault=False
 ):
 
     if source_surrogate_id is None:
@@ -407,20 +409,36 @@ def generate_consent_payload(
         raise AttributeError("Provide source_cr_id_fault as parameter")
     if sink_cr_id_fault is None:
         raise AttributeError("Provide sink_cr_id_fault as parameter")
+    if source_surrogate_id_fault is None:
+        raise AttributeError("Provide source_surrogate_id_fault as parameter")
+    if sink_surrogate_id_fault is None:
+        raise AttributeError("Provide sink_surrogate_id_fault as parameter")
 
     source_cr_id = "source-" + get_unique_string()
     source_csr_id = "source-" + get_unique_string()
+    # CR id mismatch
     if source_cr_id_fault:
         source_status_cr_id = "wrong-" + source_cr_id
     else:
         source_status_cr_id = source_cr_id
+    # Surrogate id mismatch
+    if source_surrogate_id_fault:
+        source_status_surrogate_id = "wrong-" + source_surrogate_id
+    else:
+        source_status_surrogate_id = source_surrogate_id
 
     sink_cr_id = "sink-" + get_unique_string()
     sink_csr_id = "sink-" + get_unique_string()
+    # CD id mismatch
     if sink_cr_id_fault:
         sink_status_cr_id = "wrong-" + sink_cr_id
     else:
         sink_status_cr_id = sink_cr_id
+    # Surrogate id mismatch
+    if sink_surrogate_id_fault:
+        sink_status_surrogate_id = "wrong-" + sink_surrogate_id
+    else:
+        sink_status_surrogate_id = sink_surrogate_id
 
     iat = get_epoch()
     nbf = iat
@@ -473,7 +491,7 @@ def generate_consent_payload(
             "attributes": {
               "version": "1.3",
               "record_id": source_csr_id,
-              "surrogate_id": source_surrogate_id,
+              "surrogate_id": source_status_surrogate_id,
               "cr_id": source_status_cr_id,
               "consent_status": "Active",
               "iat": iat,
@@ -531,7 +549,7 @@ def generate_consent_payload(
             "attributes": {
               "version": "1.3",
               "record_id": sink_csr_id,
-              "surrogate_id": sink_surrogate_id,
+              "surrogate_id": sink_status_surrogate_id,
               "cr_id": sink_status_cr_id,
               "consent_status": "Active",
               "iat": iat,
