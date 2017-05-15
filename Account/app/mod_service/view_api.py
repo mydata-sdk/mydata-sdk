@@ -1808,19 +1808,89 @@ class Surrogate(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
-
 # Register resources
-api.add_resource(ApiServiceLinkInitSource, '/accounts/<string:account_id>/servicelinks/init/source/', endpoint='slr_init_source')
-api.add_resource(ApiServiceLinkInitSink, '/accounts/<string:account_id>/servicelinks/init/sink/', endpoint='slr_init_sink')
-api.add_resource(ApiServiceLink, '/accounts/<string:account_id>/servicelinks/<string:link_id>/', endpoint='slr')
-api.add_resource(ApiServiceLinkStore, '/accounts/<string:account_id>/servicelinks/<string:link_id>/store/', endpoint='slr_store')
-api.add_resource(ApiServiceLinkRecords, '/accounts/<string:account_id>/servicelinks/', endpoint='slr_listing')
-api.add_resource(ApiServiceLinkStatusRecords, '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/', endpoint='slr_status_listing')
-api.add_resource(ApiServiceLinkStatusRecordsSigned, '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/signed/', endpoint='slr_status_signed')
-api.add_resource(ApiServiceLinkStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/<string:status_id>/', endpoint='slr_status')
-api.add_resource(ApiLastServiceLinkStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/last/', endpoint='slr_status_last')
-api.add_resource(ApiServiceLinkRecordsForService, '/services/<string:service_id>/servicelinks/', endpoint='slr_listing_for_service')
-api.add_resource(ApiServiceLinkRecordForService, '/services/<string:service_id>/servicelinks/<string:link_id>/', endpoint='slr_for_service')
-api.add_resource(Surrogate, '/services/<string:service_id>/surrogates/<string:surrogate_id>/', endpoint='surrogate')
+api.add_resource(
+    ApiServiceLinkInitSource,
+    '/accounts/<string:account_id>/servicelinks/init/source',
+    '/accounts/<string:account_id>/servicelinks/init/source/',
+    endpoint='slr_init_source'
+)
+
+api.add_resource(
+    ApiServiceLinkInitSink,
+    '/accounts/<string:account_id>/servicelinks/init/sink',
+    '/accounts/<string:account_id>/servicelinks/init/sink/',
+    endpoint='slr_init_sink'
+)
+
+api.add_resource(
+    ApiServiceLink,
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>',
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/',
+    endpoint='slr'
+)
+
+api.add_resource(
+    ApiServiceLinkStore,
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/store',
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/store/',
+    endpoint='slr_store'
+)
+
+api.add_resource(
+    ApiServiceLinkRecords,
+    '/accounts/<string:account_id>/servicelinks',
+    '/accounts/<string:account_id>/servicelinks/',
+    endpoint='slr_listing'
+)
+
+api.add_resource(
+    ApiServiceLinkStatusRecords,
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses',
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/',
+    endpoint='slr_status_listing'
+)
+
+api.add_resource(
+    ApiServiceLinkStatusRecordsSigned,
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/signed',
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/signed/',
+    endpoint='slr_status_signed'
+)
+
+api.add_resource(
+    ApiServiceLinkStatusRecord,
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/<string:status_id>',
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/<string:status_id>/',
+    endpoint='slr_status'
+)
+
+api.add_resource(
+    ApiLastServiceLinkStatusRecord,
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/last',
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/statuses/last/',
+    endpoint='slr_status_last'
+)
+
+api.add_resource(
+    ApiServiceLinkRecordsForService,
+    '/services/<string:service_id>/servicelinks',
+    '/services/<string:service_id>/servicelinks/',
+    endpoint='slr_listing_for_service'
+)
+
+api.add_resource(
+    ApiServiceLinkRecordForService,
+    '/services/<string:service_id>/servicelinks/<string:link_id>',
+    '/services/<string:service_id>/servicelinks/<string:link_id>/',
+    endpoint='slr_for_service'
+)
+
+api.add_resource(
+    Surrogate,
+    '/services/<string:service_id>/surrogates/<string:surrogate_id>',
+    '/services/<string:service_id>/surrogates/<string:surrogate_id>/',
+    endpoint='surrogate'
+)
 
 

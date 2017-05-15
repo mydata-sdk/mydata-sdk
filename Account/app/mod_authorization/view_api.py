@@ -1020,11 +1020,33 @@ class APIAccountConsentStatusSigned(Resource):
 
 
 # Register resources
-api.add_resource(APIAccountConsent, '/accounts/<string:account_id>/servicelinks/<string:source_link_id>/<string:sink_link_id>/consents/', endpoint='authorisation_give-consent')
-api.add_resource(APIAccountConsentStatus, '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/', endpoint='authorisation_consent-status')
-api.add_resource(APIAccountConsentStatusSigned, '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/signed/', endpoint='authorisation_consent-status-signed')
+api.add_resource(
+    APIAccountConsent,
+    '/accounts/<string:account_id>/servicelinks/<string:source_link_id>/<string:sink_link_id>/consents',
+    '/accounts/<string:account_id>/servicelinks/<string:source_link_id>/<string:sink_link_id>/consents/',
+    endpoint='authorisation_give_consent'
+)
 
-api.add_resource(APIAccountConsentStatusLast, '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/last/', endpoint='mydata-last-cr')
+api.add_resource(
+    APIAccountConsentStatus,
+    '/accounts/<string:account_id>/consents/<string:consent_id>/statuses',
+    '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/',
+    endpoint='authorisation_consent_status'
+)
+
+api.add_resource(
+    APIAccountConsentStatusSigned,
+    '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/signed',
+    '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/signed/',
+    endpoint='authorisation_consent_status_signed'
+)
+
+api.add_resource(
+    APIAccountConsentStatusLast,
+    '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/last',
+    '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/last/',
+    endpoint='authorisation_consent_status_last'
+)
 
 #api.add_resource(AuthorizationTokenData, '/consents/<string:sink_cr_id>/authorizationtoken/', endpoint='mydata-authorizationtoken')
 

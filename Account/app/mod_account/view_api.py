@@ -2590,30 +2590,173 @@ class AccountConsentStatusRecord(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 # Register resources
-account_api.add_resource(Accounts, '/accounts/', endpoint='accounts')
-account_api.add_resource(Account, '/accounts/<string:account_id>/', endpoint='account-get')
-account_api.add_resource(AccountDelete, '/accounts/<string:account_id>/', endpoint='account-delete')
-account_api.add_resource(AccountExport, '/accounts/<string:account_id>/export/', endpoint='account-export')
-account_api.add_resource(AccountParticulars, '/accounts/<string:account_id>/particulars/', endpoint='account-particulars')
-account_api.add_resource(AccountParticular, '/accounts/<string:account_id>/particulars/<string:particulars_id>/', endpoint='account-particular')
-account_api.add_resource(AccountContacts, '/accounts/<string:account_id>/contacts/', endpoint='account-contacts')  # TODO: To-be removed
-account_api.add_resource(AccountContact, '/accounts/<string:account_id>/contacts/<string:contacts_id>/', endpoint='account-contact')
-account_api.add_resource(AccountEmails, '/accounts/<string:account_id>/emails/', endpoint='account-emails')
-account_api.add_resource(AccountEmail, '/accounts/<string:account_id>/emails/<string:emails_id>/', endpoint='account-email')
-account_api.add_resource(AccountTelephones, '/accounts/<string:account_id>/telephones/', endpoint='account-telephones')
-account_api.add_resource(AccountTelephone, '/accounts/<string:account_id>/telephones/<string:telephones_id>/', endpoint='account-telephone')
-account_api.add_resource(AccountSettings, '/accounts/<string:account_id>/settings/', endpoint='account-settings')
-account_api.add_resource(AccountSetting, '/accounts/<string:account_id>/settings/<string:settings_id>/', endpoint='account-setting')
-account_api.add_resource(AccountEventLogs, '/accounts/<string:account_id>/logs/events/', endpoint='account-events')
-account_api.add_resource(AccountEventLog, '/accounts/<string:account_id>/logs/events/<string:event_log_id>/', endpoint='account-event')
-account_api.add_resource(AccountServiceLinkRecords, '/accounts/<string:account_id>/servicelinks/', endpoint='account-slrs')
-account_api.add_resource(AccountServiceLinkRecord, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/', endpoint='account-slr')
-account_api.add_resource(AccountServiceLinkStatusRecords, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/', endpoint='account-slsrs')
-account_api.add_resource(AccountServiceLinkStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/<string:slsr_id>/', endpoint='account-slsr')
-account_api.add_resource(AccountConsentRecords, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/', endpoint='account-crs')
-account_api.add_resource(AccountConsentRecord, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/', endpoint='account-cr')
-account_api.add_resource(AccountConsentStatusRecords, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/', endpoint='account-csrs')
-account_api.add_resource(AccountConsentStatusRecord, '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/<string:csr_id>/', endpoint='account-csr')
+account_api.add_resource(
+    Accounts,
+    '/accounts',
+    '/accounts/',
+    endpoint='accounts'
+)
+
+account_api.add_resource(
+    Account,
+    '/accounts/<string:account_id>',
+    '/accounts/<string:account_id>/',
+    endpoint='account-get'
+)
+
+account_api.add_resource(
+    AccountDelete,
+    '/accounts/<string:account_id>',
+    '/accounts/<string:account_id>/',
+    endpoint='account-delete'
+)
+
+account_api.add_resource(
+    AccountExport,
+    '/accounts/<string:account_id>/export',
+    '/accounts/<string:account_id>/export/',
+    endpoint='account-export'
+)
+
+account_api.add_resource(
+    AccountParticulars,
+    '/accounts/<string:account_id>/particulars',
+    '/accounts/<string:account_id>/particulars/',
+    endpoint='account-particulars'
+)
+
+account_api.add_resource(
+    AccountParticular,
+    '/accounts/<string:account_id>/particulars/<string:particulars_id>',
+    '/accounts/<string:account_id>/particulars/<string:particulars_id>/',
+    endpoint='account-particular'
+)
+
+account_api.add_resource(
+    AccountContacts,
+    '/accounts/<string:account_id>/contacts/',
+    '/accounts/<string:account_id>/contacts',
+    endpoint='account-contacts'
+)
+
+account_api.add_resource(
+    AccountContact,
+    '/accounts/<string:account_id>/contacts/<string:contacts_id>/',
+    '/accounts/<string:account_id>/contacts/<string:contacts_id>',
+    endpoint='account-contact'
+)
+
+account_api.add_resource(
+    AccountEmails,
+    '/accounts/<string:account_id>/emails/',
+    '/accounts/<string:account_id>/emails',
+    endpoint='account-emails'
+)
+
+account_api.add_resource(
+    AccountEmail,
+    '/accounts/<string:account_id>/emails/<string:emails_id>/',
+    '/accounts/<string:account_id>/emails/<string:emails_id>',
+    endpoint='account-email'
+)
+
+account_api.add_resource(
+    AccountTelephones,
+    '/accounts/<string:account_id>/telephones/',
+    '/accounts/<string:account_id>/telephones',
+    endpoint='account-telephones'
+)
+
+account_api.add_resource(
+    AccountTelephone,
+    '/accounts/<string:account_id>/telephones/<string:telephones_id>/',
+    '/accounts/<string:account_id>/telephones/<string:telephones_id>',
+    endpoint='account-telephone'
+)
+
+account_api.add_resource(
+    AccountSettings,
+    '/accounts/<string:account_id>/settings/',
+    '/accounts/<string:account_id>/settings',
+    endpoint='account-settings'
+)
+
+account_api.add_resource(
+    AccountSetting,
+    '/accounts/<string:account_id>/settings/<string:settings_id>/',
+    '/accounts/<string:account_id>/settings/<string:settings_id>',
+    endpoint='account-setting'
+)
+
+account_api.add_resource(
+    AccountEventLogs,
+    '/accounts/<string:account_id>/logs/events/',
+    '/accounts/<string:account_id>/logs/events',
+    endpoint='account-events'
+)
+
+account_api.add_resource(
+    AccountEventLog,
+    '/accounts/<string:account_id>/logs/events/<string:event_log_id>/',
+    '/accounts/<string:account_id>/logs/events/<string:event_log_id>',
+    endpoint='account-event'
+)
+
+account_api.add_resource(
+    AccountServiceLinkRecords,
+    '/accounts/<string:account_id>/servicelinks/',
+    '/accounts/<string:account_id>/servicelinks',
+    endpoint='account-slrs'
+)
+
+account_api.add_resource(
+    AccountServiceLinkRecord,
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/',
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>',
+    endpoint='account-slr'
+)
+
+account_api.add_resource(
+    AccountServiceLinkStatusRecords,
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/',
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses',
+    endpoint='account-slsrs'
+)
+
+account_api.add_resource(
+    AccountServiceLinkStatusRecord,
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/<string:slsr_id>/',
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/statuses/<string:slsr_id>',
+    endpoint='account-slsr'
+)
+
+account_api.add_resource(
+    AccountConsentRecords,
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/',
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents',
+    endpoint='account-crs'
+)
+
+account_api.add_resource(
+    AccountConsentRecord,
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/',
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>',
+    endpoint='account-cr'
+)
+
+account_api.add_resource(
+    AccountConsentStatusRecords,
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/',
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses',
+    endpoint='account-csrs'
+)
+
+account_api.add_resource(
+    AccountConsentStatusRecord,
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/<string:csr_id>/',
+    '/accounts/<string:account_id>/servicelinks/<string:slr_id>/consents/<string:cr_id>/statuses/<string:csr_id>',
+    endpoint='account-csr'
+)
 
 
 
