@@ -168,7 +168,7 @@ class APIAccountServiceConsent(Resource):
             logger.info("Verify that Source SLR IDs from path and payload are matching")
             compare_str_ids(id=source_link_id, id_to_compare=source_consent_slr_id)
         except ValueError as exp:
-            error_title = "Source Service SLR IDs from path and payload are not matching"
+            error_title = "Source Service SLR IDs from path and Consent Record payload are not matching"
             error_detail = "SLR ID from path was {} and from payload {}".format(source_link_id, source_consent_slr_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
@@ -179,8 +179,8 @@ class APIAccountServiceConsent(Resource):
             logger.info("Verify that Source Consent IDs from payload are matching")
             compare_str_ids(id=source_consent_cr_id, id_to_compare=source_status_cr_id)
         except ValueError as exp:
-            error_title = "Source Service Consent IDs from payload are not matching"
-            error_detail = "Consent ID from Consent payload was {} and from Consent Status payload {}".format(source_consent_cr_id, source_status_cr_id)
+            error_title = "Source Service Consent IDs from Consent Record payload and Consent Status Record payload are not matching"
+            error_detail = "Consent ID from Consent Record payload was {} and from Consent Status Record payload {}".format(source_consent_cr_id, source_status_cr_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
@@ -190,7 +190,7 @@ class APIAccountServiceConsent(Resource):
             logger.info("Verify that Source Surrogate IDs from payload are matching")
             compare_str_ids(id=source_consent_surrogate_id, id_to_compare=source_status_surrogate_id)
         except ValueError as exp:
-            error_title = "Source Service Surrogate IDs from payload are not matching"
+            error_title = "Source Service Surrogate IDs from Consent Record payload and Consent Status Record payload are not matching"
             error_detail = "Surrogate ID from Consent payload was {} and from Consent Status payload {}".format(source_consent_surrogate_id, source_status_surrogate_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
@@ -246,7 +246,7 @@ class APIAccountServiceConsent(Resource):
             logger.info("Verify that Sink Service SLR IDs from path and payload are matching")
             compare_str_ids(id=sink_link_id, id_to_compare=sink_consent_slr_id)
         except ValueError as exp:
-            error_title = "Sink Service SLR IDs from path and payload are not matching"
+            error_title = "Sink Service SLR IDs from path and Consent Record payload are not matching"
             error_detail = "SLR ID from path was {} and from payload {}".format(sink_link_id, sink_consent_slr_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
@@ -257,7 +257,7 @@ class APIAccountServiceConsent(Resource):
             logger.info("Verify that Sink Consent IDs from payload are matching")
             compare_str_ids(id=sink_consent_cr_id, id_to_compare=sink_status_cr_id)
         except ValueError as exp:
-            error_title = "Sink Service Consent IDs from payload are not matching"
+            error_title = "Sink Service Consent IDs from Consent Record payload and Consent Status Record payload are not matching"
             error_detail = "Consent ID from Consent payload was {} and from Consent Status payload {}".format(sink_consent_cr_id, sink_status_cr_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
@@ -268,7 +268,7 @@ class APIAccountServiceConsent(Resource):
             logger.info("Verify that Sink Surrogate IDs from payload are matching")
             compare_str_ids(id=sink_consent_surrogate_id, id_to_compare=sink_status_surrogate_id)
         except ValueError as exp:
-            error_title = "Sink Service Surrogate IDs from payload are not matching"
+            error_title = "Sink Service Surrogate IDs from Consent Record payload and Consent Status Record payload are not matching"
             error_detail = "Surrogate ID from Consent payload was {} and from Consent Status payload {}".format(sink_consent_surrogate_id, sink_status_surrogate_id)
             logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
             raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
