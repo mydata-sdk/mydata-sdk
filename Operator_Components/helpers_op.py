@@ -120,6 +120,7 @@ class AccountManagerHandler:
             "surrogate":        "api/account/{account_id}/service/{service_id}/surrogate/",  # Changed
             "sign_slr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
             "verify_slr":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/store/",
+            "slr_status":       "",
             "sign_consent":     "api/account/consent/sign/",
             "consent":          "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
             "auth_token":       "api/consent/{sink_cr_id}/authorizationtoken/",
@@ -186,6 +187,7 @@ class AccountManagerHandler:
                 }
             }
         }
+
         def init(link_id, template, retry=True):
             template["data"]["attributes"]["slr_id"] = link_id
             if pop_key is None:
@@ -533,6 +535,21 @@ class Helpers:
         debug_log.info("Found keys:\n {}".format(list_of_keys))
         return list_of_keys
 
+    def delete_session(self, code):
+        try:
+            debug_log.info("Deleting session: {}".format(code))
+            db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+            cursor = db.cursor()
+            cursor.execute("DELETE FROM session_store WHERE code=%s ;", (code,))
+            db.commit()
+            cursor.close()
+            debug_log.info("Session {} deleted.".format(code))
+        except Exception as e:
+            debug_log.info("Something went wrong while deleting session {}.".format(code))
+            debug_log.exception(e)
+
+
+
     def get_service_key(self, surrogate_id, kid):
         """
 
@@ -597,13 +614,9 @@ class Helpers:
                 cursor.execute("INSERT INTO session_store (code,json) \
                     VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
-                # db.close()
             except IntegrityError as e:
                 debug_log.info("")
                 raise e
-                cursor.execute("UPDATE session_store SET json=%s WHERE code=%s ;", (dumps(DictionaryToStore[key]), key))
-                db.commit()
-                # db.close()
         db.close()
 
     def query_db(self, query, args=()):

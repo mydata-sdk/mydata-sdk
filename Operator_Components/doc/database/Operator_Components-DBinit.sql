@@ -28,6 +28,7 @@ DROP TABLE IF EXISTS `db_Operator`.`cr_tbl` ;
 CREATE TABLE IF NOT EXISTS `db_Operator`.`cr_tbl` (
   `rs_id` LONGTEXT NOT NULL,
   `json` LONGTEXT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`rs_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -41,6 +42,7 @@ DROP TABLE IF EXISTS `db_Operator`.`rs_id_tbl` ;
 CREATE TABLE IF NOT EXISTS `db_Operator`.`rs_id_tbl` (
   `rs_id` LONGTEXT NOT NULL,
   `used` TINYINT(1) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`rs_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -54,6 +56,7 @@ DROP TABLE IF EXISTS `db_Operator`.`session_store` ;
 CREATE TABLE IF NOT EXISTS `db_Operator`.`session_store` (
   `code` LONGTEXT NOT NULL,
   `json` LONGTEXT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`code`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -67,6 +70,7 @@ CREATE TABLE IF NOT EXISTS `db_Operator`.`service_keys_tbl` (
   `kid` LONGTEXT NOT NULL,
   `surrogate_id` LONGTEXT NOT NULL,
   `key_json` LONGTEXT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`surrogate_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;

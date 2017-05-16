@@ -120,6 +120,7 @@ class RegisterSurrogate(Resource):
                                                         key_json=service_keys)
             except Exception as e:
                 debug_log.exception(e)
+                self.Helpers.delete_session(code)
                 raise DetailedHTTPException(exception=e,
                                             detail={"msg": "Received Invalid JSON that may not contain surrogate_id",
                                                     "json": js})
@@ -152,6 +153,7 @@ class RegisterSurrogate(Resource):
             try:
                 reply = AM.sign_slr(template, account_id)
             except AttributeError as e:
+                self.Helpers.delete_session(code)
                 raise DetailedHTTPException(status=502,
                                             title="It would seem initiating Account Manager Handler has failed.",
                                             detail="Account Manager might be down or unresponsive.",
@@ -181,20 +183,26 @@ class RegisterSurrogate(Resource):
                 response = post("{}{}".format(service_url, endpoint), json=req, timeout=self.request_timeout)
                 debug_log.info("Service Mgmnt replied with status code ({})".format(response.status_code))
                 if not response.ok:
+                    self.Helpers.delete_session(code)
                     raise DetailedHTTPException(status=response.status_code,
                                                 detail={"Error from Service_Components Mgmnt": loads(response.text)},
                                                 title=response.reason)
             except DetailedHTTPException as e:
                 raise e
             except Exception as e:
+                self.Helpers.delete_session(code)
                 raise DetailedHTTPException(exception=e, detail="Sending SLR to service has failed",
                                             trace=traceback.format_exc(limit=100).splitlines())
 
         except DetailedHTTPException as e:
+            self.Helpers.delete_session(code)
             raise e
         except Exception as e:
+            self.Helpers.delete_session(code)
             raise DetailedHTTPException(title="Creation of SLR has failed.", exception=e,
                                         trace=traceback.format_exc(limit=100).splitlines())
-        return response.text, 201
+        # SLR is made at this point and returned to the Service Mgmnt, session can be deleted.
+        self.Helpers.delete_session(code)
+        return loads(response.text), 201
 
 api.add_resource(RegisterSurrogate, '/link')

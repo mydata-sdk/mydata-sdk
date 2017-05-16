@@ -77,7 +77,6 @@ class StartSlrFlow(Resource):
 
             sq.task("Generate code for session")
             code = str(guid())
-            session_time = time.time()  # TODO: Use this. Make changes to DataBase to store it.
 
             debug_log.info("Session information contains: code {}, account id {} and service_id {}"
                            .format(code, account_id, service_id))
@@ -101,12 +100,14 @@ class StartSlrFlow(Resource):
             return response
 
         except DetailedHTTPException as e:
+            self.helper.delete_session(code)
             raise DetailedHTTPException(exception=e,
                                         title="SLR registration failed.",
                                         status=500,
                                         detail="Something failed during creation of SLR.",
                                         trace=traceback.format_exc(limit=100).splitlines())
         except Exception as e:
+            self.helper.delete_session(code)
             raise DetailedHTTPException(status=500,
                                         title="Something went really wrong during SLR registration.",
                                         detail="Error: {}".format(repr(e)),
