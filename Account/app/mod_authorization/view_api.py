@@ -38,7 +38,7 @@ from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jw
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
-    get_last_cr_status, store_csr, get_csrs
+    get_last_cr_status, store_csr, get_csrs, get_crs
 
 mod_authorization_api = Blueprint('authorization_api', __name__, template_folder='templates')
 api = Api(mod_authorization_api)
@@ -1019,6 +1019,169 @@ class APIAccountConsentStatusSigned(Resource):
         return make_json_response(data=response_data_dict, status_code=201)
 
 
+class ApiConsentsForServiceLinkRecord(Resource):
+    @requires_api_auth_user
+    @requires_api_auth_sdk
+    def get(self, account_id, link_id):
+        """
+        List Consent Records related to Service Link Record
+
+        :param account_id:
+        :param link_id:
+        :return: JSON array
+        """
+        try:
+            endpoint = str(api.url_for(self, account_id=account_id, link_id=link_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching User API Key")
+        api_key_user = get_user_api_key(endpoint=endpoint)
+        logger.debug("api_key_user: " + api_key_user)
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        # Check path variables
+        try:
+            account_id = str(account_id)
+        except Exception as exp:
+            error_title = "Unsupported account_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        try:
+            link_id = str(link_id)
+        except Exception as exp:
+            error_title = "Unsupported link_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key_user, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Check query variables
+        try:
+            get_consent_pair = request.args.get('get_consent_pair', False)
+            if get_consent_pair is not None:
+                get_consent_pair = bool(get_consent_pair)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported status_id", detail=repr(exp), source=endpoint)
+        else:
+            if get_consent_pair:
+                logger.info("get_consent_pair from query params: True")
+            else:
+                logger.info("get_consent_pair from query params: False")
+
+        # Get ServiceLinkRecords
+        try:
+            logger.info("Fetching ConsentRecords")
+            db_entries = get_crs(slr_id=link_id, account_id=account_id, consent_pairs=get_consent_pair)
+        except IndexError as exp:
+            error_title = "Consent Record not found with provided information"
+            error_detail = "Account ID was {} and Service Link ID was {}".format(account_id, link_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No ConsentRecords found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("ConsentRecords Fetched")
+            logger.debug("ConsentRecords: " + json.dumps(db_entries))
+
+        # Response data container
+        try:
+            db_entry_list = db_entries
+            response_data = {}
+            response_data['data'] = db_entry_list
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class ApiServiceLinkRecordForService(Resource):
+    @requires_api_auth_sdk
+    def get(self, service_id, link_id):
+        """
+        Fetch Service Link Record by Service ID and Service Link ID
+
+        :param service_id:
+        :param link_id:
+        :return: JSON Object
+        """
+        try:
+            endpoint = str(api.url_for(self, service_id=service_id, link_id=link_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        try:
+            service_id = str(service_id)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported service_id", detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("Service ID from path: " + service_id)
+
+        try:
+            link_id = str(link_id)
+        except Exception as exp:
+            error_title = "Unsupported link_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.info("link_id: " + link_id)
+
+        # Get ServiceLinkRecord
+        try:
+            logger.info("Fetching ServiceLinkRecord")
+            db_entries = get_slr_for_service(service_id=service_id, slr_id=link_id)
+        except IndexError as exp:
+            error_title = "Service Link Record not found with provided information"
+            error_detail = "Service ID was {} and Service Link Record ID was {}".format(link_id, link_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No ServiceLinkRecord found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("ServiceLinkRecord Fetched")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = db_entries
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
 # Register resources
 api.add_resource(
     APIAccountConsent,
@@ -1047,6 +1210,16 @@ api.add_resource(
     '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/last/',
     endpoint='authorisation_consent_status_last'
 )
+
+api.add_resource(
+    ApiConsentsForServiceLinkRecord,
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/consents',
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/consents/',
+    endpoint='authorisation_account_link_consents'
+)
+
+
+
 
 #api.add_resource(AuthorizationTokenData, '/consents/<string:sink_cr_id>/authorizationtoken/', endpoint='mydata-authorizationtoken')
 
