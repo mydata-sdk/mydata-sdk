@@ -1067,8 +1067,11 @@ class ApiConsentsForServiceLinkRecord(Resource):
         # Check query variables
         try:
             get_consent_pair = request.args.get('get_consent_pair', False)
-            if get_consent_pair is not None:
-                get_consent_pair = bool(get_consent_pair)
+            get_consent_pair = str(get_consent_pair)
+            if get_consent_pair == "True":
+                get_consent_pair = True
+            else:
+                get_consent_pair = False
         except Exception as exp:
             raise ApiError(code=400, title="Unsupported status_id", detail=repr(exp), source=endpoint)
         else:

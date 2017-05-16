@@ -791,7 +791,6 @@ def get_consent_ids(cursor=None, surrogate_id="", slr_id="", subject_id="", cons
     except Exception:
         raise TypeError("account_id MUST be str, not " + str(type(account_id)))
 
-
     sql_query = "SELECT consentRecordId " \
                 "FROM " + table_name + " " \
                 "WHERE surrogateId LIKE %s " \

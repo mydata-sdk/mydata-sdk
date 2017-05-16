@@ -1018,14 +1018,26 @@ def get_crs(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", accou
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
 
-    # Get ConsentRecord from database
+    # Get ConsentRecords from database
     logger.info("Get ConsentRecords from database")
-    db_entry_list = []
-    for id in id_list:
+    cr_list = []
+    logger.info("Getting ConsentRecords")
+    for entry_id in id_list:
         # TODO: try-except needed?
-        logger.info("Getting ConsentRecord with cr_id: " + str(id))
-        db_entry_dict = get_cr(cr_id=id, account_id=account_id)
-        db_entry_list.append(db_entry_dict)
+        logger.info("Getting ConsentRecord with cr_id: " + str(entry_id))
+        db_entry_dict = get_cr(cr_id=entry_id, account_id=account_id)
+        cr_list.append(db_entry_dict)
         logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
 
-    return db_entry_list
+    if consent_pairs:
+        logger.info("Getting Consent Record pairs")
+        for entry_id in id_list:
+            # TODO: try-except needed?
+            logger.info("Getting ConsentRecord with consent_pair_id: " + str(entry_id))
+            db_entry_dict = get_cr(consent_pair_id=entry_id, account_id=account_id)
+            cr_list.append(db_entry_dict)
+            logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
+
+    logger.info("ConsentRecords fetched: " + json.dumps(cr_list))
+
+    return cr_list
