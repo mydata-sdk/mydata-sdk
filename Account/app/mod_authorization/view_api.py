@@ -38,7 +38,7 @@ from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jw
 from app.mod_database.helpers import get_db_cursor
 from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
-    get_last_cr_status, store_csr, get_csrs, get_crs
+    get_last_cr_status, store_csr, get_csrs, get_crs, get_cr
 
 mod_authorization_api = Blueprint('authorization_api', __name__, template_folder='templates')
 api = Api(mod_authorization_api)
@@ -1115,33 +1115,40 @@ class ApiConsentsForServiceLinkRecord(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
 
-class ApiServiceLinkRecordForService(Resource):
+class ApiConsentForServiceLinkRecord(Resource):
+    @requires_api_auth_user
     @requires_api_auth_sdk
-    def get(self, service_id, link_id):
+    def get(self, account_id, link_id, consent_id):
         """
-        Fetch Service Link Record by Service ID and Service Link ID
+        Fetch Consent Record related to Service Link Record
 
-        :param service_id:
+        :param account_id:
         :param link_id:
-        :return: JSON Object
+        :param consent_id:
+        :return:
         """
         try:
-            endpoint = str(api.url_for(self, service_id=service_id, link_id=link_id))
+            endpoint = str(api.url_for(self, account_id=account_id, link_id=link_id, consent_id=consent_id))
         except Exception as exp:
             endpoint = str(__name__)
         finally:
             logger.info("Request to: " + str(endpoint))
 
+        logger.info("Fetching User API Key")
+        api_key_user = get_user_api_key(endpoint=endpoint)
+        logger.debug("api_key_user: " + api_key_user)
+
         logger.info("Fetching SDK API Key")
         api_key_sdk = get_sdk_api_key(endpoint=endpoint)
         logger.debug("api_key_sdk: " + api_key_sdk)
 
+        # Check path variables
         try:
-            service_id = str(service_id)
+            account_id = str(account_id)
         except Exception as exp:
-            raise ApiError(code=400, title="Unsupported service_id", detail=repr(exp), source=endpoint)
-        else:
-            logger.debug("Service ID from path: " + service_id)
+            error_title = "Unsupported account_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
 
         try:
             link_id = str(link_id)
@@ -1149,30 +1156,74 @@ class ApiServiceLinkRecordForService(Resource):
             error_title = "Unsupported link_id"
             logger.error(error_title + repr(exp))
             raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
-        else:
-            logger.info("link_id: " + link_id)
 
-        # Get ServiceLinkRecord
         try:
-            logger.info("Fetching ServiceLinkRecord")
-            db_entries = get_slr_for_service(service_id=service_id, slr_id=link_id)
+            consent_id = str(consent_id)
+        except Exception as exp:
+            error_title = "Unsupported consent_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Check if Account IDs from path and ApiKey are matching
+        if verify_account_id_match(account_id=account_id, api_key=api_key_user, endpoint=endpoint):
+            logger.info("Account IDs are matching")
+
+        # Check query variables
+        try:
+            get_consent_pair = request.args.get('get_consent_pair', False)
+            get_consent_pair = str(get_consent_pair)
+            if get_consent_pair == "True":
+                get_consent_pair = True
+            else:
+                get_consent_pair = False
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported status_id", detail=repr(exp), source=endpoint)
+        else:
+            if get_consent_pair:
+                logger.info("get_consent_pair from query params: True")
+            else:
+                logger.info("get_consent_pair from query params: False")
+
+        # Get Consent Record
+        cr_array = []
+        try:
+            logger.info("Fetching Consent Record")
+            cr_array.append(get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id))
         except IndexError as exp:
-            error_title = "Service Link Record not found with provided information"
-            error_detail = "Service ID was {} and Service Link Record ID was {}".format(link_id, link_id)
+            error_title = "Consent Record not found with provided information"
+            error_detail = "Account ID was {}, Service Link ID was {} and Consent ID was {}.".format(account_id, link_id, consent_id)
             logger.error(error_title + " - " + error_detail + ": " + repr(exp))
             raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
         except Exception as exp:
-            error_title = "No ServiceLinkRecord found"
+            error_title = "No Consent Record found"
             error_detail = repr(exp)
             logger.error(error_title + " - " + error_detail)
             raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
         else:
-            logger.info("ServiceLinkRecord Fetched")
+            logger.info("Consent Record Fetched")
+
+        # Get Consent Pair
+        if get_consent_pair:
+            try:
+                logger.info("Fetching Consent Pair")
+                cr_array.append(get_cr(account_id=account_id, consent_pair_id=consent_id))
+            except IndexError as exp:
+                error_title = "Consent Pair not found with provided information"
+                error_detail = "Account ID was {}, Service Link ID was {} and Consent Pair ID was {}.".format(account_id, link_id, consent_id)
+                logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+                raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+            except Exception as exp:
+                error_title = "No Consent Pair found"
+                error_detail = repr(exp)
+                logger.error(error_title + " - " + error_detail)
+                raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+            else:
+                logger.info("Consent Pair Fetched")
 
         # Response data container
         try:
             response_data = {}
-            response_data['data'] = db_entries
+            response_data['data'] = cr_array
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
@@ -1219,6 +1270,13 @@ api.add_resource(
     '/accounts/<string:account_id>/servicelinks/<string:link_id>/consents',
     '/accounts/<string:account_id>/servicelinks/<string:link_id>/consents/',
     endpoint='authorisation_account_link_consents'
+)
+
+api.add_resource(
+    ApiConsentForServiceLinkRecord,
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/consents/<string:consent_id>',
+    '/accounts/<string:account_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/',
+    endpoint='authorisation_account_link_consent'
 )
 
 
