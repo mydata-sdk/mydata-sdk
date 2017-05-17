@@ -27,12 +27,13 @@ api.init_app(api_SLR_Start)
 debug_log = logging.getLogger("debug")
 sq = Sequences("Operator_Components Mgmnt")
 
-class StartSlrFlow(Resource):
+
+class SlrStatus(Resource):
     def __init__(self):
         """
-
+        
         """
-        super(StartSlrFlow, self).__init__()
+        super(SlrStatus, self).__init__()
         self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
                                                                current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.request_timeout = current_app.config["TIMEOUT"]
@@ -41,7 +42,7 @@ class StartSlrFlow(Resource):
         self.store_session = self.helper.store_session
 
     @error_handler
-    def get(self, account_id, service_id, slr_id):
+    def delete(self, account_id, service_id, slr_id):
         """
         
         :param slr_id:      Id of SLR we want to change
@@ -50,9 +51,40 @@ class StartSlrFlow(Resource):
         """
         debug_log.info("#### Request to change SLR status with parameters: account_id ({}), service_id ({}), slr_id ({})"
                        .format(account_id, service_id, slr_id))
-
         try:
-            return "WIP"
+            am = get_am(current_app, request.headers)
+            # Verify Api-Key-User
+            key_check = am.verify_user_key(account_id)
+            debug_log.info("Verifying User Key resulted: {}".format(key_check))
+            try:
+                # Get SLR
+                slr = am.get_slr(account_id, slr_id)
+                consents = am.get_crs(account_id, slr_id)
+
+                # Loop trough the consents and fetch pairs.
+                for cr in consents["data"]:
+                    id = cr["data"]["id"]
+
+
+
+                return slr
+
+            except Exception as e:
+                raise e
+
+            try:
+                # Get CR's
+                pass
+            except Exception as e:
+                raise e
+
+            try:
+                # Get CR's
+                pass
+            except Exception as e:
+                raise e
+
+
         except Exception as e:
             raise DetailedHTTPException(status=500,
                                         title="Something went really wrong during SLR registration.",
@@ -60,4 +92,4 @@ class StartSlrFlow(Resource):
                                         exception=e,
                                         trace=traceback.format_exc(limit=100).splitlines())
 
-api.add_resource(StartSlrFlow, '/account/<string:account_id>/service/<string:service_id>/slr/<string:slr_id>')
+api.add_resource(SlrStatus, '/account/<string:account_id>/service/<string:service_id>/slr/<string:slr_id>')

@@ -120,9 +120,11 @@ class AccountManagerHandler:
             "surrogate":        "api/account/{account_id}/service/{service_id}/surrogate/",  # Changed
             "sign_slr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
             "verify_slr":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/store/",
+            "fetch_slr":        "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
             "slr_status":       "",
             "sign_consent":     "api/account/consent/sign/",
             "consent":          "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
+            "fetch_consents":   "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/",
             "auth_token":       "api/consent/{sink_cr_id}/authorizationtoken/",
             "last_csr":         "api/consent/{cr_id}/status/last/",
             "new_csr":          "api/consent/{cr_id}/status/"}  # Works as path to GET missing csr and POST new ones
@@ -217,13 +219,50 @@ class AccountManagerHandler:
 
         return init(get_link_id(), template)
 
+    def get_slr(self, slr_id, account_id):
 
+        if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
+            debug_log.error("Account ID mismatch.\n"
+                            "ID '{}' doesn't match with verified id '{}'".format(account_id, self.account_id))
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+
+        debug_log.info("Fetching SLR for link id '{}' that belongs to account '{}'".format(slr_id, account_id))
+        slr = get(self.url + self.endpoint["fetch_slr"].replace("{account_id}", account_id).replace("{slr_id}", slr_id))
+        debug_log.info("Request resulted in status {} and content:\n {}".format(slr.status_code, slr.text))
+        if slr.ok:
+            return loads(slr.text)
+        else:
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+
+    def get_crs(self, slr_id, account_id):
+
+        if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
+            debug_log.error("Account ID mismatch.\n"
+                            "ID '{}' doesn't match with verified id '{}'".format(account_id, self.account_id))
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+        debug_log.info("Fetching CR's for link id '{}' that belongs to account '{}'".format(slr_id, account_id))
+        consents = get(self.url + self.endpoint["fetch_consents"]
+                  .replace("{account_id}", account_id)
+                  .replace("{slr_id}", slr_id))
+        debug_log.info("Request resulted in status {} and content:\n {}".format(consents.status_code, consents.text))
+        if consents.ok:
+            return loads(consents.text)
+        else:
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
 
 
     def get_AuthTokenInfo(self, cr_id):
         req = get(self.url + self.endpoint["auth_token"]
                   .replace("{sink_cr_id}", cr_id),
-                  headers={'Api-Key-SDK': self.token}, timeout=self.timeout)
+                  headers={'Api-Key-Sdk': self.token}, timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
         else:
@@ -508,7 +547,6 @@ class Helpers:
         public_key = loads(service_key.export_public())
         full_key = loads(service_key.export())
 
-
         headeri = {"kid": self.operator_id, "jwk": public_key}
         return {"pub": public_key,
                 "key": full_key,
@@ -547,8 +585,6 @@ class Helpers:
         except Exception as e:
             debug_log.info("Something went wrong while deleting session {}.".format(code))
             debug_log.exception(e)
-
-
 
     def get_service_key(self, surrogate_id, kid):
         """
