@@ -22,7 +22,7 @@ from app.app_modules import db
 from app.helpers import get_custom_logger, ApiError, get_utc_time
 from app.mod_blackbox.controllers import get_account_public_key, generate_and_sign_jws
 from app.mod_database.helpers import get_db_cursor, get_last_csr_id, get_csr_ids, get_account_id_by_csr_id, \
-    get_consent_ids
+    get_consent_ids, get_last_consent_id
 
 # create logger with 'spam_application'
 from app.mod_database.models import SurrogateId, ConsentRecord, ServiceLinkRecord, ConsentStatusRecord, Account
@@ -1006,6 +1006,112 @@ def get_crs(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", accou
     # Get primary keys for slr
     try:
         cursor, id_list = get_consent_ids(
+            cursor=cursor,
+            surrogate_id=surrogate_id,
+            slr_id=slr_id,
+            subject_id=subject_id,
+            consent_pair_id=consent_pair_id,
+            account_id=account_id,
+            table_name=table_name
+        )
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get ConsentRecords from database
+    logger.info("Get ConsentRecords from database")
+    cr_list = []
+    logger.info("Getting ConsentRecords")
+    for entry_id in id_list:
+        # TODO: try-except needed?
+        logger.info("Getting ConsentRecord with cr_id: " + str(entry_id))
+        db_entry_dict = get_cr(cr_id=entry_id, account_id=account_id)
+        cr_list.append(db_entry_dict)
+        logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
+
+    if consent_pairs:
+        logger.info("Getting Consent Record pairs")
+        for entry_id in id_list:
+            # TODO: try-except needed?
+            logger.info("Getting ConsentRecord with consent_pair_id: " + str(entry_id))
+            db_entry_dict = get_cr(consent_pair_id=entry_id, account_id=account_id)
+            cr_list.append(db_entry_dict)
+            logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
+
+    logger.info("ConsentRecords fetched: " + json.dumps(cr_list))
+
+    return cr_list
+
+
+def get_last_cr(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", account_id="", status_id="", consent_pairs=False):
+    """
+    Get Consent Records
+
+    :param surrogate_id:
+    :param slr_id:
+    :param subject_id:
+    :param consent_pair_id:
+    :param account_id:
+    :return:
+    """
+    try:
+        surrogate_id = str(surrogate_id)
+    except Exception:
+        raise TypeError("surrogate_id MUST be str, not " + str(type(surrogate_id)))
+    try:
+        slr_id = str(slr_id)
+    except Exception:
+        raise TypeError("slr_id MUST be str, not " + str(type(slr_id)))
+    try:
+        subject_id = str(subject_id)
+    except Exception:
+        raise TypeError("subject_id MUST be str, not " + str(type(subject_id)))
+    try:
+        consent_pair_id = str(consent_pair_id)
+    except Exception:
+        raise TypeError("consent_pair_id MUST be str, not " + str(type(consent_pair_id)))
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+    try:
+        status_id = str(status_id)
+    except Exception:
+        raise TypeError("status_id MUST be str, not " + str(type(status_id)))
+    try:
+        consent_pairs = bool(consent_pairs)
+    except Exception:
+        raise TypeError("consent_pairs MUST be bool, not " + str(type(consent_pairs)))
+
+    logger.info("surrogate_id: " + surrogate_id)
+    logger.info("slr_id: " + slr_id)
+    logger.info("subject_id: " + subject_id)
+    logger.info("consent_pair_id: " + consent_pair_id)
+    logger.info("account_id: " + account_id)
+    logger.info("status_id: " + status_id)
+    if consent_pairs:
+        logger.info("consent_pairs: True")
+    else:
+        logger.info("consent_pairs: False")
+
+    # Get table name
+    logger.info("Create ConsentRecord object")
+    db_entry_object = ConsentRecord()
+    logger.info(db_entry_object.log_entry)
+    logger.info("Get table name")
+    table_name = db_entry_object.table_name
+    logger.info("Got table name: " + str(table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get primary keys for slr
+    try:
+        cursor, id_list = get_last_consent_id(
             cursor=cursor,
             surrogate_id=surrogate_id,
             slr_id=slr_id,
