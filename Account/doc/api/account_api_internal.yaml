@@ -785,6 +785,7 @@ paths:
         '500':
           description: 'General Error'
           schema:
+            $ref: '#/definitions/error'
 
 
   /accounts/{account_id}/servicelinks/{link_id}/consents/last/:
