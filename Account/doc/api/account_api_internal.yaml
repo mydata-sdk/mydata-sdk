@@ -914,7 +914,7 @@ paths:
         '200':
           description: 'Consent Record'
           schema:
-            $ref: '#/definitions/ConsentResponse'
+            $ref: '#/definitions/ConsentArray'
         '400':
           description: 'Bad Request'
           schema:
