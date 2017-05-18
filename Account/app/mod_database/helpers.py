@@ -902,5 +902,113 @@ def get_last_consent_id(cursor=None, surrogate_id="", slr_id="", subject_id="", 
         return cursor, id_list
 
 
+def get_consent_status_ids(cursor=None, cr_id="", account_id="", primary_key_filter=0, table_name=None):
+    logger.info("Executing")
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+    try:
+        cr_id = str(cr_id)
+    except Exception:
+        raise TypeError("cr_id MUST be str, not " + str(type(cr_id)))
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+    try:
+        primary_key_filter = int(primary_key_filter)
+    except Exception:
+        raise TypeError("primary_key_filter MUST be int, not " + str(type(primary_key_filter)))
+
+    sql_query = "SELECT consentStatusRecordId " \
+                "FROM " + table_name + " " \
+                "WHERE consentRecordId LIKE %s " \
+                "AND Accounts_id LIKE %s" \
+                " AND id > %s;"
+
+    arguments = (
+        '%' + str(cr_id) + '%',
+        '%' + str(account_id) + '%',
+        int(primary_key_filter),
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+        #logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data)
+        logger.info("Got data_list: " + repr(data_list))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i][0])
+        logger.info("Formatted data_list: " + repr(data_list))
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+
+        return cursor, id_list
+
+
+def get_consent_status_id_filter(cursor=None, csr_id="", account_id="", table_name=None):
+    logger.info("Executing")
+    if cursor is None:
+        raise AttributeError("Provide cursor as parameter")
+    if table_name is None:
+        raise AttributeError("Provide table_name as parameter")
+    try:
+        csr_id = str(csr_id)
+    except Exception:
+        raise TypeError("csr_id MUST be str, not " + str(type(csr_id)))
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+
+    sql_query = "SELECT id " \
+                "FROM " + table_name + " " \
+                "WHERE consentStatusRecordId LIKE %s " \
+                "AND Accounts_id LIKE %s;"
+
+    arguments = (
+        '%' + str(csr_id) + '%',
+        '%' + str(account_id) + '%',
+    )
+
+    try:
+        cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)
+    except Exception as exp:
+        logger.debug('sql_query: ' + repr(exp))
+        raise
+    else:
+        logger.debug("Got data: " + repr(data))
+        #logger.debug("Got data[0]: " + repr(data[0]))
+        data_list = list(data)
+        logger.info("Got data_list: " + repr(data_list))
+
+        if len(data) == 0:
+            logger.error("IndexError('DB query returned no results')")
+            raise IndexError("DB query returned no results")
+
+        for i in range(len(data_list)):
+            data_list[i] = str(data_list[i][0])
+        logger.info("Formatted data_list: " + repr(data_list))
+
+        id_list = data_list
+        logger.info("Got id_list: " + repr(id_list))
+        id = max(id_list)
+        logger.info("Got max id: " + str(id))
+
+        return cursor, id
+
+
 
 

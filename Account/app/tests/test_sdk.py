@@ -19,15 +19,15 @@ from flask import json
 
 from app import create_app
 from app.tests.controller import is_json, validate_json, account_create, default_headers, \
-    print_test_title, generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
+    generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
     generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload, generate_consent_payload, \
-    generate_consent_status_payload, sign_jws, generate_consent_status_payload_signed
+    generate_consent_status_payload, generate_consent_status_payload_signed
 from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
     schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
 from app.tests.schemas.schema_authorisation import schema_give_consent, schema_consent_status_change, \
-    schema_consent_listing
+    schema_consent_listing, schema_consent_status_listing, schema_consent_status
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
     schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status, schema_surrogate
@@ -70,7 +70,6 @@ class SdkTestCase(unittest.TestCase):
         app.config['TESTING'] = True
         app = app.test_client()
         self.app = app
-        print("############################")
 
     def tearDown(self):
         """
@@ -86,7 +85,6 @@ class SdkTestCase(unittest.TestCase):
         Test system running
         :return:
         """
-        print_test_title(test_name="test_system_running")
         url = '/system/status/'
 
         response = self.app.get(url)
@@ -101,13 +99,11 @@ class SdkTestCase(unittest.TestCase):
         Test system running
         :return:
         """
-        print_test_title(test_name="test_system_routes")
         url = '/system/routes/'
 
         response = self.app.get(url)
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        print(json.dumps(json.loads(response.data), indent=2))
 
     ##########
     ##########
@@ -137,7 +133,6 @@ class SdkTestCase(unittest.TestCase):
         Test database clearing
         :return:
         """
-        print_test_title(test_name="test_clear_db_positive")
         response = self.app.get('/system/db/clear/')
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
@@ -150,7 +145,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Password too long
         :return:
         """
-        print_test_title(test_name="test_account_create_password_too_long")
 
         url = self.API_PREFIX_EXTERNAL + '/accounts/'
         account_json, username, password = account_create(password_length=21)
@@ -165,7 +159,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Password too short
         :return:
         """
-        print_test_title(test_name="test_account_create_password_too_short")
 
         account_json, username, password = account_create(password_length=3)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -180,7 +173,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Username too long
         :return:
         """
-        print_test_title(test_name="test_account_create_username_too_long")
 
         account_json, username, password = account_create(username_length=256)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -193,7 +185,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Username too short
         :return:
         """
-        print_test_title(test_name="test_account_create_username_too_short")
 
         account_json, username, password = account_create(username_length=2)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -208,7 +199,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Email too long
         :return:
         """
-        print_test_title(test_name="test_account_create_email_too_long")
 
         account_json, username, password = account_create(email_length=256)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -221,7 +211,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Email invalid
         :return:
         """
-        print_test_title(test_name="test_account_create_email_invalid")
 
         account_json, username, password = account_create(invalid_email=True)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -236,7 +225,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. First name too long
         :return:
         """
-        print_test_title(test_name="test_account_create_firstname_too_long")
 
         account_json, username, password = account_create(firstname_length=256)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -249,7 +237,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. First name too short
         :return:
         """
-        print_test_title(test_name="test_account_create_firstname_too_short")
 
         account_json, username, password = account_create(firstname_length=2)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -264,7 +251,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Last name too long
         :return:
         """
-        print_test_title(test_name="test_account_create_lastname_too_long")
 
         account_json, username, password = account_create(lastname_length=256)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -277,7 +263,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Last name too short
         :return:
         """
-        print_test_title(test_name="test_account_create_lastname_too_short")
 
         account_json, username, password = account_create(lastname_length=2)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -292,7 +277,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Date invalid
         :return:
         """
-        print_test_title(test_name="test_account_create_date_invalid")
 
         account_json, username, password = account_create(invalid_date=True)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -307,7 +291,6 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. acceptTermsOfService == False
         :return:
         """
-        print_test_title(test_name="test_account_create_tos")
 
         account_json, username, password = account_create(accept_terms=False)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -322,10 +305,8 @@ class SdkTestCase(unittest.TestCase):
         Test Account creation. Positive case
         :return:
         """
-        print_test_title(test_name="test_account_create_positive")
 
         account_json, account_username, account_password = account_create()
-        print(account_json)
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
@@ -340,15 +321,11 @@ class SdkTestCase(unittest.TestCase):
         Test user authentication
         :return:
         """
-        print_test_title(test_name="test_account_authentication")
 
         account_username, account_password = self.test_account_create_positive()
-        # print("Using username: " + account_username)
-        # print("Using password: " + account_password)
 
         request_headers = default_headers
         request_headers['Authorization'] = 'Basic ' + b64encode("{0}:{1}".format(account_username, account_password))
-        # print (repr(request_headers))
 
         url = self.API_PREFIX_EXTERNAL + '/auth/user/'
         response = self.app.get(url, headers=request_headers)
@@ -369,7 +346,6 @@ class SdkTestCase(unittest.TestCase):
         Fetch Account entry
         :return:
         """
-        print_test_title(test_name="test_account_fetch")
 
         account_api_key, account_id = self.test_account_authentication()
 
@@ -390,7 +366,6 @@ class SdkTestCase(unittest.TestCase):
         Test user deletion
         :return:
         """
-        print_test_title(test_name="test_account_delete")
 
         account_api_key, account_id = self.test_account_authentication()
 
@@ -409,7 +384,6 @@ class SdkTestCase(unittest.TestCase):
         Verify User-API-Key belongs to specified user
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_sdk_account_info")
 
         account_api_key, account_id = self.test_account_authentication()
         sdk_api_key = self.test_sdk_auth()
@@ -421,7 +395,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/auth/sdk/account/" + str(account_id) + "/info/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_sdk_info))
@@ -435,7 +408,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR init
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_slr_init_sink")
 
         account_api_key, account_id = self.test_account_authentication()
         sdk_api_key = self.test_sdk_auth()
@@ -447,9 +419,7 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/sink/"
 
         payload, code, slr_id, pop_key = generate_sl_init_sink()
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_init))
@@ -463,7 +433,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR init with misformatted pop_key
         :return:
         """
-        print_test_title(test_name="test_slr_init_sink_misformatted")
 
         account_api_key, account_id = self.test_account_authentication()
         sdk_api_key = self.test_sdk_auth()
@@ -477,7 +446,6 @@ class SdkTestCase(unittest.TestCase):
         payload, code, slr_id, pop_key = generate_sl_init_sink(misformatted_payload=True)
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
@@ -489,7 +457,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR init duplicate
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_slr_init_sink_duplicate")
 
         account_id, account_api_key, sdk_api_key, slr_id_original = self.test_slr_init_sink()
 
@@ -501,7 +468,6 @@ class SdkTestCase(unittest.TestCase):
         payload, code, slr_id, pop_key = generate_sl_init_sink(slr_id=slr_id_original)
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 409, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -515,7 +481,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR init
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_slr_init_source")
 
         account_api_key, account_id = self.test_account_authentication()
         sdk_api_key = self.test_sdk_auth()
@@ -529,7 +494,6 @@ class SdkTestCase(unittest.TestCase):
         payload, code, slr_id = generate_sl_init_source()
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_init))
@@ -543,7 +507,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SLR init with misformatted pop_key
         :return:
         """
-        print_test_title(test_name="test_slr_init_source_misformatted")
 
         account_api_key, account_id = self.test_account_authentication()
         sdk_api_key = self.test_sdk_auth()
@@ -557,7 +520,6 @@ class SdkTestCase(unittest.TestCase):
         payload, code, slr_id = generate_sl_init_source(misformatted_payload=True)
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
@@ -569,7 +531,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SLR init duplicate
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_slr_init_source_duplicate")
 
         account_id, account_api_key, sdk_api_key, slr_id_original = self.test_slr_init_source()
 
@@ -581,7 +542,6 @@ class SdkTestCase(unittest.TestCase):
         payload, code, slr_id = generate_sl_init_source(slr_id=slr_id_original)
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 409, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -595,7 +555,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR signing
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_sign_sink")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_sink()
 
@@ -613,7 +572,6 @@ class SdkTestCase(unittest.TestCase):
         )
 
         response = self.app.patch(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_sign))
@@ -627,7 +585,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink malformed SLR signing
         :return:
         """
-        print_test_title(test_name="test_slr_sign_sink_malformed")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_sink()
 
@@ -646,7 +603,6 @@ class SdkTestCase(unittest.TestCase):
         )
 
         response = self.app.patch(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
@@ -658,7 +614,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR signing with wrong SLR id
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_sign_sink_wrong_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_sink()
         slr_id = "wrong-" + slr_id
@@ -677,7 +632,6 @@ class SdkTestCase(unittest.TestCase):
         )
 
         response = self.app.patch(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -691,7 +645,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR storing
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_store_sink")
 
         account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_sink()
         slr_data = json.loads(slr_data)
@@ -708,10 +661,8 @@ class SdkTestCase(unittest.TestCase):
             service_key=self.SINK_KEY_OBJECT,
             service_kid=self.SINK_KID
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))
@@ -725,7 +676,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR storing - Malformed
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_store_sink_malformed")
 
         account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_sink()
         slr_data = json.loads(slr_data)
@@ -743,10 +693,8 @@ class SdkTestCase(unittest.TestCase):
             service_kid=self.SINK_KID,
             misformatted_payload=True
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
@@ -760,7 +708,6 @@ class SdkTestCase(unittest.TestCase):
         Test Sink SLR storing - Signature verification fails
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_store_sink_malformed_signature")
 
         account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_sink()
         slr_data = json.loads(slr_data)
@@ -778,10 +725,8 @@ class SdkTestCase(unittest.TestCase):
             service_kid=self.SINK_KID,
             misformatted_signature=True
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -795,7 +740,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SLR signing
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_sign_source")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_source()
 
@@ -813,7 +757,6 @@ class SdkTestCase(unittest.TestCase):
         )
 
         response = self.app.patch(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_sign))
@@ -827,7 +770,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source malformed SLR signing
         :return:
         """
-        print_test_title(test_name="test_slr_sign_source_malformed")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_source()
 
@@ -846,7 +788,6 @@ class SdkTestCase(unittest.TestCase):
         )
 
         response = self.app.patch(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
@@ -858,7 +799,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SLR signing with wrong SLR id
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_sign_source_wrong_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_init_source()
         slr_id = "wrong-" + slr_id
@@ -877,7 +817,6 @@ class SdkTestCase(unittest.TestCase):
         )
 
         response = self.app.patch(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -891,7 +830,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SLR storing
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_store_source")
 
         account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_source()
         slr_data = json.loads(slr_data)
@@ -908,10 +846,8 @@ class SdkTestCase(unittest.TestCase):
             service_key=self.SOURCE_KEY_OBJECT,
             service_kid=self.SOURCE_KID
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))
@@ -925,7 +861,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SLR storing - Malformed
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_store_source_malformed")
 
         account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_source()
         slr_data = json.loads(slr_data)
@@ -943,10 +878,8 @@ class SdkTestCase(unittest.TestCase):
             service_kid=self.SOURCE_KID,
             misformatted_payload=True
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
@@ -960,7 +893,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SLR storing - Signature verification fails
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_store_source_malformed_signature")
 
         account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_source()
         slr_data = json.loads(slr_data)
@@ -978,10 +910,8 @@ class SdkTestCase(unittest.TestCase):
             service_kid=self.SOURCE_KID,
             misformatted_signature=True
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -995,7 +925,6 @@ class SdkTestCase(unittest.TestCase):
         Test SLR storing with wrong ID
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_slr_store_wrong_id")
 
         account_id, account_api_key, sdk_api_key, slr_id, slr_data = self.test_slr_sign_source()
         slr_data = json.loads(slr_data)
@@ -1012,10 +941,8 @@ class SdkTestCase(unittest.TestCase):
             service_key=self.SOURCE_KEY_OBJECT,
             service_kid=self.SOURCE_KID
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1029,7 +956,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR listing
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_listing")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1040,7 +966,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_listing))
@@ -1054,7 +979,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_fetch_slr_listing()
 
@@ -1065,7 +989,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr))
@@ -1079,7 +1002,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR with wrong slr id
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_wrong_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1091,7 +1013,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id_wrong) + "/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1105,7 +1026,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR status listing
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_status_listing")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1116,7 +1036,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status_listing))
@@ -1131,7 +1050,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR status listing with wrong slr_id
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_status_listing_wrong_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1143,7 +1061,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id_wrong) + "/statuses/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1157,7 +1074,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR status by ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_status")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
 
@@ -1168,7 +1084,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/" + str(slsr_id) + "/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
@@ -1182,7 +1097,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR status by wrong ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_status_wrong_id")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
 
@@ -1194,7 +1108,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/" + str(slrs_id_wrong) + "/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1208,7 +1121,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR last status
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_last_status")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
 
@@ -1219,7 +1131,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id) + "/statuses/last/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
@@ -1235,7 +1146,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR last status with wrong slr id
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_last_status_wrong_id")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_status_listing()
 
@@ -1247,7 +1157,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(slr_id_wrong) + "/statuses/last/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1261,7 +1170,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR listing for Service
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_listing_for_service")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1271,7 +1179,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_listing))
@@ -1285,7 +1192,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR listing for Service with Surrogate ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_listing_for_service_with_surrogate_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1295,7 +1201,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/?surrogate_id=" + str(self.SOURCE_SURROGATE_ID)
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_listing))
@@ -1309,7 +1214,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR listing for Service with wrong Surrogate ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_listing_for_service_with_wrong_surrogate_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1319,7 +1223,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/?surrogate_id=" + str(self.SINK_SURROGATE_ID)
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1333,7 +1236,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR listing for Service with wrong ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_listing_for_service_wrong_service_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1344,7 +1246,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/services/" + service_id_wrong + "/servicelinks/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1358,7 +1259,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR for Service
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_for_service")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1368,7 +1268,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(slr_id) + "/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr))
@@ -1382,7 +1281,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR for Service with wrong Service ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_for_service_wrong_service_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1393,7 +1291,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/services/" + service_id_wrong + "/servicelinks/" + str(slr_id) + "/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1407,7 +1304,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR for Service with wrong Link ID
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_slr_for_service_wrong_link_id")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1418,7 +1314,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(slr_id_wrong) + "/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -1432,7 +1327,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SSR storing
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_ssr_store_source")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
 
@@ -1447,10 +1341,8 @@ class SdkTestCase(unittest.TestCase):
             prev_record_id=slsr_id,
             status="Removed"
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
@@ -1464,7 +1356,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SSR storing with malformed payload
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_ssr_store_source_malformed")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
 
@@ -1480,10 +1371,8 @@ class SdkTestCase(unittest.TestCase):
             status="Removed",
             misformatted_payload=True
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
@@ -1497,7 +1386,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SSR storing with signed SSR
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_ssr_store_source_signed")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
 
@@ -1514,10 +1402,8 @@ class SdkTestCase(unittest.TestCase):
             operator_kid=self.OPERATOR_KID,
             operator_key=self.OPERATOR_KEY_OBJECT
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
@@ -1531,7 +1417,6 @@ class SdkTestCase(unittest.TestCase):
         Test Source SSR storing with signed SSR with malformed payload
         :return: account_id, account_api_key, sdk_api_key, slr_id, response.data
         """
-        print_test_title(test_name="test_ssr_store_source_signed_malformed")
 
         account_id, account_api_key, sdk_api_key, slr_id, slsr_id = self.test_fetch_slr_last_status()
 
@@ -1549,10 +1434,8 @@ class SdkTestCase(unittest.TestCase):
             operator_key=self.OPERATOR_KEY_OBJECT,
             misformatted_payload=True
         )
-        print("payload: " + json.dumps(json.loads(payload), indent=4))
 
         response = self.app.post(url, data=payload, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
@@ -1566,7 +1449,6 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch Surrogate object
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-        print_test_title(test_name="test_fetch_surrogate_object")
 
         account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
 
@@ -1576,7 +1458,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/surrogates/" + str(self.SOURCE_SURROGATE_ID) + "/"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_surrogate))
@@ -1596,16 +1477,11 @@ class SdkTestCase(unittest.TestCase):
         Link two services for same Account
         :return: account_id, user_api_key, sdk_api_key, source_slr_id, sink_slr_id
         """
-        print_test_title(test_name="test_for_account_link_services")
 
         # Create and Authenticate Account
-        print("##############################")
-        print("Create and Authenticate Account")
         account_api_key, account_id = self.test_account_authentication()
 
         # Authenticate Operator-SDK
-        print("##############################")
-        print("Authenticate Operator-SDK")
         sdk_api_key = self.test_sdk_auth()
 
         # Authentication for following requests
@@ -1614,30 +1490,22 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Api-Key-User'] = str(account_api_key)
 
         # Service Link Init for Source Service
-        print("##############################")
-        print("Source - Service Linking - Init")
         source_slr_init_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/source/"
         source_slr_init_payload, source_slr_code, source_slr_id = generate_sl_init_source()
         source_slr_init_response = self.app.post(source_slr_init_url, data=source_slr_init_payload, headers=request_headers)
-        print("source_slr_init_response.data: " + json.dumps(json.loads(source_slr_init_response.data), indent=4))
         unittest.TestCase.assertEqual(self, source_slr_init_response.status_code, 201, msg=source_slr_init_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=source_slr_init_response.data), msg=source_slr_init_response.data)
         unittest.TestCase.assertTrue(self, validate_json(source_slr_init_response.data, schema_slr_init))
 
         # Service Link Init for Sink Service
-        print("##############################")
-        print("Sink - Service Linking - Init")
         sink_slr_init_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/init/sink/"
         sink_slr_init_payload, sink_slr_code, sink_slr_id, sink_slr_pop_key = generate_sl_init_sink()
         sink_slr_init_response = self.app.post(sink_slr_init_url, data=sink_slr_init_payload, headers=request_headers)
-        print("sink_slr_init_response.data: " + json.dumps(json.loads(sink_slr_init_response.data), indent=4))
         unittest.TestCase.assertEqual(self, sink_slr_init_response.status_code, 201, msg=sink_slr_init_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=sink_slr_init_response.data), msg=sink_slr_init_response.data)
         unittest.TestCase.assertTrue(self, validate_json(sink_slr_init_response.data, schema_slr_init))
 
         # Account Owner's signature for Service Link of Source Service
-        print("##############################")
-        print("Source - Service Linking - Sign")
         source_slr_sign_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/"
         source_slr_sign_payload = generate_sl_payload(
                 slr_id=source_slr_id,
@@ -1647,14 +1515,11 @@ class SdkTestCase(unittest.TestCase):
                 surrogate_id=self.SOURCE_SURROGATE_ID
             )
         source_slr_sign_response = self.app.patch(source_slr_sign_url, data=source_slr_sign_payload, headers=request_headers)
-        print("source_slr_response.data: " + json.dumps(json.loads(source_slr_sign_response.data), indent=4))
         unittest.TestCase.assertEqual(self, source_slr_sign_response.status_code, 201, msg=source_slr_sign_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=source_slr_sign_response.data), msg=source_slr_sign_response.data)
         unittest.TestCase.assertTrue(self, validate_json(source_slr_sign_response.data, schema_slr_sign))
 
         # Account Owner's signature for Service Link of Sink Service
-        print("##############################")
-        print("Sink - Service Linking - Sign")
         sink_slr_sign_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(sink_slr_id) + "/"
         sink_slr_sign_payload = generate_sl_payload(
                 slr_id=sink_slr_id,
@@ -1664,14 +1529,11 @@ class SdkTestCase(unittest.TestCase):
                 surrogate_id=self.SINK_SURROGATE_ID
             )
         sink_slr_sign_response = self.app.patch(sink_slr_sign_url, data=sink_slr_sign_payload, headers=request_headers)
-        print("sink_slr_response.data: " + json.dumps(json.loads(sink_slr_sign_response.data), indent=4))
         unittest.TestCase.assertEqual(self, sink_slr_sign_response.status_code, 201, msg=sink_slr_sign_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=sink_slr_sign_response.data), msg=sink_slr_sign_response.data)
         unittest.TestCase.assertTrue(self, validate_json(sink_slr_sign_response.data, schema_slr_sign))
 
         # Store Service Link of Source Service
-        print("##############################")
-        print("Source - Service Linking - Store")
         source_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/store/"
         source_slr_store_payload = generate_sl_store_payload(
             slr_id=source_slr_id,
@@ -1680,17 +1542,13 @@ class SdkTestCase(unittest.TestCase):
             service_key=self.SOURCE_KEY_OBJECT,
             service_kid=self.SOURCE_KID
         )
-        print("source_slr_store_payload: " + json.dumps(json.loads(source_slr_store_payload), indent=4))
         source_slr_store_response = self.app.post(source_slr_store_url, data=source_slr_store_payload, headers=request_headers)
-        print("source_slr_store_response.data: " + json.dumps(json.loads(source_slr_store_response.data), indent=4))
         unittest.TestCase.assertEqual(self, source_slr_store_response.status_code, 201, msg=source_slr_store_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=source_slr_store_response.data), msg=source_slr_store_response.data)
         unittest.TestCase.assertTrue(self, validate_json(source_slr_store_response.data, schema_slr_store))
         source_ssr_id = json.loads(source_slr_store_response.data)['data']['ssr']['id']
 
         # Store Service Link of Sink Service
-        print("##############################")
-        print("Sink - Service Linking - Store")
         sink_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + sink_slr_id + "/store/"
         sink_slr_store_payload = generate_sl_store_payload(
             slr_id=sink_slr_id,
@@ -1699,9 +1557,7 @@ class SdkTestCase(unittest.TestCase):
             service_key=self.SINK_KEY_OBJECT,
             service_kid=self.SINK_KID
         )
-        print("sink_slr_store_payload: " + json.dumps(json.loads(sink_slr_store_payload), indent=4))
         sink_slr_store_response = self.app.post(sink_slr_store_url, data=sink_slr_store_payload, headers=request_headers)
-        print("sink_slr_store_response.data: " + json.dumps(json.loads(sink_slr_store_response.data), indent=4))
         unittest.TestCase.assertEqual(self, sink_slr_store_response.status_code, 201, msg=sink_slr_store_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=sink_slr_store_response.data), msg=sink_slr_store_response.data)
         unittest.TestCase.assertTrue(self, validate_json(sink_slr_store_response.data, schema_slr_store))
@@ -1716,11 +1572,8 @@ class SdkTestCase(unittest.TestCase):
         Give Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent")
 
         # Give Consent
-        print("##############################")
-        print("Give Consent")
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
         request_headers = default_headers
@@ -1740,10 +1593,8 @@ class SdkTestCase(unittest.TestCase):
                 sink_subject_id=self.SINK_SERVICE_ID,
                 misformatted_payload=False
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 201, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_give_consent))
@@ -1757,11 +1608,8 @@ class SdkTestCase(unittest.TestCase):
         Give Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent")
 
         # Give Consent
-        print("##############################")
-        print("Give Consent")
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
         request_headers = default_headers
@@ -1775,9 +1623,6 @@ class SdkTestCase(unittest.TestCase):
         sink_csr_id_array = []
         for i in range(0, 3):
             count += 1
-            print("################")
-            print("Consent number: " + str(count))
-
             give_consent_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/" + sink_slr_id + "/consents/"
             give_consent_payload, source_cr_id, source_csr_id, sink_cr_id, sink_csr_id = generate_consent_payload(
                     source_surrogate_id=self.SOURCE_SURROGATE_ID,
@@ -1791,10 +1636,8 @@ class SdkTestCase(unittest.TestCase):
                     sink_subject_id=self.SINK_SERVICE_ID,
                     misformatted_payload=False
             )
-            print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
             give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-            print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
             unittest.TestCase.assertEqual(self, give_consent_response.status_code, 201, msg=give_consent_response.data)
             unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
             unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_give_consent))
@@ -1803,8 +1646,6 @@ class SdkTestCase(unittest.TestCase):
             source_csr_id_array.append(source_csr_id)
             sink_cr_id_array.append(sink_cr_id)
             sink_csr_id_array.append(sink_csr_id)
-
-            print("OK Consent number: " + str(count))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
@@ -1815,7 +1656,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_malformed")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -1836,10 +1676,8 @@ class SdkTestCase(unittest.TestCase):
                 sink_subject_id=self.SINK_SERVICE_ID,
                 misformatted_payload=True
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_dict))
@@ -1853,7 +1691,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_wrong_source_surrogate_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -1874,10 +1711,8 @@ class SdkTestCase(unittest.TestCase):
                 sink_subject_id=self.SINK_SERVICE_ID,
                 misformatted_payload=False
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
@@ -1891,7 +1726,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_unknown_sink_surrogate_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -1912,10 +1746,8 @@ class SdkTestCase(unittest.TestCase):
                 sink_subject_id=self.SINK_SERVICE_ID,
                 misformatted_payload=False
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
@@ -1929,7 +1761,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_unknown_source_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -1951,10 +1782,8 @@ class SdkTestCase(unittest.TestCase):
                 sink_subject_id=self.SINK_SERVICE_ID,
                 misformatted_payload=False
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
@@ -1968,7 +1797,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_wrong_sink_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -1989,10 +1817,8 @@ class SdkTestCase(unittest.TestCase):
                 sink_subject_id=self.SINK_SERVICE_ID,
                 misformatted_payload=False
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
@@ -2006,7 +1832,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_wrong_source_cr_id_pair")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -2029,10 +1854,8 @@ class SdkTestCase(unittest.TestCase):
                 source_cr_id_fault=True,
                 sink_cr_id_fault=False
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
@@ -2046,7 +1869,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_wrong_sink_cr_id_pair")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -2069,10 +1891,8 @@ class SdkTestCase(unittest.TestCase):
                 source_cr_id_fault=False,
                 sink_cr_id_fault=True
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, validate_json(give_consent_response.data, schema_request_error_detail_as_str))
@@ -2086,7 +1906,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_surrogate_id_mismatch_source")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -2112,10 +1931,8 @@ class SdkTestCase(unittest.TestCase):
             source_surrogate_id_fault=True,
             sink_surrogate_id_fault=False
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self,validate_json(give_consent_response.data, schema_request_error_detail_as_str))
@@ -2129,7 +1946,6 @@ class SdkTestCase(unittest.TestCase):
         Give Consent - With incorrect payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_give_consent_surrogate_id_mismatch_sink")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id = self.test_for_account_link_services()
 
@@ -2155,10 +1971,8 @@ class SdkTestCase(unittest.TestCase):
             source_surrogate_id_fault=False,
             sink_surrogate_id_fault=True
         )
-        print("give_consent_payload: " + json.dumps(json.loads(give_consent_payload), indent=4))
 
         give_consent_response = self.app.post(give_consent_url, data=give_consent_payload, headers=request_headers)
-        print("give_consent_response.data: " + json.dumps(json.loads(give_consent_response.data), indent=4))
         unittest.TestCase.assertEqual(self, give_consent_response.status_code, 400, msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=give_consent_response.data), msg=give_consent_response.data)
         unittest.TestCase.assertTrue(self,validate_json(give_consent_response.data, schema_request_error_detail_as_str))
@@ -2172,7 +1986,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status - Source Service
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_change_consent_status_source")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
 
@@ -2190,10 +2003,8 @@ class SdkTestCase(unittest.TestCase):
             misformatted_payload=False,
             cr_id_fault=False
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_consent_status_change))
@@ -2207,7 +2018,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status - Sink Service
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id, sink_csr_id_new
         """
-        print_test_title(test_name="test_for_account_change_consent_status_sink")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
 
@@ -2225,10 +2035,8 @@ class SdkTestCase(unittest.TestCase):
             misformatted_payload=False,
             cr_id_fault=False
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_consent_status_change))
@@ -2242,7 +2050,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status - Faulty payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_change_consent_status_incorrect_cr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
 
@@ -2260,10 +2067,8 @@ class SdkTestCase(unittest.TestCase):
             misformatted_payload=False,
             cr_id_fault=True
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_str))
@@ -2277,7 +2082,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status - Faulty payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_change_consent_status_incorrect_payload")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
 
@@ -2295,10 +2099,8 @@ class SdkTestCase(unittest.TestCase):
             misformatted_payload=True,
             cr_id_fault=False
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_dict))
@@ -2312,7 +2114,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status - Faulty payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_change_consent_status_unknown_consent")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
 
@@ -2332,10 +2133,8 @@ class SdkTestCase(unittest.TestCase):
             misformatted_payload=False,
             cr_id_fault=False
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_str))
@@ -2349,7 +2148,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status by Operator - Source Service
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_change_consent_status_signed_source")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
 
@@ -2369,10 +2167,8 @@ class SdkTestCase(unittest.TestCase):
             operator_kid=self.OPERATOR_KID,
             operator_key=self.OPERATOR_KEY_OBJECT
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_consent_status_change))
@@ -2386,7 +2182,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status by Operator - Sink Service
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id, sink_csr_id_new
         """
-        print_test_title(test_name="test_for_account_change_consent_status_signed_sink")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_signed_source()
 
@@ -2406,10 +2201,8 @@ class SdkTestCase(unittest.TestCase):
             operator_kid=self.OPERATOR_KID,
             operator_key=self.OPERATOR_KEY_OBJECT
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_consent_status_change))
@@ -2423,7 +2216,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status by Operator - Faulty payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_change_consent_status_signed_incorrect_payload")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
 
@@ -2443,10 +2235,8 @@ class SdkTestCase(unittest.TestCase):
             operator_kid=self.OPERATOR_KID,
             operator_key=self.OPERATOR_KEY_OBJECT
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_dict))
@@ -2460,7 +2250,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status by Operator - Faulty payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_change_consent_status_signed_incorrect_cr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
 
@@ -2480,10 +2269,8 @@ class SdkTestCase(unittest.TestCase):
             operator_kid=self.OPERATOR_KID,
             operator_key=self.OPERATOR_KEY_OBJECT
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_str))
@@ -2497,7 +2284,6 @@ class SdkTestCase(unittest.TestCase):
         Change Consent Status by Operator - Faulty payload
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
         """
-        print_test_title(test_name="test_for_account_change_consent_status_signed_unknown_cr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_give_consent()
 
@@ -2519,10 +2305,8 @@ class SdkTestCase(unittest.TestCase):
             operator_kid=self.OPERATOR_KID,
             operator_key=self.OPERATOR_KEY_OBJECT
         )
-        print("consent_status_change_payload: " + json.dumps(json.loads(consent_status_change_payload), indent=4))
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
-        print("consent_status_change_response.data: " + json.dumps(json.loads(consent_status_change_response.data), indent=4))
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 400, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, validate_json(consent_status_change_response.data, schema_request_error_detail_as_str))
@@ -2536,7 +2320,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id
         """
-        print_test_title(test_name="test_for_account_fetch_consents_by_link")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2547,7 +2330,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -2562,7 +2344,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consents_by_link_with_consent_pairs")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2574,7 +2355,6 @@ class SdkTestCase(unittest.TestCase):
         count *= 2
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -2589,7 +2369,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consents_by_link_wrong_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2600,7 +2379,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_ssr_id) + "/consents/?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2614,7 +2392,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consents_by_link_with_consent_pairs_wrong_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2625,7 +2402,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_ssr_id) + "/consents/?get_consent_pair=True"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2639,7 +2415,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id
         """
-        print_test_title(test_name="test_for_account_fetch_consents_by_link_wrong_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2650,7 +2425,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(sink_slr_id) + "/servicelinks/" + str(source_slr_id) + "/consents/?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2664,7 +2438,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_link")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2676,7 +2449,6 @@ class SdkTestCase(unittest.TestCase):
         count = 1
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -2691,7 +2463,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_link_with_consent_pair")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2703,7 +2474,6 @@ class SdkTestCase(unittest.TestCase):
         count = 2
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -2718,7 +2488,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_link_wrong_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2729,7 +2498,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_ssr_id) + "/consents/" + str(source_cr_id_array[0]) + "/?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2743,7 +2511,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_link_with_consent_pairs_wrong_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2754,7 +2521,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_ssr_id) + "/consents/" + str(source_cr_id_array[0]) + "/?get_consent_pair=True"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2768,7 +2534,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_link_wrong_account_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2779,7 +2544,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(sink_slr_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id_array[0]) + "/?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2793,7 +2557,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_last_consent_by_link")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2805,7 +2568,6 @@ class SdkTestCase(unittest.TestCase):
         count = 1
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -2820,7 +2582,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_last_consent_by_link_with_consent_pair")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2832,7 +2593,6 @@ class SdkTestCase(unittest.TestCase):
         count = 2
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -2847,7 +2607,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_last_consent_by_link_wrong_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2858,7 +2617,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_ssr_id) + "/consents/last/?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2872,7 +2630,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_last_consent_by_link_with_consent_pairs_wrong_slr_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2883,7 +2640,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_ssr_id) + "/consents/last/?get_consent_pair=True"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2897,7 +2653,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_last_consent_by_link_wrong_account_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2908,7 +2663,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(sink_slr_id) + "/servicelinks/" + str(source_slr_id) + "/consents/last/?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2922,7 +2676,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consents")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2934,7 +2687,6 @@ class SdkTestCase(unittest.TestCase):
         count *= 2
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -2949,7 +2701,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consents - Invalid IDs
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id
         """
-        print_test_title(test_name="test_for_account_fetch_consents_wrong_account_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2960,7 +2711,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(sink_slr_id) + "/consents/?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -2974,7 +2724,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_account")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -2986,7 +2735,6 @@ class SdkTestCase(unittest.TestCase):
         count = 1
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -3001,7 +2749,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_account_with_consent_pair")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -3013,7 +2760,6 @@ class SdkTestCase(unittest.TestCase):
         count = 2
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
@@ -3028,7 +2774,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_account_with_wrong_consent_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -3039,7 +2784,6 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + str(sink_slr_id) + "?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
@@ -3053,7 +2797,6 @@ class SdkTestCase(unittest.TestCase):
         Test Consent
         :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
         """
-        print_test_title(test_name="test_for_account_fetch_consent_by_account_with_wrong_account_id")
 
         account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
@@ -3064,16 +2807,317 @@ class SdkTestCase(unittest.TestCase):
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(source_slr_id) + "/consents/" + str(source_cr_id_array[0]) + "?get_consent_pair=False"
 
         response = self.app.get(url, headers=request_headers)
-        print("response.data: " + json.dumps(json.loads(response.data), indent=4))
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
+    ##########
+    ##########
+    def test_for_account_fetch_consent_statuses_by_account_and_consent(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
 
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + str(source_cr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
+    ##########
+    def test_for_account_fetch_consent_statuses_by_account_and_consent_with_status_filter(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + str(source_cr_id) + "/statuses/?status_id=" + str(source_csr_id)
+        count = 1
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
+        unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_statuses_by_account_and_consent_with_wrong_consent_id(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + str(sink_slr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_statuses_by_account_and_consent_with_status_filter_faulty(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + str(source_cr_id) + "/statuses/?status_id=faulty_id"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_status_by_account_and_consent(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(source_csr_id) +"/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_status_by_account_and_consent_wrong_consent_status_id(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(sink_csr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_statuses_by_account_and_link_and_consent(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_statuses_by_account_and_link_and_consent_wrong_link_id(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(sink_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_statuses_by_account_and_link_and_consent_wrong_consent_id(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(sink_cr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_status_by_account_and_link_and_consent(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(source_csr_id_new) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_status_by_account_and_link_and_consent_wrong_link_id(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(sink_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(source_csr_id_new) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_status_by_account_and_link_and_consent_wrong_consent_id(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(sink_cr_id) + "/statuses/" + str(source_csr_id_new) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_account_fetch_consent_status_by_account_and_link_and_consent_wrong_status_id(self):
+        """
+        Test Consent Status
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(sink_csr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+
+
+
+            ##########
     ##########
     # TODO: Test Account authentication with deleted Account
     # TODO: Test Resource fetching with removed Account
