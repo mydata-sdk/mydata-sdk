@@ -708,12 +708,59 @@ paths:
           type: string
           description: 'Service Link ID'
           required: true
-        - name: status_id
+        - name: get_consent_pair
           in: query
-          type: string
-          description: "Last valid Consent Status Record ID"
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
           required: false
-        - name: getConsentPairs
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Records'
+          schema:
+            $ref: '#/definitions/ConsentArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No Service Link with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Record'
+      description: "Fetch Consent Record related to Service Link Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: get_consent_pair
           in: query
           type: boolean
           description: "If true also Consent pairs will be fetched"
@@ -760,7 +807,7 @@ paths:
           type: string
           description: 'Service Link ID'
           required: true
-        - name: getConsentPairs
+        - name: get_consent_pair
           in: query
           type: boolean
           description: "If true also Consent pairs will be fetched"
@@ -773,7 +820,7 @@ paths:
         '200':
           description: 'Array of Consent Records'
           schema:
-            $ref: '#/definitions/ConsentResponse'
+            $ref: '#/definitions/ConsentArray'
         '400':
           description: 'Bad Request'
           schema:
@@ -807,7 +854,7 @@ paths:
           type: string
           description: "Last valid Consent Status Record ID"
           required: false
-        - name: getConsentPair
+        - name: get_consent_pair
           in: query
           type: boolean
           description: "If true also Consent pairs will be fetched"
@@ -854,10 +901,10 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
-        - name: getConsentPair
+        - name: get_consent_pair
           in: query
           type: boolean
-          description: "If true also Consent pair will be fetched"
+          description: "If true also Consent pairs will be fetched"
           required: false
 
       tags:
@@ -867,7 +914,7 @@ paths:
         '200':
           description: 'Consent Record'
           schema:
-            $ref: '#/definitions/ConsentResponse'
+            $ref: '#/definitions/ConsentArray'
         '400':
           description: 'Bad Request'
           schema:
@@ -950,6 +997,11 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Consent Status Record ID"
+          required: false
 
       tags:
         - Consenting - Fetch
@@ -1252,7 +1304,7 @@ paths:
           type: string
           description: 'Service Link ID'
           required: true
-        - name: getConsentPair
+        - name: get_consent_pair
           in: query
           type: boolean
           description: "If true also Consent pairs will be fetched"
@@ -1304,10 +1356,10 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
-        - name: getConsentPair
+        - name: get_consent_pair
           in: query
           type: boolean
-          description: "If true also Consent pair will be fetched"
+          description: "If true also Consent pairs will be fetched"
           required: false
 
       tags:
@@ -1317,7 +1369,7 @@ paths:
         '200':
           description: 'Array of Consent Records'
           schema:
-            $ref: '#/definitions/ConsentResponse'
+            $ref: '#/definitions/ConsentArray'
         '400':
           description: 'Bad Request'
           schema:
@@ -2099,7 +2151,7 @@ definitions:
       data:
         type: array
         items:
-          $ref: '#/definitions/ConsentResponse'
+          $ref: '#/definitions/ConsentRecordGeneral'
 
   newConsentStatusRequest:
     type: object
