@@ -835,6 +835,158 @@ paths:
             $ref: '#/definitions/error'
 
 
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Status Records'
+      description: "Fetch list of Consent Status Records"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Consent Status Record ID"
+          required: false
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Status Records'
+          schema:
+            $ref: '#/definitions/ConsentStatusArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/{status_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Status Record'
+      description: "Fetch Consent Status Record by ID"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: status_id
+          in: path
+          type: string
+          description: 'Consent Status ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/last/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get last Consent Status Record'
+      description: "Fetch last Consent Status Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+
   /accounts/{account_id}/consents/:
     get:
       security:

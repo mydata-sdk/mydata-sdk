@@ -22,7 +22,7 @@ from app.app_modules import db
 from app.helpers import get_custom_logger, ApiError, get_utc_time
 from app.mod_blackbox.controllers import get_account_public_key, generate_and_sign_jws
 from app.mod_database.helpers import get_db_cursor, get_last_csr_id, get_csr_ids, get_account_id_by_csr_id, \
-    get_consent_ids, get_last_consent_id
+    get_consent_ids, get_last_consent_id, get_consent_status_ids, get_consent_status_id_filter
 
 # create logger with 'spam_application'
 from app.mod_database.models import SurrogateId, ConsentRecord, ServiceLinkRecord, ConsentStatusRecord, Account
@@ -734,132 +734,132 @@ def store_csr(account_id=None, record_id=None, cr_id=None, surrogate_id=None, co
     return csr_entry
 
 
-def get_csr(cr_id=None, csr_id=None, cursor=None):
-    """
-    Get one csr entry from database by Account ID and ID
-    :param slr_id:
-    :param cr_id:
-    :param csr_id:
-    :return: dict
-    """
-    if cr_id is None:
-        raise AttributeError("Provide cr_id as parameter")
-    if csr_id is None:
-        raise AttributeError("Provide csr_id as parameter")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
+# def get_csr(cr_id=None, csr_id=None, cursor=None):
+#     """
+#     Get one csr entry from database by Account ID and ID
+#     :param slr_id:
+#     :param cr_id:
+#     :param csr_id:
+#     :return: dict
+#     """
+#     if cr_id is None:
+#         raise AttributeError("Provide cr_id as parameter")
+#     if csr_id is None:
+#         raise AttributeError("Provide csr_id as parameter")
+#     if cursor is None:
+#         # Get DB cursor
+#         try:
+#             cursor = get_db_cursor()
+#         except Exception as exp:
+#             logger.error('Could not get database cursor: ' + repr(exp))
+#             raise
+#
+#     try:
+#         db_entry_object = ConsentStatusRecord(consent_record_id=cr_id, consent_status_record_id=csr_id)
+#     except Exception as exp:
+#         error_title = "Failed to create csr object"
+#         logger.error(error_title + ": " + repr(exp))
+#         raise
+#     else:
+#         logger.debug("csr object created: " + db_entry_object.log_entry)
+#
+#     # Get csr from DB
+#     try:
+#         cursor = db_entry_object.from_db(cursor=cursor)
+#     except Exception as exp:
+#         error_title = "Failed to fetch csr from DB"
+#         logger.error(error_title + ": " + repr(exp))
+#         raise
+#     else:
+#         logger.info("csr fetched")
+#         logger.info("csr fetched from db: " + db_entry_object.log_entry)
+#
+#     return db_entry_object.to_record_dict
 
-    try:
-        db_entry_object = ConsentStatusRecord(consent_record_id=cr_id, consent_status_record_id=csr_id)
-    except Exception as exp:
-        error_title = "Failed to create csr object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("csr object created: " + db_entry_object.log_entry)
 
-    # Get csr from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch csr from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("csr fetched")
-        logger.info("csr fetched from db: " + db_entry_object.log_entry)
-
-    return db_entry_object.to_record_dict
-
-
-def get_csrs(cr_id=None, last_csr_id=None):
-    """
-    Get all csr -entries related to service link record
-    :param cr_id:
-    :return: List of dicts
-    """
-    if cr_id is None:
-        raise AttributeError("Provide cr_id as parameter")
-
-    # Get DB cursor
-    try:
-        cursor = get_db_cursor()
-    except Exception as exp:
-        logger.error('Could not get database cursor: ' + repr(exp))
-        raise
-
-    # Get CSR limit if necessary
-    if last_csr_id is None:
-        logger.info("No limiting CSR ID provided")
-        csr_primary_key = None
-    else:
-        csr_limit_id = last_csr_id
-        logger.info("csr_limit_id: " + str(csr_limit_id))
-
-        # Get primary key of limiting CSR
-        try:
-            logger.info("Create CSR object")
-            csr_entry = ConsentStatusRecord(consent_record_id=cr_id, consent_status_record_id=last_csr_id)
-        except Exception as exp:
-            error_title = "Failed to create csr object"
-            logger.error(error_title + ": " + repr(exp))
-            raise
-        else:
-            logger.debug("csr object created: " + csr_entry.log_entry)
-
-        # Get csr from DB
-        try:
-            cursor = csr_entry.from_db(cursor=cursor)
-        except Exception as exp:
-            error_title = "Failed to fetch csr from DB"
-            logger.error(error_title + ": " + repr(exp))
-            raise
-        else:
-            logger.info("csr fetched")
-            logger.info("csr fetched from db: " + csr_entry.log_entry)
-
-        # Get primary key of Consent Record database entry
-        try:
-            logger.info("Get primary key of Consent Record database entry")
-            csr_primary_key = csr_entry.id
-        except Exception as exp:
-            error_title = "Failed to get primary key of Consent Record database entry"
-            logger.error(error_title + ": " + repr(exp))
-            raise
-
-        logger.debug("csr_primary_key: " + str(csr_primary_key))
-
-    # Get primary keys for csrs
-    try:
-        # Get table name
-        logger.info("Create csr")
-        db_entry_object = ConsentStatusRecord()
-        logger.info(db_entry_object.log_entry)
-        logger.info("Get table name")
-        table_name = db_entry_object.table_name
-        logger.info("Got table name: " + str(table_name))
-
-        cursor, id_list = get_csr_ids(cursor=cursor, cr_id=cr_id, csr_primary_key=csr_primary_key, table_name=table_name)
-    except Exception as exp:
-        logger.error('Could not get primary key list: ' + repr(exp))
-        raise
-
-    # Get csrs from database
-    logger.info("Get csrs from database")
-    db_entry_list = []
-    for id in id_list:
-        # TODO: try-except needed?
-        logger.info("Getting csr with cr_id: " + str(cr_id) + " csr_id: " + str(id))
-        db_entry_dict = get_csr(cr_id=cr_id, csr_id=id)
-        db_entry_list.append(db_entry_dict)
-        logger.info("csr object added to list: " + json.dumps(db_entry_dict))
-
-    return db_entry_list
+# def get_csrs(cr_id=None, last_csr_id=None):
+#     """
+#     Get all csr -entries related to service link record
+#     :param cr_id:
+#     :return: List of dicts
+#     """
+#     if cr_id is None:
+#         raise AttributeError("Provide cr_id as parameter")
+#
+#     # Get DB cursor
+#     try:
+#         cursor = get_db_cursor()
+#     except Exception as exp:
+#         logger.error('Could not get database cursor: ' + repr(exp))
+#         raise
+#
+#     # Get CSR limit if necessary
+#     if last_csr_id is None:
+#         logger.info("No limiting CSR ID provided")
+#         csr_primary_key = None
+#     else:
+#         csr_limit_id = last_csr_id
+#         logger.info("csr_limit_id: " + str(csr_limit_id))
+#
+#         # Get primary key of limiting CSR
+#         try:
+#             logger.info("Create CSR object")
+#             csr_entry = ConsentStatusRecord(consent_record_id=cr_id, consent_status_record_id=last_csr_id)
+#         except Exception as exp:
+#             error_title = "Failed to create csr object"
+#             logger.error(error_title + ": " + repr(exp))
+#             raise
+#         else:
+#             logger.debug("csr object created: " + csr_entry.log_entry)
+#
+#         # Get csr from DB
+#         try:
+#             cursor = csr_entry.from_db(cursor=cursor)
+#         except Exception as exp:
+#             error_title = "Failed to fetch csr from DB"
+#             logger.error(error_title + ": " + repr(exp))
+#             raise
+#         else:
+#             logger.info("csr fetched")
+#             logger.info("csr fetched from db: " + csr_entry.log_entry)
+#
+#         # Get primary key of Consent Record database entry
+#         try:
+#             logger.info("Get primary key of Consent Record database entry")
+#             csr_primary_key = csr_entry.id
+#         except Exception as exp:
+#             error_title = "Failed to get primary key of Consent Record database entry"
+#             logger.error(error_title + ": " + repr(exp))
+#             raise
+#
+#         logger.debug("csr_primary_key: " + str(csr_primary_key))
+#
+#     # Get primary keys for csrs
+#     try:
+#         # Get table name
+#         logger.info("Create csr")
+#         db_entry_object = ConsentStatusRecord()
+#         logger.info(db_entry_object.log_entry)
+#         logger.info("Get table name")
+#         table_name = db_entry_object.table_name
+#         logger.info("Got table name: " + str(table_name))
+#
+#         cursor, id_list = get_csr_ids(cursor=cursor, cr_id=cr_id, csr_primary_key=csr_primary_key, table_name=table_name)
+#     except Exception as exp:
+#         logger.error('Could not get primary key list: ' + repr(exp))
+#         raise
+#
+#     # Get csrs from database
+#     logger.info("Get csrs from database")
+#     db_entry_list = []
+#     for id in id_list:
+#         # TODO: try-except needed?
+#         logger.info("Getting csr with cr_id: " + str(cr_id) + " csr_id: " + str(id))
+#         db_entry_dict = get_csr(cr_id=cr_id, csr_id=id)
+#         db_entry_list.append(db_entry_dict)
+#         logger.info("csr object added to list: " + json.dumps(db_entry_dict))
+#
+#     return db_entry_list
 
 ###
 ##
@@ -1147,3 +1147,123 @@ def get_last_cr(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", a
     logger.info("ConsentRecords fetched: " + json.dumps(cr_list))
 
     return cr_list
+
+
+def get_csr(csr_id="", cr_id="", prev_record_id="", account_id="", cursor=None):
+    """
+    Get Consent Record entry
+    
+    :param csr_id: 
+    :param cr_id: 
+    :param prev_record_id: 
+    :param account_id: 
+    :param cursor: 
+    :return: dict
+    """
+    try:
+        cr_id = str(cr_id)
+    except Exception:
+        raise TypeError("cr_id MUST be str, not " + str(type(cr_id)))
+    try:
+        csr_id = str(csr_id)
+    except Exception:
+        raise TypeError("csr_id MUST be str, not " + str(type(csr_id)))
+    try:
+        prev_record_id = str(prev_record_id)
+    except Exception:
+        raise TypeError("prev_record_id MUST be str, not " + str(type(prev_record_id)))
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+
+    if cursor is None:
+        # Get DB cursor
+        try:
+            cursor = get_db_cursor()
+        except Exception as exp:
+            logger.error('Could not get database cursor: ' + repr(exp))
+            raise
+
+    try:
+        db_entry_object = ConsentStatusRecord(
+            consent_record_id=cr_id,
+            consent_status_record_id=csr_id,
+            prev_record_id=prev_record_id,
+            accounts_id=account_id
+        )
+    except Exception as exp:
+        error_title = "Failed to create ConsentRecord object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("ConsentRecord object created: " + db_entry_object.log_entry)
+
+    # Get slr from DB
+    try:
+        cursor = db_entry_object.from_db(cursor=cursor)
+    except Exception as exp:
+        error_title = "Failed to fetch ConsentRecord from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("ConsentRecord fetched")
+        logger.debug("ConsentRecord fetched from db: " + db_entry_object.log_entry)
+
+    return db_entry_object.to_api_dict
+
+
+def get_csrs(account_id=None, consent_id=None, status_id=""):
+    """
+    Get all consent status record entries related to Consent Record
+    :param account_id:
+    :param consent_id:
+    :return: List of dicts
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+    if consent_id is None:
+        raise AttributeError("Provide consent_id as parameter")
+    if status_id is None:
+        raise AttributeError("Provide status_id as parameter")
+
+    # Get table name
+    logger.info("Create Consent Status Record object")
+    db_entry_object = ConsentStatusRecord()
+    logger.info(db_entry_object.log_entry)
+    logger.info("Get table name")
+    table_name = db_entry_object.table_name
+    logger.info("Got table name: " + str(table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get primary key filter
+    try:
+        cursor, filter_id = get_consent_status_id_filter(cursor=cursor, csr_id=status_id, table_name=table_name)
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get primary keys for Consent Status Records
+    try:
+        cursor, id_list = get_consent_status_ids(cursor=cursor, cr_id=consent_id, primary_key_filter=filter_id, table_name=table_name)
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get Consent Status Records from database
+    logger.info("Get Consent Status Records from database")
+    db_entry_list = []
+    for entry_id in id_list:
+        # TODO: try-except needed?
+        logger.info("Getting Consent Status Record with account_id: " + str(account_id) + " consent_id: " + str(consent_id) + " csr_id: " + str(entry_id))
+        db_entry_dict = get_csr(account_id=account_id, cr_id=consent_id, csr_id=entry_id)
+        db_entry_list.append(db_entry_dict)
+        logger.info("Consent Status Records object added to list: " + json.dumps(db_entry_dict))
+
+    return db_entry_list

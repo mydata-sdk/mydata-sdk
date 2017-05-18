@@ -708,7 +708,6 @@ def get_slsrs(account_id=None, slr_id=None):
         logger.error(title)
         raise IndexError(title + ": " + repr(exp))
     else:
-        logger.info("HEP")
         logger.info("Found SLR: " + repr(slr))
 
     # Get table name
