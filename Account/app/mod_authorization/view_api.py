@@ -12,31 +12,15 @@ __status__ = "Development"
 """
 
 # Import dependencies
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-from random import randint
-
-# Import flask dependencies
-import time
-from flask import Blueprint, render_template, make_response, flash, session, request, jsonify, url_for, json, current_app
-from flask_login import login_user, login_required
-from flask_restful import Resource, Api, reqparse
-from base64 import b64decode
-
-# Import services
+from flask import Blueprint, request, json
+from flask_restful import Resource, Api
 from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids
 from app.mod_account.controllers import verify_account_id_match
-from app.mod_api_auth.controllers import requires_api_auth_user, get_account_id_by_api_key, provide_api_key, \
-    requires_api_auth_sdk, get_user_api_key, get_sdk_api_key
+from app.mod_api_auth.controllers import requires_api_auth_user, requires_api_auth_sdk, get_user_api_key, \
+    get_sdk_api_key
 from app.mod_authorization.schemas import schema_consent_new, schema_consent_status_new, \
     schema_consent_status_signed_new
-from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jws, get_account_public_key, \
-    verify_jws_signature_with_jwk
-from app.mod_database.helpers import get_db_cursor
-from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
+from app.mod_database.models import ServiceLinkRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
     get_last_cr_status, store_csr, get_csrs, get_crs, get_cr, get_last_cr, get_csr
 

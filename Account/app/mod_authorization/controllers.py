@@ -2,30 +2,12 @@
 
 # Import dependencies
 import json
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-from random import randint
-from time import time
-
-# Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash, session, current_app
-from flask_login import login_user, login_required
-from flask_restful import Resource, Api, reqparse
-
-# Import the database object
 from app.app_modules import db
-
-# Import services
-from app.helpers import get_custom_logger, ApiError, get_utc_time
+from app.helpers import get_custom_logger, ApiError
 from app.mod_blackbox.controllers import get_account_public_key, generate_and_sign_jws
-from app.mod_database.helpers import get_db_cursor, get_last_csr_id, get_csr_ids, get_account_id_by_csr_id, \
+from app.mod_database.helpers import get_db_cursor, get_last_csr_id, get_account_id_by_csr_id, \
     get_consent_ids, get_last_consent_id, get_consent_status_ids, get_consent_status_id_filter
-
-# create logger with 'spam_application'
-from app.mod_database.models import SurrogateId, ConsentRecord, ServiceLinkRecord, ConsentStatusRecord, Account
+from app.mod_database.models import ConsentRecord, ServiceLinkRecord, ConsentStatusRecord, Account
 
 logger = get_custom_logger(__name__)
 
