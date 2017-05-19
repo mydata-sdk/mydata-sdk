@@ -28,6 +28,7 @@ from app.tests.schemas.schema_account import schema_account_create, schema_accou
     schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
 from app.tests.schemas.schema_authorisation import schema_give_consent, schema_consent_status_change, \
     schema_consent_listing, schema_consent_status_listing, schema_consent_status, schema_consent
+from app.tests.schemas.schema_data_connection import schema_authorisation_token_data
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
     schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status, schema_surrogate
@@ -3694,19 +3695,49 @@ class SdkTestCase(unittest.TestCase):
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
+    ##########
+    ##########
+    def test_authorisation_token_data(self):
+        """
+        Authorisation token data
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
 
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
+        url = self.API_PREFIX_INTERNAL + "/consents/" + str(sink_cr_id_array[0]) + "/authorisationtoken/"
 
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_authorisation_token_data))
 
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
+    ##########
+    ##########
+    def test_authorisation_token_data_wrong_consent_id(self):
+        """
+        Authorisation token data - Faulty IDs
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
 
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count = self.test_for_account_give_consent_multiple()
 
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
+        url = self.API_PREFIX_INTERNAL + "/consents/" + str(source_cr_id_array[0]) + "/authorisationtoken/"
 
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
-
-
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
 
 
@@ -3715,7 +3746,6 @@ class SdkTestCase(unittest.TestCase):
 
     ##########
     ##########
-    # TODO: Last Consent Status Records
     # TODO: Test Account authentication with deleted Account
     # TODO: Test Resource fetching with removed Account
 
