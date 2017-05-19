@@ -689,19 +689,32 @@ def get_last_csr_id(cursor=None, consent_id=None, account_id="", table_name=None
     try:
         account_id = int(account_id)
     except Exception:
-        raise TypeError("account_id MUST be int, not " + str(type(account_id)))
+        logger.warning("account_id SHOULD be int, not " + str(type(account_id)))
+        logger.warning("Querying without Account ID")
 
-    sql_query = "SELECT consentStatusRecordId " \
-                "FROM " + table_name + " " \
-                "WHERE consentRecordId LIKE %s " \
-                "AND Accounts_id = %s " \
-                "ORDER BY id DESC " \
-                "LIMIT 1;"
+        sql_query = "SELECT consentStatusRecordId " \
+                    "FROM " + table_name + " " \
+                    "WHERE consentRecordId LIKE %s " \
+                    "ORDER BY id DESC " \
+                    "LIMIT 1;"
 
-    arguments = (
-        '%' + str(consent_id) + '%',
-        int(account_id),
-    )
+        arguments = (
+            '%' + str(consent_id) + '%',
+        )
+
+    else:
+        logger.debug("Querying with account_id")
+        sql_query = "SELECT consentStatusRecordId " \
+                    "FROM " + table_name + " " \
+                    "WHERE consentRecordId LIKE %s " \
+                    "AND Accounts_id = %s " \
+                    "ORDER BY id DESC " \
+                    "LIMIT 1;"
+
+        arguments = (
+            '%' + str(consent_id) + '%',
+            int(account_id),
+        )
 
     try:
         cursor, data = execute_sql_select_2(cursor=cursor, sql_query=sql_query, arguments=arguments)

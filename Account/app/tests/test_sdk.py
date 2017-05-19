@@ -27,7 +27,7 @@ from app.tests.schemas.schema_account import schema_account_create, schema_accou
     schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
     schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
 from app.tests.schemas.schema_authorisation import schema_give_consent, schema_consent_status_change, \
-    schema_consent_listing, schema_consent_status_listing, schema_consent_status
+    schema_consent_listing, schema_consent_status_listing, schema_consent_status, schema_consent
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
     schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status, schema_surrogate
@@ -3251,6 +3251,460 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##
+    # TEST CASES FOR SERVICES
+    ##########
+    ##########
+    def test_for_service_fetch_consents(self):
+        """
+        Consent listing for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consents_wrong_service_id(self):
+        """
+        Consent listing for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SINK_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consents_wrong_link_id(self):
+        """
+        Consent listing for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(sink_slr_id) + "/consents/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent(self):
+        """
+        Consent for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_wrong_service_id(self):
+        """
+        Consent for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SINK_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_wrong_link_id(self):
+        """
+        Consent for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(sink_slr_id) + "/consents/" + str(source_cr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_wrong_consent_id(self):
+        """
+        Consent for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(sink_cr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_statuses(self):
+        """
+        Consent Statuses for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_statuses_wrong_service_id(self):
+        """
+        Consent Statuses for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SINK_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_statuses_wrong_link_id(self):
+        """
+        Consent Statuses for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(sink_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_statuses_wrong_consent_id(self):
+        """
+        Consent Statuses for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(sink_cr_id) + "/statuses/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_status(self):
+        """
+        Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(source_csr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_status_wrong_service_id(self):
+        """
+        Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SINK_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(source_csr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_status_wrong_link_id(self):
+        """
+        Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(sink_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(source_csr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_status_wrong_consent_id(self):
+        """
+        Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(sink_cr_id) + "/statuses/" + str(source_csr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_consent_status_wrong_consent_status_id(self):
+        """
+        Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/" + str(sink_csr_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_last_consent_status(self):
+        """
+        Last Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/last/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_last_consent_status_wrong_service_id(self):
+        """
+        Last Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SINK_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/last/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_last_consent_status_wrong_link_id(self):
+        """
+        Last Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(sink_slr_id) + "/consents/" + str(source_cr_id) + "/statuses/last/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+    ##########
+    ##########
+    def test_for_service_fetch_last_consent_status_wrong_consent_id(self):
+        """
+        Last Consent Status for Service
+        :return: account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id = self.test_for_account_change_consent_status_source()
+
+        request_headers = default_headers
+        request_headers['Api-Key-Sdk'] = str(sdk_api_key)
+
+        url = self.API_PREFIX_INTERNAL + "/services/" + str(self.SOURCE_SERVICE_ID) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(sink_cr_id) + "/statuses/last/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

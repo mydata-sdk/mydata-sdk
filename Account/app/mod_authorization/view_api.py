@@ -2000,6 +2000,460 @@ class ApiAccountConsentStatusLastForServiceLinkRecord(Resource):
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
 
+######
+# Service Section
+#####
+
+
+class ApiConsentsForService(Resource):
+    @requires_api_auth_sdk
+    def get(self, service_id, link_id):
+        """
+        Fetch list of Consent Records related to Service
+
+        :param service_id:
+        :param link_id:
+        :return: JSON array
+        """
+        try:
+            endpoint = str(api.url_for(self, service_id=service_id, link_id=link_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        # Check path variables
+        try:
+            service_id = str(service_id)
+        except Exception as exp:
+            error_title = "Unsupported service_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        try:
+            link_id = str(link_id)
+        except Exception as exp:
+            error_title = "Unsupported link_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Get Consent Records
+        try:
+            logger.info("Fetching Consent Records")
+            db_entries = get_crs(subject_id=service_id, slr_id=link_id)
+        except IndexError as exp:
+            error_title = "Consent Record not found with provided information"
+            error_detail = "Service ID was {} and Service Link ID was {}".format(service_id, link_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No Consent Records found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Consent Records Fetched")
+            logger.debug("Consent Records: " + json.dumps(db_entries))
+
+        # Response data container
+        try:
+            db_entry_list = db_entries
+            response_data = {}
+            response_data['data'] = db_entry_list
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class ApiConsentForService(Resource):
+    @requires_api_auth_sdk
+    def get(self, service_id, link_id, consent_id):
+        """
+        Fetch Consent Record related to Service
+
+        :param service_id:
+        :param link_id:
+        :param consent_id:
+        :return:
+        """
+        try:
+            endpoint = str(api.url_for(self, service_id=service_id, link_id=link_id, consent_id=consent_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        # Check path variables
+        try:
+            service_id = str(service_id)
+        except Exception as exp:
+            error_title = "Unsupported service_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        try:
+            link_id = str(link_id)
+        except Exception as exp:
+            error_title = "Unsupported link_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        try:
+            consent_id = str(consent_id)
+        except Exception as exp:
+            error_title = "Unsupported consent_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        try:
+            consent_id = str(consent_id)
+        except Exception as exp:
+            error_title = "Unsupported consent_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Get Consent Record
+        try:
+            logger.info("Fetching Consent Record")
+            cr_entry = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
+        except IndexError as exp:
+            error_title = "Consent Record not found with provided information"
+            error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}.".format(service_id, link_id, consent_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No Consent Record found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Consent Record Fetched")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = cr_entry
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class ApiConsentStatusesForService(Resource):
+    @requires_api_auth_sdk
+    def get(self, service_id, link_id, consent_id):
+        """
+        Fetch list of Consent Status Records
+
+        :param service_id:
+        :param link_id:
+        :param consent_id:
+        :return: JSON array
+        """
+        try:
+            endpoint = str(api.url_for(self, service_id=service_id, link_id=link_id, consent_id=consent_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        # Check path variables
+        try:
+            service_id = str(service_id)
+        except Exception as exp:
+            error_title = "Unsupported service_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        try:
+            link_id = str(link_id)
+        except Exception as exp:
+            error_title = "Unsupported link_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        try:
+            consent_id = str(consent_id)
+        except Exception as exp:
+            error_title = "Unsupported consent_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Check query variables
+        try:
+            status_id = request.args.get('status_id', "")
+            status_id = str(status_id)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported status_id", detail=repr(exp), source=endpoint)
+        else:
+            logger.info("status_id from query params: {}".format(status_id))
+
+        # Get Consent Record
+        try:
+            logger.info("Fetching Consent Record")
+            cr_entry = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
+        except IndexError as exp:
+            error_title = "Consent Record not found with provided information"
+            error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}.".format(service_id, link_id, consent_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No Consent Record found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Consent Record Fetched")
+
+        # Get Consent Status Records
+        try:
+            logger.info("Fetching Consent Status Records")
+            db_entries = get_csrs(account_id="", consent_id=consent_id, status_id=status_id)
+        except IndexError as exp:
+            error_title = "Consent Status Records not found with provided information"
+            error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}. Status ID from query parameters was {}.".format(service_id, link_id, consent_id, status_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No Consent Status Records found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Consent Status Records Fetched")
+
+        # Response data container
+        try:
+            db_entry_list = db_entries
+            response_data = {}
+            response_data['data'] = db_entry_list
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class ApiConsentStatusForService(Resource):
+    @requires_api_auth_sdk
+    def get(self, service_id, link_id, consent_id, status_id):
+        """
+        Fetch Consent Status Record
+
+        :param service_id:
+        :param link_id:
+        :param consent_id:
+        :param status_id:
+        :return:
+        """
+        try:
+            endpoint = str(api.url_for(self, service_id=service_id, link_id=link_id, consent_id=consent_id, status_id=status_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        # Check path variables
+        try:
+            service_id = str(service_id)
+        except Exception as exp:
+            error_title = "Unsupported service_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        try:
+            link_id = str(link_id)
+        except Exception as exp:
+            error_title = "Unsupported link_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        try:
+            consent_id = str(consent_id)
+        except Exception as exp:
+            error_title = "Unsupported consent_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        try:
+            status_id = str(status_id)
+        except Exception as exp:
+            error_title = "Unsupported status_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Get Consent Record
+        try:
+            logger.info("Fetching Consent Record")
+            cr_entry = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
+        except IndexError as exp:
+            error_title = "Consent Record not found with provided information"
+            error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}.".format(service_id, link_id, consent_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No Consent Record found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Consent Record Fetched")
+
+        # Get Consent Status Record
+        try:
+            logger.info("Fetching Consent Record")
+            cr_entry = get_csr(cr_id=consent_id, account_id="", csr_id=status_id)
+        except IndexError as exp:
+            error_title = "Consent Record not found with provided information"
+            error_detail = "Consent ID was {} and Consent Status ID was {}.".format(consent_id, status_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No Consent Record found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Consent Record Fetched")
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = cr_entry
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + repr(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + repr(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class ApiConsentStatusLastForService(Resource):
+    @requires_api_auth_sdk
+    def get(self, service_id, link_id, consent_id):
+        """
+        Fetch last Consent Status Record
+
+        :param service_id: 
+        :param link_id: 
+        :param consent_id: 
+        :return: 
+        """
+        try:
+            endpoint = str(api.url_for(self, service_id=service_id, link_id=link_id, consent_id=consent_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        # Check path variables
+        try:
+            service_id = str(service_id)
+        except Exception as exp:
+            error_title = "Unsupported service_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        try:
+            link_id = str(link_id)
+        except Exception as exp:
+            error_title = "Unsupported link_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+        try:
+            consent_id = str(consent_id)
+        except Exception as exp:
+            error_title = "Unsupported consent_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Get Consent Record
+        try:
+            logger.info("Fetching Consent Record")
+            cr = get_cr(cr_id=consent_id, subject_id=service_id, slr_id=link_id)
+        except IndexError as exp:
+            error_title = "Consent Record not found with provided information"
+            error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}.".format(service_id, link_id, consent_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No Consent Record found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Consent Record Fetched")
+
+        # Get last Consent Status Record
+        try:
+            logger.info("Fetching last Consent Status Record")
+            csr_dict = get_last_cr_status(consent_id=consent_id)
+        except IndexError as exp:
+            error_title = "Consent Status Record not found with provided information"
+            error_detail = "Consent ID was {}".format(consent_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "No Consent Status Record found"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Last Consent Status Record Fetched")
+            logger.debug("Consent Status Record: " + json.dumps(csr_dict))
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = csr_dict
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + json.dumps(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
 
 # Register resources
 api.add_resource(
@@ -2098,6 +2552,44 @@ api.add_resource(
     '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/last',
     '/accounts/<string:account_id>/consents/<string:consent_id>/statuses/last/',
     endpoint='authorisation_account_consent_status_last'
+)
+
+## For Service
+
+
+api.add_resource(
+    ApiConsentsForService,
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents',
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/',
+    endpoint='authorisation_service_consents'
+)
+
+api.add_resource(
+    ApiConsentForService,
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/<string:consent_id>',
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/',
+    endpoint='authorisation_service_consent'
+)
+
+api.add_resource(
+    ApiConsentStatusesForService,
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/statuses',
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/statuses/',
+    endpoint='authorisation_service_consent_statuses'
+)
+
+api.add_resource(
+    ApiConsentStatusForService,
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/statuses/<string:status_id>',
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/statuses/<string:status_id>/',
+    endpoint='authorisation_service_consent_status'
+)
+
+api.add_resource(
+    ApiConsentStatusLastForService,
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/statuses/last',
+    '/services/<string:service_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/statuses/last/',
+    endpoint='authorisation_service_consent_status_last'
 )
 
 
