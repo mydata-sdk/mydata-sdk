@@ -2,30 +2,12 @@
 
 # Import dependencies
 import json
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-from random import randint
-from time import time
-
-# Import flask dependencies
-from flask import Blueprint, render_template, make_response, flash, session, current_app
-from flask_login import login_user, login_required
-from flask_restful import Resource, Api, reqparse
-
-# Import the database object
 from app.app_modules import db
-
-# Import services
-from app.helpers import get_custom_logger, ApiError, get_utc_time
+from app.helpers import get_custom_logger, ApiError
 from app.mod_blackbox.controllers import get_account_public_key, generate_and_sign_jws
-from app.mod_database.helpers import get_db_cursor, get_last_csr_id, get_csr_ids, get_account_id_by_csr_id, \
+from app.mod_database.helpers import get_db_cursor, get_last_csr_id, get_account_id_by_csr_id, \
     get_consent_ids, get_last_consent_id, get_consent_status_ids, get_consent_status_id_filter
-
-# create logger with 'spam_application'
-from app.mod_database.models import SurrogateId, ConsentRecord, ServiceLinkRecord, ConsentStatusRecord, Account
+from app.mod_database.models import ConsentRecord, ServiceLinkRecord, ConsentStatusRecord, Account
 
 logger = get_custom_logger(__name__)
 
@@ -371,7 +353,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
         cursor = get_db_cursor()
     except Exception as exp:
         logger.error('Could not get database cursor: ' + repr(exp))
-        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+        raise
 
     # Get Sink's CR from DB
     try:
@@ -380,30 +362,29 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
     except Exception as exp:
         error_title = "Failed to fetch Sink's CR from DB"
         logger.error(error_title + ": " + repr(exp))
-        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+        raise
     else:
         logger.debug("sink_cr_object: " + sink_cr_object.log_entry)
 
     # Get required id's from Sink's CR
     try:
         logger.info("Get required id's from Sink's CR")
-        sink_rs_id = str(sink_cr_object.resource_set_id)
         sink_slr_primary_key = str(sink_cr_object.service_link_records_id)
     except Exception as exp:
         error_title = "Failed to get id's from Sink's CR"
         logger.error(error_title + ": " + repr(exp))
-        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        raise
     else:
-        logger.debug("sink_rs_id: " + sink_rs_id)
+        logger.debug("sink_slr_primary_key: " + sink_slr_primary_key)
 
     # Init Source's Consent Record Object
     try:
         logger.info("Init Source's Consent Record Object")
-        source_cr_entry = ConsentRecord(resource_set_id=sink_rs_id, role="Source")
+        source_cr_entry = ConsentRecord(consent_pair_id=sink_cr_object.consent_id, accounts_id=sink_cr_object.accounts_id, role="Source")
     except Exception as exp:
         error_title = "Failed to create Source's Consent Record object"
         logger.error(error_title + ": " + repr(exp))
-        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        raise
     else:
         logger.debug("source_cr_entry: " + source_cr_entry.log_entry)
 
@@ -414,18 +395,18 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
     except Exception as exp:
         error_title = "Failed to fetch Source's CR from DB"
         logger.error(error_title + ": " + repr(exp))
-        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        raise
     else:
         logger.debug("source_cr_entry: " + source_cr_entry.log_entry)
 
     # Init Sink's Service Link Record Object
     try:
         logger.info("Init Sink's Service Link Record Object")
-        sink_slr_entry = ServiceLinkRecord(id=sink_slr_primary_key)
+        sink_slr_entry = ServiceLinkRecord(id=sink_slr_primary_key, service_link_record_id=sink_cr_object.service_link_record_id)
     except Exception as exp:
         error_title = "Failed to create Source's Service Link Record object"
         logger.error(error_title + ": " + repr(exp))
-        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        raise
     else:
         logger.debug("sink_slr_entry: " + sink_slr_entry.log_entry)
 
@@ -436,7 +417,7 @@ def get_auth_token_data(sink_cr_object=None, endpoint="get_auth_token_data()"):
     except Exception as exp:
         error_title = "Failed to fetch Sink's SLR from DB"
         logger.error(error_title + ": " + repr(exp))
-        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        raise
     else:
         logger.debug("sink_slr_entry: " + sink_slr_entry.log_entry)
 

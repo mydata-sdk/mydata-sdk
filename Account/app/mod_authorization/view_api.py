@@ -12,31 +12,15 @@ __status__ = "Development"
 """
 
 # Import dependencies
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-from random import randint
-
-# Import flask dependencies
-import time
-from flask import Blueprint, render_template, make_response, flash, session, request, jsonify, url_for, json, current_app
-from flask_login import login_user, login_required
-from flask_restful import Resource, Api, reqparse
-from base64 import b64decode
-
-# Import services
+from flask import Blueprint, request, json
+from flask_restful import Resource, Api
 from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids
 from app.mod_account.controllers import verify_account_id_match
-from app.mod_api_auth.controllers import requires_api_auth_user, get_account_id_by_api_key, provide_api_key, \
-    requires_api_auth_sdk, get_user_api_key, get_sdk_api_key
+from app.mod_api_auth.controllers import requires_api_auth_user, requires_api_auth_sdk, get_user_api_key, \
+    get_sdk_api_key
 from app.mod_authorization.schemas import schema_consent_new, schema_consent_status_new, \
     schema_consent_status_signed_new
-from app.mod_blackbox.controllers import sign_jws_with_jwk, generate_and_sign_jws, get_account_public_key, \
-    verify_jws_signature_with_jwk
-from app.mod_database.helpers import get_db_cursor
-from app.mod_database.models import ServiceLinkRecord, ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord
+from app.mod_database.models import ServiceLinkRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
     get_last_cr_status, store_csr, get_csrs, get_crs, get_cr, get_last_cr, get_csr
 
@@ -516,79 +500,6 @@ class ApiAccountConsent(Resource):
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
-
-
-class AuthorizationTokenData(Resource):
-    @requires_api_auth_user
-    @requires_api_auth_sdk
-    def get(self, sink_cr_id):
-
-        try:
-            endpoint = str(api.url_for(self, sink_cr_id=sink_cr_id))
-        except Exception as exp:
-            endpoint = str(__name__)
-
-        try:
-            api_key = request.headers.get('Api-Key')
-        except Exception as exp:
-            logger.error("No ApiKey in headers")
-            logger.debug("No ApiKey in headers: " + repr(repr(exp)))
-            return provide_api_key(endpoint=endpoint)
-
-        try:
-            sink_cr_id = str(sink_cr_id)
-        except Exception as exp:
-            raise ApiError(code=400, title="Unsupported sink_cr_id", detail=repr(exp), source=endpoint)
-        else:
-            logger.debug("sink_cr_id: " + repr(sink_cr_id))
-
-        # Init Sink's Consent Record Object
-        try:
-            sink_cr_entry = ConsentRecord(consent_id=sink_cr_id, role="Sink")
-        except Exception as exp:
-            error_title = "Failed to create Sink's Consent Record object"
-            logger.error(error_title + ": " + repr(exp))
-            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        else:
-            logger.debug("sink_cr_entry: " + sink_cr_entry.log_entry)
-
-        try:
-            source_cr, sink_slr = get_auth_token_data(sink_cr_object=sink_cr_entry)
-        except Exception as exp:
-            error_title = "Failed to get Authorization token data"
-            logger.error(error_title + ": " + repr(exp))
-            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-        else:
-            logger.debug("source_cr: " + source_cr.log_entry)
-            logger.debug("sink_slr: " + sink_slr.log_entry)
-
-
-        # Response data container
-        try:
-            response_data = {}
-            response_data['data'] = {}
-
-            response_data['data']['source'] = {}
-            response_data['data']['source']['consentRecord'] = {}
-            response_data['data']['source']['consentRecord']['type'] = "ConsentRecord"
-            response_data['data']['source']['consentRecord']['attributes'] = {}
-            response_data['data']['source']['consentRecord']['attributes']['cr'] = source_cr.to_record_dict
-
-            response_data['data']['sink'] = {}
-            response_data['data']['sink']['serviceLinkRecord'] = {}
-            response_data['data']['sink']['serviceLinkRecord']['type'] = "ServiceLinkRecord"
-            response_data['data']['sink']['serviceLinkRecord']['attributes'] = {}
-            response_data['data']['sink']['serviceLinkRecord']['attributes']['slr'] = sink_slr.to_record_dict
-        except Exception as exp:
-            logger.error('Could not prepare response data: ' + repr(exp))
-            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
-        else:
-            logger.info('Response data ready')
-            logger.debug('response_data: ' + json.dumps(response_data))
-
-        response_data_dict = dict(response_data)
-        logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
-        return make_json_response(data=response_data_dict, status_code=200)
 
 
 class ApiAccountConsentStatus(Resource):
@@ -2454,6 +2365,82 @@ class ApiConsentStatusLastForService(Resource):
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
 
+##
+# Authorisation token
+
+
+class AuthorisationTokenData(Resource):
+    @requires_api_auth_sdk
+    def get(self, consent_id):
+        """
+        Fetch data needed to construct Authorisation token.
+
+        :param consent_id: 
+        :return: 
+        """
+        try:
+            endpoint = str(api.url_for(self, consent_id=consent_id))
+        except Exception as exp:
+            endpoint = str(__name__)
+        finally:
+            logger.info("Request to: " + str(endpoint))
+
+        logger.info("Fetching SDK API Key")
+        api_key_sdk = get_sdk_api_key(endpoint=endpoint)
+        logger.debug("api_key_sdk: " + api_key_sdk)
+
+        # Check path variables
+        try:
+            consent_id = str(consent_id)
+        except Exception as exp:
+            error_title = "Unsupported consent_id"
+            logger.error(error_title + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+
+        # Init Sink's Consent Record Object
+        try:
+            sink_cr_entry = ConsentRecord(consent_id=consent_id, role="Sink")
+        except Exception as exp:
+            error_title = "Failed to create Sink's Consent Record object"
+            logger.error(error_title + ": " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        else:
+            logger.debug("sink_cr_entry: " + sink_cr_entry.log_entry)
+
+        try:
+            source_cr, sink_slr = get_auth_token_data(sink_cr_object=sink_cr_entry)
+        except IndexError as exp:
+            error_title = "Required data for Authorisation token could not be collected with provided information"
+            error_detail = "Consent ID was {}".format(consent_id)
+            logger.error(error_title + " - " + error_detail + ": " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "Could not get data for Authorisation token"
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("Authorisation token data Fetched")
+            logger.debug("Source Service's Consent Record: " + source_cr.log_entry)
+            logger.debug("Sink Service's Service Link Record: " + sink_slr.log_entry)
+
+        # Response data container
+        try:
+            response_data = {}
+            response_data['data'] = {}
+            response_data['data']['consent_record'] = source_cr.to_api_dict
+            response_data['data']['service_link_record'] = sink_slr.to_api_dict
+        except Exception as exp:
+            logger.error('Could not prepare response data: ' + repr(exp))
+            raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
+        else:
+            logger.info('Response data ready')
+            logger.debug('response_data: ' + json.dumps(response_data))
+
+        response_data_dict = dict(response_data)
+        logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
 
 # Register resources
 api.add_resource(
@@ -2592,7 +2579,9 @@ api.add_resource(
     endpoint='authorisation_service_consent_status_last'
 )
 
-
-
-#api.add_resource(AuthorizationTokenData, '/consents/<string:sink_cr_id>/authorizationtoken/', endpoint='mydata-authorizationtoken')
+api.add_resource(
+    AuthorisationTokenData,
+    '/consents/<string:consent_id>/authorisationtoken/',
+    endpoint='authorisation-token'
+)
 

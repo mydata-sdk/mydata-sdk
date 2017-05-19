@@ -2497,14 +2497,14 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/ConsentStatusRecord'
-          
+
   AuthorisationTokenResponse:
     type: object
     properties:
       data:
         type: object
         properties:
-          consentRecord:
-              $ref: '#/definitions/ConsentRecordGeneral'
-          serviceLinkRecord:
-              $ref: '#/definitions/Slr'
+          consent_record:
+              $ref: '#/definitions/ConsentRecordSource'
+          service_link_record:
+              $ref: '#/definitions/SlrDoubleSigned'
