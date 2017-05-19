@@ -300,9 +300,9 @@ def drop_table_content():
             return True
 
 
-def mark_account_as_deleted(account_id=None):
+def delete_account_from_database(account_id=None):
     """
-    Marks all entries related to Account as deleted
+    Delete all entries related to Account
     """
     logger.info("Executing")
     if account_id is None:
@@ -326,9 +326,9 @@ def mark_account_as_deleted(account_id=None):
     #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
 
     # TODO: This might be good to implement with separate arguments
-    sql_query_for_account_table = "UPDATE MyDataAccount.Accounts SET deleted = 1 WHERE id = {0};".format(account_id)
+    sql_query_for_account_table = "DELETE FROM MyDataAccount.Accounts WHERE id = {0};".format(account_id)
 
-    sql_query = "SELECT Concat('UPDATE ',table_schema,'.',TABLE_NAME, ' SET deleted = 1 ', 'WHERE Accounts_id = %s',';') " \
+    sql_query = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, ' ', 'WHERE Accounts_id = %s',';') " \
                 "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
 
     arguments = (
@@ -351,6 +351,9 @@ def mark_account_as_deleted(account_id=None):
         logger.debug("Fetched sql_queries: " + repr(sql_queries))
 
         try:
+            logger.debug("SET FOREIGN_KEY_CHECKS = 0;")
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+
             for query in sql_queries:
                 if "MyDataAccount.Accounts" in query[0]:  # MyDataAccount.Accounts table has to skipped here because missing table column "Accounts_id"
                     logger.debug("Skipping MyDataAccount.Accounts table because missing table column Accounts_id")
@@ -364,10 +367,14 @@ def mark_account_as_deleted(account_id=None):
         except Exception as exp:
             logger.debug('Error in SQL query execution: ' + repr(exp))
             db.connection.rollback()
+            logger.debug("SET FOREIGN_KEY_CHECKS = 1;")
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
             raise
         else:
             db.connection.commit()
             logger.debug("Committed")
+            logger.debug("SET FOREIGN_KEY_CHECKS = 1;")
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
             return True
 
 

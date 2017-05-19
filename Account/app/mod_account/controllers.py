@@ -11,9 +11,11 @@ from app.app_modules import db
 # Import services
 from app.helpers import get_custom_logger, ApiError
 from app.mod_api_auth.controllers import get_account_id_by_api_key, gen_account_api_key
+from app.mod_api_auth.services import delete_entry_from_apikey_sqlite_db
 from app.mod_blackbox.controllers import gen_account_key
+from app.mod_blackbox.services import clear_blackbox_sqlite_db, delete_entry_from_blackbox_sqlite_db
 from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id, get_slr_ids, \
-    get_slsr_ids, get_cr_ids, get_csr_ids, mark_account_as_deleted
+    get_slsr_ids, get_cr_ids, get_csr_ids, delete_account_from_database
 
 # create logger with 'spam_application'
 from app.mod_database.models import Particulars, EventLog, ServiceLinkRecord, \
@@ -178,15 +180,38 @@ def create_account(first_name=None, last_name=None, username=None, password=None
 def delete_account(account_id=None):
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
-
-    # Get primary keys for particulars
     try:
-        mark_account_as_deleted(account_id=account_id)
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+
+    # Delete account from MySQL database
+    try:
+        logger.info("Deleting Account data from MySQL database")
+        delete_account_from_database(account_id=account_id)
     except Exception as exp:
         logger.error('Could not mark Account as deleted: ' + repr(exp))
         raise
     else:
         logger.info("Account marked as deleted")
+
+    try:
+        logger.info("Deleting Account data from Blackbox database")
+        delete_entry_from_blackbox_sqlite_db(account_id=account_id)
+    except Exception as exp:
+        logger.error("Could not delete Account data from Blackbox Database: " + repr(exp))
+        raise
+    else:
+        logger.info("Account data deleted from Blackbox Database")
+
+    try:
+        logger.info("Deleting Account data from ApiKey database")
+        delete_entry_from_apikey_sqlite_db(account_id=account_id)
+    except Exception as exp:
+        logger.error("Could not delete Account data from ApiKey Database: " + repr(exp))
+        raise
+    else:
+        logger.info("Account data deleted from ApiKey Database")
         return True
 
 

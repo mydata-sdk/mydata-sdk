@@ -218,17 +218,14 @@ class AccountDelete(Resource):
 
         # Delete Account
         try:
-            logger.info("Marking Account as deleted")
+            logger.info("Deleting Account")
             delete_account(account_id=account_id)
         except Exception as exp:
-            error_title = "Could not mark Account as deleted"
+            error_title = "Could not delete Account completely"
             logger.error(error_title + repr(exp))
             raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
         else:
-            logger.info("Particulars Fetched")
-            logger.info("Particulars: ")
-
-        # TODO: Remove API-Key of Account owner
+            logger.info("Account Deleted")
 
         # Response data container
         try:

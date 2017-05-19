@@ -52,14 +52,11 @@ class ApiKeyUser(Resource):
             logger.info("User not authenticated")
             return False
 
-
     @staticmethod
     def authenticate():
-        """Sends a 401 response that enables basic auth"""
-        headers = {'WWW-Authenticate': 'Basic realm="Login Required"'}
-        body = 'Could not verify your access level for that URL. \n You have to login with proper credentials'
-        logger.info("Authentication required")
-        return make_response(body, 401, headers)
+        """Sends a 401 response that can be used to enable authentication"""
+        logger.info("Unauthorized - Authentication required")
+        raise ApiError(code=401, title="Unauthorized", detail="Could not verify your access level")
 
     def get(self):
         try:
