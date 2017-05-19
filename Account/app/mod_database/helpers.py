@@ -675,23 +675,32 @@ def get_csr_ids(cursor=None, cr_id=None, csr_primary_key=None, table_name=None):
         return cursor, id_list
 
 
-def get_last_csr_id(cursor=None, cr_id=None, table_name=None):
+def get_last_csr_id(cursor=None, consent_id=None, account_id="", table_name=None):
     logger.info("Executing")
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
-    if cr_id is None:
-        raise AttributeError("Provide cr_id as parameter")
     if table_name is None:
         raise AttributeError("Provide table_name as parameter")
+
+    try:
+        consent_id = str(consent_id)
+    except Exception:
+        raise TypeError("consent_id MUST be str, not " + str(type(consent_id)))
+    try:
+        account_id = int(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be int, not " + str(type(account_id)))
 
     sql_query = "SELECT consentStatusRecordId " \
                 "FROM " + table_name + " " \
                 "WHERE consentRecordId LIKE %s " \
+                "AND Accounts_id = %s " \
                 "ORDER BY id DESC " \
                 "LIMIT 1;"
 
     arguments = (
-        '%' + str(cr_id) + '%',
+        '%' + str(consent_id) + '%',
+        int(account_id),
     )
 
     try:
