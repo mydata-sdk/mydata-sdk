@@ -708,12 +708,59 @@ paths:
           type: string
           description: 'Service Link ID'
           required: true
-        - name: status_id
+        - name: get_consent_pair
           in: query
-          type: string
-          description: "Last valid Consent Status Record ID"
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
           required: false
-        - name: getConsentPairs
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Records'
+          schema:
+            $ref: '#/definitions/ConsentArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No Service Link with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Record'
+      description: "Fetch Consent Record related to Service Link Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: get_consent_pair
           in: query
           type: boolean
           description: "If true also Consent pairs will be fetched"
@@ -760,7 +807,7 @@ paths:
           type: string
           description: 'Service Link ID'
           required: true
-        - name: getConsentPairs
+        - name: get_consent_pair
           in: query
           type: boolean
           description: "If true also Consent pairs will be fetched"
@@ -773,7 +820,7 @@ paths:
         '200':
           description: 'Array of Consent Records'
           schema:
-            $ref: '#/definitions/ConsentResponse'
+            $ref: '#/definitions/ConsentArray'
         '400':
           description: 'Bad Request'
           schema:
@@ -786,6 +833,158 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Status Records'
+      description: "Fetch list of Consent Status Records"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Consent Status Record ID"
+          required: false
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Status Records'
+          schema:
+            $ref: '#/definitions/ConsentStatusArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/{status_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Status Record'
+      description: "Fetch Consent Status Record by ID"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: status_id
+          in: path
+          type: string
+          description: 'Consent Status ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/last/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get last Consent Status Record'
+      description: "Fetch last Consent Status Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
 
 
   /accounts/{account_id}/consents/:
@@ -807,7 +1006,7 @@ paths:
           type: string
           description: "Last valid Consent Status Record ID"
           required: false
-        - name: getConsentPair
+        - name: get_consent_pair
           in: query
           type: boolean
           description: "If true also Consent pairs will be fetched"
@@ -854,10 +1053,10 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
-        - name: getConsentPair
+        - name: get_consent_pair
           in: query
           type: boolean
-          description: "If true also Consent pair will be fetched"
+          description: "If true also Consent pairs will be fetched"
           required: false
 
       tags:
@@ -867,7 +1066,7 @@ paths:
         '200':
           description: 'Consent Record'
           schema:
-            $ref: '#/definitions/ConsentResponse'
+            $ref: '#/definitions/ConsentArray'
         '400':
           description: 'Bad Request'
           schema:
@@ -950,6 +1149,11 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Consent Status Record ID"
+          required: false
 
       tags:
         - Consenting - Fetch
@@ -1252,11 +1456,6 @@ paths:
           type: string
           description: 'Service Link ID'
           required: true
-        - name: getConsentPair
-          in: query
-          type: boolean
-          description: "If true also Consent pairs will be fetched"
-          required: false
 
       tags:
         - Consenting - Fetch
@@ -1304,11 +1503,6 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
-        - name: getConsentPair
-          in: query
-          type: boolean
-          description: "If true also Consent pair will be fetched"
-          required: false
 
       tags:
         - Consenting - Fetch
@@ -1330,6 +1524,159 @@ paths:
           description: 'General Error'
           schema:
             $ref: '#/definitions/error'
+
+
+  /services/{service_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Status Records'
+      description: "Fetch list of Consent Status Records"
+
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          description: 'Service ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Consent Status Record ID"
+          required: false
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Array of Consent Status Records'
+          schema:
+            $ref: '#/definitions/ConsentStatusArray'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /services/{service_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/{status_id}/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get Consent Status Record'
+      description: "Fetch Consent Status Record by ID"
+
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          description: 'Service ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+        - name: status_id
+          in: path
+          type: string
+          description: 'Consent Status ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
+  /services/{service_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/last/:
+    get:
+      security:
+        - apiKeyClient: []
+        - apiKeyUser: []
+      summary: 'Get last Consent Status Record'
+      description: "Fetch last Consent Status Record"
+
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          description: 'Service ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - Consenting - Fetch
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/ConsentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/error'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/error'
+
+
 
 
 definitions:
@@ -2075,16 +2422,16 @@ definitions:
           source:
             type: object
             properties:
-              consentRecord:
+              consent_record:
                   $ref: '#/definitions/ConsentRecordSource'
-              consentStatusRecord:
+              consent_status_record:
                 $ref: '#/definitions/ConsentStatusRecord'
           sink:
             type: object
             properties:
-              consentRecord:
+              consent_record:
                   $ref: '#/definitions/ConsentRecordSink'
-              consentStatusRecord:
+              consent_status_record:
                 $ref: '#/definitions/ConsentStatusRecord'
 
   ConsentResponse:
@@ -2099,19 +2446,43 @@ definitions:
       data:
         type: array
         items:
-          $ref: '#/definitions/ConsentResponse'
+          $ref: '#/definitions/ConsentRecordGeneral'
 
   newConsentStatusRequest:
     type: object
     properties:
       data:
         $ref: '#/definitions/newConsentStatus'
-        
+
   newConsentStatusSignedRequest:
     type: object
     properties:
       data:
-        $ref: '#/definitions/ConsentStatusRecord'
+        type: object
+        properties:
+          csr:
+            $ref: '#/definitions/ConsentStatusRecord'
+          csr_payload:
+            type: object
+            properties:
+              attributes:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  record_id:
+                    type: string
+                  surrogate_id:
+                    type: string
+                  cr_id:
+                    type: string
+                  consent_status:
+                    type: string
+                  iat:
+                    type: integer
+                    format: int32
+                  prev_record_id:
+                    type: string
 
   ConsentStatusResponse:
     type: object
@@ -2126,14 +2497,14 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/ConsentStatusRecord'
-          
+
   AuthorisationTokenResponse:
     type: object
     properties:
       data:
         type: object
         properties:
-          consentRecord:
-              $ref: '#/definitions/ConsentRecordGeneral'
-          serviceLinkRecord:
-              $ref: '#/definitions/Slr'
+          consent_record:
+              $ref: '#/definitions/ConsentRecordSource'
+          service_link_record:
+              $ref: '#/definitions/SlrDoubleSigned'

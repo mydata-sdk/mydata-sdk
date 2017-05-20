@@ -20,7 +20,7 @@ schema_consent_new = {
       "properties": {
         "sink": {
           "properties": {
-            "consentRecordPayload": {
+            "consent_record_payload": {
               "properties": {
                 "attributes": {
                   "properties": {
@@ -175,7 +175,7 @@ schema_consent_new = {
               ],
               "type": "object"
             },
-            "consentStatusRecordPayload": {
+            "consent_status_record_payload": {
               "properties": {
                 "attributes": {
                   "properties": {
@@ -224,14 +224,14 @@ schema_consent_new = {
             }
           },
           "required": [
-            "consentRecordPayload",
-            "consentStatusRecordPayload"
+            "consent_record_payload",
+            "consent_status_record_payload"
           ],
           "type": "object"
         },
         "source": {
           "properties": {
-            "consentRecordPayload": {
+            "consent_record_payload": {
               "properties": {
                 "attributes": {
                   "properties": {
@@ -385,7 +385,7 @@ schema_consent_new = {
               ],
               "type": "object"
             },
-            "consentStatusRecordPayload": {
+            "consent_status_record_payload": {
               "properties": {
                 "attributes": {
                   "properties": {
@@ -434,8 +434,8 @@ schema_consent_new = {
             }
           },
           "required": [
-            "consentRecordPayload",
-            "consentStatusRecordPayload"
+            "consent_record_payload",
+            "consent_status_record_payload"
           ],
           "type": "object"
         }
@@ -453,5 +453,174 @@ schema_consent_new = {
   "type": "object"
 }
 
+schema_consent_status_new = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "attributes": {
+          "properties": {
+            "consent_status": {
+              "type": "string"
+            },
+            "cr_id": {
+              "type": "string"
+            },
+            "iat": {
+              "type": "integer"
+            },
+            "prev_record_id": {
+              "type": "string"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "surrogate_id": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "cr_id",
+            "surrogate_id",
+            "prev_record_id",
+            "version",
+            "record_id",
+            "iat",
+            "consent_status"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "attributes",
+        "type"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
 
+
+schema_consent_status_signed_new = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "csr": {
+          "properties": {
+            "attributes": {
+              "properties": {
+                "header": {
+                  "properties": {
+                    "kid": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kid"
+                  ],
+                  "type": "object"
+                },
+                "payload": {
+                  "type": "string"
+                },
+                "protected": {
+                  "type": "string"
+                },
+                "signature": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "header",
+                "protected",
+                "payload",
+                "signature"
+              ],
+              "type": "object"
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "attributes",
+            "type",
+            "id"
+          ],
+          "type": "object"
+        },
+        "csr_payload": {
+          "properties": {
+            "attributes": {
+              "properties": {
+                "consent_status": {
+                  "type": "string"
+                },
+                "cr_id": {
+                  "type": "string"
+                },
+                "iat": {
+                  "type": "integer"
+                },
+                "prev_record_id": {
+                  "type": "string"
+                },
+                "record_id": {
+                  "type": "string"
+                },
+                "surrogate_id": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "cr_id",
+                "surrogate_id",
+                "prev_record_id",
+                "version",
+                "record_id",
+                "iat",
+                "consent_status"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "attributes"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "csr_payload",
+        "csr"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
 

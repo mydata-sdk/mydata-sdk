@@ -1,0 +1,16 @@
+# Account specific git ignore list
+
+# Module ApiAuth:
+./mod_api_auth/db/*
+
+# Module BlackBox:
+./mod_blackbox/db/*
+
+# Test results:
+./tests/test-results/*
+
+# Test results:
+./tests/test-results/*
+
+# Database design backup files:
+./doc/database/*.bak
