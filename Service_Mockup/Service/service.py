@@ -200,7 +200,9 @@ class UserLogin(Resource):
 
         except Exception as e:
             raise e
-        return redirect("{}".format(decode64(args["return_url"])), code=302)
+        reply_json = loads(linking_result.text)
+        debug_log.info("Encoding json as reply to ui: \n{}".format(reply_json))
+        return redirect("{}?results={}".format(decode64(args["return_url"]), encode64(reply_json)), code=302)
 
 
 class RegisterSur(Resource):

@@ -229,7 +229,12 @@ class AccountManagerHandler:
                                         title="Not Found")
 
         debug_log.info("Fetching SLR for link id '{}' that belongs to account '{}'".format(slr_id, account_id))
-        slr = get(self.url + self.endpoint["fetch_slr"].replace("{account_id}", account_id).replace("{slr_id}", slr_id))
+        slr = get(self.url + self.endpoint["fetch_slr"]
+                  .replace("{account_id}", account_id)
+                  .replace("{link_id}", slr_id),
+                  headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                  timeout=self.timeout,
+                  )
         debug_log.info("Request resulted in status {} and content:\n {}".format(slr.status_code, slr.text))
         if slr.ok:
             return loads(slr.text)
@@ -238,7 +243,8 @@ class AccountManagerHandler:
                                         detail={"msg": "Couldn't find SLR with given id."},
                                         title="Not Found")
 
-    def get_crs(self, slr_id, account_id):
+    def get_crs(self, slr_id, account_id, pairs=False):
+        return {"data": [{"id": "blaa"}, {"id": "Bleh"}]}  # Todo: This is for dev stuff, remove this!
 
         if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
             debug_log.error("Account ID mismatch.\n"
@@ -247,17 +253,28 @@ class AccountManagerHandler:
                                         detail={"msg": "Couldn't find SLR with given id."},
                                         title="Not Found")
         debug_log.info("Fetching CR's for link id '{}' that belongs to account '{}'".format(slr_id, account_id))
+        query = ""
+        if pairs:
+            query = "?get_consent_pair=true"
+
         consents = get(self.url + self.endpoint["fetch_consents"]
-                  .replace("{account_id}", account_id)
-                  .replace("{slr_id}", slr_id))
+                       .replace("{account_id}", account_id)
+                       .replace("{link_id}", slr_id)+query,
+                       headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                       timeout=self.timeout,
+                       )
         debug_log.info("Request resulted in status {} and content:\n {}".format(consents.status_code, consents.text))
         if consents.ok:
             return loads(consents.text)
         else:
+            debug_log.info("Fetching consents failed with: {}"
+                           .format([consents.status_code, consents.reason, consents.text]))
             raise DetailedHTTPException(status=404,
                                         detail={"msg": "Couldn't find SLR with given id."},
                                         title="Not Found")
 
+    def get_cr_pair(self, cr_id):
+        pass
 
     def get_AuthTokenInfo(self, cr_id):
         req = get(self.url + self.endpoint["auth_token"]

@@ -2,8 +2,10 @@
 
 import json
 import argparse, time
-from requests import get, post
+from requests import get, post, delete
 from uuid import uuid4
+from base64 import urlsafe_b64decode as decode
+from base64 import urlsafe_b64encode as encode
 
 # TODO: Maybe these should be given as parameters
 #Service_ID_Source   = "57f3a57b0cf2fcf22eea33a2"  # MyLocation
@@ -89,6 +91,8 @@ def create_service_link(operator_url, service_id, user_key):
     #print(slr_flow.history)
     print("We made a request to:", slr_flow.history[0].url)
     print("It returned us url:", slr_flow.url)
+    print(slr_flow.url, slr_flow.reason, slr_flow.status_code, slr_flow.text)
+
     print("Extracting parameters from the url...")
     params = slr_flow.url.split("/")[-1].split("?")[-1].split("&")
     params_dict = {}
@@ -100,8 +104,16 @@ def create_service_link(operator_url, service_id, user_key):
     print("Adding Debug Credentials to the data for posting..")
     params_dict["Email"] = "Matti"
     params_dict["Password"] = "Uusio"
+
+
     print("POSTing the data to the Service Mockup Login (Simulating filling the form and hitting Submit")
     result = post(slr_flow.url.split("?")[0], json=params_dict, auth=(params_dict["Email"], params_dict["Password"""]))
+    print(result.url, result.reason, result.status_code, result.text)
+    print("Parsing response JSON from query parameters..")
+    base = result.url.split("results=")[1]
+    base = decode(str(base))
+    print("Result decoded to: \n{}".format(base))
+    decoded_json = json.loads(base)
 
     # if not slr_flow.ok:
     #     print("Creation of first SLR failed with status ({}) reason ({}) and the following content:\n{}".format(
@@ -114,9 +126,15 @@ def create_service_link(operator_url, service_id, user_key):
         print(result.url, result.reason, result.status_code, result.text)
     if not slr_flow.ok:
         print(slr_flow.url, slr_flow.reason, slr_flow.status_code, slr_flow.text)
-    return
+    return decoded_json
 
-
+def remove_slr(operatorl_url, user_key, slr_id, service_id):
+    print("\n#### REMOVE SERVICE LINK ####")
+    print("Removing SLR: {}".format(slr_id))
+    result = delete("{}api/1.2/slr/account/2/service/{}/slr/{}".format(operatorl_url, service_id, slr_id),
+                    headers={"Api-Key-User": user_key["Api-Key-User"]})
+    print(result.url, result.reason, result.status_code, result.text)
+    return result.text
 # TODO: Refactor and return something.
 # Gives a Consent for these Services by sending a Consent form as JSON-payload to Operator backend.
 # Should print "201 Created" if the Consent was executed succesfully.
@@ -226,6 +244,13 @@ if __name__ == '__main__':
                         action="store_true",
                         required=False)
 
+    help_string_slr_removal = \
+        "Should slr be removed after creation. If consent flow is done this is done after it."
+    parser.add_argument("--remove_slr",
+                        help=help_string_slr_removal,
+                        action="store_true",
+                        required=False)
+
     help_string_skip_consent = \
         "Should consent flow be skipped. It is done by default. Specify this flag to skip it."
     parser.add_argument("--skip_consent",
@@ -284,8 +309,8 @@ if __name__ == '__main__':
 
     # SLR
     if not args.skip_slr:
-        create_service_link(args.operator_url, args.sink_id, user_key)
-        create_service_link(args.operator_url, args.source_id, user_key)
+        slr_1 = create_service_link(args.operator_url, args.sink_id, user_key)
+        slr_2 = create_service_link(args.operator_url, args.source_id, user_key)
 
     # Consent
     if not args.skip_consent:
@@ -294,3 +319,7 @@ if __name__ == '__main__':
         # Debug Data Flow
         if not args.skip_data:
             make_data_request(args.service_url, rs_id)
+
+    if args.remove_slr:
+        result = remove_slr(args.operator_url, user_key, slr_1["data"]["slr"]["id"], args.sink_id)
+        pass

@@ -58,14 +58,14 @@ class SlrStatus(Resource):
             debug_log.info("Verifying User Key resulted: {}".format(key_check))
             try:
                 # Get SLR
-                slr = am.get_slr(account_id, slr_id)
-                consents = am.get_crs(account_id, slr_id)
+                slr = am.get_slr(slr_id, account_id)
+                consents = am.get_crs(slr_id, account_id, pairs=True)
 
                 # Loop trough the consents and fetch pairs.
                 for cr in consents["data"]:
-                    id = cr["data"]["id"]
-
-
+                    cr_id = cr["data"]["id"]
+                    debug_log.info("\nFetching CR pair for CR '{}':\n {}".format(cr_id, cr))
+                    am.get_cr_pair(cr_id)
 
                 return slr
 
@@ -84,7 +84,8 @@ class SlrStatus(Resource):
             except Exception as e:
                 raise e
 
-
+        except DetailedHTTPException as e:
+            raise e
         except Exception as e:
             raise DetailedHTTPException(status=500,
                                         title="Something went really wrong during SLR registration.",
