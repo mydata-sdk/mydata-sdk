@@ -121,12 +121,13 @@ class AccountManagerHandler:
             "sign_slr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
             "verify_slr":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/store/",
             "fetch_slr":        "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
-            "slr_status":       "",
+            "store_slr_change": "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/statuses/",
+            "slr_status":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/statuses/last/",
             "sign_consent":     "api/account/consent/sign/",
             "consent":          "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
             "fetch_consents":   "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/",
             "auth_token":       "api/consent/{sink_cr_id}/authorizationtoken/",
-            "last_csr":         "api/consent/{cr_id}/status/last/",
+            "last_csr":         "account/api/v1.3/internal/accounts/{account_id}/consents/{consent_id}/statuses/last/",
             "new_csr":          "api/consent/{cr_id}/status/"}  # Works as path to GET missing csr and POST new ones
 
 
@@ -243,6 +244,16 @@ class AccountManagerHandler:
                                         detail={"msg": "Couldn't find SLR with given id."},
                                         title="Not Found")
 
+    def get_last_slr_status(self, slr_id):
+        debug_log.info("Fetching last SSR for id '{}'".format(slr_id))
+        req = get(self.url+self.endpoint["slr_status"]
+                  .replace("{account_id}", self.account_id)
+                  .replace("{link_id}", slr_id),
+                  headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key}, timeout=self.timeout)
+        debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
+        if req.ok:
+            return loads(req.text)
+
     def get_crs(self, slr_id, account_id, pairs=False):
         return {"data": [{"data": {"id": "blaa"}}, {"data": {"id": "Bleh"}}]}  # Todo: This is for dev stuff, remove this!
 
@@ -274,6 +285,7 @@ class AccountManagerHandler:
                                         title="Not Found")
 
     def get_cr_pair(self, cr_id):
+        debug_log.info("\nFetching CR pair for CR '{}'".format(cr_id))
         pass
 
     def get_AuthTokenInfo(self, cr_id):
@@ -308,11 +320,14 @@ class AccountManagerHandler:
         return templ
 
     def get_last_csr(self, cr_id):
-        endpoint_url = self.url + self.endpoint["last_csr"].replace("{cr_id}", cr_id)
+        endpoint_url = self.url + self.endpoint["last_csr"]\
+            .replace("{cr_id}", cr_id)\
+            .replace("{account_id}", self.account_id)
         debug_log.debug("" + endpoint_url)
 
         req = get(endpoint_url,
-                  headers={'Api-Key-SDK': self.token},
+                  headers={'Api-Key-Sdk': self.token,
+                           "Api-Key-User": self.user_key},
                   timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
@@ -385,6 +400,43 @@ class AccountManagerHandler:
 
         debug_log.debug(templ)
         return templ
+
+    def create_ssr(self, surrogate_id, slr_id, sl_status, prev_record_id):
+        allowed_statuses = ["Active", "Withdrawn", "Disabled"]
+        if sl_status not in allowed_statuses:
+            raise TypeError("sl_status must be of type {}".format(allowed_statuses))
+        if prev_record_id is None:
+            raise TypeError("prev_record_id must be defined.")
+
+        payload = {
+            "data": {
+                "type": "ServiceLinkStatusRecord",
+                "attributes": {
+                    "version": "1.3",
+                    "surrogate_id": surrogate_id,
+                    "record_id": str(guid()),
+                    "account_id": self.account_id,
+                    "slr_id": slr_id,
+                    "sl_status": sl_status,
+                    "iat": int(time.time()),
+                    "prev_record_id": prev_record_id
+                },
+            }
+        }
+        req = post(self.url+self.endpoint["store_slr_change"]
+                   .replace("{account_id}", self.account_id)
+                   .replace("{link_id}", slr_id),
+                   json=payload,
+                   headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key}, timeout=self.timeout)
+        debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
+        if req.ok:
+            return loads(req.text)
+        else:
+            raise DetailedHTTPException(title="An Error Has occured on the server. Try again later.",
+                                        status=500,
+                                        detail={"msg": "Failed SLR status change."})
+
+
 
     def verify_slr(self, payload, code, slr, account_id):
         templa = {

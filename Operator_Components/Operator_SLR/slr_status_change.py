@@ -11,7 +11,7 @@ from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, base_token_tool
 '''
 
 '''
@@ -59,27 +59,48 @@ class SlrStatus(Resource):
             try:
                 # Get SLR
                 slr = am.get_slr(slr_id, account_id)
+                decoded_slr = base_token_tool.decode_payload(slr["data"]["attributes"]["payload"])
+                surrogate_id = decoded_slr["surrogate_id"]
+                last_ssr = am.get_last_slr_status(slr_id)
+                last_ssr_payload = base_token_tool.decode_payload(last_ssr["data"]["attributes"]["payload"])
+                if last_ssr_payload["sl_status"] != "Active":
+                    raise TypeError("This SLR isn't Active to begin with.")
+                prev_record_id = last_ssr_payload["record_id"]
+                debug_log.info("Got Decoded SLR Payload:\n {}".format(decoded_slr))
                 consents = am.get_crs(slr_id, account_id, pairs=True)
 
                 # Loop trough the consents and fetch pairs.
-                for cr in consents["data"]:
-                    cr_id = cr["data"]["id"]
-                    debug_log.info("\nFetching CR pair for CR '{}':\n {}".format(cr_id, cr))
-                    am.get_cr_pair(cr_id)
-
-                return slr
-
+                # Step redundant since endpoint at Account gives us paired consent as well.
             except Exception as e:
                 raise e
 
             try:
-                # Get CR's
+                def csr_active(csr):
+                    # Implement
+                    return True
+
+                # Get CR statuses
+                crs_to_disable = []
+                if False:  # TODO: Implement once we have real consents
+                    for consent in consents:
+                        cr_id = consent["data"]["id"]
+                        raw_csr = am.get_last_csr(cr_id)
+                        if csr_active(raw_csr):
+                            crs_to_disable.append(cr_id)
+
                 pass
             except Exception as e:
                 raise e
 
             try:
-                # Get CR's
+                # Create new SLR status
+
+                created_ssr = am.create_ssr(surrogate_id=surrogate_id,
+                                            slr_id=slr_id,
+                                            sl_status="Disabled",
+                                            prev_record_id=prev_record_id,
+                                            )
+                return created_ssr
                 pass
             except Exception as e:
                 raise e
