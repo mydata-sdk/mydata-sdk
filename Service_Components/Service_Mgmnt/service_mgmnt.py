@@ -313,7 +313,7 @@ class StoreSLR(Resource):
             debug_log.debug(dumps(store, indent=2))
             payload = decode_payload(store["data"]["slr"]["attributes"]["payload"])
             if surrogate_id == payload["surrogate_id"]:
-                self.helpers.storeJSON({payload["surrogate_id"]: store})
+                self.helpers.storeJSON({payload["slr_id"]: store})
                 endpoint = "/api/1.2/slr/store_slr"
                 debug_log.info("Posting SLR for storage in Service Mockup")
                 result = post("{}{}".format(self.service_url, endpoint), json=store)  # Send copy to Service_Components

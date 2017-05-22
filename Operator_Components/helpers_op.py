@@ -255,7 +255,8 @@ class AccountManagerHandler:
             return loads(req.text)
 
     def get_crs(self, slr_id, account_id, pairs=False):
-        return {"data": [{"data": {"id": "blaa"}}, {"data": {"id": "Bleh"}}]}  # Todo: This is for dev stuff, remove this!
+        # Todo: This is for dev stuff, remove this!
+        return {"data": [{"data": {"id": "blaa"}}, {"data": {"id": "Bleh"}}]}
 
         if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
             debug_log.error("Account ID mismatch.\n"

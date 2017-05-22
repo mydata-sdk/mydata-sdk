@@ -123,27 +123,21 @@ class Helpers:
                 db.close()
                 return None
 
-    def storeJSON(self, DictionaryToStore):
+    def storeJSON(self, json, slr_id, surrogate_id):
         """
         Store SLR into database
-        :param DictionaryToStore: Dictionary in form {"key" : "dict_to_store"}
-        :return: 
+        :param surrogate_id:
+        :param slr_id:
+        :param json:
+        :return:
         """
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info("Storing dictionary:")
-        debug_log.info(DictionaryToStore)
-        for key in DictionaryToStore:
-            debug_log.info("Storing key:")
-            debug_log.info(key)
-            try:
-                cursor.execute("INSERT INTO storage (surrogate_id,json) \
-                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
-                db.commit()
-            except IntegrityError as e:
-                cursor.execute("UPDATE storage SET json=%s WHERE surrogate_id=%s ;",
-                               (dumps(DictionaryToStore[key]), key))
-                db.commit()
+        debug_log.info("Storing SLR '{}' belonging to surrogate_id '{}' with content:\n {}"
+                       .format(slr_id, surrogate_id, json))
+        cursor.execute("INSERT INTO storage (surrogate_id,json,slr_id) \
+            VALUES (%s, %s, %s)", (surrogate_id, dumps(json), slr_id))
+        db.commit()
         db.close()
 
     def storeToken(self, DictionaryToStore):
