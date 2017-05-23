@@ -118,12 +118,10 @@ class Account():
 
         sql_query = "SELECT id, globalIdentifier, activated " \
                     "FROM " + self.table_name + " " \
-                    "WHERE id LIKE %s AND globalIdentifier LIKE %s AND activated LIKE %s;"
+                    "WHERE id = %s;"
 
         arguments = (
-            '%' + str(self.id) + '%',
-            '%' + str(self.global_identifier) + '%',
-            '%' + str(self.activated) + '%',
+            int(self.id),
         )
 
         try:
@@ -845,7 +843,7 @@ class AccountInfo():
     def to_db(self, cursor=""):
 
         sql_query = "INSERT INTO " + self.table_name + " (firstname, lastname, base64Avatar, Accounts_id) " \
-                    "VALUES (%s, %s, %s, %s, %s)"
+                    "VALUES (%s, %s, %s, %s)"
 
         arguments = (
             str(self.firstname),

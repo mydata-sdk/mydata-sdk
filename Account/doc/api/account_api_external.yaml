@@ -831,15 +831,8 @@ definitions:
       attributes:
         type: object
         properties:
-          username:
-            type: string
-            description: Account username
-          firstName:
-            type: string
-            description: User's first name
-          lastName:
-            type: string
-            description: User's last name
+          activated:
+            type: integer
 
   account:
     type: object

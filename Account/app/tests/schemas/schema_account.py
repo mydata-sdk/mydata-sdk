@@ -104,61 +104,26 @@ schema_account_auth = {
 
 schema_account_create = {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "definitions": {},
+  "id": "http://example.com/example.json",
   "properties": {
-    "meta": {
-      "type": "object",
-      "properties": {
-        "activationInstructions": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "activationInstructions"
-      ]
-    },
     "data": {
-      "type": "object",
       "properties": {
         "attributes": {
-          "type": "object",
           "properties": {
-            "username": {
-              "type": "string"
-            },
-            "firstName": {
-              "type": "string"
-            },
-            "lastName": {
-              "type": "string"
-            },
-            "dateOfBirth": {
-              "type": "string"
-            },
-            "acceptTermsOfService": {
-              "type": "boolean"
-            },
-            "password": {
-              "type": "string"
-            },
-            "email": {
-              "type": "string"
+            "activated": {
+              "type": "integer"
             }
           },
           "required": [
-            "username",
-            "firstName",
-            "lastName",
-            "dateOfBirth",
-            "acceptTermsOfService",
-            "password",
-            "email"
-          ]
-        },
-        "type": {
-          "type": "string"
+            "activated"
+          ],
+          "type": "object"
         },
         "id": {
+          "type": "string"
+        },
+        "type": {
           "type": "string"
         }
       },
@@ -166,13 +131,14 @@ schema_account_create = {
         "attributes",
         "type",
         "id"
-      ]
+      ],
+      "type": "object"
     }
   },
   "required": [
-    "meta",
     "data"
-  ]
+  ],
+  "type": "object"
 }
 
 schema_account_create_password_length = {

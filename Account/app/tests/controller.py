@@ -66,7 +66,7 @@ def validate_json(json_object=None, json_schema=None):
         return True
 
 
-def account_create(username=None, password=None, email_length=15, username_length=15, password_length=15, firstname_length=15, lastname_length=15, invalid_email=False, invalid_date=False, invalid_type=False, accept_terms=True):
+def account_create(username=None, password=None, username_length=15, password_length=15, firstname_length=15, lastname_length=15, invalid_type=False):
     """
     Create valid Account
     :return: account, username, password
@@ -78,26 +78,10 @@ def account_create(username=None, password=None, email_length=15, username_lengt
     firstname = generate_string(n=firstname_length)
     lastname = generate_string(n=lastname_length)
 
-    if invalid_email:
-        email = generate_string(n=email_length)
-    else:
-        email = generate_string(n=email_length) + "@examlpe.org"
-
-    if invalid_date:
-        # TODO: Case 20160531
-        date_of_birth = "20163131"
-    else:
-        date_of_birth = "2016-05-31"
-
     if invalid_type:
         resource_type = "Acc"
     else:
         resource_type = "Account"
-
-    if accept_terms:
-        accept_tos = True
-    else:
-        accept_tos = False
 
 
     account = {
@@ -106,11 +90,8 @@ def account_create(username=None, password=None, email_length=15, username_lengt
         "attributes": {
           "firstName": firstname,
           "lastName": lastname,
-          "dateOfBirth": date_of_birth,
-          "email": email,
           "username": username,
-          "password": password,
-          "acceptTermsOfService": accept_tos
+          "password": password
         }
       }
     }
