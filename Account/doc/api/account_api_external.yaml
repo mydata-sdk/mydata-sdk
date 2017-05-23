@@ -810,11 +810,11 @@ definitions:
             description: Account password
             maxLength: 255
             minLength: 8
-          firstName:
+          firstname:
             type: string
             description: User's first name
             maxLength: 255
-          lastName:
+          lastname:
             type: string
             description: User's last name
             maxLength: 255
@@ -826,7 +826,7 @@ definitions:
         type: string
         description: Resource type 'Account'
       id:
-        type: integer
+        type: string
         description: Account ID
       attributes:
         type: object
@@ -841,7 +841,7 @@ definitions:
         type: string
         description: Resource type 'Account'
       id:
-        type: integer
+        type: string
         description: Account ID
       attributes:
         type: object
@@ -854,15 +854,15 @@ definitions:
         type: string
         description: Resource type 'AccountInfo'
       id:
-        type: integer
+        type: string
         description: AccountInfo ID
       attributes:
         type: object
         properties:
-          firstName:
+          firstname:
             type: string
             description: First name
-          lastName:
+          lastname:
             type: string
             description: Last name
           avatar:

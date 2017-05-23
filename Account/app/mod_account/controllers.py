@@ -312,25 +312,25 @@ def get_account_info(account_id=None, id=None, cursor=None):
             raise
 
     try:
-        logger.info("Creating Particulars object")
-        db_entry_object = Particulars(account_id=account_id, id=id)
+        logger.info("Creating AccountInfo object")
+        db_entry_object = AccountInfo(account_id=account_id, id=id)
     except Exception as exp:
-        error_title = "Failed to create Particulars object"
+        error_title = "Failed to create AccountInfo object"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.debug("Particulars object created: " + db_entry_object.log_entry)
+        logger.debug("AccountInfo object created: " + db_entry_object.log_entry)
 
-    # Get particulars from DB
+    # Get AccountInfo from DB
     try:
         cursor = db_entry_object.from_db(cursor=cursor)
     except Exception as exp:
-        error_title = "Failed to fetch Particulars from DB"
+        error_title = "Failed to fetch AccountInfo from DB"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.info("Particulars fetched")
-        logger.info("Particulars fetched from db: " + db_entry_object.log_entry)
+        logger.info("AccountInfo fetched")
+        logger.info("AccountInfo fetched from db: " + db_entry_object.log_entry)
 
     return db_entry_object.to_api_dict
 
@@ -346,7 +346,7 @@ def get_account_infos(account_id=None):
 
     # Get table name
     logger.info("Create db_entry_object")
-    db_entry_object = Particulars()
+    db_entry_object = AccountInfo()
     logger.info(db_entry_object.log_entry)
     logger.info("Get table name")
     table_name = db_entry_object.table_name
@@ -359,15 +359,15 @@ def get_account_infos(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for particulars
+    # Get primary keys for AccountInfo
     try:
         cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
 
-    # Get Account Infos from database
-    logger.info("Get Account Infos from database")
+    # Get AccountInfo objects from database
+    logger.info("Get AccountInfo objects from database")
     db_entry_list = []
     for id in id_list:
         # TODO: try-except needed?
@@ -403,35 +403,34 @@ def update_account_info(account_id=None, id=None, attributes=None, cursor=None):
             raise
 
     try:
-        db_entry_object = Particulars(account_id=account_id, id=id)
+        db_entry_object = AccountInfo(account_id=account_id, id=id)
     except Exception as exp:
-        error_title = "Failed to create Particulars object"
+        error_title = "Failed to create AccountInfo object"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.debug("Particulars object created: " + db_entry_object.log_entry)
+        logger.debug("AccountInfo object created: " + db_entry_object.log_entry)
 
-    # Get particulars from DB
+    # Get AccountInfo from DB
     try:
         cursor = db_entry_object.from_db(cursor=cursor)
     except Exception as exp:
-        error_title = "Failed to fetch Particulars from DB"
+        error_title = "Failed to fetch AccountInfo from DB"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.info("Particulars fetched")
-        logger.info("Particulars fetched from db: " + db_entry_object.log_entry)
+        logger.info("AccountInfo fetched")
+        logger.debug("AccountInfo fetched from db: " + db_entry_object.log_entry)
 
-    # Update Particulars object
+    # Update AccountInfo object
     if len(attributes) == 0:
         logger.info("Empty attributes dict provided. Nothing to update.")
-        return db_entry_object.to_api_dict
+        return db_entry_object
     else:
-        logger.info("Particulars object to update: " + db_entry_object.log_entry)
-
-    # log provided attributes
-    for key, value in attributes.items():
-        logger.debug("attributes[" + str(key) + "]: " + str(value))
+        logger.info("Attributes provided")
+        # log provided attributes
+        for key, value in attributes.items():
+            logger.debug("attributes[" + str(key) + "]: " + str(value))
 
     # Update object attributes
     if "lastname" in attributes:
@@ -450,20 +449,12 @@ def update_account_info(account_id=None, id=None, attributes=None, cursor=None):
         db_entry_object.firstname = new_value
         logger.info(db_entry_object.log_entry)
 
-    if "img_url" in attributes:
-        logger.info("Updating img_url")
-        old_value = str(db_entry_object.img_url)
-        new_value = str(attributes.get("img_url", "None"))
+    if "avatar" in attributes:
+        logger.info("Updating avatar")
+        old_value = str(db_entry_object.avatar)
+        new_value = str(attributes.get("avatar", "None"))
         logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.img_url = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "date_of_birth" in attributes:
-        logger.info("Updating date_of_birth")
-        old_value = str(db_entry_object.date_of_birth)
-        new_value = str(attributes.get("date_of_birth", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.date_of_birth = new_value
+        db_entry_object.avatar = new_value
         logger.info(db_entry_object.log_entry)
 
     # Store updates
@@ -473,7 +464,7 @@ def update_account_info(account_id=None, id=None, attributes=None, cursor=None):
         # Commit
         db.connection.commit()
     except Exception as exp:
-        error_title = "Failed to update Particulars to DB"
+        error_title = "Failed to update AccountInfo to DB"
         logger.error(error_title + ": " + repr(exp))
         logger.debug('commit failed: ' + repr(exp))
         logger.debug('--> rollback')
@@ -481,10 +472,10 @@ def update_account_info(account_id=None, id=None, attributes=None, cursor=None):
         raise
     else:
         logger.debug("Committed")
-        logger.info("Particulars updated")
+        logger.info("AccountInfo updated")
         logger.info(db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object
 
 #
 # ##################################

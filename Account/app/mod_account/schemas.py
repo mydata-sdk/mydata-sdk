@@ -20,13 +20,13 @@ schema_account_new = {
       "properties": {
         "attributes": {
           "properties": {
-            "firstName": {
+            "firstname": {
               "maxLength": 250,
               "minLength": 3,
               "pattern": "[a-zA-Z]+",
               "type": "string"
             },
-            "lastName": {
+            "lastname": {
               "maxLength": 250,
               "minLength": 3,
               "pattern": "[a-zA-Z]+",
@@ -47,9 +47,9 @@ schema_account_new = {
           },
           "required": [
             "username",
-            "lastName",
+            "lastname",
             "password",
-            "firstName"
+            "firstname"
           ],
           "type": "object"
         },
@@ -63,6 +63,49 @@ schema_account_new = {
       "required": [
         "attributes",
         "type"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+
+
+schema_account_info = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "attributes": {
+          "properties": {
+            "avatar": {
+              "type": "string"
+            },
+            "firstname": {
+              "type": "string"
+            },
+            "lastname": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "attributes",
+        "type",
+        "id"
       ],
       "type": "object"
     }

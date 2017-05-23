@@ -88,8 +88,8 @@ def account_create(username=None, password=None, username_length=15, password_le
       "data": {
         "type": resource_type,
         "attributes": {
-          "firstName": firstname,
-          "lastName": lastname,
+          "firstname": firstname,
+          "lastname": lastname,
           "username": username,
           "password": password
         }
@@ -99,6 +99,34 @@ def account_create(username=None, password=None, username_length=15, password_le
     account = json.dumps(account)
 
     return account, username, password
+
+
+def account_info_update(object_id=None, firstname=None, lastname=None, avatar=None):
+    """
+    Create AccountInfo payload
+    :return: JSON object
+    """
+    if object_id is None:
+        object_id = generate_string(n=10)
+
+    payload = {
+      "data": {
+        "type": "AccountInfo",
+        "id": object_id,
+        "attributes": {}
+      }
+    }
+
+    if firstname is not None:
+        payload['data']['attributes']['firstname'] = firstname
+    if lastname is not None:
+        payload['data']['attributes']['lastname'] = lastname
+    if avatar is not None:
+        payload['data']['attributes']['avatar'] = avatar
+
+    payload = json.dumps(payload)
+
+    return payload
 
 
 def generate_sl_init_sink(slr_id=None, misformatted_payload=False):

@@ -9,14 +9,14 @@ from flask import Blueprint, request
 from flask_restful import Resource, Api
 
 # Import services
-from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json
-from app.mod_account.controllers import verify_account_id_match,  get_event_log, get_event_logs, \
+from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids
+from app.mod_account.controllers import verify_account_id_match, get_event_log, get_event_logs, \
     get_slrs, get_slr, get_slsrs, get_slsr, get_cr, get_crs, get_csrs, get_csr, export_account, create_account, \
-    delete_account, get_account
+    delete_account, get_account, get_account_infos, get_account_info, update_account_info
 # from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
 #     EmailsSchema, EmailsSchemaForUpdate, TelephonesSchema, TelephonesSchemaForUpdate, SettingsSchema, \
 #     SettingsSchemaForUpdate
-from app.mod_account.schemas import schema_account_new
+from app.mod_account.schemas import schema_account_new, schema_account_info
 from app.mod_api_auth.controllers import requires_api_auth_user, provide_api_key, get_user_api_key
 
 mod_account_api = Blueprint('account_api', __name__, template_folder='templates')
@@ -53,8 +53,8 @@ class Accounts(Resource):
             logger.info("Getting required data from payload")
             username = json_data['data']['attributes']['username']
             password = json_data['data']['attributes']['password']
-            first_name = json_data['data']['attributes']['firstName']
-            last_name = json_data['data']['attributes']['lastName']
+            first_name = json_data['data']['attributes']['firstname']
+            last_name = json_data['data']['attributes']['lastname']
         except Exception as exp:
             error_title = "Could not get required data from payload"
             error_detail = str(exp.__class__.__name__) + " - " + str(exp.message)
@@ -177,7 +177,7 @@ class AccountDelete(Resource):
         except Exception as exp:
             error_title = "Unsupported account_id"
             logger.error(error_title + repr(exp))
-            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.info("account_id: " + account_id)
 
@@ -230,7 +230,7 @@ class AccountExport(Resource):
         except Exception as exp:
             error_title = "Unsupported account_id"
             logger.error(error_title + repr(exp))
-            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.info("account_id: " + account_id)
 
@@ -288,7 +288,7 @@ class AccountInfos(Resource):
         except Exception as exp:
             error_title = "Unsupported account_id"
             logger.error(error_title)
-            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.info("account_id: " + account_id)
 
@@ -296,17 +296,23 @@ class AccountInfos(Resource):
         if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
             logger.info("Account IDs are matching")
 
-        # Get Particulars
+        # Get AccountInfo
         try:
-            logger.info("Fetching Particulars")
-            db_entries = get_particulars(account_id=account_id)
+            logger.info("Fetching AccountInfo objects")
+            db_entries = get_account_infos(account_id=account_id)
+        except IndexError as exp:
+            error_title = "AccountInfo not found with provided information"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
         except Exception as exp:
-            error_title = "No Particulars found"
-            logger.error(error_title + repr(exp))
-            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+            error_title = "Could not find AccountInfo entry"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
         else:
-            logger.info("Particulars Fetched")
-            logger.info("Particulars: ")
+            logger.info("AccountInfo objects Fetched")
+            logger.info("AccountInfo objects: ")
 
         # Response data container
         try:
@@ -329,7 +335,7 @@ class AccountInfo(Resource):
     @requires_api_auth_user
     def get(self, account_id, info_id):
         try:
-            endpoint = str(account_api.url_for(self, account_id=account_id, particulars_id=particulars_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, info_id=info_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -347,38 +353,45 @@ class AccountInfo(Resource):
         except Exception as exp:
             error_title = "Unsupported account_id"
             logger.error(error_title)
-            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
             logger.info("account_id: " + account_id)
 
         try:
-            particulars_id = str(particulars_id)
+            info_id = str(info_id)
         except Exception as exp:
-            error_title = "Unsupported particulars_id"
-            logger.error(error_title + repr(exp))
-            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
+            error_title = "Unsupported info_id"
+            logger.error(error_title)
+            raise ApiError(code=400, title=error_title, detail=str(exp.message), source=endpoint)
         else:
-            logger.info("particulars_id: " + particulars_id)
+            logger.info("info_id: " + info_id)
 
         # Check if Account IDs from path and ApiKey are matching
         if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
             logger.info("Account IDs are matching")
 
-        # Get Particulars
+        # Get AccountInfo
         try:
-            logger.info("Fetching Particulars")
-            db_entries = get_particular(account_id=account_id, id=particulars_id)
+            logger.info("Fetching AccountInfo")
+            account_info_dict = get_account_info(account_id=account_id, id=info_id)
+        except IndexError as exp:
+            error_title = "AccountInfo not found with provided information"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + repr(exp))
+            raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
         except Exception as exp:
-            error_title = "No Particulars found"
-            logger.error(error_title)
-            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+            error_title = "Could not fetch AccountInfo entry"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
         else:
-            logger.info("Particulars Fetched")
+            logger.info("AccountInfo Fetched")
+            logger.debug("Accountinfo: " + json.dumps(account_info_dict))
 
         # Response data container
         try:
             response_data = {}
-            response_data['data'] = db_entries
+            response_data['data'] = account_info_dict
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
@@ -391,10 +404,9 @@ class AccountInfo(Resource):
         return make_json_response(data=response_data_dict, status_code=200)
 
     @requires_api_auth_user
-    def patch(self, account_id, particulars_id):
-        logger.info("AccountParticular")
+    def patch(self, account_id, info_id):
         try:
-            endpoint = str(account_api.url_for(self, account_id=account_id, particulars_id=particulars_id))
+            endpoint = str(account_api.url_for(self, account_id=account_id, info_id=info_id))
         except Exception as exp:
             endpoint = str(__name__)
 
@@ -417,19 +429,19 @@ class AccountInfo(Resource):
             logger.info("account_id: " + account_id)
 
         try:
-            particulars_id = str(particulars_id)
+            info_id = str(info_id)
         except Exception as exp:
-            error_title = "Unsupported particulars_id"
-            logger.error(error_title + repr(exp))
+            error_title = "Unsupported info_id"
+            logger.error(error_title)
             raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
         else:
-            logger.info("particulars_id: " + particulars_id)
+            logger.info("info_id: " + info_id)
 
         # Check if Account IDs from path and ApiKey are matching
         if verify_account_id_match(account_id=account_id, api_key=api_key, endpoint=endpoint):
-            logger.info("Account IDs from path and ApiKey are matching")
+            logger.info("Account IDs are matching")
 
-        # load JSON from payload
+        # load JSON
         json_data = request.get_json()
         if not json_data:
             error_detail = {'0': 'Set application/json as Content-Type', '1': 'Provide json payload'}
@@ -438,65 +450,56 @@ class AccountInfo(Resource):
             logger.debug("json_data: " + json.dumps(json_data))
 
         # Validate payload content
-        schema = ParticularsSchema()
-        schema_validation_result = schema.load(json_data)
+        validate_json(json_data, schema_account_info)
 
-        # Check validation errors
-        if schema_validation_result.errors:
-            logger.error("Invalid payload")
-            raise ApiError(code=400, title="Invalid payload", detail=dict(schema_validation_result.errors), source=endpoint)
-        else:
-            logger.debug("JSON validation -> OK")
-
+        # Get elements from payload
         try:
-            particulars_id_from_payload = json_data['data'].get("id", "")
-        except Exception as exp:
-            error_title = "Could not get id from payload"
-            logger.error(error_title)
-            raise ApiError(
-                code=404,
-                title=error_title,
-                detail=repr(exp),
-                source=endpoint
-            )
-
-        # Check if particulars_id from path and payload are matching
-        if particulars_id != particulars_id_from_payload:
-            error_title = "Particulars IDs from path and payload are not matching"
-            compared_ids = {'IdFromPath': particulars_id, 'IdFromPayload': particulars_id_from_payload}
-            logger.error(error_title + ", " + json.dumps(compared_ids))
-            raise ApiError(
-                code=403,
-                title=error_title,
-                detail=compared_ids,
-                source=endpoint
-            )
-        else:
-            logger.info("Particulars IDs from path and payload are matching")
-
-        # Collect data
-        try:
+            logger.info("Getting required data from payload")
             attributes = json_data['data']['attributes']
+            account_info_id = str(json_data['data']['id'])
         except Exception as exp:
-            error_title = "Could not collect data"
-            logger.error(error_title)
-            raise ApiError(code=400, title=error_title, detail=repr(exp), source=endpoint)
-
-        # Update Particulars
-        try:
-            logger.info("Updating Particulars")
-            db_entries = update_particular(account_id=account_id, id=particulars_id, attributes=attributes)
-        except Exception as exp:
-            error_title = "No Particulars found"
-            logger.error(error_title)
-            raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+            error_title = "Could not get required data from payload"
+            error_detail = str(exp.__class__.__name__) + " - " + str(exp.message)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
         else:
-            logger.info("Particulars Updated")
+            logger.info("Got required data from payload")
+            logger.debug("attributes from payload: " + json.dumps(attributes))
+            logger.debug("account_info_id from payload: " + account_info_id)
+
+        try:
+            logger.info("Verifying that AccountInfo IDs from path and payload are matching")
+            compare_str_ids(id=info_id, id_to_compare=account_info_id)
+        except ValueError as exp:
+            error_title = "AccountInfo IDs from path and payload are not matching"
+            error_detail = "SLR ID from path was {} and from payload {}".format(info_id, account_info_id)
+            logger.error(error_title + " - " + error_detail + ": " + str(exp.message))
+            raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("AccountInfo IDs from path and payload are matching")
+
+        # Update AccountInfo
+        try:
+            logger.info("Updating AccountInfo")
+            account_info_object = update_account_info(account_id=account_id, id=info_id, attributes=attributes)
+        except IndexError as exp:
+            error_title = "AccountInfo not found with provided information"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + repr(exp))
+            raise ApiError(code=400, title=error_title, detail=error_detail, source=endpoint)
+        except Exception as exp:
+            error_title = "Could not update AccountInfo entry"
+            error_detail = str(exp.message)
+            logger.error(error_title + " - " + repr(exp))
+            raise ApiError(code=500, title=error_title, detail=error_detail, source=endpoint)
+        else:
+            logger.info("AccountInfo Updated")
+            logger.debug("AccountInfo: " + account_info_object.log_entry)
 
         # Response data container
         try:
             response_data = {}
-            response_data['data'] = db_entries
+            response_data['data'] = account_info_object.to_api_dict
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)

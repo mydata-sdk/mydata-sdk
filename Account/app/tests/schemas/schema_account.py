@@ -141,562 +141,101 @@ schema_account_create = {
   "type": "object"
 }
 
-schema_account_create_password_length = {
+
+schema_account_info_listing = {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "definitions": {},
+  "id": "http://example.com/example.json",
   "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "password": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 4 and 20."
-                      }
-                    }
-                  },
-                  "required": [
-                    "password"
-                  ]
-                }
+    "data": {
+      "items": {
+        "properties": {
+          "attributes": {
+            "properties": {
+              "avatar": {
+                "type": "string"
               },
-              "required": [
-                "attributes"
-              ]
-            }
+              "firstname": {
+                "type": "string"
+              },
+              "lastname": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "lastname",
+              "avatar",
+              "firstname"
+            ],
+            "type": "object"
           },
-          "required": [
-            "data"
-          ]
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
         },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
+        "required": [
+          "attributes",
+          "type",
+          "id"
+        ],
+        "type": "object"
       },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
+      "type": "array"
     }
   },
   "required": [
-    "errors"
-  ]
+    "data"
+  ],
+  "type": "object"
 }
 
-
-schema_account_create_username_length = {
+schema_account_info = {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "definitions": {},
+  "id": "http://example.com/example.json",
   "properties": {
-    "errors": {
-      "type": "object",
+    "data": {
       "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
+        "attributes": {
           "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "username": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 3 and 255."
-                      }
-                    }
-                  },
-                  "required": [
-                    "username"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
+            "avatar": {
+              "type": "string"
+            },
+            "firstname": {
+              "type": "string"
+            },
+            "lastname": {
+              "type": "string"
             }
           },
           "required": [
-            "data"
-          ]
+            "lastname",
+            "avatar",
+            "firstname"
+          ],
+          "type": "object"
         },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
+        "id": {
+          "type": "string"
         },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
+        "type": {
+          "type": "string"
         }
       },
       "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
+        "attributes",
+        "type",
+        "id"
+      ],
+      "type": "object"
     }
   },
   "required": [
-    "errors"
-  ]
+    "data"
+  ],
+  "type": "object"
 }
-
-
-schema_account_create_email_length = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "email": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 3 and 255."
-                      }
-                    }
-                  },
-                  "required": [
-                    "email"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-schema_account_create_email_invalid = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "email": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Not a valid email address."
-                      }
-                    }
-                  },
-                  "required": [
-                    "email"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-
-schema_account_create_firstname_length = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "firstName": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 3 and 255."
-                      }
-                    }
-                  },
-                  "required": [
-                    "firstName"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-
-schema_account_create_lastname_length = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "lastName": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 3 and 255."
-                      }
-                    }
-                  },
-                  "required": [
-                    "lastName"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-
-schema_account_create_date_invalid = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "dateOfBirth": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Not a valid date."
-                      }
-                    }
-                  },
-                  "required": [
-                    "dateOfBirth"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-
-schema_account_create_tos = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "acceptTermsOfService": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Must be equal to True."
-                      }
-                    }
-                  },
-                  "required": [
-                    "acceptTermsOfService"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
 

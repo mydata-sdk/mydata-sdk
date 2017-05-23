@@ -18,8 +18,10 @@ from base64 import b64encode
 
 from flask import json
 from app import create_app
-from app.tests.controller import is_json, validate_json, account_create, default_headers
-from app.tests.schemas.schema_account import schema_account_create, schema_account_auth, schema_account_get
+from app.tests.controller import is_json, validate_json, account_create, default_headers, account_info_update, \
+    generate_string
+from app.tests.schemas.schema_account import schema_account_create, schema_account_auth, schema_account_get, \
+    schema_account_info_listing, schema_account_info
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
 
@@ -335,6 +337,262 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 401, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_fetch_listing(self):
+        """
+        Fetch AccountInfo listing
+        :return:
+        """
+
+        account_api_key, account_id, account_username, account_password = self.test_account_authentication()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info_listing))
+        account_info_id = json.loads(response.data)['data'][0]['id']
+
+        return account_api_key, account_id, account_info_id
+
+    ##########
+    ##########
+    def test_account_info_fetch_listing_wrong_account_id(self):
+        """
+        Fetch AccountInfo listing - Wrong account_id
+        :return:
+        """
+
+        account_api_key, account_id, account_username, account_password = self.test_account_authentication()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(45864586) + "/info/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_fetch_one(self):
+        """
+        Fetch AccountInfo entry by ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id = self.test_account_info_fetch_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/" + str(account_info_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
+        account_avatar = json.loads(response.data)['data']['attributes']['avatar']
+
+        return account_api_key, account_id, account_info_id, account_avatar
+
+    ##########
+    ##########
+    def test_account_info_fetch_one_wrong_account_id(self):
+        """
+        Fetch AccountInfo entry by ID - Wrong ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id = self.test_account_info_fetch_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(456464984) + "/info/" + str(account_info_id) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_fetch_one_wrong_info_id(self):
+        """
+        Fetch AccountInfo entry by ID - Wrong ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id = self.test_account_info_fetch_listing()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/" + str(account_api_key) + "/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_update_all(self):
+        """
+        Update AccountInfo entry by ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id, account_avatar = self.test_account_info_fetch_one()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        payload = account_info_update(object_id=account_info_id, firstname=generate_string(n=10), lastname=generate_string(n=10), avatar=account_avatar)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/" + str(account_info_id) + "/"
+
+        response = self.app.patch(url, data=payload,headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_update_first_name(self):
+        """
+        Update AccountInfo entry by ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id, account_avatar = self.test_account_info_fetch_one()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        payload = account_info_update(object_id=account_info_id, firstname=generate_string(n=10))
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/" + str(account_info_id) + "/"
+
+        response = self.app.patch(url, data=payload,headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_update_last_name(self):
+        """
+        Update AccountInfo entry by ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id, account_avatar = self.test_account_info_fetch_one()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        payload = account_info_update(object_id=account_info_id, lastname=generate_string(n=10))
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/" + str(account_info_id) + "/"
+
+        response = self.app.patch(url, data=payload,headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_update_avatar(self):
+        """
+        Update AccountInfo entry by ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id, account_avatar = self.test_account_info_fetch_one()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        payload = account_info_update(object_id=account_info_id, avatar=account_avatar)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/" + str(account_info_id) + "/"
+
+        response = self.app.patch(url, data=payload,headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_update_without_modifications(self):
+        """
+        Update AccountInfo entry by ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id, account_avatar = self.test_account_info_fetch_one()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        payload = account_info_update(object_id=account_info_id)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/" + str(account_info_id) + "/"
+
+        response = self.app.patch(url, data=payload, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
+
+        return account_api_key, account_id
+
+    ##########
+    ##########
+    def test_account_info_update_with_wrong_id(self):
+        """
+        Update AccountInfo entry by ID
+        :return:
+        """
+
+        account_api_key, account_id, account_info_id, account_avatar = self.test_account_info_fetch_one()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        payload = account_info_update()
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/info/" + str(account_info_id) + "/"
+
+        response = self.app.patch(url, data=payload, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
         return account_api_key, account_id
 
