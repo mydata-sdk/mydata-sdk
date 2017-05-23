@@ -818,18 +818,6 @@ definitions:
             type: string
             description: User's last name
             maxLength: 255
-          email:
-            type: string
-            format: email
-            description: User's email
-            maxLength: 255
-          dateOfBirth:
-            type: string
-            format: date
-            description: User's date of birth
-          acceptTermsOfService:
-            type: boolean
-            description: 'True if user accepts terms of usage'
 
   createdAccount:
     type: object
@@ -852,17 +840,6 @@ definitions:
           lastName:
             type: string
             description: User's last name
-          email:
-            type: string
-            format: email
-            description: User's email
-          dateOfBirth:
-            type: string
-            format: date
-            description: User's date of birth
-          acceptTermsOfService:
-            type: boolean
-            description: 'True if user accepts terms of usage'
 
   account:
     type: object
@@ -875,9 +852,6 @@ definitions:
         description: Account ID
       attributes:
         type: object
-        properties:
-          activated:
-            type: boolean
 
   AccountInfo:
     type: object
@@ -911,12 +885,6 @@ definitions:
   newAccountResponse:
     type: object
     properties:
-      meta:
-        type: object
-        properties:
-          activationInstructions:
-            type: object
-            description: Instructions for account activation
       data:
         $ref: '#/definitions/createdAccount'
 
