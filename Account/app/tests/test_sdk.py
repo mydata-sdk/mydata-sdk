@@ -24,10 +24,7 @@ from app.tests.controller import is_json, validate_json, account_create, default
     generate_sl_init_sink, generate_sl_init_source, gen_jwk_key, generate_sl_payload, \
     generate_sl_store_payload, generate_sls_store_payload, generate_signed_ssr_store_payload, generate_consent_payload, \
     generate_consent_status_payload, generate_consent_status_payload_signed
-from app.tests.schemas.schema_account import schema_account_create, schema_account_create_password_length, \
-    schema_account_create_username_length, schema_account_create_email_length, schema_account_create_email_invalid, \
-    schema_account_create_firstname_length, schema_account_create_lastname_length, schema_account_create_date_invalid, \
-    schema_account_create_tos, schema_account_auth, schema_account_get, schema_account_sdk_info
+from app.tests.schemas.schema_account import schema_account_create, schema_account_auth, schema_account_get, schema_account_sdk_info
 from app.tests.schemas.schema_authorisation import schema_give_consent, schema_consent_status_change, \
     schema_consent_listing, schema_consent_status_listing, schema_consent_status, schema_consent
 from app.tests.schemas.schema_data_connection import schema_authorisation_token_data
