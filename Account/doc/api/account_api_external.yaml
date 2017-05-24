@@ -584,6 +584,47 @@ paths:
             $ref: '#/definitions/errors'
 
 
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/last/:
+    get:
+      security:
+        - externalApiKeyAuth: []
+      summary: 'Get last Service Link Status Record'
+      description: "Fetch last Service Link Status Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+
+      tags:
+        - MyData Service Link
+
+      responses:
+        '200':
+          description: 'Service Link Status Record'
+          schema:
+            $ref: '#/definitions/serviceLinkStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'No Service Link with provided ID'
+          schema:
+            $ref: '#/definitions/errors'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/errors'
+
+
   /accounts/{account_id}/servicelinks/{servicelink_id}/consents/:
     get:
       security:
@@ -601,6 +642,11 @@ paths:
           type: integer
           description: 'Service link ID'
           required: true
+        - name: get_consent_pair
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
 
       tags:
         - MyData Consent
@@ -656,6 +702,11 @@ paths:
           type: integer
           description: 'Consent ID'
           required: true
+        - name: get_consent_pair
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
 
       tags:
         - MyData Consent
@@ -664,7 +715,7 @@ paths:
         '200':
           description: Consent fetched
           schema:
-            $ref: '#/definitions/consentResponse'
+            $ref: '#/definitions/consentsResponse'
         '204':
           description: No content with given id
         '400':
@@ -685,6 +736,52 @@ paths:
             $ref: '#/definitions/errors'
         '503':
           description: Service Unavailable
+          schema:
+            $ref: '#/definitions/errors'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/last/:
+    get:
+      security:
+        - externalApiKeyAuth: []
+      summary: 'Get Last Consent Record'
+      description: "Fetch Last Consent Record related to Service Link Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: get_consent_pair
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
+
+      tags:
+        - MyData Consent
+
+      responses:
+        '200':
+          description: 'Array of Consent Records'
+          schema:
+            $ref: '#/definitions/consentsResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'No Service Link with provided ID'
+          schema:
+            $ref: '#/definitions/errors'
+        '500':
+          description: 'General Error'
           schema:
             $ref: '#/definitions/errors'
 
@@ -711,6 +808,11 @@ paths:
           type: integer
           description: 'Consent ID'
           required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Consent Status Record ID"
+          required: false
 
       tags:
         - MyData Consent
@@ -800,6 +902,52 @@ paths:
             $ref: '#/definitions/errors'
         '503':
           description: Service Unavailable
+          schema:
+            $ref: '#/definitions/errors'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/last/:
+    get:
+      security:
+        - externalApiKeyAuth: []
+      summary: 'Get last Consent Status Record'
+      description: "Fetch last Consent Status Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - MyData Consent
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/consentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/errors'
+        '500':
+          description: 'General Error'
           schema:
             $ref: '#/definitions/errors'
 
@@ -955,30 +1103,71 @@ definitions:
       data:
         $ref: '#/definitions/AccountInfo'
 
+  jwk:
+    type: object
+    description: "Cryptographic key presented as JSON Web Key (JWK) as defined in RFC 7517"
+
+  JWSUnprotectedHeader:
+    type: object
+    description: "JWS Unprotected Header"
+    properties:
+      kid:
+        type: string
+        description: "Key identifier"
+
+  JWSProtectedHeader:
+    type: string
+    description: 'JWS Protected Header'
+
   serviceLink:
     type: object
     properties:
       type:
         type: string
-        description: Resource type 'ServiceLink'
+        description: "Resource type: 'ServiceLinkRecord'"
       id:
-        type: integer
-        description: Service Link ID
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
+        description: 'Service Link Record as JSON Web Signature (JWS)'
         properties:
-          serviceLinkRecordId:
-            type: string
-            description: 'Service Link Record ID'
-          serviceId:
-            type: string
-            description: 'Related Service ID'
-          surrogateId:
-            type: string
-            description: 'Related Surrogate ID'
-          serviceLinkRecord:
+          payload:
             type: object
-            description: 'Service Link Record as JWS - [MyData Service Linking Specification] (https://github.com/HIIT/mydata-stack)'
+            description: 'JWS Payload. Base64url encoded.'
+            properties:
+              version:
+                type: string
+              link_id:
+                type: string
+              operator_id:
+                type: string
+              service_id:
+                type: string
+              surrogate_id:
+                type: string
+              operator_key:
+                $ref: '#/definitions/jwk'
+              cr_keys:
+                description: 'JSON Web Key (JWK) Set Structure '
+                type: array
+                items:
+                  $ref: '#/definitions/jwk'
+              iat:
+                type: integer
+                format: int32
+          signatures:
+            type: array
+            items:
+              type: object
+              properties:
+                header:
+                  $ref: '#/definitions/JWSUnprotectedHeader'
+                protected:
+                  $ref: '#/definitions/JWSProtectedHeader'
+                signature:
+                  type: string
+                  description: "JWS Signature"
 
 
   serviceLinksResponse:
@@ -1002,19 +1191,40 @@ definitions:
     properties:
       type:
         type: string
-        description: Resource type 'ServiceLinkStatus'
+        description: "Resource type: 'ServiceLinkStatusRecord'"
       id:
-        type: integer
-        description: Service Link Status Record ID
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
+        description: 'Service Link Status Record as JSON Web Signature (JWS)'
         properties:
-          status:
-            type: string
-            description: "Service Link's status"
-          serviceLinkStatusRecord:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
             type: object
-            description: 'Service Link Status Record as JWS - [MyData Service Linking Specification] (https://github.com/HIIT/mydata-stack)'
+            description: 'JWS Payload. Base64url encoded.'
+            properties:
+              version:
+                type: string
+              record_id:
+                type: string
+              surrogate_id:
+                type: string
+              slr_id:
+                type: string
+              sl_status:
+                type: string
+              iat:
+                type: integer
+                format: int32
+              prev_record_id:
+                type: string
+          signature:
+            type: string
+            description: "JWS Signature"
 
 
   serviceLinkStatusesResponse:
@@ -1038,28 +1248,24 @@ definitions:
     properties:
       type:
         type: string
-        description: Resource type 'Consent'
+        description: "Resource type: 'ConsentRecord'"
       id:
-        type: integer
-        description: Consent ID
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
+        description: 'Consent Record as JSON Web Signature (JWS)'
         properties:
-          serviceLinkRecordId:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
+            type: 'object'
+            description: 'Base64 encoded object containing either Consent Payload of Source Service or Consent Payload of Sink Service. For detailed descriptions of these objects check Models section.'
+          signature:
             type: string
-            description: 'Related Service Record ID'
-          serviceId:
-            type: string
-            description: 'Related Service ID'
-          surrogateId:
-            type: string
-            description: 'Related Surrogate ID'
-          consentRecordId:
-            type: string
-            description: 'Consent Record ID'
-          consentRecord:
-            type: object
-            description: 'Consent Record as JWS - [MyData Authorization Specification] (https://github.com/HIIT/mydata-stack)'
+            description: "JWS Signature"
 
 
   consentsResponse:
@@ -1070,32 +1276,48 @@ definitions:
         items:
           $ref: '#/definitions/consent'
 
-
-  consentResponse:
+  consentStatusPayload:
     type: object
+    description: 'Consent Status Record Payload'
     properties:
-      data:
-        $ref: '#/definitions/consent'
-
+      version:
+        type: string
+      record_id:
+        type: string
+      surrogate_id:
+        type: string
+      cr_id:
+        type: string
+      consent_status:
+        type: string
+      iat:
+        type: integer
+        format: int32
+      prev_record_id:
+        type: string
 
   consentStatus:
     type: object
     properties:
       type:
         type: string
-        description: Resource type 'ConsentStatus'
+        description: "Resource type: 'ConsentStatusRecord'"
       id:
-        type: integer
-        description: Consent Status ID
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
+        description: 'Consent Status Record as JSON Web Signature (JWS)'
         properties:
-          status:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
+            $ref: '#/definitions/consentStatusPayload'
+          signature:
             type: string
-            description: "Consent's status"
-          consentStatusRecord:
-            type: object
-            description: 'Consent Status Record as JWS - [MyData Authorization Specification] (https://github.com/HIIT/mydata-stack)'
+            description: "JWS Signature"
 
 
   consentStatusesResponse:
