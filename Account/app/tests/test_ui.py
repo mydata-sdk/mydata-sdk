@@ -153,6 +153,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
 
+    ##########
+    ##########
     def test_account_create_password_too_short(self):
         """
         Test Account creation. Password too short
@@ -179,6 +181,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
 
+    ##########
+    ##########
     def test_account_create_username_too_short(self):
         """
         Test Account creation. Username too short
@@ -205,6 +209,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
 
+    ##########
+    ##########
     def test_account_create_firstname_too_short(self):
         """
         Test Account creation. First name too short
@@ -231,6 +237,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
 
+    ##########
+    ##########
     def test_account_create_lastname_too_short(self):
         """
         Test Account creation. Last name too short

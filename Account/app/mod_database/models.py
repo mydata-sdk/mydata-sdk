@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 
+"""
+__author__ = "Jani Yli-Kantola"
+__copyright__ = ""
+__credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
+__license__ = "MIT"
+__version__ = "1.3.0"
+__maintainer__ = "Jani Yli-Kantola"
+__contact__ = "https://github.com/HIIT/mydata-stack"
+__status__ = "Development"
+"""
+
 # Import dependencies
 import uuid
 import logging
@@ -747,15 +758,11 @@ class EventLog():
     table_name = ""
     deleted = ""
 
-    def __init__(self, id="", actor="", event="", created="", account_id="", deleted=0, table_name="MyDataAccount.EventLogs"):
+    def __init__(self, id="", event="", account_id="", deleted=0, table_name="MyDataAccount.EventLogs"):
         if id is not None:
             self.id = id
-        if actor is not None:
-            self.actor = actor
         if event is not None:
             self.event = event
-        if created is not None:
-            self.created = created
         if account_id is not None:
             self.account_id = account_id
         if table_name is not None:
@@ -776,28 +783,12 @@ class EventLog():
         self.id = value
 
     @property
-    def actor(self):
-        return self.actor
-
-    @actor.setter
-    def actor(self, value):
-        self.actor = value
-
-    @property
     def event(self):
         return self.event
 
     @event.setter
     def event(self, value):
         self.event = value
-
-    @property
-    def created(self):
-        return self.created
-
-    @created.setter
-    def created(self, value):
-        self.created = value
 
     @property
     def table_name(self):
@@ -833,7 +824,7 @@ class EventLog():
         dictionary = {}
         dictionary['type'] = "Event"
         dictionary['id'] = str(self.id)
-        dictionary['attributes'] = self.to_dict_external
+        dictionary['attributes'] = self.event
         return dictionary
 
     @property
@@ -846,13 +837,11 @@ class EventLog():
 
     def to_db(self, cursor=""):
 
-        sql_query = "INSERT INTO " + self.table_name + " (actor, event, created, Accounts_id) " \
-                    "VALUES (%s, %s, %s, %s)"
+        sql_query = "INSERT INTO " + self.table_name + " (event, Accounts_id) " \
+                    "VALUES (%s, %s)"
 
         arguments = (
-            str(self.actor),
-            str(self.event),
-            int(self.created),
+            json.dumps(self.event),
             int(self.account_id),
         )
 
@@ -869,7 +858,7 @@ class EventLog():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        sql_query = "SELECT id, actor, event, created, Accounts_id " \
+        sql_query = "SELECT id, event, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND Accounts_id LIKE %s;"
 
@@ -889,16 +878,12 @@ class EventLog():
                 raise IndexError("DB query returned no results")
             if len(data[0]):
                 self.id = data[0][0]
-                self.actor = data[0][1]
-                self.event = data[0][2]
-                self.created = data[0][3]
-                self.account_id = data[0][4]
+                self.event = data[0][1]
+                self.account_id = data[0][2]
             else:
                 self.id = data[0]
-                self.actor = data[1]
-                self.event = data[2]
-                self.created = data[0][3]
-                self.account_id = data[4]
+                self.event = data[1]
+                self.account_id = data[2]
 
             try:
                 event_copy = self.event

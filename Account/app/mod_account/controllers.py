@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 
+"""
+__author__ = "Jani Yli-Kantola"
+__copyright__ = ""
+__credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
+__license__ = "MIT"
+__version__ = "1.3.0"
+__maintainer__ = "Jani Yli-Kantola"
+__contact__ = "https://github.com/HIIT/mydata-stack"
+__status__ = "Development"
+"""
+
 # Import dependencies
 import json
 import uuid
@@ -151,7 +162,7 @@ def create_account(first_name=None, last_name=None, username=None, password=None
         logger.debug('data: ' + repr(data))
 
         logger.info('Created Account: ' + account.log_entry)
-        return account
+        return account, account.id
 
 
 def delete_account(account_id=None):

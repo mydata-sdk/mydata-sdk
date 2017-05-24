@@ -14,12 +14,13 @@ __status__ = "Development"
 # Import dependencies
 from flask import Blueprint, request, json
 from flask_restful import Resource, Api
-from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids
+from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids, get_utc_time
 from app.mod_account.controllers import verify_account_id_match
 from app.mod_api_auth.controllers import requires_api_auth_user, requires_api_auth_sdk, get_user_api_key, \
     get_sdk_api_key
 from app.mod_authorization.schemas import schema_consent_new, schema_consent_status_new, \
     schema_consent_status_signed_new
+from app.mod_database.controllers import create_event_log_entry
 from app.mod_database.models import ServiceLinkRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
     get_last_cr_status, store_csr, get_csrs, get_crs, get_cr, get_last_cr, get_csr
@@ -497,6 +498,14 @@ class ApiAccountConsent(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
 
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -652,6 +661,14 @@ class ApiAccountConsentStatus(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
 
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -806,6 +823,14 @@ class ApiAccountConsentStatusSigned(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
 
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -901,6 +926,14 @@ class ApiConsentsForServiceLinkRecord(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1023,6 +1056,14 @@ class ApiConsentForServiceLinkRecord(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
@@ -1117,6 +1158,14 @@ class ApiLastConsentForServiceLinkRecord(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1236,6 +1285,14 @@ class ApiConsentStatusesForServiceLinkRecord(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
@@ -1347,6 +1404,14 @@ class ApiConsentStatusForServiceLinkRecord(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
@@ -1419,6 +1484,14 @@ class ApiConsentsForAccount(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1533,6 +1606,14 @@ class ApiConsentForAccount(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
@@ -1622,6 +1703,14 @@ class ApiConsentStatusesForAccount(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
@@ -1707,6 +1796,14 @@ class ApiConsentStatusForAccount(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1803,6 +1900,14 @@ class ApiAccountConsentStatusLast(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
+
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
@@ -1906,6 +2011,14 @@ class ApiAccountConsentStatusLastForServiceLinkRecord(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
+
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
