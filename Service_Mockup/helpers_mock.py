@@ -69,7 +69,7 @@ class Helpers:
                 db.commit()
                 db.close()
 
-    def store_code_user(self, DictionaryToStore):
+    def store_code_user(self, DictionaryToStore):  # TODO: Replace with simpler function, no need for fancy for loops.
         # {"code": "user_id"}
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
@@ -105,7 +105,7 @@ class Helpers:
             cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id) \
                     VALUES (%s, %s)", [user_id, surrogate_id])
             db.commit()
-        except Exception as e:
+        except Exception as e:  # TODO: Is this acceptable behaviour?
             debug_log.info("Surrogate_id '{}' mapped with user '{}' already.".format(user_id, surrogate_id))
             db.commit()
             db.close()
