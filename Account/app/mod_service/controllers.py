@@ -565,7 +565,7 @@ def get_slr_for_service(service_id=None, slr_id=None, cursor=None):
         logger.info("slr fetched")
         logger.info("slr fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object.to_api_dict, str(db_entry_object.account_id)
 
 
 def get_slrs_for_service(service_id=None, surrogate_id=""):
@@ -605,14 +605,23 @@ def get_slrs_for_service(service_id=None, surrogate_id=""):
     # Get slrs from database
     logger.info("Get slrs from database")
     db_entry_list = []
+    account_id_list = []
     for id in id_list:
         # TODO: try-except needed?
         logger.info("Getting slr with slr_id: " + str(id))
-        db_entry_dict = get_slr_for_service(service_id=service_id, slr_id=id)
+        db_entry_dict, account_id = get_slr_for_service(service_id=service_id, slr_id=id)
         db_entry_list.append(db_entry_dict)
+        account_id_list.append(account_id)
         logger.info("slr object added to list: " + json.dumps(db_entry_dict))
+        logger.info("account_id added to list: " + str(account_id))
 
-    return db_entry_list
+    try:
+        account_id_list = list(set(account_id_list))
+    except Exception as exp:
+        logger.error('Could not remove duplicates from account id listing: ' + repr(exp))
+        raise
+
+    return db_entry_list, account_id_list
 
 
 ##################################

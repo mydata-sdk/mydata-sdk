@@ -23,7 +23,7 @@ from app.tests.controller import is_json, validate_json, account_create, default
     generate_string, generate_sl_payload, generate_sl_init_source, generate_sl_init_sink, generate_sl_store_payload, \
     gen_jwk_key, generate_consent_status_payload, generate_consent_payload, generate_sls_store_payload
 from app.tests.schemas.schema_account import schema_account_create, schema_account_auth, schema_account_get, \
-    schema_account_info_listing, schema_account_info
+    schema_account_info_listing, schema_account_info, schema_account_event_log_listing
 from app.tests.schemas.schema_authorisation import schema_consent_status_change, schema_give_consent, \
     schema_consent_listing, schema_consent, schema_consent_status_listing, schema_consent_status
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
@@ -1721,23 +1721,30 @@ class UiTestCase(unittest.TestCase):
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
+    ##########
+    ##########
+    def test_fetch_event_log_listing(self):
+        """
+        Test Fetch EventLog listing
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array = self.test_for_account_change_consent_status_sink()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/logs/events/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_event_log_listing))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            ##########
+    ##########
     ##########
 
 

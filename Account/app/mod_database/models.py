@@ -1441,9 +1441,6 @@ class ServiceLinkStatusRecord():
 
 
 class SurrogateId():
-    # TODO: Is this needed?
-    # TODO: Rename to SlrIDs or similar
-    # TODO: How to react if slr is deleted?
     surrogate_id = None
     servicelinkrecord_id = None
     service_id = None

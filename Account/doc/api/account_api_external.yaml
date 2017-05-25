@@ -384,6 +384,53 @@ paths:
 
 
 
+  /accounts/{account_id}/logs/events/:
+    get:
+      security:
+        - externalApiKeyAuth: []
+      description: 'Fetch Event logs for Account'
+
+      parameters:
+        - name: account_id
+          in: path
+          type: integer
+          description: 'Account ID'
+          required: true
+
+      tags:
+        - Event Log
+
+      responses:
+        '200':
+          description: Event logs fetched
+          schema:
+            $ref: '#/definitions/EventLogArray'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: No content
+          schema:
+            $ref: '#/definitions/errors'
+        '500':
+          description: Internal Server errors
+          schema:
+            $ref: '#/definitions/errors'
+        '503':
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/errors'
+
+
   /accounts/{account_id}/servicelinks/:
     get:
       security:
@@ -1334,4 +1381,38 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/consentStatus'
+
+  EventLog:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'Event'"
+      id:
+        type: string
+        description: "ID of resource"
+      attributes:
+        type: object
+        properties:
+          action:
+            type: string
+            description: "HTTP Method"
+          actor:
+            type: string
+            description: "Actor during event"
+          resource:
+            type: string
+            description: "Resource accessed"
+          timestamp:
+            type: string
+            description: "Timestamp of event as ISO 8601 formatted string"
+
+
+  EventLogArray:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/EventLog'
 

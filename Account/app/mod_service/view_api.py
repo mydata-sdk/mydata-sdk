@@ -131,7 +131,7 @@ class ApiServiceLinkInitSource(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="POST",
             resource=endpoint,
@@ -232,7 +232,7 @@ class ApiServiceLinkInitSink(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="POST",
             resource=endpoint,
@@ -319,7 +319,7 @@ class ApiServiceLink(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -448,7 +448,7 @@ class ApiServiceLink(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="PATCH",
             resource=endpoint,
@@ -823,7 +823,7 @@ class ApiServiceLinkStore(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="POST",
             resource=endpoint,
@@ -901,7 +901,7 @@ class ApiServiceLinkRecords(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -994,7 +994,7 @@ class ApiServiceLinkStatusRecords(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1235,7 +1235,7 @@ class ApiServiceLinkStatusRecords(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="POST",
             resource=endpoint,
@@ -1500,7 +1500,7 @@ class ApiServiceLinkStatusRecordsSigned(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="POST",
             resource=endpoint,
@@ -1602,7 +1602,7 @@ class ApiServiceLinkStatusRecord(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1675,7 +1675,7 @@ class ApiLastServiceLinkStatusRecord(Resource):
             logger.debug('response_data: ' + json.dumps(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1730,9 +1730,9 @@ class ApiServiceLinkRecordsForService(Resource):
         try:
             logger.info("Fetching ServiceLinkRecords")
             if surrogate_id is None:
-                db_entries = get_slrs_for_service(service_id=service_id)
+                db_entries, account_id_list = get_slrs_for_service(service_id=service_id)
             else:
-                db_entries = get_slrs_for_service(service_id=service_id, surrogate_id=surrogate_id)
+                db_entries, account_id_list = get_slrs_for_service(service_id=service_id, surrogate_id=surrogate_id)
         except IndexError as exp:
             error_title = "Service Link Record not found with provided information"
             error_detail = "Service ID was {} and Surrogate ID was {}".format(service_id, surrogate_id)
@@ -1757,6 +1757,15 @@ class ApiServiceLinkRecordsForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        for account_id in account_id_list:
+            create_event_log_entry(
+                account_id=account_id,
+                actor="Operator",
+                action="GET",
+                resource=endpoint,
+                timestamp=get_utc_time()
+            )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1803,7 +1812,7 @@ class ApiServiceLinkRecordForService(Resource):
         # Get ServiceLinkRecord
         try:
             logger.info("Fetching ServiceLinkRecord")
-            db_entries = get_slr_for_service(service_id=service_id, slr_id=link_id)
+            db_entries, account_id = get_slr_for_service(service_id=service_id, slr_id=link_id)
         except IndexError as exp:
             error_title = "Service Link Record not found with provided information"
             error_detail = "Service ID was {} and Service Link Record ID was {}".format(link_id, link_id)
@@ -1827,6 +1836,14 @@ class ApiServiceLinkRecordForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1890,6 +1907,14 @@ class Surrogate(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=surrogate_object.account_id,
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
