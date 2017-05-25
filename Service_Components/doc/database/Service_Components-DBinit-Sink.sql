@@ -93,10 +93,10 @@ CREATE TABLE IF NOT EXISTS `db_Srv_Sink`.`ssr_storage` (
   `slr_id` LONGTEXT NOT NULL,
   `record_id` LONGTEXT NOT NULL,
   `json` LONGTEXT NOT NULL,
+  `prev_record_id` LONGTEXT,
   PRIMARY KEY (`record_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
-
 
 
 -- -----------------------------------------------------
