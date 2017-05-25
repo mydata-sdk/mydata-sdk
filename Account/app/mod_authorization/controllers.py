@@ -902,7 +902,7 @@ def get_cr(cr_id="", surrogate_id="", slr_id="", subject_id="", consent_pair_id=
         logger.info("ConsentRecord fetched")
         logger.debug("ConsentRecord fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object.to_api_dict, str(db_entry_object.accounts_id)
 
 
 def get_crs(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", account_id="", status_id="", consent_pairs=False):
@@ -989,26 +989,37 @@ def get_crs(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", accou
     # Get ConsentRecords from database
     logger.info("Get ConsentRecords from database")
     cr_list = []
+    account_id_list = []
     logger.info("Getting ConsentRecords")
     for entry_id in id_list:
         # TODO: try-except needed?
         logger.info("Getting ConsentRecord with cr_id: " + str(entry_id))
-        db_entry_dict = get_cr(cr_id=entry_id, account_id=account_id)
+        db_entry_dict, account_id_from_db = get_cr(cr_id=entry_id, account_id=account_id)
         cr_list.append(db_entry_dict)
+        account_id_list.append(account_id_from_db)
         logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
+        logger.info("account_id added to list: " + str(account_id_from_db))
 
     if consent_pairs:
         logger.info("Getting Consent Record pairs")
         for entry_id in id_list:
             # TODO: try-except needed?
             logger.info("Getting ConsentRecord with consent_pair_id: " + str(entry_id))
-            db_entry_dict = get_cr(consent_pair_id=entry_id, account_id=account_id)
+            db_entry_dict, account_id_from_db = get_cr(consent_pair_id=entry_id, account_id=account_id)
             cr_list.append(db_entry_dict)
+            account_id_list.append(account_id_from_db)
             logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
+            logger.info("account_id added to list: " + str(account_id_from_db))
 
     logger.info("ConsentRecords fetched: " + json.dumps(cr_list))
 
-    return cr_list
+    try:
+        account_id_list = list(set(account_id_list))
+    except Exception as exp:
+        logger.error('Could not remove duplicates from account id listing: ' + repr(exp))
+        raise
+
+    return cr_list, account_id_list
 
 
 def get_last_cr(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", account_id="", status_id="", consent_pairs=False):
@@ -1099,7 +1110,7 @@ def get_last_cr(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", a
     for entry_id in id_list:
         # TODO: try-except needed?
         logger.info("Getting ConsentRecord with cr_id: " + str(entry_id))
-        db_entry_dict = get_cr(cr_id=entry_id, account_id=account_id)
+        db_entry_dict, account_id_from_db = get_cr(cr_id=entry_id, account_id=account_id)
         cr_list.append(db_entry_dict)
         logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
 
@@ -1108,7 +1119,7 @@ def get_last_cr(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", a
         for entry_id in id_list:
             # TODO: try-except needed?
             logger.info("Getting ConsentRecord with consent_pair_id: " + str(entry_id))
-            db_entry_dict = get_cr(consent_pair_id=entry_id, account_id=account_id)
+            db_entry_dict, account_id_from_db = get_cr(consent_pair_id=entry_id, account_id=account_id)
             cr_list.append(db_entry_dict)
             logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
 
@@ -1178,7 +1189,7 @@ def get_csr(csr_id="", cr_id="", prev_record_id="", account_id="", cursor=None):
         logger.info("ConsentRecord fetched")
         logger.debug("ConsentRecord fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object.to_api_dict, str(db_entry_object.accounts_id)
 
 
 def get_csrs(account_id=None, consent_id=None, status_id=""):
@@ -1227,11 +1238,19 @@ def get_csrs(account_id=None, consent_id=None, status_id=""):
     # Get Consent Status Records from database
     logger.info("Get Consent Status Records from database")
     db_entry_list = []
+    account_id_list = []
     for entry_id in id_list:
         # TODO: try-except needed?
         logger.info("Getting Consent Status Record with account_id: " + str(account_id) + " consent_id: " + str(consent_id) + " csr_id: " + str(entry_id))
-        db_entry_dict = get_csr(account_id=account_id, cr_id=consent_id, csr_id=entry_id)
+        db_entry_dict, account_id_from_db = get_csr(account_id=account_id, cr_id=consent_id, csr_id=entry_id)
         db_entry_list.append(db_entry_dict)
+        account_id_list.append(account_id_from_db)
         logger.info("Consent Status Records object added to list: " + json.dumps(db_entry_dict))
 
-    return db_entry_list
+    try:
+        account_id_list = list(set(account_id_list))
+    except Exception as exp:
+        logger.error('Could not remove duplicates from account id listing: ' + repr(exp))
+        raise
+
+    return db_entry_list, account_id_list

@@ -104,61 +104,26 @@ schema_account_auth = {
 
 schema_account_create = {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "definitions": {},
+  "id": "http://example.com/example.json",
   "properties": {
-    "meta": {
-      "type": "object",
-      "properties": {
-        "activationInstructions": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "activationInstructions"
-      ]
-    },
     "data": {
-      "type": "object",
       "properties": {
         "attributes": {
-          "type": "object",
           "properties": {
-            "username": {
-              "type": "string"
-            },
-            "firstName": {
-              "type": "string"
-            },
-            "lastName": {
-              "type": "string"
-            },
-            "dateOfBirth": {
-              "type": "string"
-            },
-            "acceptTermsOfService": {
-              "type": "boolean"
-            },
-            "password": {
-              "type": "string"
-            },
-            "email": {
-              "type": "string"
+            "activated": {
+              "type": "integer"
             }
           },
           "required": [
-            "username",
-            "firstName",
-            "lastName",
-            "dateOfBirth",
-            "acceptTermsOfService",
-            "password",
-            "email"
-          ]
-        },
-        "type": {
-          "type": "string"
+            "activated"
+          ],
+          "type": "object"
         },
         "id": {
+          "type": "string"
+        },
+        "type": {
           "type": "string"
         }
       },
@@ -166,571 +131,501 @@ schema_account_create = {
         "attributes",
         "type",
         "id"
-      ]
+      ],
+      "type": "object"
     }
   },
   "required": [
-    "meta",
     "data"
-  ]
+  ],
+  "type": "object"
 }
 
-schema_account_create_password_length = {
+
+schema_account_info_listing = {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "definitions": {},
+  "id": "http://example.com/example.json",
   "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "password": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 4 and 20."
-                      }
-                    }
-                  },
-                  "required": [
-                    "password"
-                  ]
-                }
+    "data": {
+      "items": {
+        "properties": {
+          "attributes": {
+            "properties": {
+              "avatar": {
+                "type": "string"
               },
-              "required": [
-                "attributes"
-              ]
-            }
+              "firstname": {
+                "type": "string"
+              },
+              "lastname": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "lastname",
+              "avatar",
+              "firstname"
+            ],
+            "type": "object"
           },
-          "required": [
-            "data"
-          ]
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
         },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
+        "required": [
+          "attributes",
+          "type",
+          "id"
+        ],
+        "type": "object"
       },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
+      "type": "array"
     }
   },
   "required": [
-    "errors"
-  ]
+    "data"
+  ],
+  "type": "object"
 }
 
-
-schema_account_create_username_length = {
+schema_account_info = {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "definitions": {},
+  "id": "http://example.com/example.json",
   "properties": {
-    "errors": {
-      "type": "object",
+    "data": {
       "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
+        "attributes": {
           "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "username": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 3 and 255."
-                      }
-                    }
-                  },
-                  "required": [
-                    "username"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
+            "avatar": {
+              "type": "string"
+            },
+            "firstname": {
+              "type": "string"
+            },
+            "lastname": {
+              "type": "string"
             }
           },
           "required": [
-            "data"
-          ]
+            "lastname",
+            "avatar",
+            "firstname"
+          ],
+          "type": "object"
         },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
+        "id": {
+          "type": "string"
         },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
+        "type": {
+          "type": "string"
         }
       },
       "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
+        "attributes",
+        "type",
+        "id"
+      ],
+      "type": "object"
     }
   },
   "required": [
-    "errors"
-  ]
+    "data"
+  ],
+  "type": "object"
 }
 
-
-schema_account_create_email_length = {
+schema_account_event_log_listing = {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "definitions": {},
+  "id": "http://example.com/example.json",
   "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "email": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 3 and 255."
-                      }
-                    }
-                  },
-                  "required": [
-                    "email"
-                  ]
-                }
+    "data": {
+      "items": {
+        "properties": {
+          "attributes": {
+            "properties": {
+              "action": {
+                "type": "string"
               },
-              "required": [
-                "attributes"
-              ]
+              "actor": {
+                "type": "string"
+              },
+              "resource": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "timestamp",
+              "resource",
+              "actor"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "attributes",
+          "type",
+          "id"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "type": "object"
+}
+
+schema_account_export = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "data": {
+      "properties": {
+        "attributes": {
+          "properties": {
+            "account_info": {
+              "items": {
+                "properties": {
+                  "attributes": {
+                    "properties": {
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "firstname": {
+                        "type": "string"
+                      },
+                      "lastname": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "lastname",
+                      "avatar",
+                      "firstname"
+                    ],
+                    "type": "object"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "attributes",
+                  "type",
+                  "id"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "event_logs": {
+              "items": {
+                "properties": {
+                  "attributes": {
+                    "properties": {
+                      "action": {
+                        "type": "string"
+                      },
+                      "actor": {
+                        "type": "string"
+                      },
+                      "resource": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "timestamp",
+                      "resource",
+                      "actor"
+                    ],
+                    "type": "object"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "attributes",
+                  "type",
+                  "id"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "service_links": {
+              "items": {
+                "properties": {
+                  "attributes": {
+                    "properties": {
+                      "payload": {
+                        "type": "string"
+                      },
+                      "signatures": {
+                        "items": {
+                          "properties": {
+                            "header": {
+                              "properties": {
+                                "kid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kid"
+                              ],
+                              "type": "object"
+                            },
+                            "protected": {
+                              "type": "string"
+                            },
+                            "signature": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "header",
+                            "protected",
+                            "signature"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "signatures",
+                      "payload"
+                    ],
+                    "type": "object"
+                  },
+                  "consent_records": {
+                    "items": {
+                      "properties": {
+                        "attributes": {
+                          "properties": {
+                            "header": {
+                              "properties": {
+                                "kid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kid"
+                              ],
+                              "type": "object"
+                            },
+                            "payload": {
+                              "type": "string"
+                            },
+                            "protected": {
+                              "type": "string"
+                            },
+                            "signature": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "header",
+                            "protected",
+                            "payload",
+                            "signature"
+                          ],
+                          "type": "object"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "status_records": {
+                          "items": {
+                            "properties": {
+                              "attributes": {
+                                "properties": {
+                                  "header": {
+                                    "properties": {
+                                      "kid": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "kid"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  "payload": {
+                                    "type": "string"
+                                  },
+                                  "protected": {
+                                    "type": "string"
+                                  },
+                                  "signature": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "header",
+                                  "protected",
+                                  "payload",
+                                  "signature"
+                                ],
+                                "type": "object"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "attributes",
+                              "type",
+                              "id"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "attributes",
+                        "status_records",
+                        "type",
+                        "id"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "status_records": {
+                    "items": {
+                      "properties": {
+                        "attributes": {
+                          "properties": {
+                            "header": {
+                              "properties": {
+                                "kid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kid"
+                              ],
+                              "type": "object"
+                            },
+                            "payload": {
+                              "type": "string"
+                            },
+                            "protected": {
+                              "type": "string"
+                            },
+                            "signature": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "header",
+                            "protected",
+                            "payload",
+                            "signature"
+                          ],
+                          "type": "object"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "attributes",
+                        "type",
+                        "id"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "attributes",
+                  "consent_records",
+                  "status_records",
+                  "type",
+                  "id"
+                ],
+                "type": "object"
+              },
+              "type": "array"
             }
           },
           "required": [
-            "data"
-          ]
+            "account_info",
+            "event_logs",
+            "service_links"
+          ],
+          "type": "object"
         },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
+        "gid": {
+          "type": "string"
         },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
+        "id": {
+          "type": "string"
         },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
+        "type": {
+          "type": "string"
         }
       },
       "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
+        "attributes",
+        "gid",
+        "type",
+        "id"
+      ],
+      "type": "object"
     }
   },
   "required": [
-    "errors"
-  ]
+    "data"
+  ],
+  "type": "object"
 }
-
-schema_account_create_email_invalid = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "email": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Not a valid email address."
-                      }
-                    }
-                  },
-                  "required": [
-                    "email"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-
-schema_account_create_firstname_length = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "firstName": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 3 and 255."
-                      }
-                    }
-                  },
-                  "required": [
-                    "firstName"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-
-schema_account_create_lastname_length = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "lastName": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Length must be between 3 and 255."
-                      }
-                    }
-                  },
-                  "required": [
-                    "lastName"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-
-schema_account_create_date_invalid = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "dateOfBirth": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Not a valid date."
-                      }
-                    }
-                  },
-                  "required": [
-                    "dateOfBirth"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
-
-schema_account_create_tos = {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "errors": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string",
-          "default": "400"
-        },
-        "detail": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "properties": {
-                "attributes": {
-                  "type": "object",
-                  "properties": {
-                    "acceptTermsOfService": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "default": "Must be equal to True."
-                      }
-                    }
-                  },
-                  "required": [
-                    "acceptTermsOfService"
-                  ]
-                }
-              },
-              "required": [
-                "attributes"
-              ]
-            }
-          },
-          "required": [
-            "data"
-          ]
-        },
-        "source": {
-          "type": "string",
-          "default": "/api/accounts/"
-        },
-        "status": {
-          "type": "string",
-          "default": "Bad Request, Bad request syntax or unsupported method"
-        },
-        "title": {
-          "type": "string",
-          "default": "Invalid payload"
-        }
-      },
-      "required": [
-        "code",
-        "detail",
-        "source",
-        "status",
-        "title"
-      ]
-    }
-  },
-  "required": [
-    "errors"
-  ]
-}
-
 

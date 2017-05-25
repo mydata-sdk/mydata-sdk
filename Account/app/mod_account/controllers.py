@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 
+"""
+__author__ = "Jani Yli-Kantola"
+__copyright__ = ""
+__credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
+__license__ = "MIT"
+__version__ = "1.3.0"
+__maintainer__ = "Jani Yli-Kantola"
+__contact__ = "https://github.com/HIIT/mydata-stack"
+__status__ = "Development"
+"""
+
 # Import dependencies
 import json
 import uuid
@@ -11,14 +22,16 @@ from app.app_modules import db
 # Import services
 from app.helpers import get_custom_logger, ApiError
 from app.mod_api_auth.controllers import get_account_id_by_api_key, gen_account_api_key
+from app.mod_api_auth.services import delete_entry_from_apikey_sqlite_db
 from app.mod_blackbox.controllers import gen_account_key
+from app.mod_blackbox.services import clear_blackbox_sqlite_db, delete_entry_from_blackbox_sqlite_db
 from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id, get_slr_ids, \
-    get_slsr_ids, get_cr_ids, get_csr_ids, mark_account_as_deleted
+    get_slsr_ids, get_cr_ids, get_csr_ids, delete_account_from_database, get_last_slsr_id, get_consent_ids, \
+    get_last_consent_id, get_consent_status_id_filter, get_consent_status_ids, get_last_csr_id
 
 # create logger with 'spam_application'
-from app.mod_database.models import Particulars, EventLog, ServiceLinkRecord, \
-    ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord, Account, LocalIdentityPWD, LocalIdentity, Salt, Email, \
-    Contacts, Telephone, Settings
+from app.mod_database.models import AccountInfo, EventLog, ServiceLinkRecord, \
+    ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord, Account, LocalIdentityPWD, LocalIdentity, Salt
 
 logger = get_custom_logger(__name__)
 
@@ -44,7 +57,7 @@ def hash_password(password=None):
     return pwd_hash, salt_str
 
 
-def create_account(first_name=None, last_name=None, username=None, password=None, email_address=None, date_of_birth=None, endpoint="create_account()"):
+def create_account(first_name=None, last_name=None, username=None, password=None, endpoint="create_account()"):
     if first_name is None:
         raise AttributeError("Provide first_name as parameter")
     if last_name is None:
@@ -53,10 +66,6 @@ def create_account(first_name=None, last_name=None, username=None, password=None
         raise AttributeError("Provide username as parameter")
     if password is None:
         raise AttributeError("Provide password as parameter")
-    if email_address is None:
-        raise AttributeError("Provide email_address as parameter")
-    if date_of_birth is None:
-        raise AttributeError("Provide date_of_birth as parameter")
 
     logger.info('Global identifier for Account')
     global_identifier = str(uuid.uuid4())
@@ -67,7 +76,7 @@ def create_account(first_name=None, last_name=None, username=None, password=None
     except Exception as exp:
         error_title = "Could not generate password salt"
         logger.debug(error_title + ': ' + repr(exp))
-        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+        raise
 
     # DB cursor
     cursor = get_db_cursor()
@@ -75,19 +84,19 @@ def create_account(first_name=None, last_name=None, username=None, password=None
     try:
         ###
         # Accounts
-        logger.debug('Accounts')
-        account = Account(global_identifyer=global_identifier)  # TODO: activated MUST be changed to 0 if activation process is in use
+        logger.debug('Account')
+        account = Account(global_identifyer=global_identifier)  # NOTE: activated MUST be changed to 0 if activation process is in use
         account.to_db(cursor=cursor)
 
         ###
         # localIdentityPWDs
-        logger.debug('localIdentityPWDs')
+        logger.debug('LocalIdentityPWD')
         local_pwd = LocalIdentityPWD(password=pwd_hash, accounts_id=account.id)
         local_pwd.to_db(cursor=cursor)
 
         ###
         # localIdentities
-        logger.debug('localIdentities')
+        logger.debug('LocalIdentity')
         local_identity = LocalIdentity(
             username=username,
             pwd_id=local_pwd.id,
@@ -97,7 +106,7 @@ def create_account(first_name=None, last_name=None, username=None, password=None
 
         ###
         # salts
-        logger.debug('salts')
+        logger.debug('Salt')
         salt = Salt(
             salt=salt_str,
             identity_id=local_identity.id,
@@ -106,48 +115,23 @@ def create_account(first_name=None, last_name=None, username=None, password=None
         salt.to_db(cursor=cursor)
 
         ###
-        # Particulars
-        logger.debug('particulars')
-        particulars = Particulars(
+        # AccountInfo
+        logger.debug('AccountInfo')
+        info = AccountInfo(
             firstname=first_name,
             lastname=last_name,
-            date_of_birth=date_of_birth,
             account_id=account.id
         )
-        logger.debug("to_dict: " + repr(particulars.to_dict))
-        cursor = particulars.to_db(cursor=cursor)
+        cursor = info.to_db(cursor=cursor)
 
-        ###
-        # emails
-        logger.debug('emails')
-        email = Email(
-            email=email_address,
-            type="Personal",
-            prime=1,
-            account_id=account.id
-        )
-        email.to_db(cursor=cursor)
-
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Could not create Account"
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        logger.error(error_title)
-        db.connection.rollback()
-        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-    else:
-        logger.debug('Account commited')
-
+        ##
         try:
             logger.info("Generating Key for Account")
             kid = gen_account_key(account_id=account.id)
         except Exception as exp:
             error_title = "Could not generate Key for Account"
             logger.debug(error_title + ': ' + repr(exp))
-            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+            raise
         else:
             logger.info("Generated Key for Account with Key ID: " + str(kid))
 
@@ -157,36 +141,65 @@ def create_account(first_name=None, last_name=None, username=None, password=None
         except Exception as exp:
             error_title = "Could not generate API Key for Account"
             logger.debug(error_title + ': ' + repr(exp))
-            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+            raise
         else:
             logger.info("Generated API Key: " + str(api_key))
+
+        ###
+        # Commit MySql data
+        db.connection.commit()
+    except Exception as exp:
+        error_title = "Could not create Account"
+        logger.debug('commit failed: ' + repr(exp))
+        logger.debug('--> rollback')
+        logger.error(error_title)
+        db.connection.rollback()
+        raise
+    else:
+        logger.debug('Account created')
 
         data = cursor.fetchall()
         logger.debug('data: ' + repr(data))
 
-        try:
-            account_id = account.id
-        except Exception as exp:
-            error_title = "Could not format Account ID as String"
-            logger.debug(error_title + ': ' + repr(exp))
-            raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
-
-        logger.info('Created Account with ID: ' + account_id)
-        return account_id
+        logger.info('Created Account: ' + account.log_entry)
+        return account, account.id
 
 
 def delete_account(account_id=None):
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
-
-    # Get primary keys for particulars
     try:
-        mark_account_as_deleted(account_id=account_id)
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+
+    # Delete account from MySQL database
+    try:
+        logger.info("Deleting Account data from MySQL database")
+        delete_account_from_database(account_id=account_id)
     except Exception as exp:
         logger.error('Could not mark Account as deleted: ' + repr(exp))
         raise
     else:
         logger.info("Account marked as deleted")
+
+    try:
+        logger.info("Deleting Account data from Blackbox database")
+        delete_entry_from_blackbox_sqlite_db(account_id=account_id)
+    except Exception as exp:
+        logger.error("Could not delete Account data from Blackbox Database: " + repr(exp))
+        raise
+    else:
+        logger.info("Account data deleted from Blackbox Database")
+
+    try:
+        logger.info("Deleting Account data from ApiKey database")
+        delete_entry_from_apikey_sqlite_db(account_id=account_id)
+    except Exception as exp:
+        logger.error("Could not delete Account data from ApiKey Database: " + repr(exp))
+        raise
+    else:
+        logger.info("Account data deleted from ApiKey Database")
         return True
 
 
@@ -227,7 +240,7 @@ def get_account(account_id=None, cursor=None):
         logger.info("Account fetched")
         logger.info("Account fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
+    return db_entry_object
 
 
 def verify_account_id_match(account_id=None, api_key=None, account_id_to_compare=None, endpoint=None):
@@ -286,14 +299,77 @@ def verify_account_id_match(account_id=None, api_key=None, account_id_to_compare
     return True
 
 
-##################################
-##################################
-# Particulars
-##################################
-##################################
-def get_particular(account_id=None, id=None, cursor=None):
+def export_account(account_id=None):
     """
-    Get one particular entry from database by Account ID and Particulars ID
+    Export Account as JSON presentation
+    :param account_id:
+    :return: List of dicts
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    try:
+        logger.info("Getting Account")
+        account_object = get_account(account_id=account_id)
+    except Exception as exp:
+        error_title = "Failed to get Account"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Got Account")
+
+    try:
+        logger.info("Exporting AccountInfo")
+        account_info_dict = get_account_infos(account_id=account_id)
+    except Exception as exp:
+        error_title = "Failed to export AccountInfo"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Exported AccountInfo")
+
+    try:
+        logger.info("Exporting EvenLogs")
+        event_log_dict = get_event_logs(account_id=account_id)
+    except Exception as exp:
+        error_title = "Failed to export EvenLogs"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Exported EvenLogs")
+
+    try:
+        logger.info("Exporting MyData content")
+        mydata_dict = account_export_mydata_content(account_id=account_id)
+    except Exception as exp:
+        error_title = "Failed to export MyData content"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Exported MyData content")
+
+    export_dict = {
+        "type": "AccountExport",
+        "id": account_id,
+        "gid": account_object.global_identifier,
+        "attributes": {
+            "account_info": account_info_dict,
+            "event_logs": event_log_dict,
+            "service_links": mydata_dict
+        }
+    }
+
+    return export_dict
+
+
+##################################
+##################################
+# AccountInfo
+##################################
+##################################
+def get_account_info(account_id=None, id=None, cursor=None):
+    """
+    Get one AccountInfo entry from database
     :param account_id:
     :param id:
     :return: Particular dict
@@ -311,41 +387,41 @@ def get_particular(account_id=None, id=None, cursor=None):
             raise
 
     try:
-        logger.info("Creating Particulars object")
-        db_entry_object = Particulars(account_id=account_id, id=id)
+        logger.info("Creating AccountInfo object")
+        db_entry_object = AccountInfo(account_id=account_id, id=id)
     except Exception as exp:
-        error_title = "Failed to create Particulars object"
+        error_title = "Failed to create AccountInfo object"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.debug("Particulars object created: " + db_entry_object.log_entry)
+        logger.debug("AccountInfo object created: " + db_entry_object.log_entry)
 
-    # Get particulars from DB
+    # Get AccountInfo from DB
     try:
         cursor = db_entry_object.from_db(cursor=cursor)
     except Exception as exp:
-        error_title = "Failed to fetch Particulars from DB"
+        error_title = "Failed to fetch AccountInfo from DB"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.info("Particulars fetched")
-        logger.info("Particulars fetched from db: " + db_entry_object.log_entry)
+        logger.info("AccountInfo fetched")
+        logger.info("AccountInfo fetched from db: " + db_entry_object.log_entry)
 
     return db_entry_object.to_api_dict
 
 
-def get_particulars(account_id=None):
+def get_account_infos(account_id=None):
     """
-    Get all Particulars -entries related to account
+    Get all AccountInfo -entries related to account
     :param account_id:
-    :return: List of Particular dicts
+    :return: List of AccountInfo dicts
     """
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
 
     # Get table name
     logger.info("Create db_entry_object")
-    db_entry_object = Particulars()
+    db_entry_object = AccountInfo()
     logger.info(db_entry_object.log_entry)
     logger.info("Get table name")
     table_name = db_entry_object.table_name
@@ -358,32 +434,32 @@ def get_particulars(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for particulars
+    # Get primary keys for AccountInfo
     try:
         cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
 
-    # Get Particulars from database
-    logger.info("Get Particulars from database")
+    # Get AccountInfo objects from database
+    logger.info("Get AccountInfo objects from database")
     db_entry_list = []
     for id in id_list:
         # TODO: try-except needed?
-        logger.info("Getting particulars with particular_id: " + str(id))
-        db_entry_dict = get_particular(account_id=account_id, id=id)
+        logger.info("Getting AccountInfo with info_id: " + str(id))
+        db_entry_dict = get_account_info(account_id=account_id, id=id)
         db_entry_list.append(db_entry_dict)
-        logger.info("Particulars object added to list: " + json.dumps(db_entry_dict))
+        logger.info("AccountInfo object added to list: " + json.dumps(db_entry_dict))
 
     return db_entry_list
 
 
-def update_particular(account_id=None, id=None, attributes=None, cursor=None):
+def update_account_info(account_id=None, id=None, attributes=None, cursor=None):
     """
-    Update one particular entry at database identified by Account ID and Particulars ID
+    Update one AccountInfo entry at database
     :param account_id:
     :param id:
-    :return: Particular dict
+    :return: AccountInfo dict
     """
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
@@ -402,35 +478,34 @@ def update_particular(account_id=None, id=None, attributes=None, cursor=None):
             raise
 
     try:
-        db_entry_object = Particulars(account_id=account_id, id=id)
+        db_entry_object = AccountInfo(account_id=account_id, id=id)
     except Exception as exp:
-        error_title = "Failed to create Particulars object"
+        error_title = "Failed to create AccountInfo object"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.debug("Particulars object created: " + db_entry_object.log_entry)
+        logger.debug("AccountInfo object created: " + db_entry_object.log_entry)
 
-    # Get particulars from DB
+    # Get AccountInfo from DB
     try:
         cursor = db_entry_object.from_db(cursor=cursor)
     except Exception as exp:
-        error_title = "Failed to fetch Particulars from DB"
+        error_title = "Failed to fetch AccountInfo from DB"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.info("Particulars fetched")
-        logger.info("Particulars fetched from db: " + db_entry_object.log_entry)
+        logger.info("AccountInfo fetched")
+        logger.debug("AccountInfo fetched from db: " + db_entry_object.log_entry)
 
-    # Update Particulars object
+    # Update AccountInfo object
     if len(attributes) == 0:
         logger.info("Empty attributes dict provided. Nothing to update.")
-        return db_entry_object.to_api_dict
+        return db_entry_object
     else:
-        logger.info("Particulars object to update: " + db_entry_object.log_entry)
-
-    # log provided attributes
-    for key, value in attributes.items():
-        logger.debug("attributes[" + str(key) + "]: " + str(value))
+        logger.info("Attributes provided")
+        # log provided attributes
+        for key, value in attributes.items():
+            logger.debug("attributes[" + str(key) + "]: " + str(value))
 
     # Update object attributes
     if "lastname" in attributes:
@@ -449,20 +524,12 @@ def update_particular(account_id=None, id=None, attributes=None, cursor=None):
         db_entry_object.firstname = new_value
         logger.info(db_entry_object.log_entry)
 
-    if "img_url" in attributes:
-        logger.info("Updating img_url")
-        old_value = str(db_entry_object.img_url)
-        new_value = str(attributes.get("img_url", "None"))
+    if "avatar" in attributes:
+        logger.info("Updating avatar")
+        old_value = str(db_entry_object.avatar)
+        new_value = str(attributes.get("avatar", "None"))
         logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.img_url = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "date_of_birth" in attributes:
-        logger.info("Updating date_of_birth")
-        old_value = str(db_entry_object.date_of_birth)
-        new_value = str(attributes.get("date_of_birth", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.date_of_birth = new_value
+        db_entry_object.avatar = new_value
         logger.info(db_entry_object.log_entry)
 
     # Store updates
@@ -472,7 +539,7 @@ def update_particular(account_id=None, id=None, attributes=None, cursor=None):
         # Commit
         db.connection.commit()
     except Exception as exp:
-        error_title = "Failed to update Particulars to DB"
+        error_title = "Failed to update AccountInfo to DB"
         logger.error(error_title + ": " + repr(exp))
         logger.debug('commit failed: ' + repr(exp))
         logger.debug('--> rollback')
@@ -480,1077 +547,10 @@ def update_particular(account_id=None, id=None, attributes=None, cursor=None):
         raise
     else:
         logger.debug("Committed")
-        logger.info("Particulars updated")
+        logger.info("AccountInfo updated")
         logger.info(db_entry_object.log_entry)
 
-    return db_entry_object.to_api_dict
-
-
-##################################
-###################################
-# Contacts
-##################################
-##################################
-def get_contact(account_id=None, id=None, cursor=None):
-    """
-    Get one contact entry from database by Account ID and contact ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if id is None:
-        raise AttributeError("Provide id as parameter")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    try:
-        db_entry_object = Contacts(account_id=account_id, id=id)
-    except Exception as exp:
-        error_title = "Failed to create contact object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("contact object created: " + db_entry_object.log_entry)
-
-    # Get contact from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch contact from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("contact fetched")
-        logger.info("contact fetched from db: " + db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-def get_contacts(account_id=None):
-    """
-    Get all contact -entries related to account
-    :param account_id:
-    :return: List of dicts
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-
-    # Get table name
-    logger.info("Create contact")
-    db_entry_object = Contacts()
-    logger.info(db_entry_object.log_entry)
-    logger.info("Get table name")
-    table_name = db_entry_object.table_name
-    logger.info("Got table name: " + str(table_name))
-
-    # Get DB cursor
-    try:
-        cursor = get_db_cursor()
-    except Exception as exp:
-        logger.error('Could not get database cursor: ' + repr(exp))
-        raise
-
-    # Get primary keys for contacts
-    try:
-        cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
-    except Exception as exp:
-        logger.error('Could not get primary key list: ' + repr(exp))
-        raise
-
-    # Get contacts from database
-    logger.info("Get contacts from database")
-    db_entry_list = []
-    for id in id_list:
-        # TODO: try-except needed?
-        logger.info("Getting contacts with contacts_id: " + str(id))
-        db_entry_dict = get_contact(account_id=account_id, id=id)
-        db_entry_list.append(db_entry_dict)
-        logger.info("contact object added to list: " + json.dumps(db_entry_dict))
-
-    return db_entry_list
-
-
-def add_contact(account_id=None, attributes=None, cursor=None):
-    """
-    Add one contacts entry at database identified by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: Particular dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if attributes is None:
-        raise AttributeError("Provide attributes as parameter")
-    if not isinstance(attributes, dict):
-        raise AttributeError("attributes must be a dict")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    # Update contacts object
-    if len(attributes) == 0:
-        logger.info("Empty attributes dict provided. Nothing to add.")
-        raise StandardError("Not adding empty entry to database")
-    else:
-        # log provided attributes
-        for key, value in attributes.items():
-            logger.debug("attributes[" + str(key) + "]: " + str(value))
-
-    # Create object
-    try:
-        db_entry_object = Contacts(
-            account_id=account_id,
-            address1=str(attributes.get("address1", "")),
-            address2=str(attributes.get("address2", "")),
-            postal_code=str(attributes.get("postalCode", "")),
-            city=str(attributes.get("city", "")),
-            state=str(attributes.get("state", "")),
-            country=str(attributes.get("country", "")),
-            type=str(attributes.get("type", "")),
-            prime=str(attributes.get("primary", ""))
-        )
-    except Exception as exp:
-        error_title = "Failed to create contacts object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("contacts object created: " + db_entry_object.log_entry)
-
-    # Store updates
-    try:
-        cursor = db_entry_object.to_db(cursor=cursor)
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Failed to add contacts to DB"
-        logger.error(error_title + ": " + repr(exp))
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        db.connection.rollback()
-        raise
-    else:
-        logger.debug("Committed")
-        logger.info("contacts added")
-        logger.info(db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-def update_contact(account_id=None, id=None, attributes=None, cursor=None):
-    """
-    Update one contacts entry at database identified by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: Particular dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if id is None:
-        raise AttributeError("Provide id as parameter")
-    if attributes is None:
-        raise AttributeError("Provide attributes as parameter")
-    if not isinstance(attributes, dict):
-        raise AttributeError("attributes must be a dict")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    try:
-        db_entry_object = Contacts(account_id=account_id, id=id)
-    except Exception as exp:
-        error_title = "Failed to create contacts object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("contacts object created: " + db_entry_object.log_entry)
-
-    # Get contacts from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch contacts from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("contacts fetched")
-        logger.info("contacts fetched from db: " + db_entry_object.log_entry)
-
-    # Update contacts object
-    if len(attributes) == 0:
-        logger.info("Empty attributes dict provided. Nothing to update.")
-        return db_entry_object.to_api_dict
-    else:
-        logger.info("contacts object to update: " + db_entry_object.log_entry)
-
-    # log provided attributes
-    for key, value in attributes.items():
-        logger.debug("attributes[" + str(key) + "]: " + str(value))
-
-    # Update object attributes
-    if "address1" in attributes:
-        logger.info("Updating address1")
-        old_value = str(db_entry_object.address1)
-        new_value = str(attributes.get("address1", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.address1 = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "address2" in attributes:
-        logger.info("Updating address2")
-        old_value = str(db_entry_object.address2)
-        new_value = str(attributes.get("address2", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.address2 = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "postalCode" in attributes:
-        logger.info("Updating postalCode")
-        old_value = str(db_entry_object.postal_code)
-        new_value = str(attributes.get("postalCode", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.postal_code = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "city" in attributes:
-        logger.info("Updating city")
-        old_value = str(db_entry_object.city)
-        new_value = str(attributes.get("city", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.city = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "state" in attributes:
-        logger.info("Updating state")
-        old_value = str(db_entry_object.state)
-        new_value = str(attributes.get("state", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.state = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "country" in attributes:
-        logger.info("Updating country")
-        old_value = str(db_entry_object.country)
-        new_value = str(attributes.get("country", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.country = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "type" in attributes:
-        logger.info("Updating type")
-        old_value = str(db_entry_object.type)
-        new_value = str(attributes.get("type", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.type = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "primary" in attributes:
-        logger.info("Updating primary")
-        old_value = str(db_entry_object.prime)
-        new_value = str(attributes.get("primary", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.prime = new_value
-        logger.info(db_entry_object.log_entry)
-
-    # Store updates
-    try:
-        cursor = db_entry_object.update_db(cursor=cursor)
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Failed to update contacts to DB"
-        logger.error(error_title + ": " + repr(exp))
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        db.connection.rollback()
-        raise
-    else:
-        logger.debug("Committed")
-        logger.info("contacts updated")
-        logger.info(db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-##################################
-###################################
-# Emails
-##################################
-##################################
-def get_email(account_id=None, id=None, cursor=None):
-    """
-    Get one email entry from database by Account ID and email ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if id is None:
-        raise AttributeError("Provide id as parameter")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    try:
-        db_entry_object = Email(account_id=account_id, id=id)
-    except Exception as exp:
-        error_title = "Failed to create email object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("email object created: " + db_entry_object.log_entry)
-
-    # Get email from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch email from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("email fetched")
-        logger.info("email fetched from db: " + db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-def get_emails(account_id=None):
-    """
-    Get all email -entries related to account
-    :param account_id:
-    :return: List of dicts
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-
-    # Get table name
-    logger.info("Create email")
-    db_entry_object = Email()
-    logger.info(db_entry_object.log_entry)
-    logger.info("Get table name")
-    table_name = db_entry_object.table_name
-    logger.info("Got table name: " + str(table_name))
-
-    # Get DB cursor
-    try:
-        cursor = get_db_cursor()
-    except Exception as exp:
-        logger.error('Could not get database cursor: ' + repr(exp))
-        raise
-
-    # Get primary keys for emails
-    try:
-        cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
-    except Exception as exp:
-        logger.error('Could not get primary key list: ' + repr(exp))
-        raise
-
-    # Get emails from database
-    logger.info("Get emails from database")
-    db_entry_list = []
-    for id in id_list:
-        # TODO: try-except needed?
-        logger.info("Getting emails with emails_id: " + str(id))
-        db_entry_dict = get_email(account_id=account_id, id=id)
-        db_entry_list.append(db_entry_dict)
-        logger.info("email object added to list: " + json.dumps(db_entry_dict))
-
-    return db_entry_list
-
-
-def add_email(account_id=None, attributes=None, cursor=None):
-    """
-    Add one email entry to database identified by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if attributes is None:
-        raise AttributeError("Provide attributes as parameter")
-    if not isinstance(attributes, dict):
-        raise AttributeError("attributes must be a dict")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    # Update emails object
-    if len(attributes) == 0:
-        logger.info("Empty attributes dict provided. Nothing to add.")
-        raise StandardError("Not adding empty entry to database")
-    else:
-        # log provided attributes
-        for key, value in attributes.items():
-            logger.debug("attributes[" + str(key) + "]: " + str(value))
-
-    # Create object
-    try:
-        db_entry_object = Email(
-            account_id=account_id,
-            email=str(attributes.get("email", "")),
-            type=str(attributes.get("type", "")),
-            prime=str(attributes.get("primary", ""))
-        )
-    except Exception as exp:
-        error_title = "Failed to create emails object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("emails object created: " + db_entry_object.log_entry)
-
-    # Store updates
-    try:
-        cursor = db_entry_object.to_db(cursor=cursor)
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Failed to add emails to DB"
-        logger.error(error_title + ": " + repr(exp))
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        db.connection.rollback()
-        raise
-    else:
-        logger.debug("Committed")
-        logger.info("emails added")
-        logger.info(db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-def update_email(account_id=None, id=None, attributes=None, cursor=None):
-    """
-    Update one email entry at database identified by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if id is None:
-        raise AttributeError("Provide id as parameter")
-    if attributes is None:
-        raise AttributeError("Provide attributes as parameter")
-    if not isinstance(attributes, dict):
-        raise AttributeError("attributes must be a dict")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    try:
-        db_entry_object = Email(account_id=account_id, id=id)
-    except Exception as exp:
-        error_title = "Failed to create email object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("email object created: " + db_entry_object.log_entry)
-
-    # Get email from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch email from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("email fetched")
-        logger.info("email fetched from db: " + db_entry_object.log_entry)
-
-    # Update email object
-    if len(attributes) == 0:
-        logger.info("Empty attributes dict provided. Nothing to update.")
-        return db_entry_object.to_api_dict
-    else:
-        logger.info("email object to update: " + db_entry_object.log_entry)
-
-    # log provided attributes
-    for key, value in attributes.items():
-        logger.debug("attributes[" + str(key) + "]: " + str(value))
-
-    # Update object attributes
-    if "email" in attributes:
-        logger.info("Updating email")
-        old_value = str(db_entry_object.email)
-        new_value = str(attributes.get("email", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.email = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "type" in attributes:
-        logger.info("Updating type")
-        old_value = str(db_entry_object.type)
-        new_value = str(attributes.get("type", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.type = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "primary" in attributes:
-        logger.info("Updating primary")
-        old_value = str(db_entry_object.prime)
-        new_value = str(attributes.get("primary", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.prime = new_value
-        logger.info(db_entry_object.log_entry)
-
-    # Store updates
-    try:
-        cursor = db_entry_object.update_db(cursor=cursor)
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Failed to update email to DB"
-        logger.error(error_title + ": " + repr(exp))
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        db.connection.rollback()
-        raise
-    else:
-        logger.debug("Committed")
-        logger.info("email updated")
-        logger.info(db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-
-
-##################################
-###################################
-# Telephones (numbers)
-##################################
-##################################
-def get_telephone(account_id=None, id=None, cursor=None):
-    """
-    Get one telephone entry from database by Account ID and telephone ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if id is None:
-        raise AttributeError("Provide id as parameter")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    try:
-        db_entry_object = Telephone(account_id=account_id, id=id)
-    except Exception as exp:
-        error_title = "Failed to create telephone object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("telephone object created: " + db_entry_object.log_entry)
-
-    # Get telephone from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch telephone from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("telephone fetched")
-        logger.info("telephone fetched from db: " + db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-def get_telephones(account_id=None):
-    """
-    Get all telephone -entries related to account
-    :param account_id:
-    :return: List of dicts
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-
-    # Get table name
-    logger.info("Create telephone")
-    db_entry_object = Telephone()
-    logger.info(db_entry_object.log_entry)
-    logger.info("Get table name")
-    table_name = db_entry_object.table_name
-    logger.info("Got table name: " + str(table_name))
-
-    # Get DB cursor
-    try:
-        cursor = get_db_cursor()
-    except Exception as exp:
-        logger.error('Could not get database cursor: ' + repr(exp))
-        raise
-
-    # Get primary keys for telephones
-    try:
-        cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
-    except Exception as exp:
-        logger.error('Could not get primary key list: ' + repr(exp))
-        raise
-
-    # Get telephones from database
-    logger.info("Get telephones from database")
-    db_entry_list = []
-    for id in id_list:
-        # TODO: try-except needed?
-        logger.info("Getting telephones with telephones_id: " + str(id))
-        db_entry_dict = get_telephone(account_id=account_id, id=id)
-        db_entry_list.append(db_entry_dict)
-        logger.info("telephone object added to list: " + json.dumps(db_entry_dict))
-
-    return db_entry_list
-
-
-def add_telephone(account_id=None, attributes=None, cursor=None):
-    """
-    Add one telephone entry to database identified by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if attributes is None:
-        raise AttributeError("Provide attributes as parameter")
-    if not isinstance(attributes, dict):
-        raise AttributeError("attributes must be a dict")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    # Update telephone object
-    if len(attributes) == 0:
-        logger.info("Empty attributes dict provided. Nothing to add.")
-        raise StandardError("Not adding empty entry to database")
-    else:
-        # log provided attributes
-        for key, value in attributes.items():
-            logger.debug("attributes[" + str(key) + "]: " + str(value))
-
-    # Create object
-    try:
-        db_entry_object = Telephone(
-            account_id=account_id,
-            tel=str(attributes.get("tel", "")),
-            type=str(attributes.get("type", "")),
-            prime=str(attributes.get("primary", ""))
-        )
-    except Exception as exp:
-        error_title = "Failed to create telephone object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("telephone object created: " + db_entry_object.log_entry)
-
-    # Store updates
-    try:
-        cursor = db_entry_object.to_db(cursor=cursor)
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Failed to add telephone to DB"
-        logger.error(error_title + ": " + repr(exp))
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        db.connection.rollback()
-        raise
-    else:
-        logger.debug("Committed")
-        logger.info("telephone added")
-        logger.info(db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-def update_telephone(account_id=None, id=None, attributes=None, cursor=None):
-    """
-    Update one telephone entry at database identified by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if id is None:
-        raise AttributeError("Provide id as parameter")
-    if attributes is None:
-        raise AttributeError("Provide attributes as parameter")
-    if not isinstance(attributes, dict):
-        raise AttributeError("attributes must be a dict")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    try:
-        db_entry_object = Telephone(account_id=account_id, id=id)
-    except Exception as exp:
-        error_title = "Failed to create telephone object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("telephone object created: " + db_entry_object.log_entry)
-
-    # Get telephone from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch telephone from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("telephone fetched")
-        logger.info("telephone fetched from db: " + db_entry_object.log_entry)
-
-    # Update telephone object
-    if len(attributes) == 0:
-        logger.info("Empty attributes dict provided. Nothing to update.")
-        return db_entry_object.to_api_dict
-    else:
-        logger.info("telephone object to update: " + db_entry_object.log_entry)
-
-    # log provided attributes
-    for key, value in attributes.items():
-        logger.debug("attributes[" + str(key) + "]: " + str(value))
-
-    # Update object attributes
-    if "tel" in attributes:
-        logger.info("Updating telephone")
-        old_value = str(db_entry_object.tel)
-        new_value = str(attributes.get("tel", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.tel = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "type" in attributes:
-        logger.info("Updating type")
-        old_value = str(db_entry_object.type)
-        new_value = str(attributes.get("type", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.type = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "primary" in attributes:
-        logger.info("Updating primary")
-        old_value = str(db_entry_object.prime)
-        new_value = str(attributes.get("primary", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.prime = new_value
-        logger.info(db_entry_object.log_entry)
-
-    # Store updates
-    try:
-        cursor = db_entry_object.update_db(cursor=cursor)
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Failed to update telephone to DB"
-        logger.error(error_title + ": " + repr(exp))
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        db.connection.rollback()
-        raise
-    else:
-        logger.debug("Committed")
-        logger.info("telephone updated")
-        logger.info(db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-
-##################################
-###################################
-# Settings
-##################################
-##################################
-def get_setting(account_id=None, id=None, cursor=None):
-    """
-    Get one setting entry from database by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if id is None:
-        raise AttributeError("Provide id as parameter")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    try:
-        db_entry_object = Settings(account_id=account_id, id=id)
-    except Exception as exp:
-        error_title = "Failed to create setting object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("setting object created: " + db_entry_object.log_entry)
-
-    # Get setting from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch setting from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("setting fetched")
-        logger.info("setting fetched from db: " + db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-def get_settings(account_id=None):
-    """
-    Get all setting -entries related to account
-    :param account_id:
-    :return: List of dicts
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-
-    # Get table name
-    logger.info("Create setting")
-    db_entry_object = Settings()
-    logger.info(db_entry_object.log_entry)
-    logger.info("Get table name")
-    table_name = db_entry_object.table_name
-    logger.info("Got table name: " + str(table_name))
-
-    # Get DB cursor
-    try:
-        cursor = get_db_cursor()
-    except Exception as exp:
-        logger.error('Could not get database cursor: ' + repr(exp))
-        raise
-
-    # Get primary keys for setting
-    try:
-        cursor, id_list = get_primary_keys_by_account_id(cursor=cursor, account_id=account_id, table_name=table_name)
-    except Exception as exp:
-        logger.error('Could not get primary key list: ' + repr(exp))
-        raise
-
-    # Get setting from database
-    logger.info("Get setting from database")
-    db_entry_list = []
-    for id in id_list:
-        # TODO: try-except needed?
-        logger.info("Getting setting with setting_id: " + str(id))
-        db_entry_dict = get_setting(account_id=account_id, id=id)
-        db_entry_list.append(db_entry_dict)
-        logger.info("setting object added to list: " + json.dumps(db_entry_dict))
-
-    return db_entry_list
-
-
-def add_setting(account_id=None, attributes=None, cursor=None):
-    """
-    Add one setting entry to database identified by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if attributes is None:
-        raise AttributeError("Provide attributes as parameter")
-    if not isinstance(attributes, dict):
-        raise AttributeError("attributes must be a dict")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    # Update setting object
-    if len(attributes) == 0:
-        logger.info("Empty attributes dict provided. Nothing to add.")
-        raise StandardError("Not adding empty entry to database")
-    else:
-        # log provided attributes
-        for key, value in attributes.items():
-            logger.debug("attributes[" + str(key) + "]: " + str(value))
-
-    # Create object
-    try:
-        db_entry_object = Settings(
-            account_id=account_id,
-            key=str(attributes.get("key", "")),
-            value=str(attributes.get("value", ""))
-        )
-    except Exception as exp:
-        error_title = "Failed to create setting object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("setting object created: " + db_entry_object.log_entry)
-
-    # Store updates
-    try:
-        cursor = db_entry_object.to_db(cursor=cursor)
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Failed to add setting to DB"
-        logger.error(error_title + ": " + repr(exp))
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        db.connection.rollback()
-        raise
-    else:
-        logger.debug("Committed")
-        logger.info("setting added")
-        logger.info(db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
-
-
-def update_setting(account_id=None, id=None, attributes=None, cursor=None):
-    """
-    Update one setting entry at database identified by Account ID and ID
-    :param account_id:
-    :param id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if id is None:
-        raise AttributeError("Provide id as parameter")
-    if attributes is None:
-        raise AttributeError("Provide attributes as parameter")
-    if not isinstance(attributes, dict):
-        raise AttributeError("attributes must be a dict")
-    if cursor is None:
-        # Get DB cursor
-        try:
-            cursor = get_db_cursor()
-        except Exception as exp:
-            logger.error('Could not get database cursor: ' + repr(exp))
-            raise
-
-    try:
-        db_entry_object = Settings(account_id=account_id, id=id)
-    except Exception as exp:
-        error_title = "Failed to create setting object"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.debug("setting object created: " + db_entry_object.log_entry)
-
-    # Get setting from DB
-    try:
-        cursor = db_entry_object.from_db(cursor=cursor)
-    except Exception as exp:
-        error_title = "Failed to fetch setting from DB"
-        logger.error(error_title + ": " + repr(exp))
-        raise
-    else:
-        logger.info("setting fetched")
-        logger.info("setting fetched from db: " + db_entry_object.log_entry)
-
-    # Update setting object
-    if len(attributes) == 0:
-        logger.info("Empty attributes dict provided. Nothing to update.")
-        return db_entry_object.to_api_dict
-    else:
-        logger.info("setting object to update: " + db_entry_object.log_entry)
-
-    # log provided attributes
-    for key, value in attributes.items():
-        logger.debug("attributes[" + str(key) + "]: " + str(value))
-
-    # Update object attributes
-    if "key" in attributes:
-        logger.info("Updating key")
-        old_value = str(db_entry_object.key)
-        new_value = str(attributes.get("key", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.key = new_value
-        logger.info(db_entry_object.log_entry)
-
-    if "value" in attributes:
-        logger.info("Updating value")
-        old_value = str(db_entry_object.value)
-        new_value = str(attributes.get("value", "None"))
-        logger.debug("Updating: " + old_value + " --> " + new_value)
-        db_entry_object.value = new_value
-        logger.info(db_entry_object.log_entry)
-
-    # Store updates
-    try:
-        cursor = db_entry_object.update_db(cursor=cursor)
-        ###
-        # Commit
-        db.connection.commit()
-    except Exception as exp:
-        error_title = "Failed to update setting to DB"
-        logger.error(error_title + ": " + repr(exp))
-        logger.debug('commit failed: ' + repr(exp))
-        logger.debug('--> rollback')
-        db.connection.rollback()
-        raise
-    else:
-        logger.debug("Committed")
-        logger.info("setting updated")
-        logger.info(db_entry_object.log_entry)
-
-    return db_entry_object.to_api_dict
+    return db_entry_object
 
 
 ##################################
@@ -1645,11 +645,11 @@ def get_event_logs(account_id=None):
 
 
 ##################################
-###################################
+##################################
 # Service Link Records
 ##################################
 ##################################
-def get_slr(account_id=None, slr_id=None, cursor=None):
+def account_get_slr(account_id=None, slr_id=None, cursor=None):
     """
     Get one slr entry from database by Account ID and ID
     :param account_id:
@@ -1688,10 +688,10 @@ def get_slr(account_id=None, slr_id=None, cursor=None):
         logger.info("slr fetched")
         logger.info("slr fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_record_dict
+    return db_entry_object.to_api_dict
 
 
-def get_slrs(account_id=None):
+def account_get_slrs(account_id=None):
     """
     Get all slr -entries related to account
     :param account_id:
@@ -1728,235 +728,19 @@ def get_slrs(account_id=None):
     for id in id_list:
         # TODO: try-except needed?
         logger.info("Getting slr with slr_id: " + str(id))
-        db_entry_dict = get_slr(account_id=account_id, slr_id=id)
+        db_entry_dict = account_get_slr(account_id=account_id, slr_id=id)
         db_entry_list.append(db_entry_dict)
         logger.info("slr object added to list: " + json.dumps(db_entry_dict))
 
     return db_entry_list
 
 
-def get_record_ids(cursor=None, account_id=None):
-    """
-    Fetches IDs for all record structures
-    :param cursor:
-    :param account_id:
-    :return:
-    """
-    if cursor is None:
-        raise AttributeError("Provide cursor as parameter")
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-
-    # Containers
-    record_id_container = {}
-    table_names = {
-        "slr": "",
-        "slsr": "",
-        "cr": "",
-        "csr": ""
-    }
-
-    # Get table names
-    try:
-        logger.info("Table names")
-        # SLR
-        db_entry_object = ServiceLinkRecord()
-        table_names["slr"] = db_entry_object.table_name
-        # SLSR
-        db_entry_object = ServiceLinkStatusRecord()
-        table_names["slsr"] = db_entry_object.table_name
-        # CR
-        db_entry_object = ConsentRecord()
-        table_names["cr"] = db_entry_object.table_name
-        # CSR
-        db_entry_object = ConsentStatusRecord()
-        table_names["csr"] = db_entry_object.table_name
-        #
-        logger.info("Table names: " + json.dumps(table_names))
-    except Exception as exp:
-        logger.error('Could not get database table names: ' + repr(exp))
-        raise
-
-    # Get primary keys for Service Link Records
-    try:
-        logger.info("Getting SLR IDs")
-        cursor, slr_id_list = get_slr_ids(cursor=cursor, account_id=account_id, table_name=table_names["slr"])
-    except Exception as exp:
-        logger.error('Could not get slr primary key list: ' + repr(exp))
-        raise
-    else:
-        logger.debug("Got following SLR IDs: " + json.dumps(slr_id_list))
-
-    # Get primary keys for Service Link Status Records and Consent Records
-    for slr_id in slr_id_list:
-        logger.debug("Looping through slr_id_list: " + json.dumps(slr_id_list))
-        # Add Service Link Record IDs to record_container
-        try:
-            logger.info("Adding SLR IDs")
-            record_id_container[slr_id] = {"serviceLinkStatusRecords": {}, "consentRecords": {}}
-        except Exception as exp:
-            logger.error('Could not add slr_id: ' + str(slr_id) + ' to record_id_container: ' + repr(exp))
-            raise
-        else:
-            logger.debug("Added SLR ID: " + str(slr_id))
-
-        # Get Service Link Status Record IDs
-        try:
-            logger.info("Getting SLSR IDs")
-            cursor, slsr_id_list = get_slsr_ids(cursor=cursor, slr_id=slr_id, table_name=table_names["slsr"])
-        except Exception as exp:
-            logger.error('Could not get slsr primary key list: ' + repr(exp))
-            raise
-        else:
-            logger.debug("Got following SLSR IDs: " + json.dumps(slsr_id_list))
-
-        # Add Service Link Status Record IDs to record_container
-        for slsr_id in slsr_id_list:
-            logger.debug("Looping through slsr_id_list: " + json.dumps(slsr_id_list))
-            try:
-                logger.info("Adding SLSR IDs")
-                record_id_container[slr_id]["serviceLinkStatusRecords"][slsr_id] = {}
-            except Exception as exp:
-                logger.error('Could not add slsr_id: ' + str(slsr_id) + ' to record_id_container: ' + repr(exp))
-                raise
-            else:
-                logger.debug("Added SLSR ID: " + str(slsr_id))
-
-        # Get Consent Record IDs
-        try:
-            logger.info("Getting CR IDs")
-            cursor, cr_id_list = get_cr_ids(cursor=cursor, slr_id=slr_id, table_name=table_names["cr"])
-        except Exception as exp:
-            logger.error('Could not get cr primary key list: ' + repr(exp))
-            raise
-        else:
-            logger.debug("Got following CR IDs: " + json.dumps(cr_id_list))
-
-        # Add Consent Record IDs to record_container
-        for cr_id in cr_id_list:
-            logger.debug("Looping through cr_id_list: " + json.dumps(cr_id_list))
-            try:
-                logger.info("Adding CR IDs")
-                record_id_container[slr_id]["consentRecords"][cr_id] = {"consentStatusRecords": {}}
-            except Exception as exp:
-                logger.error('Could not add cr_id: ' + str(cr_id) + ' to record_id_container: ' + repr(exp))
-                raise
-            else:
-                logger.debug("Added CR ID: " + str(cr_id))
-
-            # Get Consent Status Record IDs
-            try:
-                logger.info("Getting CSR IDs")
-                cursor, csr_id_list = get_csr_ids(cursor=cursor, cr_id=cr_id, table_name=table_names["csr"])
-            except Exception as exp:
-                logger.error('Could not get csr primary key list: ' + repr(exp))
-                raise
-            else:
-                logger.debug("Got following CSR IDs: " + json.dumps(csr_id_list))
-
-            # Add Consent Status Record IDs to record_container
-            for csr_id in csr_id_list:
-                logger.debug("Looping through csr_id_list: " + json.dumps(csr_id_list))
-                try:
-                    logger.info("Adding CSR IDs")
-                    record_id_container[slr_id]["consentRecords"][cr_id]["consentStatusRecords"][csr_id] = {}
-                except Exception as exp:
-                    logger.error('Could not add csr_id: ' + str(csr_id) + ' to record_id_container: ' + repr(exp))
-                    raise
-                else:
-                    logger.debug("Added CSR ID: " + str(csr_id))
-
-    return record_id_container
-
-
-def get_records(cursor=None, record_ids=None):
-    if cursor is None:
-        raise AttributeError("Provide cursor as parameter")
-    if record_ids is None:
-        raise AttributeError("Provide record_ids as parameter")
-    if not isinstance(record_ids, dict):
-        raise AttributeError("record_ids MUST be dict")
-
-    logger.debug("Type of record_ids: " + repr(type(record_ids)))
-
-    record_container = {}
-
-    logger.info("Getting Records")
-    logger.info("record_ids: " + repr(record_ids))
-    record_ids = dict(record_ids)
-
-    # logger.info("Get Service Link Records")
-    # for slr in record_ids.iteritems():
-    #     logger.debug("slr: " + repr(slr))
-    #     logger.info("Looping through Service Link Record with ID: " + json.dumps(slr))
-
-    return record_container
-
-
-def get_slrs_and_subcomponents(account_id=None):
-    """
-    Get all slr -entries with sub elements (slsr, cr, csr) related to account
-    :param account_id:
-    :return: List of dicts
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-
-    # Containers
-    return_container = {}
-    record_id_container = {}
-    record_container = {}
-
-    # Get DB cursor
-    try:
-        cursor = get_db_cursor()
-    except Exception as exp:
-        logger.error('Could not get database cursor: ' + repr(exp))
-        raise
-
-    try:
-        record_id_container = get_record_ids(cursor=cursor, account_id=account_id)
-    except Exception as exp:
-        logger.error('Could not get record id collection: ' + repr(exp))
-        raise
-
-    # TODO: Get Actual records from db
-    logger.info("################")
-    logger.info("################")
-    logger.info("################")
-    try:
-        record_container = get_records(cursor=cursor, record_ids=record_id_container)
-    except Exception as exp:
-        logger.error('Could not get record collection: ' + repr(exp))
-        raise
-
-    logger.info("################")
-    logger.info("################")
-    logger.info("################")
-
-    return_container["record_id_container"] = record_id_container
-    return_container["record_container"] = record_container
-
-
-    # Get slrs from database
-    # logger.info("Get slrs from database")
-    # db_entry_list = []
-    # for id in id_list:
-    #     # TODO: try-except needed?
-    #     logger.info("Getting slr with slr_id: " + str(id))
-    #     db_entry_dict = get_slr(account_id=account_id, slr_id=id)
-    #     db_entry_list.append(db_entry_dict)
-    #     logger.info("slr object added to list: " + json.dumps(db_entry_dict))
-
-    return return_container
-
-
 ##################################
-###################################
+##################################
 # Service Link Status Records
 ##################################
 ##################################
-def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
+def account_get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
     """
     Get one slsr entry from database by Account ID and ID
     :param slr_id:
@@ -1979,7 +763,7 @@ def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
 
     # Check if slr can be found with account_id and slr_id
     try:
-        slr = get_slr(account_id=account_id, slr_id=slr_id)
+        slr = account_get_slr(account_id=account_id, slr_id=slr_id)
     except StandardError as exp:
         logger.error(repr(exp))
         raise
@@ -2004,6 +788,11 @@ def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
     try:
         logger.info("Get slsr from DB")
         cursor = db_entry_object.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "Service Link Status Record not found with provided information."
+        error_detail = "Service Link Record ID was {} and Service Link Status Record ID was {}.".format(slr_id, slsr_id)
+        logger.error(error_title + " " + error_detail + ": " + repr(exp))
+        raise IndexError(error_detail)
     except Exception as exp:
         error_title = "Failed to fetch slsr from DB"
         logger.error(error_title + ": " + repr(exp))
@@ -2012,10 +801,10 @@ def get_slsr(account_id=None, slr_id=None, slsr_id=None, cursor=None):
         logger.info("slsr fetched")
         logger.info("slsr fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_record_dict
+    return db_entry_object.to_api_dict
 
 
-def get_slsrs(account_id=None, slr_id=None):
+def account_get_slsrs(account_id=None, slr_id=None):
     """
     Get all slsr -entries related to service link record
     :param account_id:
@@ -2029,7 +818,7 @@ def get_slsrs(account_id=None, slr_id=None):
 
     # Check if slr can be found with account_id and slr_id
     try:
-        slr = get_slr(account_id=account_id, slr_id=slr_id)
+        slr = account_get_slr(account_id=account_id, slr_id=slr_id)
     except StandardError as exp:
         logger.error(repr(exp))
         raise
@@ -2037,9 +826,8 @@ def get_slsrs(account_id=None, slr_id=None):
         func_data = {'account_id': account_id, 'slr_id': slr_id}
         title = "No SLR with: " + json.dumps(func_data)
         logger.error(title)
-        raise StandardError(title + ": " + repr(exp))
+        raise IndexError(title + ": " + repr(exp))
     else:
-        logger.info("HEP")
         logger.info("Found SLR: " + repr(slr))
 
     # Get table name
@@ -2070,31 +858,153 @@ def get_slsrs(account_id=None, slr_id=None):
     for id in id_list:
         # TODO: try-except needed?
         logger.info("Getting slsr with account_id: " + str(account_id) + " slr_id: " + str(slr_id) + " slsr_id: " + str(id))
-        db_entry_dict = get_slsr(account_id=account_id, slr_id=slr_id, slsr_id=id)
+        db_entry_dict = account_get_slsr(account_id=account_id, slr_id=slr_id, slsr_id=id)
         db_entry_list.append(db_entry_dict)
         logger.info("slsr object added to list: " + json.dumps(db_entry_dict))
 
     return db_entry_list
 
 
-##################################
-###################################
-# Consent Records
-##################################
-##################################
-def get_cr(account_id=None, slr_id=None, cr_id=None, cursor=None):
-    """
-    Get one cr entry from database by Account ID and ID
-    :param slr_id:
-    :param cr_id:
-    :return: dict
-    """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
+def account_get_last_slr_status(account_id=None, slr_id=None, endpoint="get_last_slr_status()"):
     if slr_id is None:
         raise AttributeError("Provide slr_id as parameter")
-    if cr_id is None:
-        raise AttributeError("Provide cr_id as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise ApiError(code=500, title="Failed to get database cursor", detail=repr(exp), source=endpoint)
+
+    # Init ServiceLinkRecord Object
+    try:
+        logger.info("Create ServiceLinkRecord object")
+        slr_entry = ServiceLinkRecord(service_link_record_id=slr_id, account_id=account_id)
+        logger.info(slr_entry.log_entry)
+    except Exception as exp:
+        error_title = "Failed to create Service Link Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("slr_entry: " + slr_entry.log_entry)
+
+    # Get ServiceLinkRecord from DB
+    try:
+        cursor = slr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "Service Link Status Record not found with provided information."
+        error_detail = "Account ID was {} and Service Link Record ID was {}.".format(account_id, slr_id)
+        logger.error(error_title + " " + error_detail + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=error_detail, source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to fetch Service Link Record from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=str(exp.message), source=endpoint)
+    else:
+        logger.debug("slr_entry: " + slr_entry.log_entry)
+
+    # Create ServiceLinkStatusRecord object
+    try:
+        slsr_entry = ServiceLinkStatusRecord()
+    except Exception as exp:
+        error_title = "Failed to create ServiceLinkStatusRecord object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("slsr_entry: " + slsr_entry.log_entry)
+
+    # Get database table name for ServiceLinkStatusRecord
+    try:
+        logger.info("Get ServiceLinkStatusRecord table name")
+        slsr_table_name = slsr_entry.table_name
+    except Exception as exp:
+        error_title = "Failed to get ServiceLinkStatusRecord table name"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Got ServiceLinkStatusRecord table name: " + str(slsr_table_name))
+
+    # Get ServiceLinkStatusRecord ID
+    try:
+        cursor, slsr_id = get_last_slsr_id(cursor=cursor, slr_id=slr_id, table_name=slsr_table_name)
+    except IndexError as exp:
+        error_title = "ServiceLinkStatusRecord not found from DB with given Consent Record ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to get last ServiceLinkStatusRecord ID from database"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("slsr_id: " + str(slsr_id))
+
+    # Append ID to ServiceLinkStatusRecord Object
+    try:
+        logger.info("Append ID to ServiceLinkStatusRecord object: " + slsr_entry.log_entry)
+        slsr_entry.consent_status_record_id = slsr_id
+    except Exception as exp:
+        error_title = "Failed to append ID to ServiceLinkStatusRecord object"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.info("Appended ID to ServiceLinkStatusRecord object: " + slsr_entry.log_entry)
+
+    # Get ServiceLinkStatusRecord from DB
+    try:
+        cursor = slsr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "ServiceLinkStatusRecord not found from DB with given ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to fetch ServiceLinkStatusRecord from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("slsr_entry: " + slsr_entry.log_entry)
+
+    return slsr_entry.to_api_dict
+
+
+##################################
+##################################
+# Consents
+##################################
+##################################
+def account_get_cr(cr_id="", surrogate_id="", slr_id="", subject_id="", consent_pair_id="", account_id="", cursor=None):
+    """
+    Get Consent Record entry
+    :param account_id:
+    :param slr_id:
+    :return: dict
+    """
+    try:
+        cr_id = str(cr_id)
+    except Exception:
+        raise TypeError("cr_id MUST be str, not " + str(type(cr_id)))
+    try:
+        surrogate_id = str(surrogate_id)
+    except Exception:
+        raise TypeError("surrogate_id MUST be str, not " + str(type(surrogate_id)))
+    try:
+        slr_id = str(slr_id)
+    except Exception:
+        raise TypeError("slr_id MUST be str, not " + str(type(slr_id)))
+    try:
+        subject_id = str(subject_id)
+    except Exception:
+        raise TypeError("subject_id MUST be str, not " + str(type(subject_id)))
+    try:
+        consent_pair_id = str(consent_pair_id)
+    except Exception:
+        raise TypeError("consent_pair_id MUST be str, not " + str(type(consent_pair_id)))
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+
     if cursor is None:
         # Get DB cursor
         try:
@@ -2103,72 +1013,89 @@ def get_cr(account_id=None, slr_id=None, cr_id=None, cursor=None):
             logger.error('Could not get database cursor: ' + repr(exp))
             raise
 
-    # Check if slr can be found with account_id and slr_id
     try:
-        logger.info("Check if slr can be found with account_id and slr_id")
-        slr = get_slr(account_id=account_id, slr_id=slr_id)
-    except StandardError as exp:
-        logger.error(repr(exp))
-        raise
+        db_entry_object = ConsentRecord(
+            consent_id=cr_id,
+            surrogate_id=surrogate_id,
+            service_link_record_id=slr_id,
+            subject_id=subject_id,
+            consent_pair_id=consent_pair_id,
+            accounts_id=account_id
+        )
     except Exception as exp:
-        func_data = {'account_id': account_id, 'slr_id': slr_id}
-        title = "No SLR with: " + json.dumps(func_data)
-        logger.error(title)
-        raise StandardError(title + ": " + repr(exp))
-    else:
-        logger.info("Found: " + repr(slr))
-
-    try:
-        db_entry_object = ConsentRecord(consent_id=cr_id, service_link_record_id=slr_id)
-    except Exception as exp:
-        error_title = "Failed to create cr object"
+        error_title = "Failed to create ConsentRecord object"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.debug("cr object created: " + db_entry_object.log_entry)
+        logger.debug("ConsentRecord object created: " + db_entry_object.log_entry)
 
-    # Get cr from DB
+    # Get slr from DB
     try:
         cursor = db_entry_object.from_db(cursor=cursor)
     except Exception as exp:
-        error_title = "Failed to fetch cr from DB"
+        error_title = "Failed to fetch ConsentRecord from DB"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.info("cr fetched")
-        logger.info("cr fetched from db: " + db_entry_object.log_entry)
+        logger.info("ConsentRecord fetched")
+        logger.debug("ConsentRecord fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_record_dict
+    return db_entry_object.to_api_dict
 
 
-def get_crs(account_id=None, slr_id=None):
+def account_get_crs(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", account_id="", status_id="", consent_pairs=False):
     """
-    Get all cr -entries related to service link record
-    :param account_id:
+    Get Consent Records
+
+    :param surrogate_id:
     :param slr_id:
-    :return: List of dicts
+    :param subject_id:
+    :param consent_pair_id:
+    :param account_id:
+    :return:
     """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if slr_id is None:
-        raise AttributeError("Provide slr_id as parameter")
-
-    # Check if slr can be found with account_id and slr_id
     try:
-        slr = get_slr(account_id=account_id, slr_id=slr_id)
-    except StandardError as exp:
-        logger.error(repr(exp))
-        raise
-    except Exception as exp:
-        func_data = {'account_id': account_id, 'slr_id': slr_id}
-        title = "No SLR with: " + json.dumps(func_data)
-        logger.error(title)
-        raise StandardError(title + ": " + repr(exp))
+        surrogate_id = str(surrogate_id)
+    except Exception:
+        raise TypeError("surrogate_id MUST be str, not " + str(type(surrogate_id)))
+    try:
+        slr_id = str(slr_id)
+    except Exception:
+        raise TypeError("slr_id MUST be str, not " + str(type(slr_id)))
+    try:
+        subject_id = str(subject_id)
+    except Exception:
+        raise TypeError("subject_id MUST be str, not " + str(type(subject_id)))
+    try:
+        consent_pair_id = str(consent_pair_id)
+    except Exception:
+        raise TypeError("consent_pair_id MUST be str, not " + str(type(consent_pair_id)))
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+    try:
+        status_id = str(status_id)
+    except Exception:
+        raise TypeError("status_id MUST be str, not " + str(type(status_id)))
+    try:
+        consent_pairs = bool(consent_pairs)
+    except Exception:
+        raise TypeError("consent_pairs MUST be bool, not " + str(type(consent_pairs)))
+
+    logger.info("surrogate_id: " + surrogate_id)
+    logger.info("slr_id: " + slr_id)
+    logger.info("subject_id: " + subject_id)
+    logger.info("consent_pair_id: " + consent_pair_id)
+    logger.info("account_id: " + account_id)
+    logger.info("status_id: " + status_id)
+    if consent_pairs:
+        logger.info("consent_pairs: True")
     else:
-        logger.info("Found SLR: " + repr(slr))
+        logger.info("consent_pairs: False")
 
     # Get table name
-    logger.info("Create cr")
+    logger.info("Create ConsentRecord object")
     db_entry_object = ConsentRecord()
     logger.info(db_entry_object.log_entry)
     logger.info("Get table name")
@@ -2182,50 +1109,180 @@ def get_crs(account_id=None, slr_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for crs
+    # Get primary keys for slr
     try:
-        logger.info("Get primary keys for crs")
-        cursor, id_list = get_cr_ids(cursor=cursor, slr_id=slr_id, table_name=table_name)
+        cursor, id_list = get_consent_ids(
+            cursor=cursor,
+            surrogate_id=surrogate_id,
+            slr_id=slr_id,
+            subject_id=subject_id,
+            consent_pair_id=consent_pair_id,
+            account_id=account_id,
+            table_name=table_name
+        )
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
-    else:
-        logger.info("primary keys for crs: " + repr(id_list))
 
-    # Get crs from database
-    logger.info("Get crs from database")
-    db_entry_list = []
-    for id in id_list:
+    # Get ConsentRecords from database
+    logger.info("Get ConsentRecords from database")
+    cr_list = []
+    logger.info("Getting ConsentRecords")
+    for entry_id in id_list:
         # TODO: try-except needed?
-        logger.info("Getting cr with account_id: " + str(account_id) + " slr_id: " + str(slr_id) + " cr_id: " + str(id))
-        db_entry_dict = get_cr(account_id=account_id, slr_id=slr_id, cr_id=id)
-        db_entry_list.append(db_entry_dict)
-        logger.info("cr object added to list: " + json.dumps(db_entry_dict))
+        logger.info("Getting ConsentRecord with cr_id: " + str(entry_id))
+        db_entry_dict = account_get_cr(cr_id=entry_id, account_id=account_id)
+        cr_list.append(db_entry_dict)
+        logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
 
-    return db_entry_list
+    if consent_pairs:
+        logger.info("Getting Consent Record pairs")
+        for entry_id in id_list:
+            # TODO: try-except needed?
+            logger.info("Getting ConsentRecord with consent_pair_id: " + str(entry_id))
+            db_entry_dict = account_get_cr(consent_pair_id=entry_id, account_id=account_id)
+            cr_list.append(db_entry_dict)
+            logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
+
+    logger.info("ConsentRecords fetched: " + json.dumps(cr_list))
+
+    return cr_list
 
 
-##################################
-###################################
-# Consent Status Records
-##################################
-##################################
-def get_csr(account_id=None, slr_id=None, cr_id=None, csr_id=None, cursor=None):
+def account_get_last_cr(surrogate_id="", slr_id="", subject_id="", consent_pair_id="", account_id="", status_id="", consent_pairs=False):
     """
-    Get one csr entry from database by Account ID and ID
+    Get Consent Records
+
+    :param surrogate_id:
     :param slr_id:
-    :param cr_id:
-    :param csr_id:
+    :param subject_id:
+    :param consent_pair_id:
+    :param account_id:
+    :return:
+    """
+    try:
+        surrogate_id = str(surrogate_id)
+    except Exception:
+        raise TypeError("surrogate_id MUST be str, not " + str(type(surrogate_id)))
+    try:
+        slr_id = str(slr_id)
+    except Exception:
+        raise TypeError("slr_id MUST be str, not " + str(type(slr_id)))
+    try:
+        subject_id = str(subject_id)
+    except Exception:
+        raise TypeError("subject_id MUST be str, not " + str(type(subject_id)))
+    try:
+        consent_pair_id = str(consent_pair_id)
+    except Exception:
+        raise TypeError("consent_pair_id MUST be str, not " + str(type(consent_pair_id)))
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+    try:
+        status_id = str(status_id)
+    except Exception:
+        raise TypeError("status_id MUST be str, not " + str(type(status_id)))
+    try:
+        consent_pairs = bool(consent_pairs)
+    except Exception:
+        raise TypeError("consent_pairs MUST be bool, not " + str(type(consent_pairs)))
+
+    logger.info("surrogate_id: " + surrogate_id)
+    logger.info("slr_id: " + slr_id)
+    logger.info("subject_id: " + subject_id)
+    logger.info("consent_pair_id: " + consent_pair_id)
+    logger.info("account_id: " + account_id)
+    logger.info("status_id: " + status_id)
+    if consent_pairs:
+        logger.info("consent_pairs: True")
+    else:
+        logger.info("consent_pairs: False")
+
+    # Get table name
+    logger.info("Create ConsentRecord object")
+    db_entry_object = ConsentRecord()
+    logger.info(db_entry_object.log_entry)
+    logger.info("Get table name")
+    table_name = db_entry_object.table_name
+    logger.info("Got table name: " + str(table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Get primary keys for slr
+    try:
+        cursor, id_list = get_last_consent_id(
+            cursor=cursor,
+            surrogate_id=surrogate_id,
+            slr_id=slr_id,
+            subject_id=subject_id,
+            consent_pair_id=consent_pair_id,
+            account_id=account_id,
+            table_name=table_name
+        )
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get ConsentRecords from database
+    logger.info("Get ConsentRecords from database")
+    cr_list = []
+    logger.info("Getting ConsentRecords")
+    for entry_id in id_list:
+        # TODO: try-except needed?
+        logger.info("Getting ConsentRecord with cr_id: " + str(entry_id))
+        db_entry_dict = account_get_cr(cr_id=entry_id, account_id=account_id)
+        cr_list.append(db_entry_dict)
+        logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
+
+    if consent_pairs:
+        logger.info("Getting Consent Record pairs")
+        for entry_id in id_list:
+            # TODO: try-except needed?
+            logger.info("Getting ConsentRecord with consent_pair_id: " + str(entry_id))
+            db_entry_dict = account_get_cr(consent_pair_id=entry_id, account_id=account_id)
+            cr_list.append(db_entry_dict)
+            logger.info("ConsentRecord object added to list: " + json.dumps(db_entry_dict))
+
+    logger.info("ConsentRecords fetched: " + json.dumps(cr_list))
+
+    return cr_list
+
+
+def account_get_csr(csr_id="", cr_id="", prev_record_id="", account_id="", cursor=None):
+    """
+    Get Consent Record entry
+
+    :param csr_id: 
+    :param cr_id: 
+    :param prev_record_id: 
+    :param account_id: 
+    :param cursor: 
     :return: dict
     """
-    if account_id is None:
-        raise AttributeError("Provide account_id as parameter")
-    if slr_id is None:
-        raise AttributeError("Provide slr_id as parameter")
-    if cr_id is None:
-        raise AttributeError("Provide cr_id as parameter")
-    if csr_id is None:
-        raise AttributeError("Provide csr_id as parameter")
+    try:
+        cr_id = str(cr_id)
+    except Exception:
+        raise TypeError("cr_id MUST be str, not " + str(type(cr_id)))
+    try:
+        csr_id = str(csr_id)
+    except Exception:
+        raise TypeError("csr_id MUST be str, not " + str(type(csr_id)))
+    try:
+        prev_record_id = str(prev_record_id)
+    except Exception:
+        raise TypeError("prev_record_id MUST be str, not " + str(type(prev_record_id)))
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+
     if cursor is None:
         # Get DB cursor
         try:
@@ -2234,73 +1291,50 @@ def get_csr(account_id=None, slr_id=None, cr_id=None, csr_id=None, cursor=None):
             logger.error('Could not get database cursor: ' + repr(exp))
             raise
 
-    # Check if cr can be found with account_id, slr_id and cr_id
     try:
-        cr = get_cr(account_id=account_id, slr_id=slr_id, cr_id=cr_id)
-    except StandardError as exp:
-        logger.error(repr(exp))
-        raise
+        db_entry_object = ConsentStatusRecord(
+            consent_record_id=cr_id,
+            consent_status_record_id=csr_id,
+            prev_record_id=prev_record_id,
+            accounts_id=account_id
+        )
     except Exception as exp:
-        func_data = {'account_id': account_id, 'slr_id': slr_id, 'cr_id': cr_id}
-        title = "No CR with: " + json.dumps(func_data)
-        logger.error(title)
-        raise StandardError(title + ": " + repr(exp))
-    else:
-        logger.info("Found: " + repr(cr))
-
-    try:
-        db_entry_object = ConsentStatusRecord(consent_record_id=cr_id, consent_status_record_id=csr_id)
-    except Exception as exp:
-        error_title = "Failed to create csr object"
+        error_title = "Failed to create ConsentRecord object"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.debug("csr object created: " + db_entry_object.log_entry)
+        logger.debug("ConsentRecord object created: " + db_entry_object.log_entry)
 
-    # Get csr from DB
+    # Get slr from DB
     try:
         cursor = db_entry_object.from_db(cursor=cursor)
     except Exception as exp:
-        error_title = "Failed to fetch csr from DB"
+        error_title = "Failed to fetch ConsentRecord from DB"
         logger.error(error_title + ": " + repr(exp))
         raise
     else:
-        logger.info("csr fetched")
-        logger.info("csr fetched from db: " + db_entry_object.log_entry)
+        logger.info("ConsentRecord fetched")
+        logger.debug("ConsentRecord fetched from db: " + db_entry_object.log_entry)
 
-    return db_entry_object.to_record_dict
+    return db_entry_object.to_api_dict
 
 
-def get_csrs(account_id=None, slr_id=None, cr_id=None):
+def account_get_csrs(account_id=None, consent_id=None, status_id=""):
     """
-    Get all csr -entries related to service link record
+    Get all consent status record entries related to Consent Record
     :param account_id:
-    :param slr_id:
+    :param consent_id:
     :return: List of dicts
     """
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
-    if slr_id is None:
-        raise AttributeError("Provide slr_id as parameter")
-    if cr_id is None:
-        raise AttributeError("Provide cr_id as parameter")
-
-    # Check if cr can be found with account_id, slr_id and cr_id
-    try:
-        cr = get_cr(account_id=account_id, slr_id=slr_id, cr_id=cr_id)
-    except StandardError as exp:
-        logger.error(repr(exp))
-        raise
-    except Exception as exp:
-        func_data = {'account_id': account_id, 'slr_id': slr_id, 'cr_id': cr_id}
-        title = "No CR with: " + json.dumps(func_data)
-        logger.error(title)
-        raise StandardError(title + ": " + repr(exp))
-    else:
-        logger.info("Found: " + repr(cr))
+    if consent_id is None:
+        raise AttributeError("Provide consent_id as parameter")
+    if status_id is None:
+        raise AttributeError("Provide status_id as parameter")
 
     # Get table name
-    logger.info("Create csr")
+    logger.info("Create Consent Status Record object")
     db_entry_object = ConsentStatusRecord()
     logger.info(db_entry_object.log_entry)
     logger.info("Get table name")
@@ -2314,47 +1348,149 @@ def get_csrs(account_id=None, slr_id=None, cr_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary keys for csrs
+    # Get primary key filter
     try:
-        cursor, id_list = get_csr_ids(cursor=cursor, cr_id=cr_id, table_name=table_name)
+        cursor, filter_id = get_consent_status_id_filter(cursor=cursor, csr_id=status_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
 
-    # Get csrs from database
-    logger.info("Get csrs from database")
+    # Get primary keys for Consent Status Records
+    try:
+        cursor, id_list = get_consent_status_ids(cursor=cursor, cr_id=consent_id, primary_key_filter=filter_id, table_name=table_name)
+    except Exception as exp:
+        logger.error('Could not get primary key list: ' + repr(exp))
+        raise
+
+    # Get Consent Status Records from database
+    logger.info("Get Consent Status Records from database")
     db_entry_list = []
-    for id in id_list:
+    for entry_id in id_list:
         # TODO: try-except needed?
-        logger.info("Getting csr with account_id: " + str(account_id) + " slr_id: " + str(slr_id) + " cr_id: " + str(cr_id) + " csr_id: " + str(id))
-        db_entry_dict = get_csr(account_id=account_id, slr_id=slr_id, cr_id=cr_id, csr_id=id)
+        logger.info("Getting Consent Status Record with account_id: " + str(account_id) + " consent_id: " + str(
+            consent_id) + " csr_id: " + str(entry_id))
+        db_entry_dict = account_get_csr(account_id=account_id, cr_id=consent_id, csr_id=entry_id)
         db_entry_list.append(db_entry_dict)
-        logger.info("csr object added to list: " + json.dumps(db_entry_dict))
+        logger.info("Consent Status Records object added to list: " + json.dumps(db_entry_dict))
 
     return db_entry_list
 
 
-##################################
-##################################
-# Account Export  # TODO: Move this to Account section
-##################################
-##################################
-def export_account(account_id=None):
+def account_get_last_cr_status(consent_id=None, account_id="", endpoint="get_last_cr_status()"):
+    if consent_id is None:
+        raise AttributeError("Provide consent_id as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Get DB cursor
+    try:
+        logger.info("Getting database cursor")
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    # Init Consent Record Object
+    try:
+        logger.info("Create ConsentRecord object")
+        cr_entry = ConsentRecord(consent_id=consent_id)
+        logger.info(cr_entry.log_entry)
+    except Exception as exp:
+        error_title = "Failed to create Consent Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("ConsentRecord object: " + cr_entry.log_entry)
+
+    # Get Consent Record from DB
+    try:
+        logger.info("Getting Consent Record from DB")
+        cursor = cr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "Consent Record not found from DB with given ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    except Exception as exp:
+        error_title = "Failed to fetch Consent Record from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("cr_entry: " + cr_entry.log_entry)
+
+    # Create Consent Status Record object
+    try:
+        logger.info("Creating Consent Status Record object")
+        csr_entry = ConsentStatusRecord()
+    except Exception as exp:
+        error_title = "Failed to create Consent Status Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("Consent Status Record object: " + csr_entry.log_entry)
+
+    # Get Consent Status Record ID
+    try:
+        logger.info("Getting ID of last Consent Status Record")
+        cursor, csr_id = get_last_csr_id(cursor=cursor, consent_id=consent_id, account_id=account_id, table_name=csr_entry.table_name)
+    except IndexError as exp:
+        error_title = "Consent Status Record not found from DB with given Consent Record ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    except Exception as exp:
+        error_title = "Failed to get last Consent Status Record ID from database"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.debug("Consent Status Record ID: " + str(csr_id))
+
+    # Append IDs to Consent Status Record Object
+    try:
+        logger.info("Appending IDs to Consent Status Record object")
+        csr_entry.consent_status_record_id = csr_id
+        csr_entry.accounts_id = account_id
+    except Exception as exp:
+        error_title = "Failed to append IDs to Consent Status Record object"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Appended IDs to Consent Status Record object: " + csr_entry.log_entry)
+
+    # Get Consent Status Record from DB
+    try:
+        logger.info("Getting Consent Status Record from DB")
+        cursor = csr_entry.from_db(cursor=cursor)
+    except IndexError as exp:
+        error_title = "Consent Status Record not found from DB with given ID"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=404, title=error_title, detail=repr(exp), source=endpoint)
+    except Exception as exp:
+        error_title = "Failed to fetch Consent Status Record from DB"
+        logger.error(error_title + ": " + repr(exp))
+        raise ApiError(code=500, title=error_title, detail=repr(exp), source=endpoint)
+    else:
+        logger.debug("Consent Status Record object: " + csr_entry.log_entry)
+
+    return csr_entry.to_api_dict
+
+
+def account_export_mydata_content(account_id=None):
     """
-    Export Account as JSON presentation
+    Export ServiceLinks
     :param account_id:
     :return: List of dicts
     """
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
 
-    export = {
-        "type": "Account",
-        "id": account_id,
-        "attributes": {}
-    }
-
-    export_attributes = {}
+    # Get table names
+    logger.info("ServiceLinkRecord")
+    db_entry_object = ServiceLinkRecord()
+    slr_table_name = db_entry_object.table_name
+    logger.info("ServiceLinkRecord table name: " + str(slr_table_name))
+    logger.info("ConsentRecord")
+    db_entry_object = ConsentRecord()
+    cr_table_name = db_entry_object.table_name
+    logger.info("ConsentRecord table name: " + str(cr_table_name))
 
     # Get DB cursor
     try:
@@ -2363,162 +1499,37 @@ def export_account(account_id=None):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    ##################################
-    # Service Link Records
-    ##################################
-    title = "Service Link Records"
-    try:
-        logger.info(title)
-        entries = get_slrs_and_subcomponents(account_id=account_id)
-        export_attributes["serviceLinkRecords"] = entries
-    except IndexError as exp:
-        error_title = "Export of " + title + " failed. No entries in database."
-        logger.error(error_title + ': ' + repr(exp))
-        export_attributes["serviceLinkRecords"] = {}
-    except Exception as exp:
-        error_title = "Export of " + title + " failed"
-        logger.error(error_title + ': ' + repr(exp))
-        raise StandardError(title + ": " + repr(exp))
-    else:
-        logger.info(title + ": " + json.dumps(entries))
+    logger.info("Get SLR IDs")
+    db_entry_list = []
+    cursor, slr_id_list = get_slr_ids(cursor=cursor, account_id=account_id, table_name=slr_table_name)
+    for slr_id in slr_id_list:
+        logger.info("Getting SLR with slr_id: " + str(slr_id))
+        slr_dict = account_get_slr(account_id=account_id, slr_id=slr_id)
+        #
+        logger.info("Getting status records for SLR")
+        slsr_dict = account_get_slsrs(account_id=account_id, slr_id=slr_id)
+        logger.info("Appending status record to SLR")
+        slr_dict['status_records'] = slsr_dict
+        #
+        logger.info("Get CR IDs")
+        cr_dict_list = []
+        cursor, cr_id_list = get_cr_ids(slr_id=slr_id, table_name=cr_table_name, cursor=cursor)
+        for cr_id in cr_id_list:
+            logger.info("Getting CR with cr_id: " + str(cr_id))
+            cr_dict = account_get_cr(cr_id=cr_id, account_id=account_id)
+            logger.info("Getting status records for CR")
+            csr_dict = account_get_csrs(account_id=account_id, consent_id=cr_id)
+            logger.info("Appending status record to CR")
+            cr_dict['status_records'] = csr_dict
+            logger.info("Appending CR to CR list")
+            cr_dict_list.append(cr_dict)
 
-    ##################################
-    # Particulars
-    ##################################
-    # title = "Particulars"
-    # try:
-    #     logger.info(title)
-    #     entries = get_particulars(account_id=account_id)
-    #     export_attributes["particulars"] = entries
-    # except IndexError as exp:
-    #     error_title = "Export of " + title + " failed. No entries in database."
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     export_attributes["particulars"] = {}
-    # except Exception as exp:
-    #     error_title = "Export of " + title + " failed"
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     raise StandardError(title + ": " + repr(exp))
-    # else:
-    #     logger.info(title + ": " + json.dumps(entries))
-    #
-    # ##################################
-    # # Contacts
-    # ##################################
-    # title = "Contacts"
-    # try:
-    #     logger.info(title)
-    #     entries = get_contacts(account_id=account_id)
-    #     export_attributes["contacts"] = entries
-    # except IndexError as exp:
-    #     error_title = "Export of " + title + " failed. No entries in database."
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     export_attributes["contacts"] = {}
-    # except Exception as exp:
-    #     error_title = "Export of " + title + " failed"
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     raise StandardError(title + ": " + repr(exp))
-    # else:
-    #     logger.info(title + ": " + json.dumps(entries))
-    #
-    # ##################################
-    # # Emails
-    # ##################################
-    # title = "Emails"
-    # try:
-    #     logger.info(title)
-    #     entries = get_emails(account_id=account_id)
-    #     export_attributes["emails"] = entries
-    # except IndexError as exp:
-    #     error_title = "Export of " + title + " failed. No entries in database."
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     export_attributes["emails"] = {}
-    # except Exception as exp:
-    #     error_title = "Export of " + title + " failed"
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     raise StandardError(title + ": " + repr(exp))
-    # else:
-    #     logger.info(title + ": " + json.dumps(entries))
-    #
-    # ##################################
-    # # Telephones
-    # ##################################
-    # title = "Telephones"
-    # try:
-    #     logger.info(title)
-    #     entries = get_telephones(account_id=account_id)
-    #     export_attributes["telephones"] = entries
-    # except IndexError as exp:
-    #     error_title = "Export of " + title + " failed. No entries in database."
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     export_attributes["telephones"] = {}
-    # except Exception as exp:
-    #     error_title = "Export of " + title + " failed"
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     raise StandardError(title + ": " + repr(exp))
-    # else:
-    #     logger.info(title + ": " + json.dumps(entries))
-    #
-    # ##################################
-    # # Settings
-    # ##################################
-    # title = "Settings"
-    # try:
-    #     logger.info(title)
-    #     entries = get_settings(account_id=account_id)
-    #     export_attributes["settings"] = entries
-    # except IndexError as exp:
-    #     error_title = "Export of " + title + " failed. No entries in database."
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     export_attributes["settings"] = {}
-    # except Exception as exp:
-    #     error_title = "Export of " + title + " failed"
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     raise StandardError(title + ": " + repr(exp))
-    # else:
-    #     logger.info(title + ": " + json.dumps(entries))
-    #
-    # ##################################
-    # # Event logs
-    # ##################################
-    # title = "Event logs"
-    # try:
-    #     logger.info(title)
-    #     entries = get_event_logs(account_id=account_id)
-    #     export_attributes["logs"] = {}
-    #     export_attributes["logs"]["events"] = entries
-    # except IndexError as exp:
-    #     error_title = "Export of " + title + " failed. No entries in database."
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     export_attributes["logs"] = {}
-    #     export_attributes["logs"]["events"] = {}
-    # except Exception as exp:
-    #     error_title = "Export of " + title + " failed"
-    #     logger.error(error_title + ': ' + repr(exp))
-    #     raise StandardError(title + ": " + repr(exp))
-    # else:
-    #     logger.info(title + ": " + json.dumps(entries))
+        #
+        slr_dict['consent_records'] = cr_dict_list
+        #
+        logger.info("Appending SLR to main list")
+        db_entry_list.append(slr_dict)
+        logger.info("SLR added to main list: " + json.dumps(slr_dict))
 
-    ##################################
-    ##################################
-    ##################################
-    # Preparing return content
-    ##################################
-    title = "export['attributes'] = export_attributes"
-    try:
-        logger.info(title)
-        export["attributes"] = export_attributes
-    except Exception as exp:
-        error_title = title + " failed"
-        logger.error(error_title + ': ' + repr(exp))
-        raise StandardError(title + ": " + repr(exp))
-    else:
-        logger.info("Content of export: " + json.dumps(export))
-
-    return export
-
-
-
-
-
-
+    return db_entry_list
 

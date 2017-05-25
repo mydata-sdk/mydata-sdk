@@ -14,12 +14,13 @@ __status__ = "Development"
 # Import dependencies
 from flask import Blueprint, request, json
 from flask_restful import Resource, Api
-from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids
+from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids, get_utc_time
 from app.mod_account.controllers import verify_account_id_match
 from app.mod_api_auth.controllers import requires_api_auth_user, requires_api_auth_sdk, get_user_api_key, \
     get_sdk_api_key
 from app.mod_authorization.schemas import schema_consent_new, schema_consent_status_new, \
     schema_consent_status_signed_new
+from app.mod_database.controllers import create_event_log_entry
 from app.mod_database.models import ServiceLinkRecord, ConsentRecord, ConsentStatusRecord
 from app.mod_authorization.controllers import sign_cr, sign_csr, store_cr_and_csr, get_auth_token_data, \
     get_last_cr_status, store_csr, get_csrs, get_crs, get_cr, get_last_cr, get_csr
@@ -497,6 +498,14 @@ class ApiAccountConsent(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -652,6 +661,14 @@ class ApiAccountConsentStatus(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -806,6 +823,14 @@ class ApiAccountConsentStatusSigned(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -875,7 +900,7 @@ class ApiConsentsForServiceLinkRecord(Resource):
         # Get ServiceLinkRecords
         try:
             logger.info("Fetching ConsentRecords")
-            db_entries = get_crs(slr_id=link_id, account_id=account_id, consent_pairs=get_consent_pair)
+            db_entries, account_id_list = get_crs(slr_id=link_id, account_id=account_id, consent_pairs=get_consent_pair)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {} and Service Link ID was {}".format(account_id, link_id)
@@ -901,6 +926,14 @@ class ApiConsentsForServiceLinkRecord(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -980,7 +1013,8 @@ class ApiConsentForServiceLinkRecord(Resource):
         cr_array = []
         try:
             logger.info("Fetching Consent Record")
-            cr_array.append(get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id))
+            cr_entry, account_id_from_db = get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id)
+            cr_array.append(cr_entry)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {}, Service Link ID was {} and Consent ID was {}.".format(account_id, link_id, consent_id)
@@ -998,7 +1032,8 @@ class ApiConsentForServiceLinkRecord(Resource):
         if get_consent_pair:
             try:
                 logger.info("Fetching Consent Pair")
-                cr_array.append(get_cr(account_id=account_id, consent_pair_id=consent_id))
+                cr_entry, account_id_from_db = get_cr(account_id=account_id, consent_pair_id=consent_id)
+                cr_array.append(cr_entry)
             except IndexError as exp:
                 error_title = "Consent Pair not found with provided information"
                 error_detail = "Account ID was {}, Service Link ID was {} and Consent Pair ID was {}.".format(account_id, link_id, consent_id)
@@ -1022,6 +1057,14 @@ class ApiConsentForServiceLinkRecord(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1118,6 +1161,14 @@ class ApiLastConsentForServiceLinkRecord(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
@@ -1193,7 +1244,7 @@ class ApiConsentStatusesForServiceLinkRecord(Resource):
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
-            cr = get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id)
+            cr, account_id_from_db = get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {}, Service Link ID was {} and Consent ID was {}.".format(account_id, link_id, consent_id)
@@ -1210,7 +1261,7 @@ class ApiConsentStatusesForServiceLinkRecord(Resource):
         # Get Consent Status Records
         try:
             logger.info("Fetching Consent Status Records")
-            db_entries = get_csrs(account_id=account_id, consent_id=consent_id, status_id=status_id)
+            db_entries, account_id_list = get_csrs(account_id=account_id, consent_id=consent_id, status_id=status_id)
         except IndexError as exp:
             error_title = "Consent Status Records not found with provided information"
             error_detail = "Account ID was {} Service Link ID was {}, and Consent ID was {}. Status ID from query parameters was {}.".format(account_id, link_id, consent_id, status_id)
@@ -1235,6 +1286,14 @@ class ApiConsentStatusesForServiceLinkRecord(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1305,7 +1364,7 @@ class ApiConsentStatusForServiceLinkRecord(Resource):
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
-            cr = get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id)
+            cr, account_id_from_db = get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {}, Service Link ID was {} and Consent ID was {}.".format(account_id, link_id, consent_id)
@@ -1322,7 +1381,7 @@ class ApiConsentStatusForServiceLinkRecord(Resource):
         # Get Consent Status Record
         try:
             logger.info("Fetching Consent Record")
-            cr_entry = get_csr(cr_id=consent_id, account_id=account_id, csr_id=status_id)
+            cr_entry, account_id_from_db = get_csr(cr_id=consent_id, account_id=account_id, csr_id=status_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {}, Service Link ID was {}, Consent ID was {} and Consent Status ID was {}.".format(account_id, link_id, consent_id, status_id)
@@ -1346,6 +1405,14 @@ class ApiConsentStatusForServiceLinkRecord(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1393,7 +1460,7 @@ class ApiConsentsForAccount(Resource):
         # Get ServiceLinkRecords
         try:
             logger.info("Fetching ConsentRecords")
-            db_entries = get_crs(account_id=account_id)
+            db_entries, account_id_list = get_crs(account_id=account_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {}".format(account_id)
@@ -1419,6 +1486,14 @@ class ApiConsentsForAccount(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1490,7 +1565,8 @@ class ApiConsentForAccount(Resource):
         cr_array = []
         try:
             logger.info("Fetching Consent Record")
-            cr_array.append(get_cr(cr_id=consent_id, account_id=account_id))
+            cr_entry, account_id_from_db = get_cr(cr_id=consent_id, account_id=account_id)
+            cr_array.append(cr_entry)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {} and Consent ID was {}.".format(account_id, consent_id)
@@ -1508,7 +1584,8 @@ class ApiConsentForAccount(Resource):
         if get_consent_pair:
             try:
                 logger.info("Fetching Consent Pair")
-                cr_array.append(get_cr(account_id=account_id, consent_pair_id=consent_id))
+                cr_entry, account_id_from_db = get_cr(account_id=account_id, consent_pair_id=consent_id)
+                cr_array.append(cr_entry)
             except IndexError as exp:
                 error_title = "Consent Pair not found with provided information"
                 error_detail = "Account ID was {} and Consent Pair ID was {}.".format(account_id, consent_id)
@@ -1532,6 +1609,14 @@ class ApiConsentForAccount(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1596,7 +1681,7 @@ class ApiConsentStatusesForAccount(Resource):
         # Get Consent Status Records
         try:
             logger.info("Fetching Consent Status Records")
-            db_entries = get_csrs(account_id=account_id, consent_id=consent_id, status_id=status_id)
+            db_entries, account_id_from_db = get_csrs(account_id=account_id, consent_id=consent_id, status_id=status_id)
         except IndexError as exp:
             error_title = "Consent Status Records not found with provided information"
             error_detail = "Account ID was {} and Consent ID was {}. Status ID from query parameters was {}.".format(account_id, consent_id, status_id)
@@ -1621,6 +1706,14 @@ class ApiConsentStatusesForAccount(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1683,7 +1776,7 @@ class ApiConsentStatusForAccount(Resource):
         # Get Consent Status Record
         try:
             logger.info("Fetching Consent Record")
-            cr_entry = get_csr(cr_id=consent_id, account_id=account_id, csr_id=status_id)
+            cr_entry, account_id_from_db = get_csr(cr_id=consent_id, account_id=account_id, csr_id=status_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {}, Consent ID was {} and Consent Status ID was {}.".format(account_id, consent_id, status_id)
@@ -1707,6 +1800,14 @@ class ApiConsentStatusForAccount(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1761,7 +1862,7 @@ class ApiAccountConsentStatusLast(Resource):
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
-            cr = get_cr(cr_id=consent_id, account_id=account_id)
+            cr, account_id_from_db = get_cr(cr_id=consent_id, account_id=account_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {} and Consent ID was {}.".format(account_id, consent_id)
@@ -1803,6 +1904,14 @@ class ApiAccountConsentStatusLast(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
@@ -1864,7 +1973,7 @@ class ApiAccountConsentStatusLastForServiceLinkRecord(Resource):
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
-            cr = get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id)
+            cr, account_id_from_db = get_cr(cr_id=consent_id, slr_id=link_id, account_id=account_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Account ID was {}, Service Link ID was {} and Consent ID was {}.".format(account_id, link_id, consent_id)
@@ -1906,6 +2015,14 @@ class ApiAccountConsentStatusLastForServiceLinkRecord(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
@@ -1955,7 +2072,7 @@ class ApiConsentsForService(Resource):
         # Get Consent Records
         try:
             logger.info("Fetching Consent Records")
-            db_entries = get_crs(subject_id=service_id, slr_id=link_id)
+            db_entries, account_id_list = get_crs(subject_id=service_id, slr_id=link_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Service ID was {} and Service Link ID was {}".format(service_id, link_id)
@@ -1981,6 +2098,15 @@ class ApiConsentsForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        for account_id_item in account_id_list:
+            create_event_log_entry(
+                account_id=account_id_item,
+                actor="Operator",
+                action="GET",
+                resource=endpoint,
+                timestamp=get_utc_time()
+            )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -2039,7 +2165,7 @@ class ApiConsentForService(Resource):
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
-            cr_entry = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
+            cr_entry, account_id = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}.".format(service_id, link_id, consent_id)
@@ -2063,6 +2189,14 @@ class ApiConsentForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -2123,7 +2257,7 @@ class ApiConsentStatusesForService(Resource):
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
-            cr_entry = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
+            cr_entry, account_id_from_db = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}.".format(service_id, link_id, consent_id)
@@ -2140,7 +2274,7 @@ class ApiConsentStatusesForService(Resource):
         # Get Consent Status Records
         try:
             logger.info("Fetching Consent Status Records")
-            db_entries = get_csrs(account_id="", consent_id=consent_id, status_id=status_id)
+            db_entries, account_id_list = get_csrs(account_id="", consent_id=consent_id, status_id=status_id)
         except IndexError as exp:
             error_title = "Consent Status Records not found with provided information"
             error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}. Status ID from query parameters was {}.".format(service_id, link_id, consent_id, status_id)
@@ -2165,6 +2299,15 @@ class ApiConsentStatusesForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        for account_id_entry in account_id_list:
+            create_event_log_entry(
+                account_id=account_id_entry,
+                actor="Operator",
+                action="GET",
+                resource=endpoint,
+                timestamp=get_utc_time()
+            )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -2226,7 +2369,7 @@ class ApiConsentStatusForService(Resource):
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
-            cr_entry = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
+            cr_entry, account_id_from_db = get_cr(cr_id=consent_id, slr_id=link_id, subject_id=service_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}.".format(service_id, link_id, consent_id)
@@ -2243,7 +2386,7 @@ class ApiConsentStatusForService(Resource):
         # Get Consent Status Record
         try:
             logger.info("Fetching Consent Record")
-            cr_entry = get_csr(cr_id=consent_id, account_id="", csr_id=status_id)
+            cr_entry, account_id_from_db = get_csr(cr_id=consent_id, account_id="", csr_id=status_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Consent ID was {} and Consent Status ID was {}.".format(consent_id, status_id)
@@ -2267,6 +2410,14 @@ class ApiConsentStatusForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id_from_db,
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -2318,7 +2469,7 @@ class ApiConsentStatusLastForService(Resource):
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
-            cr = get_cr(cr_id=consent_id, subject_id=service_id, slr_id=link_id)
+            cr, account_id_from_db = get_cr(cr_id=consent_id, subject_id=service_id, slr_id=link_id)
         except IndexError as exp:
             error_title = "Consent Record not found with provided information"
             error_detail = "Service ID was {}, Service Link ID was {} and Consent ID was {}.".format(service_id, link_id, consent_id)
@@ -2360,6 +2511,14 @@ class ApiConsentStatusLastForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
+
+        create_event_log_entry(
+            account_id=account_id_from_db,
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
@@ -2436,6 +2595,14 @@ class AuthorisationTokenData(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
+
+        create_event_log_entry(
+            account_id=source_cr.accounts_id,
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
