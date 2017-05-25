@@ -84,7 +84,7 @@ class UiTestCase(unittest.TestCase):
         Test system running
         :return:
         """
-        url = '/system/status/'
+        url = '/'
 
         response = self.app.get(url)
         unittest.TestCase.assertEqual(self, response.status_code, 200)
