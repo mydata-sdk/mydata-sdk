@@ -112,7 +112,7 @@ class Accounts(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="POST",
             resource=endpoint,
@@ -175,7 +175,7 @@ class Account(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -280,9 +280,8 @@ class AccountExport(Resource):
 
         # Response data container
         try:
-            db_entry_list = db_entries
             response_data = {}
-            response_data['data'] = db_entry_list
+            response_data['data'] = db_entries
         except Exception as exp:
             logger.error('Could not prepare response data: ' + repr(exp))
             raise ApiError(code=500, title="Could not prepare response data", detail=repr(exp), source=endpoint)
@@ -291,7 +290,7 @@ class AccountExport(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -364,7 +363,7 @@ class AccountInfos(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -445,7 +444,7 @@ class AccountInfo(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -561,7 +560,7 @@ class AccountInfo(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="PATCH",
             resource=endpoint,
@@ -628,7 +627,7 @@ class AccountEventLogs(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -703,7 +702,7 @@ class AccountEventLog(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -780,7 +779,7 @@ class ApiServiceLinkRecords(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -862,7 +861,7 @@ class ApiServiceLinkRecord(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -950,7 +949,7 @@ class ApiServiceLinkStatusRecords(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1047,7 +1046,7 @@ class ApiServiceLinkStatusRecord(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1115,7 +1114,7 @@ class ApiLastServiceLinkStatusRecord(Resource):
             logger.debug('response_data: ' + json.dumps(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1217,7 +1216,7 @@ class ApiConsentsForServiceLinkRecord(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1341,7 +1340,7 @@ class ApiConsentForServiceLinkRecord(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1439,7 +1438,7 @@ class ApiLastConsentForServiceLinkRecord(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1560,7 +1559,7 @@ class ApiConsentStatusesForServiceLinkRecord(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1674,7 +1673,7 @@ class ApiConsentStatusForServiceLinkRecord(Resource):
             logger.debug('response_data: ' + repr(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,
@@ -1780,7 +1779,7 @@ class ApiAccountConsentStatusLastForServiceLinkRecord(Resource):
             logger.debug('response_data: ' + json.dumps(response_data))
 
         create_event_log_entry(
-            account_id=int(account_id),
+            account_id=account_id,
             actor="AccountOwner",
             action="GET",
             resource=endpoint,

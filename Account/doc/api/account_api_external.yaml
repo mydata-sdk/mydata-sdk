@@ -208,7 +208,7 @@ paths:
         '200':
           description: Account exported
           schema:
-            $ref: '#/definitions/accountResponse'
+            $ref: '#/definitions/accountExportResponse'
         '204':
           description: No Account with given id
         '400':
@@ -1407,7 +1407,6 @@ definitions:
             type: string
             description: "Timestamp of event as ISO 8601 formatted string"
 
-
   EventLogArray:
     type: object
     properties:
@@ -1415,4 +1414,112 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/EventLog'
+
+
+  accountExportResponse:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'AccountExport'"
+      id:
+        type: string
+        description: "ID of resource"
+      gid:
+        type: string
+        description: "Global ID of resource"
+      attributes:
+        type: object
+        properties:
+          account_info:
+            type: array
+            items:
+              $ref: '#/definitions/AccountInfo'
+          event_logs:
+            type: array
+            items:
+              $ref: '#/definitions/EventLog'
+          service_links:
+            type: object
+            properties:
+              type:
+                type: string
+                description: "Resource type: 'ServiceLinkRecord'"
+              id:
+                type: string
+                description: "ID of resource"
+              attributes:
+                type: object
+                description: 'Service Link Record as JSON Web Signature (JWS)'
+                properties:
+                  payload:
+                    type: object
+                    description: 'JWS Payload. Base64url encoded.'
+                    properties:
+                      version:
+                        type: string
+                      link_id:
+                        type: string
+                      operator_id:
+                        type: string
+                      service_id:
+                        type: string
+                      surrogate_id:
+                        type: string
+                      operator_key:
+                        $ref: '#/definitions/jwk'
+                      cr_keys:
+                        description: 'JSON Web Key (JWK) Set Structure '
+                        type: array
+                        items:
+                          $ref: '#/definitions/jwk'
+                      iat:
+                        type: integer
+                        format: int32
+                  signatures:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        header:
+                          $ref: '#/definitions/JWSUnprotectedHeader'
+                        protected:
+                          $ref: '#/definitions/JWSProtectedHeader'
+                        signature:
+                          type: string
+                          description: "JWS Signature"
+              status_records:
+                type: array
+                items:
+                  $ref: '#/definitions/serviceLinkStatus'
+              consent_records:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      description: "Resource type: 'ConsentRecord'"
+                    id:
+                      type: string
+                      description: "ID of resource"
+                    attributes:
+                      type: object
+                      description: 'Consent Record as JSON Web Signature (JWS)'
+                      properties:
+                        header:
+                          $ref: '#/definitions/JWSUnprotectedHeader'
+                        protected:
+                          $ref: '#/definitions/JWSProtectedHeader'
+                        payload:
+                          type: 'object'
+                          description: 'Base64 encoded object containing either Consent Payload of Source Service or Consent Payload of Sink Service. For detailed descriptions of these objects check Models section.'
+                        signature:
+                          type: string
+                          description: "JWS Signature"
+                    status_records:
+                      type: array
+                      items:
+                        $ref: '#/definitions/consentStatus'
+
 

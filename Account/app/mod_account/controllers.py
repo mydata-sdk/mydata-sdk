@@ -308,13 +308,58 @@ def export_account(account_id=None):
     if account_id is None:
         raise AttributeError("Provide account_id as parameter")
 
-    export = {
-        "type": "Account",
+    try:
+        logger.info("Getting Account")
+        account_object = get_account(account_id=account_id)
+    except Exception as exp:
+        error_title = "Failed to get Account"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Got Account")
+
+    try:
+        logger.info("Exporting AccountInfo")
+        account_info_dict = get_account_infos(account_id=account_id)
+    except Exception as exp:
+        error_title = "Failed to export AccountInfo"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Exported AccountInfo")
+
+    try:
+        logger.info("Exporting EvenLogs")
+        event_log_dict = get_event_logs(account_id=account_id)
+    except Exception as exp:
+        error_title = "Failed to export EvenLogs"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Exported EvenLogs")
+
+    try:
+        logger.info("Exporting MyData content")
+        mydata_dict = account_export_mydata_content(account_id=account_id)
+    except Exception as exp:
+        error_title = "Failed to export MyData content"
+        logger.error(error_title + ": " + repr(exp))
+        raise
+    else:
+        logger.info("Exported MyData content")
+
+    export_dict = {
+        "type": "AccountExport",
         "id": account_id,
-        "attributes": {}
+        "gid": account_object.global_identifier,
+        "attributes": {
+            "account_info": account_info_dict,
+            "event_logs": event_log_dict,
+            "service_links": mydata_dict
+        }
     }
 
-    return export
+    return export_dict
 
 
 ##################################
@@ -1428,4 +1473,63 @@ def account_get_last_cr_status(consent_id=None, account_id="", endpoint="get_las
     return csr_entry.to_api_dict
 
 
+def account_export_mydata_content(account_id=None):
+    """
+    Export ServiceLinks
+    :param account_id:
+    :return: List of dicts
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    # Get table names
+    logger.info("ServiceLinkRecord")
+    db_entry_object = ServiceLinkRecord()
+    slr_table_name = db_entry_object.table_name
+    logger.info("ServiceLinkRecord table name: " + str(slr_table_name))
+    logger.info("ConsentRecord")
+    db_entry_object = ConsentRecord()
+    cr_table_name = db_entry_object.table_name
+    logger.info("ConsentRecord table name: " + str(cr_table_name))
+
+    # Get DB cursor
+    try:
+        cursor = get_db_cursor()
+    except Exception as exp:
+        logger.error('Could not get database cursor: ' + repr(exp))
+        raise
+
+    logger.info("Get SLR IDs")
+    db_entry_list = []
+    cursor, slr_id_list = get_slr_ids(cursor=cursor, account_id=account_id, table_name=slr_table_name)
+    for slr_id in slr_id_list:
+        logger.info("Getting SLR with slr_id: " + str(slr_id))
+        slr_dict = account_get_slr(account_id=account_id, slr_id=slr_id)
+        #
+        logger.info("Getting status records for SLR")
+        slsr_dict = account_get_slsrs(account_id=account_id, slr_id=slr_id)
+        logger.info("Appending status record to SLR")
+        slr_dict['status_records'] = slsr_dict
+        #
+        logger.info("Get CR IDs")
+        cr_dict_list = []
+        cursor, cr_id_list = get_cr_ids(slr_id=slr_id, table_name=cr_table_name, cursor=cursor)
+        for cr_id in cr_id_list:
+            logger.info("Getting CR with cr_id: " + str(cr_id))
+            cr_dict = account_get_cr(cr_id=cr_id, account_id=account_id)
+            logger.info("Getting status records for CR")
+            csr_dict = account_get_csrs(account_id=account_id, consent_id=cr_id)
+            logger.info("Appending status record to CR")
+            cr_dict['status_records'] = csr_dict
+            logger.info("Appending CR to CR list")
+            cr_dict_list.append(cr_dict)
+
+        #
+        slr_dict['consent_records'] = cr_dict_list
+        #
+        logger.info("Appending SLR to main list")
+        db_entry_list.append(slr_dict)
+        logger.info("SLR added to main list: " + json.dumps(slr_dict))
+
+    return db_entry_list
 
