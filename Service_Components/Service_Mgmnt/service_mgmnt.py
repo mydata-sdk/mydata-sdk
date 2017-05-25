@@ -310,10 +310,15 @@ class StoreSLR(Resource):
         if result.ok:
             sq.task("Store following SLR into db")
             store = loads(loads(result.text))
-            debug_log.debug(dumps(store, indent=2))
-            payload = decode_payload(store["data"]["slr"]["attributes"]["payload"])
+            slr_store = loads(loads(result.text))["data"]["slr"]
+            ssr_store = loads(loads(result.text))["data"]["ssr"]
+            debug_log.debug("Storing following SLR and SSR:")
+            debug_log.debug(dumps(slr_store, indent=2))
+            debug_log.debug(dumps(ssr_store, indent=2))
+            payload = decode_payload(slr_store["attributes"]["payload"])
             if surrogate_id == payload["surrogate_id"]:
-                self.helpers.storeJSON({payload["slr_id"]: store})
+                self.helpers.store_slr_JSON(json=slr_store, slr_id=payload["link_id"], surrogate_id=payload["surrogate_id"])
+                self.helpers.store_ssr_JSON(json=ssr_store)
                 endpoint = "/api/1.2/slr/store_slr"
                 debug_log.info("Posting SLR for storage in Service Mockup")
                 result = post("{}{}".format(self.service_url, endpoint), json=store)  # Send copy to Service_Components

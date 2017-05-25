@@ -123,7 +123,7 @@ class Helpers:
                 db.close()
                 return None
 
-    def storeJSON(self, json, slr_id, surrogate_id):
+    def store_slr_JSON(self, json, slr_id, surrogate_id):
         """
         Store SLR into database
         :param surrogate_id:
@@ -139,6 +139,41 @@ class Helpers:
             VALUES (%s, %s, %s)", (surrogate_id, dumps(json), slr_id))
         db.commit()
         db.close()
+
+    def store_ssr_JSON(self, json):
+        """
+        Store SSR into database
+        :param record_id:
+        :param surrogate_id:
+        :param slr_id:
+        :param json:
+        :return:
+        """
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+        cursor = db.cursor()
+
+        decoded_payload = base_token_tool.decode_payload(json["attributes"]["payload"])
+        record_id = decoded_payload["record_id"]
+        surrogate_id = decoded_payload["surrogate_id"]
+        slr_id = decoded_payload["slr_id"]
+
+
+        debug_log.info("Storing SSR '{}' momentarily.\n {}".format(record_id, decoded_payload))
+        prev_id = decoded_payload["prev_record_id"]
+        if prev_id != "NULL":
+            debug_log.info("Verifying SSR chain is unbroken.\n Looking up previous record '{}'".format(prev_id))
+            prev_record = self.query_db("select record_id, json from ssr_storage where record_id = %s", (prev_id,))
+            if prev_record is None:
+                raise TypeError("Previous record_id is not found")  # Todo We make this basic check but is it enough?
+            debug_log.info("Found record: \n{}".format(prev_record))
+
+        debug_log.info("Storing SSR '{}' belonging to surrogate_id '{}' with content:\n {}"
+                       .format(record_id, surrogate_id, json))
+        cursor.execute("INSERT INTO ssr_storage (surrogate_id,json,record_id,slr_id,prev_record_id) \
+            VALUES (%s, %s, %s, %s, %s)", (surrogate_id, dumps(json), record_id, slr_id, prev_id))
+        db.commit()
+        db.close()
+
 
     def storeToken(self, DictionaryToStore):
         """
