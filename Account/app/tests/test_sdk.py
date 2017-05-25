@@ -31,7 +31,7 @@ from app.tests.schemas.schema_data_connection import schema_authorisation_token_
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_init, schema_slr_sign, \
     schema_slr_store, schema_slr_listing, schema_slr, schema_slr_status_listing, schema_slr_status, schema_surrogate
-from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth
+from app.tests.schemas.schema_system import schema_db_clear, system_running, schema_sdk_auth, schema_system_status
 
 
 class SdkTestCase(unittest.TestCase):
@@ -85,12 +85,26 @@ class SdkTestCase(unittest.TestCase):
         Test system running
         :return:
         """
-        url = '/system/status/'
+        url = '/'
 
         response = self.app.get(url)
         unittest.TestCase.assertEqual(self, response.status_code, 200)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, system_running))
+
+    ##########
+    ##########
+    def test_system_status(self):
+        """
+        Test system running
+        :return:
+        """
+        url = '/system/status/'
+
+        response = self.app.get(url)
+        unittest.TestCase.assertEqual(self, response.status_code, 200)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_system_status))
 
     ##########
     ##########

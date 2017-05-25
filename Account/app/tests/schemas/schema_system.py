@@ -49,6 +49,61 @@ system_running = {
   ]
 }
 
+schema_system_status = {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {},
+  "id": "http://example.com/example.json",
+  "properties": {
+    "attributes": {
+      "properties": {
+        "db_row_counts": {
+          "properties": {
+            "account": {
+              "type": "integer"
+            },
+            "consent": {
+              "type": "integer"
+            },
+            "consent_record": {
+              "type": "integer"
+            },
+            "service_link": {
+              "type": "integer"
+            },
+            "service_link_status": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "service_link",
+            "consent",
+            "account",
+            "consent_record",
+            "service_link_status"
+          ],
+          "type": "object"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "db_row_counts",
+        "title"
+      ],
+      "type": "object"
+    },
+    "type": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "attributes",
+    "type"
+  ],
+  "type": "object"
+}
+
 schema_sdk_auth = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "properties": {

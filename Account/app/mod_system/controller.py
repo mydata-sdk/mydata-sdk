@@ -16,6 +16,7 @@ from app.helpers import get_custom_logger
 # create logger
 from app.mod_api_auth.services import clear_apikey_sqlite_db
 from app.mod_blackbox.services import clear_blackbox_sqlite_db
+from app.mod_database.controllers import get_db_statistics
 from app.mod_database.helpers import drop_table_content
 
 logger = get_custom_logger(__name__)
@@ -68,4 +69,26 @@ def clear_api_key_db():
     else:
         logger.info("ApiKey Database cleared")
         return True
+
+
+def system_check():
+    """
+    Check system functionality
+    :return: dict
+    """
+    logger.info("Checking system functionality")
+    try:
+        status_dict = {
+            "type": "StatusReport",
+            "attributes": {
+                "title": "System running as intended",
+                "db_row_counts": get_db_statistics()
+            }
+        }
+    except Exception as exp:
+        logger.error("System not running as intended: " + repr(exp))
+        raise
+    else:
+        logger.info("ApiKey Database cleared")
+        return status_dict
 
