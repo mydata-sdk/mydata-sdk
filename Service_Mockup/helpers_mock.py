@@ -97,17 +97,18 @@ class Helpers:
 
         # Letting world burn if user was not in db. Fail fast, fail hard.
 
-    def storeSurrogateJSON(self, DictionaryToStore):
+    def storeSurrogateJSON(self, user_id, surrogate_id):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info(DictionaryToStore)
-
-        for key in DictionaryToStore:
-            debug_log.info(key)
+        debug_log.info("Mapping surrogate_id '{}' with user_id '{}'".format(surrogate_id, user_id))
+        try:
             cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id) \
-                VALUES (%s, %s)", [key, dumps(DictionaryToStore[key])])
+                    VALUES (%s, %s)", [user_id, surrogate_id])
             db.commit()
-        db.close()
+        except Exception as e:
+            debug_log.info("Surrogate_id '{}' mapped with user '{}' already.".format(user_id, surrogate_id))
+            db.commit()
+            db.close()
             
 def read_key(path, password=None):
     ##

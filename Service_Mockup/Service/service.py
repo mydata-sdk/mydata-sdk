@@ -161,7 +161,7 @@ class UserLogin(Resource):
                     )
                 debug_log.info("We got surrogate_id {} for user_id {}".format(json_response["surrogate_id"], user_id))
                 debug_log.info(dumps(json_response, indent=2))
-                self.helpers.storeSurrogateJSON({user_id: json_response})
+                self.helpers.storeSurrogateJSON(user_id, json_response["surrogate_id"])
                 return json_response["surrogate_id"]
             except Exception as e:
                 debug_log.exception(e)

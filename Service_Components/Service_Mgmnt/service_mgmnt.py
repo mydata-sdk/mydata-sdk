@@ -133,12 +133,15 @@ class StartServiceLinking(Resource):
         result = post("{}{}".format(self.operator_url, endpoint), json=data)
         debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
         if result.ok:
+            self.helpers.delete_session(args["code"])
             return result.text, 201
         elif result.status_code == 500:
+            self.helpers.delete_session(args["code"])
             raise DetailedHTTPException(status=500,
                                         detail={"msg": "Linking Service has failed due to server side issue."},
                                         title="Could not link Service.")
         else:
+            self.helpers.delete_session(args["code"])
             raise DetailedHTTPException(status=result.status_code,
                                         detail={
                                             "msg": "Something went wrong while posting to Operator_SLR for /link",

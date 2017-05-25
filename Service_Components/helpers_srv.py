@@ -327,6 +327,19 @@ class Helpers:
         debug_log.info("CR has been validated.")
         return loads(combined_decoded)
 
+    def delete_session(self, code):
+        try:
+            debug_log.info("Deleting session: {}".format(code))
+            db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+            cursor = db.cursor()
+            cursor.execute("DELETE FROM session_store WHERE code=%s ;", (code,))
+            db.commit()
+            cursor.close()
+            debug_log.info("Session {} deleted.".format(code))
+        except Exception as e:
+            debug_log.info("Something went wrong while deleting session {}.".format(code))
+            debug_log.exception(e)
+
     def check_lock(self, user_id):
         """
         Verify that code is found in database

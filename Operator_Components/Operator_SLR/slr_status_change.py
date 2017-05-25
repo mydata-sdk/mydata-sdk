@@ -100,8 +100,18 @@ class SlrStatus(Resource):
                                             sl_status="Disabled",
                                             prev_record_id=prev_record_id,
                                             )
+
+
+                pass
+            except Exception as e:
+                raise e
+
+            try:
+                # Notify Service of SLR status chanege
                 return created_ssr
                 pass
+
+
             except Exception as e:
                 raise e
 
