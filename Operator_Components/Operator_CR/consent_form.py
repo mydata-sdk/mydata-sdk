@@ -9,7 +9,7 @@ from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import Consent_form_Out
 from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
-from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences
+from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences, get_am
 from op_tasks import CR_installer
 from requests import post
 
@@ -31,11 +31,7 @@ class ConsentFormHandler(Resource):
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
         self.timeout = current_app.config["TIMEOUT"]
         self.debug_mode = current_app.config["DEBUG_MODE"]
-        try:
-            self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
-        except Exception as e:
-            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}"
-                           .format(repr(e)))
+
         self.SH = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
                                          current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.getService = self.SH.getService
@@ -107,6 +103,10 @@ class ConsentFormHandler(Resource):
 
         debug_log.info("ConsentFormHandler post got json:\n{}".format(dumps(request.json, indent=2)))
 
+        AM = get_am(current_app, request.headers)
+        key_check = AM.verify_user_key(account_id)
+        debug_log.info("Verifying User Key resulted: {}".format(key_check))
+
         _consent_form = request.json
         sink_srv_id = _consent_form["sink"]["service_id"]
         source_srv_id = _consent_form["source"]["service_id"]
@@ -122,8 +122,8 @@ class ConsentFormHandler(Resource):
 
         sq.send_to("Account Manager", "GET surrogate_id & slr_id")
         try:
-            sink_sur = self.AM.getSUR_ID(sink_srv_id, account_id)
-            source_sur = self.AM.getSUR_ID(source_srv_id, account_id)
+            sink_sur = AM.getSUR_ID(sink_srv_id, account_id)
+            source_sur = AM.getSUR_ID(source_srv_id, account_id)
         except AttributeError as e:
             raise DetailedHTTPException(status=502,
                                         title="It would seem initiating Account Manager Handler has failed.",
@@ -199,7 +199,7 @@ class ConsentFormHandler(Resource):
                                           "null")
 
         sq.send_to("Account Manager", "Send CR/CSR to sign and store")
-        result = self.AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
+        result = AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
 
         # These are debugging and testing calls.
         if self.debug_mode:

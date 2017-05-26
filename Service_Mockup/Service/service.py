@@ -262,7 +262,6 @@ class StoreSSR(Resource):
         config = current_app.config
         self.helpers = Helpers(config)
 
-
     @timeme
     @error_handler
     def post(self):
