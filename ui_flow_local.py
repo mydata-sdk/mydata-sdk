@@ -38,8 +38,8 @@ def initialize(account_url):
     user_data = {"data": {
         "type": "Account",
         "attributes": {
-            'firstName': 'ExampleFirstName',
-            'lastName': 'ExampleLastName',
+            'firstname': 'ExampleFirstName',
+            'lastname': 'ExampleLastName',
             'dateOfBirth': '2010-05-14',
             'email': username + '@examlpe.org',
             'username': username,
@@ -53,8 +53,8 @@ def initialize(account_url):
     print(resp.status_code, resp.reason, resp.text, resp.url)
     print(json.dumps(json.loads(resp.text), indent=2))
 
-    user_data["data"]["attributes"]["firstName"] = "Iso"
-    user_data["data"]["attributes"]["lastName"] = "Pasi"
+    user_data["data"]["attributes"]["firstname"] = "Iso"
+    user_data["data"]["attributes"]["lastname"] = "Pasi"
     user_data["data"]["attributes"]["email"] = "iso.pasi@example.org"
     user_data["data"]["attributes"]["username"] = "pasi"
     user_data["data"]["attributes"]["password"] = "0nk0va"
@@ -63,8 +63,8 @@ def initialize(account_url):
     print(resp.status_code, resp.reason, resp.text, resp.url)
     print(json.dumps(json.loads(resp.text), indent=2))
 
-    user_data["data"]["attributes"]["firstName"] = "Dude"
-    user_data["data"]["attributes"]["lastName"] = "Dudeson"
+    user_data["data"]["attributes"]["firstname"] = "Dude"
+    user_data["data"]["attributes"]["lastname"] = "Dudeson"
     user_data["data"]["attributes"]["email"] = "dude.dudeson@example.org"
     user_data["data"]["attributes"]["username"] = "mydata"
     user_data["data"]["attributes"]["password"] = "Hello"

@@ -132,6 +132,8 @@ class ConsentFormHandler(Resource):
         debug_log.info("Got {} as surrogate id for sink from Account Manager".format(sink_sur))
         debug_log.info("Got {} as surrogate id for source from Account Manager".format(source_sur))
 
+
+
         # Get slr and surrogate_id
         slr_id_sink, surrogate_id_sink = sink_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"],\
                                          sink_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]
