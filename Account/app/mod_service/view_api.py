@@ -24,10 +24,11 @@ from _mysql_exceptions import IntegrityError
 from flask import Blueprint, request, json
 from flask_restful import Resource, Api
 from base64 import b64decode
-from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids
+from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids, get_utc_time
 from app.mod_account.controllers import verify_account_id_match
 from app.mod_api_auth.controllers import requires_api_auth_user, requires_api_auth_sdk, get_user_api_key, get_sdk_api_key
 from app.mod_blackbox.controllers import verify_jws_signature_with_jwk
+from app.mod_database.controllers import create_event_log_entry
 from app.mod_database.models import ServiceLinkStatusRecord
 from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, init_slr_sink, init_slr_source, \
     get_slr_record, get_slrs, get_slr, get_slsrs, get_slsr, get_last_slr_status, get_slrs_for_service, \
@@ -129,6 +130,14 @@ class ApiServiceLinkInitSource(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data, status_code=201)
@@ -222,6 +231,14 @@ class ApiServiceLinkInitSink(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -301,10 +318,17 @@ class ApiServiceLink(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
-
 
     @requires_api_auth_user
     @requires_api_auth_sdk
@@ -422,6 +446,14 @@ class ApiServiceLink(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="PATCH",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -790,6 +822,14 @@ class ApiServiceLinkStore(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -859,6 +899,14 @@ class ApiServiceLinkRecords(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -944,6 +992,14 @@ class ApiServiceLinkStatusRecords(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1177,6 +1233,14 @@ class ApiServiceLinkStatusRecords(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1435,6 +1499,14 @@ class ApiServiceLinkStatusRecordsSigned(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="POST",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=201)
@@ -1529,6 +1601,14 @@ class ApiServiceLinkStatusRecord(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
@@ -1594,6 +1674,14 @@ class ApiLastServiceLinkStatusRecord(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + json.dumps(response_data))
 
+        create_event_log_entry(
+            account_id=account_id,
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
+
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
@@ -1642,9 +1730,9 @@ class ApiServiceLinkRecordsForService(Resource):
         try:
             logger.info("Fetching ServiceLinkRecords")
             if surrogate_id is None:
-                db_entries = get_slrs_for_service(service_id=service_id)
+                db_entries, account_id_list = get_slrs_for_service(service_id=service_id)
             else:
-                db_entries = get_slrs_for_service(service_id=service_id, surrogate_id=surrogate_id)
+                db_entries, account_id_list = get_slrs_for_service(service_id=service_id, surrogate_id=surrogate_id)
         except IndexError as exp:
             error_title = "Service Link Record not found with provided information"
             error_detail = "Service ID was {} and Surrogate ID was {}".format(service_id, surrogate_id)
@@ -1669,6 +1757,15 @@ class ApiServiceLinkRecordsForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        for account_id in account_id_list:
+            create_event_log_entry(
+                account_id=account_id,
+                actor="Operator",
+                action="GET",
+                resource=endpoint,
+                timestamp=get_utc_time()
+            )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1715,7 +1812,7 @@ class ApiServiceLinkRecordForService(Resource):
         # Get ServiceLinkRecord
         try:
             logger.info("Fetching ServiceLinkRecord")
-            db_entries = get_slr_for_service(service_id=service_id, slr_id=link_id)
+            db_entries, account_id = get_slr_for_service(service_id=service_id, slr_id=link_id)
         except IndexError as exp:
             error_title = "Service Link Record not found with provided information"
             error_detail = "Service ID was {} and Service Link Record ID was {}".format(link_id, link_id)
@@ -1739,6 +1836,14 @@ class ApiServiceLinkRecordForService(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=account_id,
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))
@@ -1802,6 +1907,14 @@ class Surrogate(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=surrogate_object.account_id,
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))

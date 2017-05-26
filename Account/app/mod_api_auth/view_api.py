@@ -17,12 +17,13 @@ __date__ = 26.5.2016
 from flask import Blueprint, make_response, request
 from flask_restful import Resource, Api
 
-from app.helpers import get_custom_logger, make_json_response, ApiError
+from app.helpers import get_custom_logger, make_json_response, ApiError, get_utc_time
 from app.mod_account.controllers import verify_account_id_match
 from app.mod_api_auth.controllers import get_account_api_key, get_api_key_sdk, get_user_api_key, get_sdk_api_key, \
     requires_api_auth_sdk, requires_api_auth_user
 from app.mod_api_auth.helpers import ApiKeyNotFoundError
 from app.mod_auth.helpers import get_account_id_by_username_and_password
+from app.mod_database.controllers import create_event_log_entry
 
 logger = get_custom_logger(__name__)
 
@@ -52,14 +53,11 @@ class ApiKeyUser(Resource):
             logger.info("User not authenticated")
             return False
 
-
     @staticmethod
     def authenticate():
-        """Sends a 401 response that enables basic auth"""
-        headers = {'WWW-Authenticate': 'Basic realm="Login Required"'}
-        body = 'Could not verify your access level for that URL. \n You have to login with proper credentials'
-        logger.info("Authentication required")
-        return make_response(body, 401, headers)
+        """Sends a 401 response that can be used to enable authentication"""
+        logger.info("Unauthorized - Authentication required")
+        raise ApiError(code=401, title="Unauthorized", detail="Could not verify your access level")
 
     def get(self):
         try:
@@ -90,6 +88,14 @@ class ApiKeyUser(Resource):
         else:
             logger.debug("account_id: " + str(self.account_id))
             logger.debug("api_key: " + str(api_key))
+
+        create_event_log_entry(
+            account_id=int(self.account_id),
+            actor="AccountOwner",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data = {
             'Api-Key-User': api_key,
@@ -193,6 +199,14 @@ class AccountInfo(Resource):
         else:
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
+
+        create_event_log_entry(
+            account_id=int(account_id),
+            actor="Operator",
+            action="GET",
+            resource=endpoint,
+            timestamp=get_utc_time()
+        )
 
         response_data_dict = dict(response_data)
         logger.debug('response_data_dict: ' + repr(response_data_dict))

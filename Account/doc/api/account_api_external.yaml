@@ -47,7 +47,6 @@ paths:
 
       tags:
         - Auth
-        - ApiKey
 
       responses:
         '200':
@@ -189,11 +188,11 @@ paths:
             $ref: '#/definitions/errors'
 
 
-  /accounts/{account_id}/activate/:
-    patch:
+  /accounts/{account_id}/export/:
+    get:
       security:
         - externalApiKeyAuth: []
-      description: 'Activate Account'
+      summary: 'Export MyData Account'
 
       parameters:
         - name: account_id
@@ -201,21 +200,15 @@ paths:
           type: integer
           description: 'Account ID'
           required: true
-        - name: payload
-          in: body
-          description: 'Activation Token for Account'
-          required: true
-          schema:
-            $ref: '#/definitions/activateAccountRequest'
 
       tags:
         - Account
 
       responses:
         '200':
-          description: Account activated
+          description: Account exported
           schema:
-            $ref: '#/definitions/activateAccountResponse'
+            $ref: '#/definitions/accountExportResponse'
         '204':
           description: No Account with given id
         '400':
@@ -240,11 +233,11 @@ paths:
             $ref: '#/definitions/errors'
 
 
-  /accounts/{account_id}/particulars/:
+  /accounts/{account_id}/info/:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Particulars related to Account'
+      description: 'Fetch Account Info Object'
 
       parameters:
         - name: account_id
@@ -254,14 +247,13 @@ paths:
           required: true
 
       tags:
-        - Account
-        - Particular
+        - Info
 
       responses:
         '200':
-          description: Particulars fetched
+          description: Account Info fetched
           schema:
-            $ref: '#/definitions/particularsResponse'
+            $ref: '#/definitions/AccountInfoResponseArray'
         '204':
           description: No content with given id
         '400':
@@ -286,11 +278,11 @@ paths:
             $ref: '#/definitions/errors'
 
 
-  /accounts/{account_id}/particulars/{particular_id}/:
+  /accounts/{account_id}/info/{info_id}/:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Particular by ID related to Account'
+      description: 'Fetch Account info object by ID'
 
       parameters:
         - name: account_id
@@ -298,21 +290,20 @@ paths:
           type: integer
           description: 'Account ID'
           required: true
-        - name: particular_id
+        - name: info_id
           in: path
           type: integer
-          description: 'Particular ID'
+          description: 'Account Info ID'
           required: true
 
       tags:
-        - Account
-        - Particular
+        - Info
 
       responses:
         '200':
-          description: Particulars fetched
+          description: Account info fetched
           schema:
-            $ref: '#/definitions/particularResponse'
+            $ref: '#/definitions/AccountInfoResponse'
         '204':
           description: No content with given id
         '400':
@@ -347,27 +338,26 @@ paths:
           type: integer
           description: 'Account ID'
           required: true
-        - name: particular_id
+        - name: info_id
           in: path
           type: integer
-          description: 'Particular ID'
+          description: 'Account Info ID'
           required: true
         - name: payload
           in: body
           description: 'Resource content'
           required: true
           schema:
-            $ref: '#/definitions/updateParticularRequest'
+            $ref: '#/definitions/AccountInfoRequest'
 
       tags:
-        - Account
-        - Particular
+        - Info
 
       responses:
         '200':
-          description: Particulars updated
+          description: Account Info updated
           schema:
-            $ref: '#/definitions/updateParticularResponse'
+            $ref: '#/definitions/AccountInfoResponse'
         '204':
           description: No content with given id
         '400':
@@ -392,59 +382,13 @@ paths:
             $ref: '#/definitions/errors'
 
 
-  /accounts/{account_id}/contacts/:
-    post:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Create Contacts entry'
 
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: newContact
-          in: body
-          description: 'Base information for Contacts entry'
-          required: true
-          schema:
-            $ref: '#/definitions/newContactRequest'
 
-      tags:
-        - Account
-        - Contact
-
-      responses:
-        '201':
-          description: Contacts entry created
-          schema:
-            $ref: '#/definitions/newContactResponse'
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
+  /accounts/{account_id}/logs/events/:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch list of particulars related to Account'
+      description: 'Fetch Event logs for Account'
 
       parameters:
         - name: account_id
@@ -454,16 +398,13 @@ paths:
           required: true
 
       tags:
-        - Account
-        - Contact
+        - Event Log
 
       responses:
         '200':
-          description: Contacts fetched
+          description: Event logs fetched
           schema:
-            $ref: '#/definitions/contactsResponse'
-        '204':
-          description: No content with given id
+            $ref: '#/definitions/EventLogArray'
         '400':
           description: Bad Request
           schema:
@@ -476,55 +417,8 @@ paths:
           description: Forbidden
           schema:
             $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /accounts/{account_id}/contacts/{contact_id}/:
-    get:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Fetch Contact entry by ID'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: contact_id
-          in: path
-          type: integer
-          description: 'Contact ID'
-          required: true
-
-      tags:
-        - Account
-        - Contact
-
-      responses:
-        '200':
-          description: Contacts fetched
-          schema:
-            $ref: '#/definitions/contactResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
+        '404':
+          description: No content
           schema:
             $ref: '#/definitions/errors'
         '500':
@@ -535,794 +429,6 @@ paths:
           description: Service Unavailable
           schema:
             $ref: '#/definitions/errors'
-
-    patch:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Update contacts'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: contact_id
-          in: path
-          type: integer
-          description: 'Contact ID'
-          required: true
-        - name: payload
-          in: body
-          description: 'Resource content'
-          required: true
-          schema:
-            $ref: '#/definitions/updateContactRequest'
-
-      tags:
-        - Account
-        - Contact
-
-      responses:
-        '200':
-          description: Contacts updated
-          schema:
-            $ref: '#/definitions/updateContactResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    delete:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Delete Contact by ID'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: contact_id
-          in: path
-          type: integer
-          description: 'Contacts ID'
-          required: true
-
-      tags:
-        - Account
-        - Contact
-
-      responses:
-        '204':
-          description: Contact entry deleted
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /accounts/{account_id}/telephones/:
-    post:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Create Telephone entry'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: newTelephone
-          in: body
-          description: 'Base information for telephone entry'
-          required: true
-          schema:
-            $ref: '#/definitions/newTelephoneRequest'
-
-      tags:
-        - Account
-        - Telephone
-
-      responses:
-        '201':
-          description: Telephone entry created
-          schema:
-            $ref: '#/definitions/newTelephoneResponse'
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    get:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Fetch list of telephone numbers related to Account'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-
-      tags:
-        - Account
-        - Telephone
-
-      responses:
-        '200':
-          description: Telephones fetched
-          schema:
-            $ref: '#/definitions/telephonesResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /accounts/{account_id}/telephones/{telephone_id}/:
-    get:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Fetch Telephones by ID'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: telephone_id
-          in: path
-          type: integer
-          description: 'Telephone ID'
-          required: true
-
-      tags:
-        - Account
-        - Telephone
-
-      responses:
-        '200':
-          description: Telephones fetched
-          schema:
-            $ref: '#/definitions/telephoneResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    patch:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Update Telephone entry'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: telephone_id
-          in: path
-          type: integer
-          description: 'Telephone ID'
-          required: true
-        - name: payload
-          in: body
-          description: 'Resource content'
-          required: true
-          schema:
-            $ref: '#/definitions/updateTelephoneRequest'
-
-      tags:
-        - Account
-        - Telephone
-
-      responses:
-        '200':
-          description: Thelephone updated
-          schema:
-            $ref: '#/definitions/updateTelephoneResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    delete:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Delete Telephone by ID'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: telephone_id
-          in: path
-          type: integer
-          description: 'Telephone ID'
-          required: true
-
-      tags:
-        - Account
-        - Telephone
-
-      responses:
-        '204':
-          description: Telephone entry deleted
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /accounts/{account_id}/emails/:
-    post:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Create Email entry'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: newEmail
-          in: body
-          description: 'Base information for email entry'
-          required: true
-          schema:
-            $ref: '#/definitions/newEmailRequest'
-
-      tags:
-        - Account
-        - Email
-
-      responses:
-        '201':
-          description: Emails entry created
-          schema:
-            $ref: '#/definitions/newEmailResponse'
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    get:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Fetch list of email addresses related to Account'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-
-      tags:
-        - Account
-        - Email
-
-      responses:
-        '200':
-          description: Emails fetched
-          schema:
-            $ref: '#/definitions/emailsResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /accounts/{account_id}/emails/{email_id}/:
-    get:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Fetch Emails by ID'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: email_id
-          in: path
-          type: integer
-          description: 'Email ID'
-          required: true
-
-      tags:
-        - Account
-        - Email
-
-      responses:
-        '200':
-          description: Emails fetched
-          schema:
-            $ref: '#/definitions/emailResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    patch:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Update Email'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: email_id
-          in: path
-          type: integer
-          description: 'Email ID'
-          required: true
-        - name: payload
-          in: body
-          description: 'Resource content'
-          required: true
-          schema:
-            $ref: '#/definitions/updateEmailRequest'
-
-      tags:
-        - Account
-        - Email
-
-      responses:
-        '200':
-          description: Email updated
-          schema:
-            $ref: '#/definitions/updateEmailResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    delete:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Delete Email by ID'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: email_id
-          in: path
-          type: integer
-          description: 'Email ID'
-          required: true
-
-      tags:
-        - Account
-        - Email
-
-      responses:
-        '204':
-          description: Email entry deleted
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /accounts/{account_id}/settings/:
-    get:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Fetch settings related to Account'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-
-      tags:
-        - Account
-        - Settings
-
-      responses:
-        '200':
-          description: Settings fetched
-          schema:
-            $ref: '#/definitions/settingsResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-
-  /accounts/{account_id}/settings/{setting_id}/:
-    get:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Fetch setting by ID related to Account'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: setting_id
-          in: path
-          type: integer
-          description: 'Setting ID'
-          required: true
-
-      tags:
-        - Account
-        - Settings
-
-      responses:
-        '200':
-          description: Settings fetched
-          schema:
-            $ref: '#/definitions/settingResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    patch:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Update settings'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: setting_id
-          in: path
-          type: integer
-          description: 'Setting ID'
-          required: true
-        - name: payload
-          in: body
-          description: 'Resource content'
-          required: true
-          schema:
-            $ref: '#/definitions/updateSettingRequest'
-
-      tags:
-        - Account
-        - Settings
-
-      responses:
-        '200':
-          description: Settings updated
-          schema:
-            $ref: '#/definitions/updateSettingResponse'
-        '204':
-          description: No content with given id
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
-    delete:
-      security:
-        - externalApiKeyAuth: []
-      description: 'Delete Setting by ID'
-
-      parameters:
-        - name: account_id
-          in: path
-          type: integer
-          description: 'Account ID'
-          required: true
-        - name: setting_id
-          in: path
-          type: integer
-          description: 'Setting ID'
-          required: true
-
-      tags:
-        - Account
-        - Settings
-
-      responses:
-        '204':
-          description: Setting entry deleted
-        '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/errors'
-        '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
-
 
 
   /accounts/{account_id}/servicelinks/:
@@ -1339,8 +445,7 @@ paths:
           required: true
 
       tags:
-        - Account
-        - Service Link
+        - MyData Service Link
 
       responses:
         '200':
@@ -1390,8 +495,7 @@ paths:
           required: true
 
       tags:
-        - Account
-        - Service Link
+        - MyData Service Link
 
       responses:
         '200':
@@ -1441,9 +545,7 @@ paths:
           required: true
 
       tags:
-        - Account
-        - Service Link
-        - Status
+        - MyData Service Link
 
       responses:
         '200':
@@ -1498,9 +600,7 @@ paths:
           required: true
 
       tags:
-        - Account
-        - Service Link
-        - Status
+        - MyData Service Link
 
       responses:
         '200':
@@ -1531,6 +631,47 @@ paths:
             $ref: '#/definitions/errors'
 
 
+  /accounts/{account_id}/servicelinks/{link_id}/statuses/last/:
+    get:
+      security:
+        - externalApiKeyAuth: []
+      summary: 'Get last Service Link Status Record'
+      description: "Fetch last Service Link Status Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+
+      tags:
+        - MyData Service Link
+
+      responses:
+        '200':
+          description: 'Service Link Status Record'
+          schema:
+            $ref: '#/definitions/serviceLinkStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'No Service Link with provided ID'
+          schema:
+            $ref: '#/definitions/errors'
+        '500':
+          description: 'General Error'
+          schema:
+            $ref: '#/definitions/errors'
+
+
   /accounts/{account_id}/servicelinks/{servicelink_id}/consents/:
     get:
       security:
@@ -1548,10 +689,14 @@ paths:
           type: integer
           description: 'Service link ID'
           required: true
+        - name: get_consent_pair
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
 
       tags:
-        - Account
-        - Consent
+        - MyData Consent
 
       responses:
         '200':
@@ -1604,17 +749,20 @@ paths:
           type: integer
           description: 'Consent ID'
           required: true
+        - name: get_consent_pair
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
 
       tags:
-        - Account
-        - Service Link
-        - Status
+        - MyData Consent
 
       responses:
         '200':
           description: Consent fetched
           schema:
-            $ref: '#/definitions/consentResponse'
+            $ref: '#/definitions/consentsResponse'
         '204':
           description: No content with given id
         '400':
@@ -1635,6 +783,52 @@ paths:
             $ref: '#/definitions/errors'
         '503':
           description: Service Unavailable
+          schema:
+            $ref: '#/definitions/errors'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/last/:
+    get:
+      security:
+        - externalApiKeyAuth: []
+      summary: 'Get Last Consent Record'
+      description: "Fetch Last Consent Record related to Service Link Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: get_consent_pair
+          in: query
+          type: boolean
+          description: "If true also Consent pairs will be fetched"
+          required: false
+
+      tags:
+        - MyData Consent
+
+      responses:
+        '200':
+          description: 'Array of Consent Records'
+          schema:
+            $ref: '#/definitions/consentsResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'No Service Link with provided ID'
+          schema:
+            $ref: '#/definitions/errors'
+        '500':
+          description: 'General Error'
           schema:
             $ref: '#/definitions/errors'
 
@@ -1661,11 +855,14 @@ paths:
           type: integer
           description: 'Consent ID'
           required: true
+        - name: status_id
+          in: query
+          type: string
+          description: "Last valid Consent Status Record ID"
+          required: false
 
       tags:
-        - Account
-        - Consent
-        - Status
+        - MyData Consent
 
       responses:
         '200':
@@ -1725,9 +922,7 @@ paths:
           required: true
 
       tags:
-        - Account
-        - Consent
-        - Status
+        - MyData Consent
 
       responses:
         '200':
@@ -1754,6 +949,52 @@ paths:
             $ref: '#/definitions/errors'
         '503':
           description: Service Unavailable
+          schema:
+            $ref: '#/definitions/errors'
+
+
+  /accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/last/:
+    get:
+      security:
+        - externalApiKeyAuth: []
+      summary: 'Get last Consent Status Record'
+      description: "Fetch last Consent Status Record"
+
+      parameters:
+        - name: account_id
+          in: path
+          type: string
+          description: 'Account ID'
+          required: true
+        - name: link_id
+          in: path
+          type: string
+          description: 'Service Link ID'
+          required: true
+        - name: consent_id
+          in: path
+          type: string
+          description: 'Consent ID'
+          required: true
+
+      tags:
+        - MyData Consent
+
+      responses:
+        '200':
+          description: 'Consent Status Record'
+          schema:
+            $ref: '#/definitions/consentStatusResponse'
+        '400':
+          description: 'Bad Request'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'No entry with provided ID'
+          schema:
+            $ref: '#/definitions/errors'
+        '500':
+          description: 'General Error'
           schema:
             $ref: '#/definitions/errors'
 
@@ -1809,26 +1050,14 @@ definitions:
             description: Account password
             maxLength: 255
             minLength: 8
-          firstName:
+          firstname:
             type: string
             description: User's first name
             maxLength: 255
-          lastName:
+          lastname:
             type: string
             description: User's last name
             maxLength: 255
-          email:
-            type: string
-            format: email
-            description: User's email
-            maxLength: 255
-          dateOfBirth:
-            type: string
-            format: date
-            description: User's date of birth
-          acceptTermsOfService:
-            type: boolean
-            description: 'True if user accepts terms of usage'
 
   createdAccount:
     type: object
@@ -1837,31 +1066,13 @@ definitions:
         type: string
         description: Resource type 'Account'
       id:
-        type: integer
+        type: string
         description: Account ID
       attributes:
         type: object
         properties:
-          username:
-            type: string
-            description: Account username
-          firstName:
-            type: string
-            description: User's first name
-          lastName:
-            type: string
-            description: User's last name
-          email:
-            type: string
-            format: email
-            description: User's email
-          dateOfBirth:
-            type: string
-            format: date
-            description: User's date of birth
-          acceptTermsOfService:
-            type: boolean
-            description: 'True if user accepts terms of usage'
+          activated:
+            type: integer
 
   account:
     type: object
@@ -1870,253 +1081,33 @@ definitions:
         type: string
         description: Resource type 'Account'
       id:
-        type: integer
+        type: string
         description: Account ID
       attributes:
         type: object
-        properties:
-          activated:
-            type: boolean
 
-  tinyAccount:
+  AccountInfo:
     type: object
+    description: "Account info"
     properties:
       type:
         type: string
-        description: Resource type 'TinyAccount'
+        description: Resource type 'AccountInfo'
       id:
-        type: integer
-        description: Account ID
-      attributes:
-        type: object
-        properties:
-          username:
-            type: string
-            description: Account username
-          firstName:
-            type: string
-            description: User's first name
-          lastName:
-            type: string
-            description: User's last name
-          email:
-            type: string
-            format: email
-            description: User's email
-          img:
-            type: string
-            description: 'Baase64 avatar image'
-
-  particular:
-    type: object
-    description: "Account owner's personal information"
-    properties:
-      type:
         type: string
-        description: Resource type 'Particular'
-      id:
-        type: integer
-        description: Particular ID
+        description: AccountInfo ID
       attributes:
         type: object
         properties:
-          firstName:
+          firstname:
             type: string
             description: First name
-          lastName:
+          lastname:
             type: string
             description: Last name
-          dateOfBirth:
-            type: string
-            format: date
-            description: Date of birth
-          img:
+          avatar:
             type: string
             description: 'Base64 avatar image'
-
-
-  newContact:
-    type: object
-    properties:
-      type:
-        type: string
-        description: Resource type 'Contact'
-      attributes:
-        type: object
-        properties:
-          address1:
-            type: string
-            description: 'Address 1'
-          address2:
-            type: string
-            description: 'Address 2'
-          postalCode:
-            type: string
-            description: 'Postal Code'
-          city:
-            type: string
-            description: 'City'
-          state:
-            type: string
-            description: 'State'
-          country:
-            type: string
-            description: 'Country'
-          type:
-            type: string
-            description: 'Contact Type (Home / Work)'
-          primary:
-            type: boolean
-            description: 'Is primary'
-
-
-  contact:
-    type: object
-    description: "Account owner's contact details"
-    properties:
-      type:
-        type: string
-        description: Resource type 'Contact'
-      id:
-        type: integer
-        description: Contact ID
-      attributes:
-        type: object
-        properties:
-          address1:
-            type: string
-            description: 'Address 1'
-          address2:
-            type: string
-            description: 'Address 2'
-          postalCode:
-            type: string
-            description: 'Postal Code'
-          city:
-            type: string
-            description: 'City'
-          state:
-            type: string
-            description: 'State'
-          country:
-            type: string
-            description: 'Country'
-          type:
-            type: string
-            description: 'Contact Type (Home / Work)'
-          primary:
-            type: boolean
-            description: 'Is primary'
-
-
-  newTelephone:
-    type: object
-    properties:
-      type:
-        type: string
-        description: Resource type 'Telephone'
-      attributes:
-        type: object
-        properties:
-          tel:
-            type: string
-            description: 'Telephone number'
-          type:
-            type: string
-            description: 'Telephone type (Home / Work)'
-          primary:
-            type: boolean
-            description: 'Is primary'
-
-
-  telephone:
-    type: object
-    description: "Account owner's telephone number"
-    properties:
-      type:
-        type: string
-        description: Resource type 'Telephone'
-      id:
-        type: integer
-        description: Telephone ID
-      attributes:
-        type: object
-        properties:
-          tel:
-            type: string
-            description: 'Telephone number'
-          type:
-            type: string
-            description: 'Telephone type (Home / Work)'
-          primary:
-            type: boolean
-            description: 'Is primary'
-
-
-  newEmail:
-    type: object
-    properties:
-      type:
-        type: string
-        description: Resource type 'Email'
-      attributes:
-        type: object
-        properties:
-          email:
-            type: string
-            description: 'Email address'
-          type:
-            type: string
-            description: 'Email type (Home / Work)'
-          primary:
-            type: boolean
-            description: 'Is primary'
-
-
-  email:
-    type: object
-    description: "Account owner's email address"
-    properties:
-      type:
-        type: string
-        description: Resource type 'Email'
-      id:
-        type: integer
-        description: Email ID
-      attributes:
-        type: object
-        properties:
-          email:
-            type: string
-            description: 'Email address'
-          type:
-            type: string
-            description: 'Email type (Home / Work)'
-          primary:
-            type: boolean
-            description: 'Is primary'
-
-
-  setting:
-    type: object
-    description: "Account owner's stored settings as key-value pairs"
-    properties:
-      type:
-        type: string
-        description: Resource type 'Setting'
-      id:
-        type: integer
-        description: Setting ID
-      attributes:
-        type: object
-        properties:
-          key:
-            type: string
-            description: 'Key for setting value'
-          value:
-            type: string
-            description: 'Setting value'
-
 
   newAccountRequest:
     type: object
@@ -2124,59 +1115,11 @@ definitions:
       data:
         $ref: '#/definitions/newAccount'
 
-
   newAccountResponse:
     type: object
     properties:
-      meta:
-        type: object
-        properties:
-          activationInstructions:
-            type: object
-            description: Instructions for account activation
       data:
         $ref: '#/definitions/createdAccount'
-
-
-  activateAccountRequest:
-    type: object
-    properties:
-      data:
-        type: object
-        properties:
-          type:
-            type: string
-            description: Resource type 'AccountActivation'
-          id:
-            type: integer
-            description: Account ID
-          attributes:
-            type: object
-            properties:
-              activationToken:
-                type: string
-                description: Activation Token for Account
-
-
-  activateAccountResponse:
-    type: object
-    properties:
-      data:
-        type: object
-        properties:
-          type:
-            type: string
-            description: Resource type 'AccountActivation'
-          id:
-            type: integer
-            description: Account ID
-          attributes:
-            type: object
-            properties:
-              activationStatus:
-                type: string
-                description: 'Activation status'
-
 
   accountResponse:
     type: object
@@ -2185,225 +1128,93 @@ definitions:
         $ref: '#/definitions/account'
 
 
-  particularsResponse:
+  AccountInfoResponseArray:
     type: object
     properties:
       data:
         type: array
         items:
-          $ref: '#/definitions/particular'
+          $ref: '#/definitions/AccountInfo'
 
 
-  particularResponse:
+  AccountInfoResponse:
     type: object
     properties:
       data:
-        $ref: '#/definitions/particular'
+        $ref: '#/definitions/AccountInfo'
 
 
-  updateParticularRequest:
+  AccountInfoRequest:
     type: object
     properties:
       data:
-        $ref: '#/definitions/particular'
+        $ref: '#/definitions/AccountInfo'
 
-
-  updateParticularResponse:
+  jwk:
     type: object
-    properties:
-      data:
-        $ref: '#/definitions/particular'
+    description: "Cryptographic key presented as JSON Web Key (JWK) as defined in RFC 7517"
 
-
-  newContactRequest:
+  JWSUnprotectedHeader:
     type: object
+    description: "JWS Unprotected Header"
     properties:
-      data:
-        $ref: '#/definitions/newContact'
+      kid:
+        type: string
+        description: "Key identifier"
 
-
-  newContactResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/contact'
-
-
-  contactsResponse:
-    type: object
-    properties:
-      data:
-        type: array
-        items:
-          $ref: '#/definitions/contact'
-
-
-  contactResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/contact'
-
-
-  updateContactRequest:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/contact'
-
-
-  updateContactResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/contact'
-
-
-
-  newTelephoneRequest:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/newTelephone'
-
-
-  newTelephoneResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/telephone'
-
-
-  telephonesResponse:
-    type: object
-    properties:
-      data:
-        type: array
-        items:
-          $ref: '#/definitions/telephone'
-
-
-  telephoneResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/telephone'
-
-
-  updateTelephoneRequest:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/telephone'
-
-
-  updateTelephoneResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/telephone'
-
-
-
-  newEmailRequest:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/newEmail'
-
-
-  newEmailResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/email'
-
-
-  emailsResponse:
-    type: object
-    properties:
-      data:
-        type: array
-        items:
-          $ref: '#/definitions/email'
-
-
-  emailResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/email'
-
-
-  updateEmailRequest:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/email'
-
-
-  updateEmailResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/email'
-
-
-
-  settingsResponse:
-    type: object
-    properties:
-      data:
-        type: array
-        items:
-          $ref: '#/definitions/setting'
-
-
-  settingResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/setting'
-
-
-  updateSettingRequest:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/setting'
-
-
-  updateSettingResponse:
-    type: object
-    properties:
-      data:
-        $ref: '#/definitions/setting'
-
+  JWSProtectedHeader:
+    type: string
+    description: 'JWS Protected Header'
 
   serviceLink:
     type: object
     properties:
       type:
         type: string
-        description: Resource type 'ServiceLink'
+        description: "Resource type: 'ServiceLinkRecord'"
       id:
-        type: integer
-        description: Service Link ID
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
+        description: 'Service Link Record as JSON Web Signature (JWS)'
         properties:
-          serviceLinkRecordId:
-            type: string
-            description: 'Service Link Record ID'
-          serviceId:
-            type: string
-            description: 'Related Service ID'
-          surrogateId:
-            type: string
-            description: 'Related Surrogate ID'
-          serviceLinkRecord:
+          payload:
             type: object
-            description: 'Service Link Record as JWS - [MyData Service Linking Specification] (https://github.com/HIIT/mydata-stack)'
+            description: 'JWS Payload. Base64url encoded.'
+            properties:
+              version:
+                type: string
+              link_id:
+                type: string
+              operator_id:
+                type: string
+              service_id:
+                type: string
+              surrogate_id:
+                type: string
+              operator_key:
+                $ref: '#/definitions/jwk'
+              cr_keys:
+                description: 'JSON Web Key (JWK) Set Structure '
+                type: array
+                items:
+                  $ref: '#/definitions/jwk'
+              iat:
+                type: integer
+                format: int32
+          signatures:
+            type: array
+            items:
+              type: object
+              properties:
+                header:
+                  $ref: '#/definitions/JWSUnprotectedHeader'
+                protected:
+                  $ref: '#/definitions/JWSProtectedHeader'
+                signature:
+                  type: string
+                  description: "JWS Signature"
 
 
   serviceLinksResponse:
@@ -2427,19 +1238,40 @@ definitions:
     properties:
       type:
         type: string
-        description: Resource type 'ServiceLinkStatus'
+        description: "Resource type: 'ServiceLinkStatusRecord'"
       id:
-        type: integer
-        description: Service Link Status Record ID
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
+        description: 'Service Link Status Record as JSON Web Signature (JWS)'
         properties:
-          status:
-            type: string
-            description: "Service Link's status"
-          serviceLinkStatusRecord:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
             type: object
-            description: 'Service Link Status Record as JWS - [MyData Service Linking Specification] (https://github.com/HIIT/mydata-stack)'
+            description: 'JWS Payload. Base64url encoded.'
+            properties:
+              version:
+                type: string
+              record_id:
+                type: string
+              surrogate_id:
+                type: string
+              slr_id:
+                type: string
+              sl_status:
+                type: string
+              iat:
+                type: integer
+                format: int32
+              prev_record_id:
+                type: string
+          signature:
+            type: string
+            description: "JWS Signature"
 
 
   serviceLinkStatusesResponse:
@@ -2463,28 +1295,24 @@ definitions:
     properties:
       type:
         type: string
-        description: Resource type 'Consent'
+        description: "Resource type: 'ConsentRecord'"
       id:
-        type: integer
-        description: Consent ID
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
+        description: 'Consent Record as JSON Web Signature (JWS)'
         properties:
-          serviceLinkRecordId:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
+            type: 'object'
+            description: 'Base64 encoded object containing either Consent Payload of Source Service or Consent Payload of Sink Service. For detailed descriptions of these objects check Models section.'
+          signature:
             type: string
-            description: 'Related Service Record ID'
-          serviceId:
-            type: string
-            description: 'Related Service ID'
-          surrogateId:
-            type: string
-            description: 'Related Surrogate ID'
-          consentRecordId:
-            type: string
-            description: 'Consent Record ID'
-          consentRecord:
-            type: object
-            description: 'Consent Record as JWS - [MyData Authorization Specification] (https://github.com/HIIT/mydata-stack)'
+            description: "JWS Signature"
 
 
   consentsResponse:
@@ -2495,32 +1323,48 @@ definitions:
         items:
           $ref: '#/definitions/consent'
 
-
-  consentResponse:
+  consentStatusPayload:
     type: object
+    description: 'Consent Status Record Payload'
     properties:
-      data:
-        $ref: '#/definitions/consent'
-
+      version:
+        type: string
+      record_id:
+        type: string
+      surrogate_id:
+        type: string
+      cr_id:
+        type: string
+      consent_status:
+        type: string
+      iat:
+        type: integer
+        format: int32
+      prev_record_id:
+        type: string
 
   consentStatus:
     type: object
     properties:
       type:
         type: string
-        description: Resource type 'ConsentStatus'
+        description: "Resource type: 'ConsentStatusRecord'"
       id:
-        type: integer
-        description: Consent Status ID
+        type: string
+        description: "ID of resource"
       attributes:
         type: object
+        description: 'Consent Status Record as JSON Web Signature (JWS)'
         properties:
-          status:
+          header:
+            $ref: '#/definitions/JWSUnprotectedHeader'
+          protected:
+            $ref: '#/definitions/JWSProtectedHeader'
+          payload:
+            $ref: '#/definitions/consentStatusPayload'
+          signature:
             type: string
-            description: "Consent's status"
-          consentStatusRecord:
-            type: object
-            description: 'Consent Status Record as JWS - [MyData Authorization Specification] (https://github.com/HIIT/mydata-stack)'
+            description: "JWS Signature"
 
 
   consentStatusesResponse:
@@ -2537,4 +1381,145 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/consentStatus'
+
+  EventLog:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'Event'"
+      id:
+        type: string
+        description: "ID of resource"
+      attributes:
+        type: object
+        properties:
+          action:
+            type: string
+            description: "HTTP Method"
+          actor:
+            type: string
+            description: "Actor during event"
+          resource:
+            type: string
+            description: "Resource accessed"
+          timestamp:
+            type: string
+            description: "Timestamp of event as ISO 8601 formatted string"
+
+  EventLogArray:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/EventLog'
+
+
+  accountExportResponse:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Resource type: 'AccountExport'"
+      id:
+        type: string
+        description: "ID of resource"
+      gid:
+        type: string
+        description: "Global ID of resource"
+      attributes:
+        type: object
+        properties:
+          account_info:
+            type: array
+            items:
+              $ref: '#/definitions/AccountInfo'
+          event_logs:
+            type: array
+            items:
+              $ref: '#/definitions/EventLog'
+          service_links:
+            type: object
+            properties:
+              type:
+                type: string
+                description: "Resource type: 'ServiceLinkRecord'"
+              id:
+                type: string
+                description: "ID of resource"
+              attributes:
+                type: object
+                description: 'Service Link Record as JSON Web Signature (JWS)'
+                properties:
+                  payload:
+                    type: object
+                    description: 'JWS Payload. Base64url encoded.'
+                    properties:
+                      version:
+                        type: string
+                      link_id:
+                        type: string
+                      operator_id:
+                        type: string
+                      service_id:
+                        type: string
+                      surrogate_id:
+                        type: string
+                      operator_key:
+                        $ref: '#/definitions/jwk'
+                      cr_keys:
+                        description: 'JSON Web Key (JWK) Set Structure '
+                        type: array
+                        items:
+                          $ref: '#/definitions/jwk'
+                      iat:
+                        type: integer
+                        format: int32
+                  signatures:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        header:
+                          $ref: '#/definitions/JWSUnprotectedHeader'
+                        protected:
+                          $ref: '#/definitions/JWSProtectedHeader'
+                        signature:
+                          type: string
+                          description: "JWS Signature"
+              status_records:
+                type: array
+                items:
+                  $ref: '#/definitions/serviceLinkStatus'
+              consent_records:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      description: "Resource type: 'ConsentRecord'"
+                    id:
+                      type: string
+                      description: "ID of resource"
+                    attributes:
+                      type: object
+                      description: 'Consent Record as JSON Web Signature (JWS)'
+                      properties:
+                        header:
+                          $ref: '#/definitions/JWSUnprotectedHeader'
+                        protected:
+                          $ref: '#/definitions/JWSProtectedHeader'
+                        payload:
+                          type: 'object'
+                          description: 'Base64 encoded object containing either Consent Payload of Source Service or Consent Payload of Sink Service. For detailed descriptions of these objects check Models section.'
+                        signature:
+                          type: string
+                          description: "JWS Signature"
+                    status_records:
+                      type: array
+                      items:
+                        $ref: '#/definitions/consentStatus'
+
 

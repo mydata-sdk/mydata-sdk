@@ -16,7 +16,7 @@ from werkzeug.routing import BaseConverter
 from app.helpers import get_custom_logger, ApiError, make_json_response
 
 # Define the blueprint: 'auth', set its url prefix: app.url/auth
-from app.mod_system.controller import clear_mysql_db, clear_blackbox_db, clear_api_key_db
+from app.mod_system.controller import clear_mysql_db, clear_blackbox_db, clear_api_key_db, system_check
 
 mod_system = Blueprint('system', __name__, template_folder='templates')
 api = Api(mod_system)
@@ -80,8 +80,35 @@ class SystemStatus(Resource):
         :return:
         """
 
+        logger.info("Checking system status")
+        try:
+            response_data_dict = system_check()
+        except Exception as exp:
+            error_title = "API seems to be working fine, but database connection might be down."
+            error_detail = repr(exp)
+            logger.error(error_title + " - " + error_detail)
+            raise ApiError(code=500, title=error_title, detail=error_detail)
+        else:
+            logger.info("System running as intended")
+
         # Response
-        response_data_dict = {'status': 'running'}
+        logger.info(json.dumps(response_data_dict))
+        return make_json_response(data=response_data_dict, status_code=200)
+
+
+class SystemRunning(Resource):
+    def get(self):
+        """
+        Status check
+        :param:
+        :return:
+        """
+
+        logger.info("Checking API status")
+        logger.info("API running as intended")
+
+        # Response
+        response_data_dict = {"status": "running"}
         logger.info(json.dumps(response_data_dict))
         return make_json_response(data=response_data_dict, status_code=200)
 
@@ -118,5 +145,6 @@ class SystemRoutes(Resource):
 
 # Register resources
 api.add_resource(ClearDb, '/system/db/clear/', endpoint='db_clear')
-api.add_resource(SystemStatus, '/system/status/', '/', endpoint='system_status')
+api.add_resource(SystemStatus, '/system/status/', endpoint='system_status')
+api.add_resource(SystemRunning, '/', endpoint='system_running')
 api.add_resource(SystemRoutes, '/system/routes/', endpoint='system_routes')

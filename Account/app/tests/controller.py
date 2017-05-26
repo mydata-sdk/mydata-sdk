@@ -66,7 +66,7 @@ def validate_json(json_object=None, json_schema=None):
         return True
 
 
-def account_create(username=None, password=None, email_length=15, username_length=15, password_length=15, firstname_length=15, lastname_length=15, invalid_email=False, invalid_date=False, invalid_type=False, accept_terms=True):
+def account_create(username=None, password=None, username_length=15, password_length=15, firstname_length=15, lastname_length=15, invalid_type=False):
     """
     Create valid Account
     :return: account, username, password
@@ -78,39 +78,20 @@ def account_create(username=None, password=None, email_length=15, username_lengt
     firstname = generate_string(n=firstname_length)
     lastname = generate_string(n=lastname_length)
 
-    if invalid_email:
-        email = generate_string(n=email_length)
-    else:
-        email = generate_string(n=email_length) + "@examlpe.org"
-
-    if invalid_date:
-        # TODO: Case 20160531
-        date_of_birth = "20163131"
-    else:
-        date_of_birth = "2016-05-31"
-
     if invalid_type:
         resource_type = "Acc"
     else:
         resource_type = "Account"
-
-    if accept_terms:
-        accept_tos = True
-    else:
-        accept_tos = False
 
 
     account = {
       "data": {
         "type": resource_type,
         "attributes": {
-          "firstName": firstname,
-          "lastName": lastname,
-          "dateOfBirth": date_of_birth,
-          "email": email,
+          "firstname": firstname,
+          "lastname": lastname,
           "username": username,
-          "password": password,
-          "acceptTermsOfService": accept_tos
+          "password": password
         }
       }
     }
@@ -118,6 +99,34 @@ def account_create(username=None, password=None, email_length=15, username_lengt
     account = json.dumps(account)
 
     return account, username, password
+
+
+def account_info_update(object_id=None, firstname=None, lastname=None, avatar=None):
+    """
+    Create AccountInfo payload
+    :return: JSON object
+    """
+    if object_id is None:
+        object_id = generate_string(n=10)
+
+    payload = {
+      "data": {
+        "type": "AccountInfo",
+        "id": object_id,
+        "attributes": {}
+      }
+    }
+
+    if firstname is not None:
+        payload['data']['attributes']['firstname'] = firstname
+    if lastname is not None:
+        payload['data']['attributes']['lastname'] = lastname
+    if avatar is not None:
+        payload['data']['attributes']['avatar'] = avatar
+
+    payload = json.dumps(payload)
+
+    return payload
 
 
 def generate_sl_init_sink(slr_id=None, misformatted_payload=False):

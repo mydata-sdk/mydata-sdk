@@ -9,8 +9,8 @@
 # Test results:
 ./tests/test-results/*
 
-# Test results:
-./tests/test-results/*
+# Coverage reports:
+./tests/coverage-reports/*
 
 # Database design backup files:
 ./doc/database/*.bak
