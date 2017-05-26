@@ -108,6 +108,12 @@ class SlrStatus(Resource):
 
             try:
                 # Notify Service of SLR status chanege
+                service_url = self.service_registry_handler.getService_url(service_id)
+                endpoint = "/api/1.2/slr/status"
+                req = post(service_url+endpoint, json=created_ssr)
+                debug_log.debug("Posted SSR to service:\n{}  {}  {}  {}"
+                                .format(req.status_code, req.reason, req.text, req.content))
+
                 return created_ssr
                 pass
 

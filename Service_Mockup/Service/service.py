@@ -250,9 +250,33 @@ class StoreSlr(Resource):
         debug_log.info(dumps(request.json, indent=2))
         store = request.json
         payload = decode_payload(store["data"]["slr"]["attributes"]["payload"])
-        self.helpers.storeJSON({payload["surrogate_id"]: store})
+        debug_log.info("Storing SLR into db")
+        self.helpers.store_slr_JSON(json=request.json["data"]["slr"], slr_id=payload["link_id"], surrogate_id=payload["surrogate_id"])
+        debug_log.info("Storing SSR into db")
+        self.helpers.store_ssr_JSON(json=request.json["data"]["ssr"])
 
+
+class StoreSSR(Resource):
+    def __init__(self):
+        super(StoreSSR, self).__init__()
+        config = current_app.config
+        self.helpers = Helpers(config)
+
+
+    @timeme
+    @error_handler
+    def post(self):
+        # TODO: This is as naive as it gets, needs some verifications regarding ssr,
+        # or are we leaving this to firewalls, eg. Only this host(operator) can use this endpoint.
+        debug_log.info("Received JSON to SSR endpoint:\n {}".format(request.json))
+        try:
+            self.helpers.store_ssr_JSON(json=request.json["data"])
+            return {"id":request.json["data"]["id"]}, 201
+        except Exception as e:
+            debug_log.exception(e)
+            raise e
 
 api.add_resource(UserLogin, '/login')
 api.add_resource(RegisterSur, '/link')
 api.add_resource(StoreSlr, '/store_slr')
+api.add_resource(StoreSSR, '/store_ssr')

@@ -39,9 +39,28 @@ DEFAULT CHARACTER SET = utf8;
 DROP TABLE IF EXISTS `db_Service_Mockup_Source`.`storage` ;
 
 CREATE TABLE IF NOT EXISTS `db_Service_Mockup_Source`.`storage` (
-  `ID` LONGTEXT NOT NULL,
+  `surrogate_id` LONGTEXT NOT NULL,
   `json` LONGTEXT NOT NULL,
-  PRIMARY KEY (`ID`(255)))
+  `slr_id` LONGTEXT NOT NULL,
+  PRIMARY KEY (`slr_id`(255)))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+
+
+
+-- -----------------------------------------------------
+-- Table `db_Service_Mockup_Source`.`ssr_storage`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `db_Service_Mockup_Source`.`ssr_storage` ;
+
+CREATE TABLE IF NOT EXISTS `db_Service_Mockup_Source`.`ssr_storage` (
+  `surrogate_id` LONGTEXT NOT NULL,
+  `slr_id` LONGTEXT NOT NULL,
+  `record_id` LONGTEXT NOT NULL,
+  `json` LONGTEXT NOT NULL,
+  `prev_record_id` LONGTEXT,
+  PRIMARY KEY (`record_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 

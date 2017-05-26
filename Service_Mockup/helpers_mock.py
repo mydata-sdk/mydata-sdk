@@ -4,8 +4,7 @@ import logging
 import pkgutil
 import time
 from json import dumps, loads
-from sqlite3 import IntegrityError
-
+from base64 import urlsafe_b64decode as decode
 from Crypto.PublicKey.RSA import importKey as import_rsa_key
 from flask import Blueprint
 from flask_restful import Api
@@ -50,24 +49,56 @@ class Helpers:
             db.close()
             return None
 
-    def storeJSON(self, DictionaryToStore):
+    def store_slr_JSON(self, json, slr_id, surrogate_id):
+        """
+        Store SLR into database
+        :param surrogate_id:
+        :param slr_id:
+        :param json:
+        :return:
+        """
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info(DictionaryToStore)
+        debug_log.info("Storing SLR '{}' belonging to surrogate_id '{}' with content:\n {}"
+                       .format(slr_id, surrogate_id, json))
+        cursor.execute("INSERT INTO storage (surrogate_id,json,slr_id) \
+            VALUES (%s, %s, %s)", (surrogate_id, dumps(json), slr_id))
+        db.commit()
+        db.close()
 
-        for key in DictionaryToStore:
-            debug_log.info(key)
-            # codes = {"jsons": {}}
-            # codes = {"jsons": {}}
-            try:
-                cursor.execute("INSERT INTO storage (ID,json) \
-                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
-                db.commit()
-                db.close()
-            except IntegrityError as e:
-                cursor.execute("UPDATE storage SET json=%s WHERE ID=%s ;", (dumps(DictionaryToStore[key]), key))
-                db.commit()
-                db.close()
+    def store_ssr_JSON(self, json):
+        """
+        Store SSR into database
+        :param record_id:
+        :param surrogate_id:
+        :param slr_id:
+        :param json:
+        :return:
+        """
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+        cursor = db.cursor()
+
+        decoded_payload = base_token_tool.decode_payload(json["attributes"]["payload"])
+        record_id = decoded_payload["record_id"]
+        surrogate_id = decoded_payload["surrogate_id"]
+        slr_id = decoded_payload["slr_id"]
+
+
+        debug_log.info("Storing SSR '{}' momentarily.\n {}".format(record_id, decoded_payload))
+        prev_id = decoded_payload["prev_record_id"]
+        if prev_id != "NULL":
+            debug_log.info("Verifying SSR chain is unbroken.\n Looking up previous record '{}'".format(prev_id))
+            prev_record = self.query_db("select record_id, json from ssr_storage where record_id = %s", (prev_id,))
+            if prev_record is None:
+                raise TypeError("Previous record_id is not found")  # Todo We make this basic check but is it enough?
+            debug_log.info("Found record: \n{}".format(prev_record))
+
+        debug_log.info("Storing SSR '{}' belonging to surrogate_id '{}' with content:\n {}"
+                       .format(record_id, surrogate_id, json))
+        cursor.execute("INSERT INTO ssr_storage (surrogate_id,json,record_id,slr_id,prev_record_id) \
+            VALUES (%s, %s, %s, %s, %s)", (surrogate_id, dumps(json), record_id, slr_id, prev_id))
+        db.commit()
+        db.close()
 
     def store_code_user(self, DictionaryToStore):  # TODO: Replace with simpler function, no need for fancy for loops.
         # {"code": "user_id"}
@@ -106,6 +137,7 @@ class Helpers:
                     VALUES (%s, %s)", [user_id, surrogate_id])
             db.commit()
         except Exception as e:  # TODO: Is this acceptable behaviour?
+            debug_log.exception(e)
             debug_log.info("Surrogate_id '{}' mapped with user '{}' already.".format(user_id, surrogate_id))
             db.commit()
             db.close()
@@ -169,6 +201,15 @@ def register_blueprints(app, package_name, package_path):
                 apis.append(item)
     return rv, apis
 
+class base_token_tool:
+    @staticmethod
+    def decode_payload(payload):
+        payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
+        content = decode(payload.encode())
+        payload = loads(content.decode("utf-8"))
+        debug_log.info("Decoded payload is:")
+        debug_log.info(payload)
+        return payload
 
 class Sequences:
     def __init__(self, name):

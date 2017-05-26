@@ -197,6 +197,31 @@ def header_fix(malformed_dictionary):  # We do not check if its malformed, we ex
         return malformed_dictionary
     raise ValueError("Received dictionary was not expected type.")
 
+class StoreSSR(Resource):
+    def __init__(self):
+        super(StoreSSR, self).__init__()
+        config = current_app.config
+        self.helpers = Helpers(config)
+        self.service_url = config["SERVICE_URL"]
+
+
+    @timeme
+    @error_handler
+    def post(self):
+        # TODO: This is as naive as it gets, needs some verifications regarding ssr,
+        # or are we leaving this to firewalls, eg. Only this host(operator) can use this endpoint.
+        debug_log.info("Received JSON to SSR endpoint:\n {}".format(request.json))
+        try:
+            self.helpers.store_ssr_JSON(json=request.json["data"])
+            endpoint = "/api/1.2/slr/store_ssr"
+            debug_log.info("Posting SLR for storage in Service Mockup")
+            result = post("{}{}".format(self.service_url, endpoint), json=request.json)  # Send copy to Service_Components
+            return {"id":request.json["data"]["id"]}, 201
+        except Exception as e:
+            debug_log.exception(e)
+            raise e
+
+
 
 class StoreSLR(Resource):
     def __init__(self):
@@ -325,6 +350,7 @@ class StoreSLR(Resource):
                 endpoint = "/api/1.2/slr/store_slr"
                 debug_log.info("Posting SLR for storage in Service Mockup")
                 result = post("{}{}".format(self.service_url, endpoint), json=store)  # Send copy to Service_Components
+                # TODO: incase this fails we should try again.
             else:
                 raise DetailedHTTPException(status=500,
                                             detail={
@@ -353,3 +379,4 @@ class StoreSLR(Resource):
 api.add_resource(GenerateSurrogateId, '/auth')
 api.add_resource(StartServiceLinking, '/linking')
 api.add_resource(StoreSLR, '/slr')
+api.add_resource(StoreSSR, '/status')
