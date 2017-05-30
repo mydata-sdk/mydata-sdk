@@ -741,13 +741,14 @@ class SLR_tool(base_token_tool):
                     }
 
     def get_SLR_payload(self):
-        base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["payload"]
+        debug_log.info("SLR in tool is:\n {}".format(self.slr))
+        base64_payload = self.slr["attributes"]["payload"]
         debug_log.info("Decoding SLR payload:")
         payload = self.decode_payload(base64_payload)
         return payload
 
     def get_SSR_payload(self):
-        base64_payload = self.slr["data"]["ssr"]["attributes"]["ssr"]["payload"]
+        base64_payload = self.slr["attributes"]["payload"]
         debug_log.info("Decoding SSR payload:")
         payload = self.decode_payload(base64_payload)
         return payload
@@ -775,12 +776,12 @@ class CR_tool(base_token_tool):
         }
 
     def get_CR_payload(self):
-        base64_payload = self.cr["cr"]["attributes"]["cr"]["payload"]
+        base64_payload = self.cr["cr"]["payload"]
         payload = self.decode_payload(base64_payload)
         return payload
 
     def get_CSR_payload(self):
-        base64_payload = self.cr["csr"]["attributes"]["csr"]["payload"]
+        base64_payload = self.cr["csr"]["payload"]
         payload = self.decode_payload(base64_payload)
         return payload
 
@@ -843,7 +844,7 @@ class CR_tool(base_token_tool):
         for key in keys:
             cr_jwk = jwk.JWK(**key)
             cr_jws = jws.JWS()
-            cr = self.cr["cr"]["attributes"]["cr"]
+            cr = self.cr["cr"]
             cr_jws.deserialize(dumps(cr))
 
             try:
@@ -861,7 +862,7 @@ class CR_tool(base_token_tool):
         for key in keys:
             cr_jwk = jwk.JWK(**key)
             csr_jws = jws.JWS()
-            csr = self.cr["csr"]["attributes"]["csr"]
+            csr = self.cr["csr"]
             csr_jws.deserialize(dumps(csr))
             try:
                 csr_jws.verify(cr_jwk)

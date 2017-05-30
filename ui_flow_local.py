@@ -138,7 +138,7 @@ def remove_slr(operatorl_url, user_key, slr_id, service_id):
 # TODO: Refactor and return something.
 # Gives a Consent for these Services by sending a Consent form as JSON-payload to Operator backend.
 # Should print "201 Created" if the Consent was executed succesfully.
-def give_consent(operator_url, sink_id, source_id):
+def give_consent(operator_url, sink_id, source_id, user_key):
 
     print("\n##### GIVE CONSENT #####")
 
@@ -158,7 +158,8 @@ def give_consent(operator_url, sink_id, source_id):
     print("\n###### 2.SEND CONSENT FORM ######")
     print(req.url, req.reason, req.status_code, req.text)
     js = json.loads(req.text)
-    req = post(operator_url + "api/1.2/cr/consent_form/account/2", json=js)
+    req = post(operator_url + "api/1.2/cr/consent_form/account/2", json=js,
+               headers={"Api-Key-User": user_key["Api-Key-User"]})
     if not req.ok:
         print("Granting consent failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
@@ -314,7 +315,7 @@ if __name__ == '__main__':
 
     # Consent
     if not args.skip_consent:
-        rs_id = give_consent(args.operator_url, args.sink_id, args.source_id)
+        rs_id = give_consent(args.operator_url, args.sink_id, args.source_id, user_key)
 
         # Debug Data Flow
         if not args.skip_data:

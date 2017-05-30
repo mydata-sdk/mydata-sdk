@@ -121,12 +121,13 @@ class AccountManagerHandler:
             "sign_slr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
             "verify_slr":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/store/",
             "fetch_slr":        "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
+            "fetch_slrs":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/",
             "store_slr_change": "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/statuses/",
             "slr_status":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/statuses/last/",
             "sign_consent":     "api/account/consent/sign/",
-            "consent":          "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
+            "consent":          "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{source_slr_id}/{sink_slr_id}/consents/",
             "fetch_consents":   "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/",
-            "auth_token":       "api/consent/{sink_cr_id}/authorizationtoken/",
+            "auth_token":       "account/api/v1.3/internal/consents/{sink_cr_id}/authorisationtoken/",
             "last_csr":         "account/api/v1.3/internal/accounts/{account_id}/consents/{consent_id}/statuses/last/",
             "new_csr":          "api/consent/{cr_id}/status/"}  # Works as path to GET missing csr and POST new ones
 
@@ -243,6 +244,44 @@ class AccountManagerHandler:
             raise DetailedHTTPException(status=404,
                                         detail={"msg": "Couldn't find SLR with given id."},
                                         title="Not Found")
+
+    def get_slrs(self, account_id):
+
+        if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
+            debug_log.error("Account ID mismatch.\n"
+                            "ID '{}' doesn't match with verified id '{}'".format(account_id, self.account_id))
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+
+        debug_log.info("Fetching SLRs that belongs to account '{}'".format(account_id))
+        slrs = get(self.url + self.endpoint["fetch_slrs"]
+                  .replace("{account_id}", account_id),
+                  headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                  timeout=self.timeout,
+                  )
+        debug_log.info("Request resulted in status {} and content:\n {}".format(slrs.status_code, slrs.text))
+        if slrs.ok:
+            return loads(slrs.text)
+        else:
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLRs for account"},
+                                        title="Not Found")
+
+    def get_surrogate_and_slr_id(self, account_id, service_id):
+        debug_log.info("Fetching surrogate_id and slr_id for account '{}' and service '{}'"
+                       .format(account_id, service_id))
+        slrs = self.get_slrs(account_id=account_id)
+
+        for slr in slrs["data"]:
+            decoded_payload = base_token_tool.decode_payload(slr["attributes"]["payload"])
+            if service_id == decoded_payload["service_id"]:
+                return slr["id"], decoded_payload["surrogate_id"]
+        raise DetailedHTTPException(status=404,
+                                    detail={"msg": "Couldn't find SLR for given service."},
+                                    title="Not Found")
+
+
 
     def get_last_slr_status(self, slr_id):
         debug_log.info("Fetching last SSR for id '{}'".format(slr_id))
@@ -485,21 +524,21 @@ class AccountManagerHandler:
         template = {
             "data": {
                 "source": {
-                    "consentRecordPayload": {
+                    "consent_record_payload": {
                         "type": "ConsentRecord",
                         "attributes": source_cr["cr"]
                     },
-                    "consentStatusRecordPayload": {
+                    "consent_status_record_payload": {
                         "type": "ConsentStatusRecord",
                         "attributes": source_csr,
                     }
                 },
                 "sink": {
-                    "consentRecordPayload": {
+                    "consent_record_payload": {
                         "type": "ConsentRecord",
                         "attributes": sink_cr["cr"],
                     },
-                    "consentStatusRecordPayload": {
+                    "consent_status_record_payload": {
                         "type": "ConsentStatusRecord",
                         "attributes": sink_csr,
                     },
@@ -507,15 +546,15 @@ class AccountManagerHandler:
             },
         }
 
-        slr_id_sink = template["data"]["sink"]["consentRecordPayload"]["attributes"]["common_part"]["slr_id"]
-        slr_id_source = template["data"]["source"]["consentRecordPayload"]["attributes"]["common_part"]["slr_id"]
+        slr_id_sink = template["data"]["sink"]["consent_record_payload"]["attributes"]["common_part"]["slr_id"]
+        slr_id_source = template["data"]["source"]["consent_record_payload"]["attributes"]["common_part"]["slr_id"]
         # print(type(slr_id_source), type(slr_id_sink), account_id)
         debug_log.debug(dumps(template, indent=2))
         req = post(self.url + self.endpoint["consent"].replace("{account_id}", account_id)
                    .replace("{source_slr_id}", slr_id_source).
                    replace("{sink_slr_id}", slr_id_sink),
                    json=template,
-                   headers={'Api-Key-SDK': self.token},
+                   headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key},
                    timeout=self.timeout)
         debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
@@ -629,7 +668,7 @@ class Helpers:
         ##
         return self.change_rs_id_status(rs_id, True)
 
-    # TODO: This should return list, now returns single object.
+    # TODO: This should return list, now returns single object. # Recheck validity
     def get_service_keys(self, surrogate_id):
         """
 
@@ -807,7 +846,7 @@ class Helpers:
         # Some of these fields are filled in consent_form.py
         ##
         common_cr = {
-            "version": "1.2",
+            "version": "1.3",
             "cr_id": str(guid()),
             "surrogate_id": sur_id,
             "rs_id": rs_ID,
@@ -898,6 +937,7 @@ class Helpers:
 
     def gen_csr(self, account_id, consent_record_id, consent_status, previous_record_id):
         _tmpl = {
+            "version": "1.3",
             "record_id": str(guid()),
             "surrogate_id": account_id,
             "cr_id": consent_record_id,
@@ -1022,14 +1062,12 @@ class SLR_tool(base_token_tool):
 
     def get_SLR_payload(self):
         debug_log.info(dumps(self.slr, indent=2))
-        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["slr"][
-            "payload"]  # TODO: This is a workaround for structure repetition.
+        base64_payload = self.slr["data"]["service_link_record"]["attributes"]["payload"]
         payload = self.decode_payload(base64_payload)
         return payload
 
     def get_CR_payload(self):
-        base64_payload = self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["cr"][
-            "payload"]  # TODO: This is a workaround for structure repetition.
+        base64_payload = self.slr["data"]["consent_record"]["attributes"]["payload"]
         payload = self.decode_payload(base64_payload)
         return payload
 
@@ -1060,8 +1098,8 @@ class SLR_tool(base_token_tool):
     def get_source_service_id(self):
         return self.get_CR_payload()["common_part"]["subject_id"]
 
-    def get_sink_service_id(self):
-        return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
+    # def get_sink_service_id(self):
+    #     return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
 
 
 class Sequences:

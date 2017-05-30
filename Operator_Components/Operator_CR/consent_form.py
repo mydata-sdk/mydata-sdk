@@ -43,6 +43,7 @@ class ConsentFormHandler(Resource):
         """get
         :return: Returns Consent form to UI for user input.
         """
+        # TODO: We probably should check if user has SLR's for given services before proceeding.
         _consent_form = Consent_form_Out
         service_ids = request.args
 
@@ -121,28 +122,16 @@ class ConsentFormHandler(Resource):
                                         status=403)
 
         sq.send_to("Account Manager", "GET surrogate_id & slr_id")
-        try:
-            sink_sur = AM.getSUR_ID(sink_srv_id, account_id)
-            source_sur = AM.getSUR_ID(source_srv_id, account_id)
-        except AttributeError as e:
-            raise DetailedHTTPException(status=502,
-                                        title="It would seem initiating Account Manager Handler has failed.",
-                                        detail="Account Manager might be down or unresponsive.",
-                                        trace=traceback.format_exc(limit=100).splitlines())
-        debug_log.info("Got {} as surrogate id for sink from Account Manager".format(sink_sur))
-        debug_log.info("Got {} as surrogate id for source from Account Manager".format(source_sur))
-
 
 
         # Get slr and surrogate_id
-        slr_id_sink, surrogate_id_sink = sink_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"],\
-                                         sink_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]
+        slr_id_sink, surrogate_id_sink = AM.get_surrogate_and_slr_id(account_id, sink_srv_id)
         # One for Sink, one for Source
-        slr_id_source, surrogate_id_source = source_sur["data"]["surrogate_id"]["attributes"]["servicelinkrecord_id"],\
-                                             source_sur["data"]["surrogate_id"]["attributes"]["surrogate_id"]
+        slr_id_source, surrogate_id_source = AM.get_surrogate_and_slr_id(account_id, source_srv_id)
 
         sink_keys = self.Helpers.get_service_keys(surrogate_id_sink)
         try:
+            # TODO: We technically support fetching multiple keys, but use only 1
             sink_key = loads(sink_keys[0])
         except IndexError as e:
             raise DetailedHTTPException(status=500,
@@ -204,7 +193,7 @@ class ConsentFormHandler(Resource):
         result = AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
 
         # These are debugging and testing calls.
-        if self.debug_mode:
+        if False:
             own_addr = self.operator_url #request.url_root.rstrip(request.script_root)
             debug_log.info("Our own address is: {}".format(own_addr))
             req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
@@ -224,11 +213,11 @@ class ConsentFormHandler(Resource):
             ))
 
         debug_log.info("CR/CSR structure the Account Manager signed:\n{}".format(dumps(result, indent=2)))
-        sink_cr = result["data"]["sink"]["consentRecord"]["attributes"]["cr"]
-        sink_csr = result["data"]["sink"]["consentStatusRecord"]["attributes"]["csr"]
+        sink_cr = result["data"]["sink"]["consent_record"]["attributes"]
+        sink_csr = result["data"]["sink"]["consent_status_record"]["attributes"]
 
-        source_cr = result["data"]["source"]["consentRecord"]["attributes"]["cr"]
-        source_csr = result["data"]["source"]["consentStatusRecord"]["attributes"]["csr"]
+        source_cr = result["data"]["source"]["consent_record"]["attributes"]
+        source_csr = result["data"]["source"]["consent_status_record"]["attributes"]
 
         crs_csrs_payload = {"sink": {"cr": sink_cr, "csr": sink_csr},
                             "source": {"cr": source_cr, "csr": source_csr}}

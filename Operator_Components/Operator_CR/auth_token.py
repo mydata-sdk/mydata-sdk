@@ -3,12 +3,11 @@ import logging
 import traceback
 from json import dumps
 
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import AccountManagerHandler
-from helpers_op import Helpers, Sequences
+from helpers_op import Helpers, Sequences, get_am
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_AuthToken_blueprint", __name__)
@@ -27,10 +26,6 @@ class AuthToken(Resource):
         self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
         self.timeout = current_app.config["TIMEOUT"]
-        try:
-            self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
-        except Exception as e:
-            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
         helper_object = Helpers(current_app.config)
         self.gen_auth_token = helper_object.gen_auth_token
 
@@ -45,8 +40,12 @@ class AuthToken(Resource):
         # helper.py has the function template, look into it.
         ##
         debug_log.info("Got Request for Auth_token, given cr_id ({})".format(cr_id))
+        am = get_am(current_app, request.headers)
+
+
+
         try:
-            result = self.AM.get_AuthTokenInfo(cr_id)
+            result = am.get_AuthTokenInfo(cr_id)
         except AttributeError as e:
             raise DetailedHTTPException(status=502,
                                         title="It would seem initiating Account Manager Handler has failed.",
