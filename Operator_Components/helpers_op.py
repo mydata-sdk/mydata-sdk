@@ -129,7 +129,7 @@ class AccountManagerHandler:
             "fetch_consents":   "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/",
             "auth_token":       "account/api/v1.3/internal/consents/{sink_cr_id}/authorisationtoken/",
             "last_csr":         "account/api/v1.3/internal/accounts/{account_id}/consents/{consent_id}/statuses/last/",
-            "new_csr":          "api/consent/{cr_id}/status/"}  # Works as path to GET missing csr and POST new ones
+            "new_csr":          "account/api/v1.3/internal/accounts/{account_id}/consents/{cr_id}/statuses/"}  # Works as path to GET missing csr and POST new ones
 
 
 
@@ -294,8 +294,6 @@ class AccountManagerHandler:
             return loads(req.text)
 
     def get_crs(self, slr_id, account_id, pairs=False):
-        # Todo: This is for dev stuff, remove this!
-        return {"data": [{"data": {"id": "blaa"}}, {"data": {"id": "Bleh"}}]}
 
         if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
             debug_log.error("Account ID mismatch.\n"
@@ -341,23 +339,23 @@ class AccountManagerHandler:
                                         title=req.reason)
         return templ
 
-    def getSUR_ID(self, service_id, account_id):
-        debug_log.debug(
-            "" + self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
-                                                                                                   service_id))
-
-        req = get(self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
-                                                                                                    service_id),
-                  headers={'Api-Key-SDK': self.token},
-                  timeout=self.timeout)
-        if req.ok:
-            templ = loads(req.text)
-        else:
-            raise DetailedHTTPException(status=req.status_code,
-                                        detail={"msg": "Getting surrogate_id from account management failed.",
-                                                "content": req.content},
-                                        title=req.reason)
-        return templ
+    # def getSUR_ID(self, service_id, account_id):
+    #     debug_log.debug(
+    #         "" + self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
+    #                                                                                                service_id))
+    #
+    #     req = get(self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
+    #                                                                                                 service_id),
+    #               headers={'Api-Key-SDK': self.token},
+    #               timeout=self.timeout)
+    #     if req.ok:
+    #         templ = loads(req.text)
+    #     else:
+    #         raise DetailedHTTPException(status=req.status_code,
+    #                                     detail={"msg": "Getting surrogate_id from account management failed.",
+    #                                             "content": req.content},
+    #                                     title=req.reason)
+    #     return templ
 
     def get_last_csr(self, cr_id):
         endpoint_url = self.url + self.endpoint["last_csr"]\
@@ -371,7 +369,7 @@ class AccountManagerHandler:
                   timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
-            payload = base_token_tool.decode_payload(templ["data"]["attributes"]["csr"]["payload"])
+            payload = base_token_tool.decode_payload(templ["data"]["attributes"]["payload"])
             debug_log.info("Got CSR payload from account:\n{}".format(dumps(payload, indent=2)))
             csr_id = payload["record_id"]
             return {"csr_id": csr_id}
@@ -382,11 +380,14 @@ class AccountManagerHandler:
                                         title=req.reason)
 
     def create_new_csr(self, cr_id, payload):
-        endpoint_url = self.url + self.endpoint["new_csr"].replace("{cr_id}", cr_id)
+        endpoint_url = self.url + self.endpoint["new_csr"]\
+            .replace("{cr_id}", cr_id)\
+            .replace("{account_id}", self.account_id)
         debug_log.debug("" + endpoint_url)
         payload = {"data": {"attributes": payload, "type": "ConsentStatusRecord"}}
         req = post(endpoint_url, json=payload,
-                   headers={'Api-Key-SDK': self.token},
+                   headers={'Api-Key-Sdk': self.token,
+                            "Api-Key-User": self.user_key},
                    timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
@@ -407,7 +408,8 @@ class AccountManagerHandler:
         debug_log.debug("" + endpoint_url)
         payload = {"csr_id": csr_id}
         req = get(endpoint_url, params=payload,
-                   headers={'Api-Key-SDK': self.token},
+                  headers={'Api-Key-Sdk': self.token,
+                           "Api-Key-User": self.user_key},
                    timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
@@ -994,7 +996,7 @@ class base_token_tool:
 
 class SLR_tool(base_token_tool):
     def __init__(self):
-        self.slr = {
+        self.slr = {  # TODO: This "example" is really outdated.
             "data": {
                 "source": {
                     "consentRecord": {

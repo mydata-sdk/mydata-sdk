@@ -674,6 +674,7 @@ class SLR_tool(base_token_tool):
     def __init__(self):
         # Here you can see the structure this tool handles
         # Do note this default value should be re-assigned before use
+        # TODO: This "example" is really outdated.
         self.slr = {"code": "486b01cb-518a-4838-be63-624f0d86a2a1",
                     "data": {
                         "surrogate_id": "e15053fd-0808-4125-9acf-f0647d62a2bb_486b01cb-518a-4838-be63-624f0d86a2a1",

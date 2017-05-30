@@ -193,7 +193,7 @@ class ConsentFormHandler(Resource):
         result = AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
 
         # These are debugging and testing calls.
-        if False:
+        if False: # self.debug_mode:
             own_addr = self.operator_url #request.url_root.rstrip(request.script_root)
             debug_log.info("Our own address is: {}".format(own_addr))
             req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"

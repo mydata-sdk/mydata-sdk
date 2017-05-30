@@ -2,11 +2,11 @@
 import logging
 import traceback
 
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import AccountManagerHandler
+from helpers_op import get_am
 from helpers_op import Helpers
 
 # Init Flask
@@ -25,11 +25,6 @@ class StatusChange(Resource):
         self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
         self.timeout = current_app.config["TIMEOUT"]
-        try:
-            self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
-        except Exception as e:
-            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}"
-                           .format(repr(e)))
         self.helper_object = Helpers(current_app.config)
 
     @error_handler
@@ -44,7 +39,11 @@ class StatusChange(Resource):
             # TODO: Do we need srv_id for anything?
             # TODO: How do we authorize this request? Who is allowed to make it?
             # Get previous_csr_id
-            previous_csr = self.AM.get_last_csr(cr_id)
+            am = get_am(current_app, request.headers)
+            key_check = am.verify_user_key(acc_id)
+            debug_log.info("Verifying User Key resulted: {}".format(key_check))
+
+            previous_csr = am.get_last_csr(cr_id)
             previous_csr_id = previous_csr["csr_id"]
             if previous_csr["consent_status"] == new_status:
                 raise DetailedHTTPException(title="Unable to change consent status from {} to {}."
@@ -54,7 +53,7 @@ class StatusChange(Resource):
 
             csr_payload = self.helper_object.gen_csr(acc_id, cr_id, new_status, previous_csr_id)
             debug_log.info("Created CSR payload:\n {}".format(csr_payload))
-            self.AM.create_new_csr(cr_id, csr_payload)
+            am.create_new_csr(cr_id, csr_payload)
         except AttributeError as e:
             raise DetailedHTTPException(status=502,
                                         title="It would seem initiating Account Manager Handler has failed.",
