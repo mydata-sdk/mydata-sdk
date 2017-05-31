@@ -193,11 +193,12 @@ class ConsentFormHandler(Resource):
         result = AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
 
         # These are debugging and testing calls.
-        if False: # self.debug_mode:
+        if self.debug_mode:
             own_addr = self.operator_url #request.url_root.rstrip(request.script_root)
             debug_log.info("Our own address is: {}".format(own_addr))
             req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
-                                .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
+                                .format(account_id, source_srv_id, common_cr_source["cr_id"]),
+                       headers=request.headers)
 
             debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
                 req.status_code,
@@ -205,7 +206,8 @@ class ConsentFormHandler(Resource):
                 dumps(loads(req.content), indent=2)
             ))
             req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Active"
-                                .format(surrogate_id_source, source_srv_id, common_cr_source["cr_id"]))
+                                .format(account_id, source_srv_id, common_cr_source["cr_id"]),
+                       headers=request.headers)
             debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
                 req.status_code,
                 req.reason,

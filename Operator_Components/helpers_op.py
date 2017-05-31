@@ -128,7 +128,7 @@ class AccountManagerHandler:
             "consent":          "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{source_slr_id}/{sink_slr_id}/consents/",
             "fetch_consents":   "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/",
             "auth_token":       "account/api/v1.3/internal/consents/{sink_cr_id}/authorisationtoken/",
-            "last_csr":         "account/api/v1.3/internal/accounts/{account_id}/consents/{consent_id}/statuses/last/",
+            "last_csr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/last/",
             "new_csr":          "account/api/v1.3/internal/accounts/{account_id}/consents/{cr_id}/statuses/"}  # Works as path to GET missing csr and POST new ones
 
 
@@ -357,22 +357,24 @@ class AccountManagerHandler:
     #                                     title=req.reason)
     #     return templ
 
-    def get_last_csr(self, cr_id):
+    def get_last_csr(self, cr_id, link_id):
         endpoint_url = self.url + self.endpoint["last_csr"]\
-            .replace("{cr_id}", cr_id)\
-            .replace("{account_id}", self.account_id)
+            .replace("{consent_id}", cr_id)\
+            .replace("{account_id}", self.account_id)\
+            .replace("{link_id}", link_id)
         debug_log.debug("" + endpoint_url)
 
         req = get(endpoint_url,
                   headers={'Api-Key-Sdk': self.token,
                            "Api-Key-User": self.user_key},
                   timeout=self.timeout)
+        debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
             templ = loads(req.text)
             payload = base_token_tool.decode_payload(templ["data"]["attributes"]["payload"])
             debug_log.info("Got CSR payload from account:\n{}".format(dumps(payload, indent=2)))
             csr_id = payload["record_id"]
-            return {"csr_id": csr_id}
+            return payload
         else:
             raise DetailedHTTPException(status=req.status_code,
                                         detail={"msg": "Getting last csr from account management failed.",
@@ -380,15 +382,17 @@ class AccountManagerHandler:
                                         title=req.reason)
 
     def create_new_csr(self, cr_id, payload):
+        debug_log.info("Issuing new Consent Status Record.")
         endpoint_url = self.url + self.endpoint["new_csr"]\
             .replace("{cr_id}", cr_id)\
             .replace("{account_id}", self.account_id)
-        debug_log.debug("" + endpoint_url)
-        payload = {"data": {"attributes": payload, "type": "ConsentStatusRecord"}}
+        debug_log.info("POST: {}".format(endpoint_url))
+        payload = {"data": {"attributes": payload, "type": "consent_status_record"}}
         req = post(endpoint_url, json=payload,
                    headers={'Api-Key-Sdk': self.token,
                             "Api-Key-User": self.user_key},
                    timeout=self.timeout)
+        debug_log.info("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
             templ = loads(req.text)
             #tool = SLR_tool()
@@ -404,8 +408,9 @@ class AccountManagerHandler:
                                         title=req.reason)
 
     def get_missing_csr(self, cr_id, csr_id):
+        debug_log.debug("Fetching missing CSR's")
         endpoint_url = self.url + self.endpoint["new_csr"].replace("{cr_id}", cr_id)
-        debug_log.debug("" + endpoint_url)
+        debug_log.info("GET: {}".format(endpoint_url))
         payload = {"csr_id": csr_id}
         req = get(endpoint_url, params=payload,
                   headers={'Api-Key-Sdk': self.token,

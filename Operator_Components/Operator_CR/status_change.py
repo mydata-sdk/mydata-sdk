@@ -36,22 +36,23 @@ class StatusChange(Resource):
         try:
             debug_log.info("We received status change request for cr_id ({}) for srv_id ({}) on account ({})"
                            .format(cr_id, srv_id, acc_id))
-            # TODO: Do we need srv_id for anything?
             # TODO: How do we authorize this request? Who is allowed to make it?
+            # Now only those who have Account User Key can successfully make this.
             # Get previous_csr_id
+
             am = get_am(current_app, request.headers)
             key_check = am.verify_user_key(acc_id)
             debug_log.info("Verifying User Key resulted: {}".format(key_check))
-
-            previous_csr = am.get_last_csr(cr_id)
-            previous_csr_id = previous_csr["csr_id"]
+            link_id, surrogate_id = am.get_surrogate_and_slr_id(acc_id, srv_id)
+            previous_csr = am.get_last_csr(cr_id, link_id)
+            previous_csr_id = previous_csr["record_id"]
             if previous_csr["consent_status"] == new_status:
                 raise DetailedHTTPException(title="Unable to change consent status from {} to {}."
                                             .format(previous_csr["consent_status"], new_status),
                                             detail={"msg": "Status change must happen from one state to another."},
                                             status=409)
 
-            csr_payload = self.helper_object.gen_csr(acc_id, cr_id, new_status, previous_csr_id)
+            csr_payload = self.helper_object.gen_csr(surrogate_id, cr_id, new_status, previous_csr_id)
             debug_log.info("Created CSR payload:\n {}".format(csr_payload))
             am.create_new_csr(cr_id, csr_payload)
         except AttributeError as e:
