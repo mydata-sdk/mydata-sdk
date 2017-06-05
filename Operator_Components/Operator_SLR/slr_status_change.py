@@ -109,7 +109,7 @@ class SlrStatus(Resource):
             try:
                 # Notify Service of SLR status chanege
                 service_url = self.service_registry_handler.getService_url(service_id)
-                endpoint = "/api/1.2/slr/status"
+                endpoint = "/api/1.3/slr/status"
                 req = post(service_url+endpoint, json=created_ssr)
                 debug_log.debug("Posted SSR to service:\n{}  {}  {}  {}"
                                 .format(req.status_code, req.reason, req.text, req.content))
@@ -125,7 +125,7 @@ class SlrStatus(Resource):
             raise e
         except Exception as e:
             raise DetailedHTTPException(status=500,
-                                        title="Something went really wrong during SLR registration.",
+                                        title="Something went really wrong during SLR Status Change.",
                                         detail="Error: {}".format(repr(e)),
                                         exception=e,
                                         trace=traceback.format_exc(limit=100).splitlines())

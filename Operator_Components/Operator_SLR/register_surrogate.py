@@ -177,7 +177,7 @@ class RegisterSurrogate(Resource):
 
             try:
                 sq.send_to("Service_Components Mgmnt", "Send created and signed SLR to Service_Components Mgmnt")
-                endpoint = "/api/1.2/slr/slr"  # TODO Where do we get this endpoint?
+                endpoint = "/api/1.3/slr/slr"  # TODO Where do we get this endpoint?
                 service_url = self.service_registry_handler.getService_url(self.payload["service_id"].encode())
                 debug_log.info("Service_ulr = {}, type: {}".format(service_url, type(service_url)))
                 response = post("{}{}".format(service_url, endpoint), json=req, timeout=self.request_timeout)

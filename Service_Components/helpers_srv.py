@@ -488,7 +488,7 @@ class Helpers:
 
         # We send cr_id to Operator for inspection.
         # TODO: Where do we get these paths?
-        req = get(operator_url + "/api/1.2/cr" + "/introspection/{}".format(cr_id))
+        req = get(operator_url + "/api/1.3/cr" + "/introspection/{}".format(cr_id))
         debug_log.info(req.status_code)
         debug_log.info(req.content)
         if req.ok:
@@ -504,7 +504,7 @@ class Helpers:
             else:
                 debug_log.info("Our csr({}) is outdated!".format(latest_csr_id))
                 req = get(
-                    operator_url + "/api/1.2/cr" + "/consent/{}/missing_since/{}".format(cr_id, latest_csr_id))
+                    operator_url + "/api/1.3/cr" + "/consent/{}/missing_since/{}".format(cr_id, latest_csr_id))
                 if req.ok:
                     decode_payload = base_token_tool.decode_payload
                     content = loads(req.content)

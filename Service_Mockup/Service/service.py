@@ -175,7 +175,7 @@ class UserLogin(Resource):
 
         debug_log.info("User logged in with id ({})".format(format(user_id)))
 
-        endpoint = "/api/1.2/slr/auth"  # TODO: This needs to be fetched from somewhere.
+        endpoint = "/api/1.3/slr/auth"  # TODO: This needs to be fetched from somewhere.
         data = {"code": code, "user_id": user_id, "operator_id": args["operator_id"]}
         result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=data)
         if not result.ok:
@@ -188,7 +188,7 @@ class UserLogin(Resource):
         debug_log.info(result.text)
         try:
             surrogate_id = link_surrogate_id(loads(result.text), user_id)  # Returns surrogate_id for convenience
-            endpoint = "/api/1.2/slr/linking"  # TODO: This needs to be fetched from somewhere.
+            endpoint = "/api/1.3/slr/linking"  # TODO: This needs to be fetched from somewhere.
 
             data = {"code": code,
                     "operator_id": args["operator_id"],

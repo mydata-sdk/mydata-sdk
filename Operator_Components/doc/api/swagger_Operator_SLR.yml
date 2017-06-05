@@ -1,46 +1,31 @@
 ---
 swagger: "2.0"
 info:
-  version: "1.2.1"
+  version: "1.3"
   title: "Operator SLR API"
 host: "example.operator.example"
 basePath: "/api/1.2/slr"
-paths:
-  /link:
-    post:
-      tags:
-      - "Operator"
-      description: "End point where Service Mgmnt POSTs after user has been authenticated\
-        \ by the Service inorder to deliver surrogate id to Operator."
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "Contains code, surrogate_id and token_key"
-        required: true
-        schema:
-          $ref: "#/definitions/LinkParams"
-      responses:
-        200:
-          description: "Returns 200 OK"
-        500:
-          description: "Internal server error"
-          schema:
-            $ref: "#/definitions/errors"
-        502:
-          description: "Bad Gateway"
-          schema:
-            $ref: "#/definitions/errors"
 
+securityDefinitions:
+  BasicAuth:
+    type: basic
+    description: HTTP Basic Auth
+
+  apiKeyUser:
+    type: apiKey
+    name: "Api-Key-User"
+    description: "Defines user that is performing operations. Possible user's are MyData Account Owner's"
+    in: header
+
+paths:
   /account/{account_id}/service/{service_id}:
     get:
+      security:
+        - apiKeyUser: []
       tags:
-      - "Operator"
-      description: "Entry point for creating new SLR with service.\nWill take UUID\
-        \ of service to link with as paramater. This will start chain of events."
+      - "Operator External - SLR"
+      description: "Entrypoint for creating new SLR with service.\nWill take UUID\
+        \ of service to link with as paramater. Returns redirect to Service Login. This endpoint will start chain of events."
       parameters:
       - name: "account_id"
         in: "path"
@@ -55,8 +40,8 @@ paths:
         type: "string"
         format: "uuid4"
       responses:
-        200:
-          description: "Returns 200 OK"
+        302:
+          description: "Returns Redirect to Service Login page for authentication."
         500:
           description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
@@ -73,10 +58,91 @@ paths:
           description: "Bad Gateway"
           schema:
             $ref: "#/definitions/errors"
+
+  /account/{account_id}/service/{service_id}/slr/{link_id}:
+    delete:
+      security:
+        - apiKeyUser: []
+      tags:
+      - "Operator External - SLR"
+      description: "Endpoint for Disabling Active SLR."
+      parameters:
+      - name: "account_id"
+        in: "path"
+        description: "Unique ID of user initiating process."
+        required: true
+        type: "string"
+        format: "uuid4"
+      - name: "service_id"
+        in: "path"
+        description: "Unique ID of service to make SLR with."
+        required: true
+        type: "string"
+        format: "uuid4"
+      - name: "link_id"
+        in: "path"
+        description: "Unique ID of Service Link"
+        required: true
+        type: "string"
+        format: "uuid4"
+      responses:
+        200:
+          description: "Returns Created SSR signifying the status change to Disabled."
+          schema:
+            $ref: "#/definitions/SSR"
+        500:
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
+          schema:
+            $ref: "#/definitions/errors"
+        504:
+          description: "Gateway Timeout"
+          schema:
+            $ref: "#/definitions/errors"
+        503:
+          description: "Service Unavailable"
+          schema:
+            $ref: "#/definitions/errors"
+        502:
+          description: "Bad Gateway"
+          schema:
+            $ref: "#/definitions/errors"
+
+
+  /link:
+    post:
+      tags:
+      - "Operator Internal - SLR"
+      description: "End point where Service Mgmnt POSTs after user has been authenticated\
+        \ by the Service inorder to deliver surrogate id to Operator."
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Contains code, surrogate_id and incase of Sink service a token_key"
+        required: true
+        schema:
+          $ref: "#/definitions/LinkParams"
+      responses:
+        201:
+          description: "Returns 201 CREATED and the created SLR"
+          schema:
+            $ref: "#/definitions/VerifyResponse"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/errors"
+        502:
+          description: "Bad Gateway"
+          schema:
+            $ref: "#/definitions/errors"
+
   /verify:
     post:
       tags:
-      - "Operator"
+      - "Operator Internal - SLR"
       description: "End point where Service Mgmnt POSTs after signing SLR from Operator"
       consumes:
       - "application/json"
@@ -122,6 +188,51 @@ definitions:
         source:
           type: string
           description: Source URI
+
+  SLR_content:
+   type: "object"
+   properties:
+    attributes:
+      type: "object"
+      properties:
+        protected:
+          type: "string"
+        payload:
+          type: "string"
+        signatures:
+          type: array
+          items:
+            type: object
+    type:
+      type: "string"
+    id:
+      type: "string"
+
+  SSR_content:
+   type: "object"
+   properties:
+    attributes:
+      type: "object"
+      properties:
+        header:
+          type: "object"
+        protected:
+          type: "string"
+        payload:
+          type: "string"
+        signature:
+          type: "string"
+    type:
+      type: "string"
+    id:
+      type: "string"
+
+  SSR:
+    type: "object"
+    properties:
+      data:
+        $ref: "#/definitions/SSR_content"
+
 
   LinkParams:
     type: "object"
@@ -171,6 +282,7 @@ definitions:
       y:
         type: "string"
         description: "string containing y"
+
   VerifyResponse:
     type: object
     properties:
@@ -181,39 +293,8 @@ definitions:
         type: object
         properties:
           ssr:
-            type: object
-            properties:
-              attributes:
-                type: object
-                properties:
-                  ssr:
-                    type: object
-                    description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-service-linking.pdf"
-              type:
-                type: string
-                description: string containing type
-          meta:
-            type: object
-            properties:
-              slr_id:
-                type: string
-                description: string containing slr_id
-              ssr_id:
-                type: string
-                description: string containing ssr_id
-          surrogate_id:
-            type: string
-            description: string containing surrogate_id
+            $ref: "#/definitions/SSR_content"
           slr:
-            type: object
-            properties:
-              attributes:
-                type: object
-                properties:
-                  slr:
-                    type: object
-                    description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-service-linking.pdf"
-              type:
-                type: string
-                description: string containing type
+            $ref: "#/definitions/SLR_content"
+
 

@@ -129,7 +129,7 @@ class StartServiceLinking(Resource):
             data["token_key"] = self.service_key["pub"]  # TODO: Onko implementoitava 1.3 mukaisesti siten että
             # operaattori, service, käyttäjä kohtaiset pop avaimet?
         sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
-        endpoint = "/api/1.2/slr/link"  # Todo: this needs to be fetched from somewhere
+        endpoint = "/api/1.3/slr/link"  # Todo: this needs to be fetched from somewhere
         result = post("{}{}".format(self.operator_url, endpoint), json=data)
         debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
         if result.ok:
@@ -213,7 +213,7 @@ class StoreSSR(Resource):
         debug_log.info("Received JSON to SSR endpoint:\n {}".format(request.json))
         try:
             self.helpers.store_ssr_JSON(json=request.json["data"])
-            endpoint = "/api/1.2/slr/store_ssr"
+            endpoint = "/api/1.3/slr/store_ssr"
             debug_log.info("Posting SLR for storage in Service Mockup")
             result = post("{}{}".format(self.service_url, endpoint), json=request.json)  # Send copy to Service_Components
             return {"id":request.json["data"]["id"]}, 201
@@ -330,7 +330,7 @@ class StoreSLR(Resource):
                                         trace=traceback.format_exc(limit=100).splitlines())
 
         sq.send_to("Operator_Components Mgmnt", "Verify SLR(JWS)")
-        endpoint = "/api/1.2/slr/verify"
+        endpoint = "/api/1.3/slr/verify"
         result = post("{}{}".format(self.operator_url, endpoint), json=req)
         debug_log.info("Sent SLR to Operator for verification, results:")
         debug_log.info("status code:{}\nreason: {}\ncontent: {}".format(result.status_code, result.reason, result.content))
@@ -347,7 +347,7 @@ class StoreSLR(Resource):
             if surrogate_id == payload["surrogate_id"]:
                 self.helpers.store_slr_JSON(json=slr_store, slr_id=payload["link_id"], surrogate_id=payload["surrogate_id"])
                 self.helpers.store_ssr_JSON(json=ssr_store)
-                endpoint = "/api/1.2/slr/store_slr"
+                endpoint = "/api/1.3/slr/store_slr"
                 debug_log.info("Posting SLR for storage in Service Mockup")
                 result = post("{}{}".format(self.service_url, endpoint), json=store)  # Send copy to Service_Components
                 # TODO: incase this fails we should try again.

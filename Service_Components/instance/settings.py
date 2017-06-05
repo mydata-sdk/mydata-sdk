@@ -26,7 +26,7 @@ OPERATOR_URL = "http://operator_components:5000"
 
 
 
-SERVICE_ROOT_PATH = "/api/1.2"
+SERVICE_ROOT_PATH = "/api/1.3"
 
 
 

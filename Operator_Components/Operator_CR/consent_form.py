@@ -196,7 +196,7 @@ class ConsentFormHandler(Resource):
         if self.debug_mode:
             own_addr = self.operator_url #request.url_root.rstrip(request.script_root)
             debug_log.info("Our own address is: {}".format(own_addr))
-            req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
+            req = post(own_addr+"/api/1.3/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
                                 .format(account_id, source_srv_id, common_cr_source["cr_id"]),
                        headers=request.headers)
 
@@ -205,7 +205,7 @@ class ConsentFormHandler(Resource):
                 req.reason,
                 dumps(loads(req.content), indent=2)
             ))
-            req = post(own_addr+"/api/1.2/cr/account_id/{}/service/{}/consent/{}/status/Active"
+            req = post(own_addr+"/api/1.3/cr/account_id/{}/service/{}/consent/{}/status/Active"
                                 .format(account_id, source_srv_id, common_cr_source["cr_id"]),
                        headers=request.headers)
             debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(

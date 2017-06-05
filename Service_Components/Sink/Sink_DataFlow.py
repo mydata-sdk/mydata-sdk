@@ -63,7 +63,7 @@ class DebugDataFlow(Resource):
                                "rs_id": urllib.quote_plus(rs_id)}
                     # TODO get the url from, config
                     debug_log.info(dumps(payload, indent=2))
-                    req = requests.post(self.own_url+"/api/1.2/sink_flow/dc", json=payload)
+                    req = requests.post(self.own_url+"/api/1.3/sink_flow/dc", json=payload)
                     return req.content
 
 
@@ -80,7 +80,7 @@ class DataFlow(Resource):
         def renew_token(operator_url, record_id):
             sq.task("Renewing Auth Token.")
             token = requests.get(
-                "{}/api/1.2/cr/auth_token/{}".format(operator_url, record_id))  # TODO Get api path from some config?
+                "{}/api/1.3/cr/auth_token/{}".format(operator_url, record_id))  # TODO Get api path from some config?
             debug_log.info("{}, {}, {}, {}".format(token.url, token.reason, token.status_code, token.text))
             store_dict = {cr_id: dumps(loads(token.text.encode()))}
             self.helpers.storeToken(store_dict)
@@ -183,4 +183,4 @@ api.add_resource(Status, '/init')
 api.add_resource(DataFlow, '/dc')
 api.add_resource(DebugDataFlow, '/debug_dc/<string:rs_id>')
 #api.add_resource(DataFlow, '/user/<string:user_id>/consentRecord/<string:cr_id>/resourceSet/<string:rs_id>')
-#"http://service_components:7000/api/1.2/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"
+#"http://service_components:7000/api/1.3/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"

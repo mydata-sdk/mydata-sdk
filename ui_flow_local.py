@@ -86,7 +86,7 @@ def initialize(account_url):
 def create_service_link(operator_url, service_id, user_key):
     print("\n##### CREATE A SERVICE LINK #####")
     print("User key is: {}".format(user_key["Api-Key-User"]))
-    slr_flow = get(operator_url + "api/1.2/slr/account/2/service/"+service_id,
+    slr_flow = get(operator_url + "api/1.3/slr/account/2/service/"+service_id,
                    headers={"Api-Key-User": user_key["Api-Key-User"]})
     #print(slr_flow.history)
     print("We made a request to:", slr_flow.history[0].url)
@@ -131,7 +131,7 @@ def create_service_link(operator_url, service_id, user_key):
 def remove_slr(operatorl_url, user_key, slr_id, service_id):
     print("\n#### REMOVE SERVICE LINK ####")
     print("Removing SLR: {}".format(slr_id))
-    result = delete("{}api/1.2/slr/account/2/service/{}/slr/{}".format(operatorl_url, service_id, slr_id),
+    result = delete("{}api/1.3/slr/account/2/service/{}/slr/{}".format(operatorl_url, service_id, slr_id),
                     headers={"Api-Key-User": user_key["Api-Key-User"]})
     print(result.url, result.reason, result.status_code, result.text)
     return result.text
@@ -146,7 +146,7 @@ def give_consent(operator_url, sink_id, source_id, user_key):
     ids = {"sink": sink_id, "source": source_id}
 
     print("\n###### 1.FETCH CONSENT FORM ######")
-    req = get(operator_url + "api/1.2/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id))
+    req = get(operator_url + "api/1.3/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id))
     if not req.ok:
         print("Fetching consent form consent failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
@@ -158,7 +158,7 @@ def give_consent(operator_url, sink_id, source_id, user_key):
     print("\n###### 2.SEND CONSENT FORM ######")
     print(req.url, req.reason, req.status_code, req.text)
     js = json.loads(req.text)
-    req = post(operator_url + "api/1.2/cr/consent_form/account/2", json=js,
+    req = post(operator_url + "api/1.3/cr/consent_form/account/2", json=js,
                headers={"Api-Key-User": user_key["Api-Key-User"]})
     if not req.ok:
         print("Granting consent failed with status ({}) reason ({}) and the following content:\n{}".format(
@@ -180,7 +180,7 @@ def make_data_request(service_url, rs_id):
     print("\n##### Make_data_request #####")
     print("\n##### Waiting {} seconds for previous actions to complete #####".format(wait_time))
     time.sleep(wait_time)
-    req = get(service_url + "api/1.2/sink_flow/debug_dc/{}".format(rs_id))
+    req = get(service_url + "api/1.3/sink_flow/debug_dc/{}".format(rs_id))
     if not req.ok:
         print("Debug Data request failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
@@ -322,5 +322,7 @@ if __name__ == '__main__':
             make_data_request(args.service_url, rs_id)
 
     if args.remove_slr:
+        print("Sleeping 5 seconds before removing SLR to allow possible CR flow to finish.")
+        time.sleep(5)
         result = remove_slr(args.operator_url, user_key, slr_1["data"]["slr"]["id"], args.sink_id)
         pass
