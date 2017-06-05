@@ -568,17 +568,19 @@ def get_slr_for_service(service_id=None, slr_id=None, cursor=None):
     return db_entry_object.to_api_dict, str(db_entry_object.account_id)
 
 
-def get_slrs_for_service(service_id=None, surrogate_id=""):
+def get_slrs_for_service(service_id=None, surrogate_id="", account_id=""):
     """
     Get all slr -entries related to service
     :param service_id:
     :param surrogate_id:
+    :param account_id:
     :return: List of dicts
     """
     if service_id is None:
         raise AttributeError("Provide service_id as parameter")
     logger.info("service_id: " + str(service_id))
     logger.info("surrogate_id: " + str(surrogate_id))
+    logger.info("account_id: " + str(account_id))
 
     # Get table name
     logger.info("Create slr")
@@ -597,7 +599,7 @@ def get_slrs_for_service(service_id=None, surrogate_id=""):
 
     # Get primary keys for slr
     try:
-        cursor, id_list = get_slr_ids_by_service(cursor=cursor, service_id=service_id, surrogate_id=surrogate_id, table_name=table_name)
+        cursor, id_list = get_slr_ids_by_service(cursor=cursor, service_id=service_id, surrogate_id=surrogate_id, account_id=account_id, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise
