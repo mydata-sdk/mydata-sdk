@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 
-# Import dependencies
-import logging
+"""
+__author__ = "Jani Yli-Kantola"
+__copyright__ = ""
+__credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
+__license__ = "MIT"
+__version__ = "1.3.0"
+__maintainer__ = "Jani Yli-Kantola"
+__contact__ = "https://github.com/HIIT/mydata-stack"
+__status__ = "Development"
+"""
 
+# Import dependencies
 from flask import current_app
 from app.helpers import get_custom_logger
-
-# Import the database object
 from app.app_modules import db
 
 logger = get_custom_logger(__name__)
@@ -260,10 +267,6 @@ def drop_table_content():
     sql_query = "SELECT Concat('TRUNCATE TABLE ',table_schema,'.',TABLE_NAME, ';') " \
                 "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
 
-    # sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
-    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
-    # TODO: Remove two upper rows
-
     try:
         cursor.execute(sql_query)
     except Exception as exp:
@@ -322,10 +325,6 @@ def delete_account_from_database(account_id=None):
         logger.debug('Could not get db cursor: ' + repr(exp))
         raise
 
-    # sql_query = "SELECT Concat('UPDATE ',table_schema,'.',TABLE_NAME, ';') " \
-    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
-
-    # TODO: This might be good to implement with separate arguments
     sql_query_for_account_table = "DELETE FROM MyDataAccount.Accounts WHERE id = {0};".format(account_id)
 
     sql_query = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, ' ', 'WHERE Accounts_id = %s',';') " \
@@ -334,10 +333,6 @@ def delete_account_from_database(account_id=None):
     arguments = (
         int(account_id),
     )
-
-    # sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
-    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
-    # TODO: Remove two upper rows
 
     try:
         log_query(sql_query=sql_query, arguments=arguments)

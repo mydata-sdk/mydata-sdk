@@ -12,11 +12,6 @@ __status__ = "Development"
 """
 
 # Import dependencies
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-
-# Import the database object from the main app module
 from flask import json, current_app
 from app.helpers import get_custom_logger
 from app.mod_database.helpers import execute_sql_insert_2, execute_sql_select_2, execute_sql_update
