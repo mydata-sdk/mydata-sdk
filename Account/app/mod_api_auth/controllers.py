@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 
 """
-Minimum viable account - API Auth module
-
 __author__ = "Jani Yli-Kantola"
-__copyright__ = "Digital Health Revolution (c) 2016"
+__copyright__ = ""
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
 __version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
-__date__ = 26.5.2016
 """
 
 import base64
