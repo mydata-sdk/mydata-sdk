@@ -28,7 +28,6 @@ from app.mod_database.controllers import create_event_log_entry
 mod_account_api = Blueprint('account_api', __name__, template_folder='templates')
 account_api = Api(mod_account_api)
 
-# create logger with 'spam_application'
 logger = get_custom_logger(__name__)
 
 
