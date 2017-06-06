@@ -517,7 +517,6 @@ def get_slrs(account_id=None):
     logger.info("Get slrs from database")
     db_entry_list = []
     for id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting slr with slr_id: " + str(id))
         db_entry_dict = get_slr(account_id=account_id, slr_id=id)
         db_entry_list.append(db_entry_dict)
@@ -609,7 +608,6 @@ def get_slrs_for_service(service_id=None, surrogate_id="", account_id=""):
     db_entry_list = []
     account_id_list = []
     for id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting slr with slr_id: " + str(id))
         db_entry_dict, account_id = get_slr_for_service(service_id=service_id, slr_id=id)
         db_entry_list.append(db_entry_dict)
@@ -747,7 +745,6 @@ def get_slsrs(account_id=None, slr_id=None):
     logger.info("Get slsrs from database")
     db_entry_list = []
     for id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting slsr with account_id: " + str(account_id) + " slr_id: " + str(slr_id) + " slsr_id: " + str(id))
         db_entry_dict = get_slsr(account_id=account_id, slr_id=slr_id, slsr_id=id)
         db_entry_list.append(db_entry_dict)

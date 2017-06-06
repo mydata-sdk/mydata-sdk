@@ -12,14 +12,6 @@ __status__ = "Development"
 """
 
 # Import dependencies
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-from random import randint
-
-# Import dependencies
 from _mysql_exceptions import IntegrityError
 from flask import Blueprint, request, json
 from flask_restful import Resource, Api
@@ -32,7 +24,7 @@ from app.mod_database.controllers import create_event_log_entry
 from app.mod_database.models import ServiceLinkStatusRecord
 from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, init_slr_sink, init_slr_source, \
     get_slr_record, get_slrs, get_slr, get_slsrs, get_slsr, get_last_slr_status, get_slrs_for_service, \
-    get_slr_for_service, store_ssr, get_surrogate_id_by_account_and_service, get_account_id_by_service_and_surrogate_id
+    get_slr_for_service, store_ssr, get_account_id_by_service_and_surrogate_id
 from app.mod_service.schemas import schema_sl_init_sink, schema_sl_init_source, schema_sl_sign, schema_sl_store, \
     schema_sls_to_sign_by_account, schema_sls_signed_by_operator
 
