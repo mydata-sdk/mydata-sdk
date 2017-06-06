@@ -44,12 +44,6 @@ class VerifySLR(Resource):
         self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
         self.timeout = current_app.config["TIMEOUT"]
-        try:
-            self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
-        except Exception as e:
-            debug_log.warn(
-                "Initialization of AccountManager failed. We will crash later but note it here.\n{}".format(repr(e)))
-
         self.Helpers = Helpers(current_app.config)
 
     @error_handler
@@ -102,9 +96,9 @@ class VerifySLR(Resource):
             try:
                 reply = AM.verify_slr(slr_payload, code, slr, account_id)
             except AttributeError as e:
-                raise DetailedHTTPException(status=502,
-                                            title="It would seem initiating Account Manager Handler has failed.",
-                                            detail="Account Manager might be down or unresponsive.",
+                raise DetailedHTTPException(status=500,
+                                            title="Verification of SLR failed",
+                                            detail="SLR verification has failed.",
                                             trace=traceback.format_exc(limit=100).splitlines())
             if reply.ok:
                 sq.reply_to("Service_Components Mgmnt", "201, SLR VERIFIED")

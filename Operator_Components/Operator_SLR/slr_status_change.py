@@ -42,7 +42,7 @@ class SlrStatus(Resource):
         self.store_session = self.helper.store_session
 
     @error_handler
-    def delete(self, account_id, service_id, slr_id):
+    def post(self, account_id, service_id, slr_id):
         """
         
         :param slr_id:      Id of SLR we want to change

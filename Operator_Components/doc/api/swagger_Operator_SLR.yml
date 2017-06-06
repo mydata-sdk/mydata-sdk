@@ -26,6 +26,7 @@ paths:
       - "Operator External - SLR"
       description: "Entrypoint for creating new SLR with service.\nWill take UUID\
         \ of service to link with as paramater. Returns redirect to Service Login. This endpoint will start chain of events."
+      summary: "Start Process of creating SLR"
       parameters:
       - name: "account_id"
         in: "path"
@@ -60,12 +61,13 @@ paths:
             $ref: "#/definitions/errors"
 
   /account/{account_id}/service/{service_id}/slr/{link_id}:
-    delete:
+    post:
       security:
         - apiKeyUser: []
       tags:
       - "Operator External - SLR"
       description: "Endpoint for Disabling Active SLR."
+      summary: "Disable an active SLR"
       parameters:
       - name: "account_id"
         in: "path"
@@ -114,6 +116,7 @@ paths:
       - "Operator Internal - SLR"
       description: "End point where Service Mgmnt POSTs after user has been authenticated\
         \ by the Service inorder to deliver surrogate id to Operator."
+      summary: "Inform Operator we're ready to continue creation of SLR"
       consumes:
       - "application/json"
       produces:
@@ -144,6 +147,7 @@ paths:
       tags:
       - "Operator Internal - SLR"
       description: "End point where Service Mgmnt POSTs after signing SLR from Operator"
+      summary: "Send Service Signed SLR back to Operator for verification"
       consumes:
       - "application/json"
       produces:
@@ -189,20 +193,23 @@ definitions:
           type: string
           description: Source URI
 
+  SLR_raw:
+    type: "object"
+    properties:
+      protected:
+        type: "string"
+      payload:
+        type: "string"
+      signatures:
+        type: array
+        items:
+          type: object
+
   SLR_content:
    type: "object"
    properties:
     attributes:
-      type: "object"
-      properties:
-        protected:
-          type: "string"
-        payload:
-          type: "string"
-        signatures:
-          type: array
-          items:
-            type: object
+      $ref: '#/definitions/SLR_raw'
     type:
       type: "string"
     id:
@@ -256,15 +263,8 @@ definitions:
             type: string
             description: string containing code
       slr:
-        type: object
-        properties:
-          signatures:
-            type: array
-            items:
-              type: string
-          payload:
-            type: string
-            description: string containing payload
+        $ref: "#/definitions/SLR_raw"
+
   LinkParams_token_key:
     properties:
       kty:

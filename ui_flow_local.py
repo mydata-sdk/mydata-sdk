@@ -131,7 +131,7 @@ def create_service_link(operator_url, service_id, user_key):
 def remove_slr(operatorl_url, user_key, slr_id, service_id):
     print("\n#### REMOVE SERVICE LINK ####")
     print("Removing SLR: {}".format(slr_id))
-    result = delete("{}api/1.3/slr/account/2/service/{}/slr/{}".format(operatorl_url, service_id, slr_id),
+    result = post("{}api/1.3/slr/account/2/service/{}/slr/{}".format(operatorl_url, service_id, slr_id),
                     headers={"Api-Key-User": user_key["Api-Key-User"]})
     print(result.url, result.reason, result.status_code, result.text)
     return result.text

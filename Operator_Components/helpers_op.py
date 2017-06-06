@@ -316,6 +316,9 @@ class AccountManagerHandler:
         if consents.ok:
             return loads(consents.text)
         else:
+            if consents.status_code == 404:
+                debug_log.info("Couldn't find consents for the SLR.")
+                return []
             debug_log.info("Fetching consents failed with: {}"
                            .format([consents.status_code, consents.reason, consents.text]))
             raise DetailedHTTPException(status=404,
