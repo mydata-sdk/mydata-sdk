@@ -229,6 +229,6 @@ class ConsentFormHandler(Resource):
         sq.send_to("Service_Components Mgmnt (Sink)", "Post CR-Sink, CSR-Sink")
         sq.send_to("Service_Components Mgmnt (Source)", "Post CR-Source, CSR-Source")
         CR_installer.delay(crs_csrs_payload, self.SH.getService_url(sink_srv_id), self.SH.getService_url(source_srv_id))
-        return {"status": 201, "msg": "CREATED"}, 201
+        return {"sink_cr_id": common_cr_sink["cr_id"], "source_cr_id": common_cr_source["cr_id"]}, 201
 
 api.add_resource(ConsentFormHandler, '/consent_form/account/<string:account_id>')

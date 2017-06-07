@@ -54,12 +54,12 @@ class StatusChange(Resource):
 
             csr_payload = self.helper_object.gen_csr(surrogate_id, cr_id, new_status, previous_csr_id)
             debug_log.info("Created CSR payload:\n {}".format(csr_payload))
-            am.create_new_csr(cr_id, csr_payload)
+            csr = am.create_new_csr(cr_id, csr_payload)
         except AttributeError as e:
             raise DetailedHTTPException(status=502,
                                         title="It would seem initiating Account Manager Handler has failed.",
                                         detail="Account Manager might be down or unresponsive.",
                                         trace=traceback.format_exc(limit=100).splitlines())
-        return {"status": "OK"}
+        return csr, 201
 
 api.add_resource(StatusChange, '/account_id/<string:acc_id>/service/<string:srv_id>/consent/<string:cr_id>/status/<string:new_status>')

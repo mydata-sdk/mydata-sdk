@@ -9,9 +9,12 @@ paths:
   /consent_form/account/{account_id}:
     # This is a HTTP operation
     get:
+      tags:
+      - "Operator - External"
       # Describe this verb here. Note: you can use markdown
       description: |
         Gets `Consent Form` template.
+      summary: "Fetch Consent Form"
       # This is array of GET operation parameters:
       parameters:
         # An example parameter that is in query and is required
@@ -48,8 +51,11 @@ paths:
             $ref: "#/definitions/errors"
 
     post:
+      tags:
+      - "Operator - External"
       # Describe this verb here. Note: you can use markdown
       description: "Post filled `Consent Form`"
+      summary: "Post filled Consent Form"
       # This is array of GET operation parameters:
       parameters:
         # An example parameter that is in query and is required
@@ -82,7 +88,9 @@ paths:
       # Expected responses for this operation:
       responses:
         201:
-          description: "Returns 201 Created"
+          description: "returns CR id's of created consent"
+          schema:
+            $ref: '#/definitions/ConsentFormPOSTReply'
         500:
           description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
@@ -98,9 +106,10 @@ paths:
   /auth_token/{cr_id}:
     get:
       tags:
-      - "Operator"
-      - "Sink"
+      - "Operator - Internal"
+      - "Endpoint for Sink"
       description: "Returns Auth token for specific cr_id"
+      summary: "Get Auth token"
       parameters:
       - name: "cr_id"
         in: "path"
@@ -125,9 +134,10 @@ paths:
   /introspection/{cr_id}:
     get:
       tags:
-      - "Operator"
-      - "Source"
+      - "Operator - Internal"
+      - "Endpoint for Source"
       description: "Gets last csr for given cr_id"
+      summary: "Get last csr"
       parameters:
       - name: "cr_id"
         in: "path"
@@ -152,9 +162,10 @@ paths:
   /consent/{cr_id}/missing_since/{csr_id}:
     get:
       tags:
-      - "Operator"
-      - "Source"
+      - "Operator - Internal"
+      - "Endpoint for Source"
       description: "Gets new csr's for given cr since given csr_id"
+      summary: "Get missing csr's"
       parameters:
       - name: "cr_id"
         in: "path"
@@ -183,13 +194,14 @@ paths:
   /account_id/{acc_id}/service/{srv_id}/consent/{cr_id}/status/{new_status}:
     post:
       tags:
-      - "Operator"
-      - "Source"
+      - "Operator - Internal"
+      - "Endpoint for Source"
       description: "Change status of consent"
+      summary: "Change consent status"
       parameters:
       - name: "acc_id"
         in: "path"
-        description: "Unique Surrogate id for service"
+        description: "User's MyData Account ID"
         required: true
         type: "string"
       - name: "srv_id"
@@ -208,8 +220,8 @@ paths:
         required: true
         type: "string"
       responses:
-        200:
-          description: "returns 200 OK"
+        201:
+          description: "Returns created CSR"
         500:
           description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
@@ -239,6 +251,16 @@ definitions:
         source:
           type: string
           description: Source URI
+
+  ConsentFormPOSTReply:
+      type: object
+      properties:
+        sink_cr_id:
+          type: string
+          description: CR id for sink
+        source_cr_id:
+          type: integer
+          description: CR id for source
 
   Auth_TokenReply:
     type: object
