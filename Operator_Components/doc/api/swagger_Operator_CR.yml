@@ -194,7 +194,7 @@ paths:
   /account_id/{acc_id}/service/{srv_id}/consent/{cr_id}/status/{new_status}:
     post:
       tags:
-      - "Operator - Internal"
+      - "Operator - External"
       - "Endpoint for Source"
       description: "Change status of consent"
       summary: "Change consent status"
@@ -222,6 +222,8 @@ paths:
       responses:
         201:
           description: "Returns created CSR"
+          schema:
+            $ref: '#/definitions/StatusChangeReply'
         500:
           description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
@@ -251,6 +253,21 @@ definitions:
         source:
           type: string
           description: Source URI
+
+  StatusChangeReply:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          attributes:
+            type: object
+          type:
+            type: string
+          id:
+            type: string
+
+
 
   ConsentFormPOSTReply:
       type: object

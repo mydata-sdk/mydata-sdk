@@ -174,7 +174,7 @@ def give_consent(operator_url, sink_id, source_id, user_key):
     print(json.dumps(json.loads(req.text), indent=2))
 
     print("\n\n")
-    return {"rs_id": js["source"]["rs_id"], "crs": json.loads(req.text)}
+    return {"rs_id": js["source"]["rs_id"], "crs": json.loads(req.text)["data"]["attributes"]}
 
 def make_cr_status_changes(operator_url, srv_id, cr_id, user_key):
     print("\n###### 3.CHANGE CONSENT STATUS ######\n")
@@ -187,10 +187,6 @@ def make_cr_status_changes(operator_url, srv_id, cr_id, user_key):
 
     status_change(operator_url, srv_id, cr_id, user_key, "Disabled")
     status_change(operator_url, srv_id, cr_id, user_key, "Active")
-
-
-
-
 
 
 def make_data_request(service_url, rs_id):
