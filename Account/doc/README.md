@@ -28,6 +28,7 @@ Authorization module (mod_mod_authorization) provides implementation to fulfill 
 
 ### Key Management module
 Key Management module (mod_blackbox) provides key management services for MyData Account. This module is meant only for demonstration purposes. Module does not provide a secure key store.
+Uses SQLite database to provide separate data location.
 
 ### Database module
 Database module (mod_database) provides database integration for MyData Account.
@@ -37,6 +38,7 @@ System module (mod_system) provides system health checks.
 
 ### Authentication module
 Authentication modules (mod_auth and mod_api_auth) provide authentication logic for APIs.
+Uses SQLite database to provide separate data location.
 
 ### Tests
 
