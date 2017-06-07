@@ -46,10 +46,11 @@ class DebugDataFlow(Resource):
     def get(self, rs_id):
 
         debug_log.info("Got rs_id {} to DebugDataFlow endpoint".format(rs_id))
-        records = self.helpers.query_db_multiple("select rs_id, cr_id, slr_id, surrogate_id from cr_storage where rs_id = %s;", (rs_id,))
+        records = self.helpers.query_db_multiple("select rs_id, cr_id, slr_id, surrogate_id from cr_storage", ())
         #rs_id =
         debug_log.info("DB query resulted in following results:\n{}".format(records))
         for record in records:
+            rs_id = record[0]
             cr_id = record[1]
             tool = CR_tool()
             tool.cr = self.helpers.get_cr_json(cr_id)

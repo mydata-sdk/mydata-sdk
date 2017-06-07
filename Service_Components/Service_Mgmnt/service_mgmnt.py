@@ -85,7 +85,7 @@ class GenerateSurrogateId(Resource):
 
                 sq.task("Generate surrogate_id.")
                 # TODO: Some logic to surrogate_id's?
-                # code as part of surrogate_id is practically for debugging reasons and servers no other purpose
+                # code as part of surrogate_id is practically for debugging reasons and serves no other purpose
                 surrogate_id = "{}_{}".format(operator_id, code)
 
                 sq.task("Link code to generated surrogate_id")

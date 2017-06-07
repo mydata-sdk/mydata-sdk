@@ -154,6 +154,7 @@ def give_consent(operator_url, sink_id, source_id, user_key):
             json.dumps(json.loads(req.content), indent=2)
         ))
         raise Exception("Consent flow failed.")
+    print(json.dumps(json.loads(req.content), indent=2))
 
     print("\n###### 2.SEND CONSENT FORM ######")
     print(req.url, req.reason, req.status_code, req.text)

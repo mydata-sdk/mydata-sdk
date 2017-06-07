@@ -403,7 +403,7 @@ class AccountManagerHandler:
             debug_log.info("Created CSR:\n{}".format(dumps(templ, indent=2)))
             #csr_id = payload["record_id"]
 
-            return {"csr": templ}
+            return templ
         else:
             raise DetailedHTTPException(status=req.status_code,
                                         detail={"msg": "Creating new csr at account management failed.",
