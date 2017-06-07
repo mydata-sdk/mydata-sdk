@@ -1,5 +1,7 @@
 # API Documentation
+
 API documentation is provided in format of OpenAPI Specification. API documentation can be visualised with following tools.
+
 - [Swagger Editor](http://swagger.io/swagger-editor/)
 - [Swagger UI](http://swagger.io/swagger-ui/)
 
