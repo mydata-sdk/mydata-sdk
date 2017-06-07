@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 
-# Import dependencies
-import logging
+"""
+__author__ = "Jani Yli-Kantola"
+__copyright__ = ""
+__credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
+__license__ = "MIT"
+__version__ = "1.3.0"
+__maintainer__ = "Jani Yli-Kantola"
+__contact__ = "https://github.com/HIIT/mydata-stack"
+__status__ = "Development"
+"""
 
+# Import dependencies
 from flask import current_app
 from app.helpers import get_custom_logger
-
-# Import the database object
 from app.app_modules import db
 
 logger = get_custom_logger(__name__)
@@ -260,10 +267,6 @@ def drop_table_content():
     sql_query = "SELECT Concat('TRUNCATE TABLE ',table_schema,'.',TABLE_NAME, ';') " \
                 "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
 
-    # sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
-    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
-    # TODO: Remove two upper rows
-
     try:
         cursor.execute(sql_query)
     except Exception as exp:
@@ -322,10 +325,6 @@ def delete_account_from_database(account_id=None):
         logger.debug('Could not get db cursor: ' + repr(exp))
         raise
 
-    # sql_query = "SELECT Concat('UPDATE ',table_schema,'.',TABLE_NAME, ';') " \
-    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
-
-    # TODO: This might be good to implement with separate arguments
     sql_query_for_account_table = "DELETE FROM MyDataAccount.Accounts WHERE id = {0};".format(account_id)
 
     sql_query = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, ' ', 'WHERE Accounts_id = %s',';') " \
@@ -334,10 +333,6 @@ def delete_account_from_database(account_id=None):
     arguments = (
         int(account_id),
     )
-
-    # sql_query1 = "SELECT Concat('DELETE FROM ',table_schema,'.',TABLE_NAME, '; ALTER TABLE ',table_schema,'.',TABLE_NAME, ' AUTO_INCREMENT = 1;') " \
-    #             "FROM INFORMATION_SCHEMA.TABLES where  table_schema in ('MyDataAccount');"
-    # TODO: Remove two upper rows
 
     try:
         log_query(sql_query=sql_query, arguments=arguments)
@@ -462,7 +457,7 @@ def get_slr_ids(cursor=None, account_id=None, table_name=None):
         return cursor, id_list
 
 
-def get_slr_ids_by_service(cursor=None, service_id=None, surrogate_id="", table_name=None):
+def get_slr_ids_by_service(cursor=None, service_id=None, surrogate_id="", account_id="", table_name=None):
     logger.info("Executing")
     if cursor is None:
         raise AttributeError("Provide cursor as parameter")
@@ -470,16 +465,19 @@ def get_slr_ids_by_service(cursor=None, service_id=None, surrogate_id="", table_
         raise AttributeError("Provide service_id as parameter")
     if surrogate_id is None:
         raise AttributeError("Provide surrogate_id as parameter")
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
     if table_name is None:
         raise AttributeError("Provide table_name as parameter")
 
     sql_query = "SELECT serviceLinkRecordId " \
                 "FROM " + table_name + " " \
-                "WHERE serviceId LIKE %s AND surrogateId LIKE %s;"
+                "WHERE serviceId LIKE %s AND surrogateId LIKE %s AND Accounts_id LIKE %s;"
 
     arguments = (
         '%' + str(service_id) + '%',
         '%' + str(surrogate_id) + '%',
+        '%' + str(account_id) + '%',
     )
 
     try:

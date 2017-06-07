@@ -1372,6 +1372,11 @@ paths:
           type: string
           description: 'Filter by Surrogate ID'
           required: false
+        - name: account_id
+          in: query
+          type: string
+          description: 'Filter by Surrogate ID'
+          required: false
 
       tags:
         - Service Linking - Fetch

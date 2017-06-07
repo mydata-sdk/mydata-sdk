@@ -12,14 +12,6 @@ __status__ = "Development"
 """
 
 # Import dependencies
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-#from Crypto.Hash import SHA512
-#from Crypto.Random.random import StrongRandom
-from random import randint
-
-# Import dependencies
 from _mysql_exceptions import IntegrityError
 from flask import Blueprint, request, json
 from flask_restful import Resource, Api
@@ -32,7 +24,7 @@ from app.mod_database.controllers import create_event_log_entry
 from app.mod_database.models import ServiceLinkStatusRecord
 from app.mod_service.controllers import sign_slr, store_slr_and_ssr, sign_ssr, init_slr_sink, init_slr_source, \
     get_slr_record, get_slrs, get_slr, get_slsrs, get_slsr, get_last_slr_status, get_slrs_for_service, \
-    get_slr_for_service, store_ssr, get_surrogate_id_by_account_and_service, get_account_id_by_service_and_surrogate_id
+    get_slr_for_service, store_ssr, get_account_id_by_service_and_surrogate_id
 from app.mod_service.schemas import schema_sl_init_sink, schema_sl_init_source, schema_sl_sign, schema_sl_store, \
     schema_sls_to_sign_by_account, schema_sls_signed_by_operator
 
@@ -1726,13 +1718,29 @@ class ApiServiceLinkRecordsForService(Resource):
             else:
                 logger.info("No Surrogate ID in query params")
 
+        try:
+            account_id = request.args.get('account_id', None)
+            if account_id is not None:
+                account_id = str(account_id)
+        except Exception as exp:
+            raise ApiError(code=400, title="Unsupported account_id", detail=repr(exp), source=endpoint)
+        else:
+            if account_id is not None:
+                logger.info("Account ID from query params: " + account_id)
+            else:
+                logger.info("No Account ID in query params")
+
         # Get ServiceLinkRecords
         try:
             logger.info("Fetching ServiceLinkRecords")
-            if surrogate_id is None:
-                db_entries, account_id_list = get_slrs_for_service(service_id=service_id)
-            else:
+            if (surrogate_id is not None) and (account_id is not None):
+                db_entries, account_id_list = get_slrs_for_service(service_id=service_id, surrogate_id=surrogate_id, account_id=account_id)
+            elif surrogate_id is not None:
                 db_entries, account_id_list = get_slrs_for_service(service_id=service_id, surrogate_id=surrogate_id)
+            elif account_id is not None:
+                db_entries, account_id_list = get_slrs_for_service(service_id=service_id, account_id=account_id)
+            else:
+                db_entries, account_id_list = get_slrs_for_service(service_id=service_id)
         except IndexError as exp:
             error_title = "Service Link Record not found with provided information"
             error_detail = "Service ID was {} and Surrogate ID was {}".format(service_id, surrogate_id)
@@ -1758,9 +1766,9 @@ class ApiServiceLinkRecordsForService(Resource):
             logger.info('Response data ready')
             logger.debug('response_data: ' + repr(response_data))
 
-        for account_id in account_id_list:
+        for account_id_entry in account_id_list:
             create_event_log_entry(
-                account_id=account_id,
+                account_id=account_id_entry,
                 actor="Operator",
                 action="GET",
                 resource=endpoint,

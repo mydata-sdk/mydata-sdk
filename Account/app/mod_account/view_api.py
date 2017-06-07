@@ -13,21 +13,14 @@ __status__ = "Development"
 
 # Import dependencies
 import json
-
-# Import flask dependencies
 from _mysql_exceptions import IntegrityError
 from flask import Blueprint, request
 from flask_restful import Resource, Api
-
-# Import services
 from app.helpers import get_custom_logger, make_json_response, ApiError, validate_json, compare_str_ids, get_utc_time
 from app.mod_account.controllers import verify_account_id_match, get_event_log, get_event_logs, export_account, \
     create_account, delete_account, get_account, get_account_infos, get_account_info, update_account_info, \
     account_get_slrs, account_get_slr, account_get_slsrs, account_get_slsr, account_get_last_slr_status, \
     account_get_crs, account_get_cr, account_get_last_cr, account_get_csrs, account_get_csr, account_get_last_cr_status
-# from app.mod_account.models import AccountSchema2, ParticularsSchema, ContactsSchema, ContactsSchemaForUpdate, \
-#     EmailsSchema, EmailsSchemaForUpdate, TelephonesSchema, TelephonesSchemaForUpdate, SettingsSchema, \
-#     SettingsSchemaForUpdate
 from app.mod_account.schemas import schema_account_new, schema_account_info
 from app.mod_api_auth.controllers import requires_api_auth_user, provide_api_key, get_user_api_key
 from app.mod_database.controllers import create_event_log_entry
@@ -35,7 +28,6 @@ from app.mod_database.controllers import create_event_log_entry
 mod_account_api = Blueprint('account_api', __name__, template_folder='templates')
 account_api = Api(mod_account_api)
 
-# create logger with 'spam_application'
 logger = get_custom_logger(__name__)
 
 
