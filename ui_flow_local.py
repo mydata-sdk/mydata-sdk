@@ -174,7 +174,24 @@ def give_consent(operator_url, sink_id, source_id, user_key):
     print(json.dumps(json.loads(req.text), indent=2))
 
     print("\n\n")
-    return js["source"]["rs_id"]
+    return {"rs_id": js["source"]["rs_id"], "crs": json.loads(req.text)}
+
+def make_cr_status_changes(operator_url, srv_id, cr_id, user_key):
+    print("\n###### 3.CHANGE CONSENT STATUS ######\n")
+    def status_change(operator_url, srv_id, cr_id, user_key, status):
+        print("\n  ## Change status of cr '{}' to {}.".format(cr_id, status))
+        req = post(operator_url + "api/1.3/cr/account_id/2/service/{}/consent/{}/status/{}".format(srv_id, cr_id, status),
+                   headers={"Api-Key-User": user_key["Api-Key-User"]})
+        print(req.url, req.reason, req.status_code)
+        print(json.dumps(json.loads(req.text), indent=2))
+
+    status_change(operator_url, srv_id, cr_id, user_key, "Disabled")
+    status_change(operator_url, srv_id, cr_id, user_key, "Active")
+
+
+
+
+
 
 def make_data_request(service_url, rs_id):
     wait_time = 5
@@ -316,7 +333,11 @@ if __name__ == '__main__':
 
     # Consent
     if not args.skip_consent:
-        rs_id = give_consent(args.operator_url, args.sink_id, args.source_id, user_key)
+        consents = give_consent(args.operator_url, args.sink_id, args.source_id, user_key)
+        rs_id = consents["rs_id"]
+        cr_ids = consents["crs"]
+
+        make_cr_status_changes(args.operator_url, args.sink_id, cr_ids["sink_cr_id"], user_key)
 
         # Debug Data Flow
         if not args.skip_data:

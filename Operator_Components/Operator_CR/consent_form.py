@@ -192,28 +192,6 @@ class ConsentFormHandler(Resource):
         sq.send_to("Account Manager", "Send CR/CSR to sign and store")
         result = AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
 
-        # These are debugging and testing calls.
-        if self.debug_mode:
-            own_addr = self.operator_url #request.url_root.rstrip(request.script_root)
-            debug_log.info("Our own address is: {}".format(own_addr))
-            req = post(own_addr+"/api/1.3/cr/account_id/{}/service/{}/consent/{}/status/Disabled"
-                                .format(account_id, source_srv_id, common_cr_source["cr_id"]),
-                       headers=request.headers)
-
-            debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
-                req.status_code,
-                req.reason,
-                dumps(loads(req.content), indent=2)
-            ))
-            req = post(own_addr+"/api/1.3/cr/account_id/{}/service/{}/consent/{}/status/Active"
-                                .format(account_id, source_srv_id, common_cr_source["cr_id"]),
-                       headers=request.headers)
-            debug_log.info("Changed csr status, request status ({}) reason ({}) and the following content:\n{}".format(
-                req.status_code,
-                req.reason,
-                dumps(loads(req.content), indent=2)
-            ))
-
         debug_log.info("CR/CSR structure the Account Manager signed:\n{}".format(dumps(result, indent=2)))
         sink_cr = result["data"]["sink"]["consent_record"]["attributes"]
         sink_csr = result["data"]["sink"]["consent_status_record"]["attributes"]
