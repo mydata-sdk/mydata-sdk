@@ -1,11 +1,12 @@
 # MyData Account - Documentation
 
 ## High level prerequisites
+- [MySQL 5.7](https://www.mysql.com/)
+- [SQLite](https://www.sqlite.org/)
+- [Python 2.7](https://www.python.org/download/releases/2.7/)
 - [Flask](http://flask.pocoo.org/)
 - [Flask-RESTful](http://flask-restful.readthedocs.io)
 - [JWCrypto](https://jwcrypto.readthedocs.io/en/stable/)
-- [MySQL 5.6](https://www.mysql.com/)
-- [Python 2.7](https://www.python.org/download/releases/2.7/)
 
 ## Detailed Documentation
 - [Deployment](deployment.md)
