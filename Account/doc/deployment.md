@@ -83,7 +83,7 @@ These instructions are using 'Y3xUcheg' as root password.
 #### Create virtual environment
 
     virtualenv venv
-    source venv/bin/activate
+    source ./venv/bin/activate
     ./venv/bin/pip install -r requirements.txt
 
 
@@ -120,8 +120,8 @@ Before starting make sure that your user belongs to www-data group.
 
 #### Prerequisites
 
-    sudo apt-get update
-    sudo apt-get -y install nginx
+    sudo apt update
+    sudo apt -y install nginx
     sudo pip install uwsgi
 
 
@@ -130,6 +130,7 @@ Before starting make sure that your user belongs to www-data group.
     sudo mkdir -p /var/www/myDataSDK
     sudo chown -R www-data:www-data /var/www/myDataSDK
     sudo chmod 775 -R /var/www/myDataSDK/
+    cd /var/www/myDataSDK/
 
 
 #### Clone from Git
@@ -161,7 +162,7 @@ Before starting make sure that your user belongs to www-data group.
 #### Create virtual environment
 
     virtualenv venv
-    source venv/bin/activate
+    source ./venv/bin/activate
     ./venv/bin/pip install -r requirements.txt
 
 
@@ -190,8 +191,6 @@ Check configuration files and modify if necessary.
 
 ##### Test that uWSGI serving is working properly
 
-    source venv/bin/activate
-    ./venv/bin/pip install -r requirements.txt
     sudo uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --virtualenv venv/ --callable app
 
 Try to access application with web-browser via your domain. For example http://example.org:8080
