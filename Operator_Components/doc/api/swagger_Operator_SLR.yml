@@ -3,6 +3,7 @@ swagger: "2.0"
 info:
   version: "1.3"
   title: "Operator SLR API"
+  description: "See https://github.com/HIIT/mydata-stack/blob/master/mydata-linking.pdf for detailed JSON structures"
 host: "example.operator.example"
 basePath: "/api/1.2/slr"
 

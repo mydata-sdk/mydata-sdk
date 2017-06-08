@@ -1,17 +1,24 @@
 ---
 swagger: "2.0"
 info:
-  version: "1.2.1"
+  version: "1.3"
   title: "Service SLR API"
+  description: "See https://github.com/HIIT/mydata-stack/blob/master/mydata-linking.pdf for detailed JSON structures"
 host: "example.service.example"
 basePath: "/api/1.3/slr"
+
+securityDefinitions:
+  BasicAuth:
+    type: basic
+    description: HTTP Basic Auth
+
 paths:
   /link:
     post:
       tags:
-      - "Service Management"
-      - "Service"
+      - "Service - Internal"
       description: "This is called to let Service know/store the generated surrogate_id."
+      summary: "Informs Service of generated surrogate_id"
       consumes:
       - "application/json"
       produces:
@@ -31,12 +38,57 @@ paths:
           schema:
             $ref: "#/definitions/errors"
   /login:
+    get:
+      tags:
+      - "Service - External"
+      description: "Generate User Form to authenticate for Service to continue SLR creation"
+      summary: "Fetch login page"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+        -
+          name: code
+          in: query
+          description: unique session code from Operator
+          required: true
+          type: string
+
+        -
+          name: return_url
+          in: query
+          description: base64 encoded URL where user is redirected once SLR is created
+          required: true
+          type: string
+
+        -
+          name: operator_id
+          in: query
+          description: Operator's id
+          required: true
+          type: string
+
+        -
+          name: linkingFrom
+          in: query
+          description: Are we initiating linking from Service or Operator
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Returns 200 OK or Error message"
+        500:
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
+          schema:
+            $ref: "#/definitions/errors"
     post:
       tags:
-      - "Service"
-      - "Service Management"
-      description: "User logins to service here, provides code and the Service then\
-        \ sends the user_id and code to Service Mgmnt."
+      - "Service - External"
+      description: "User login ends up here with filled fields."
+      summary: "Login user for consenting SLR"
+      security:
+        - BasicAuth: []
       consumes:
       - "application/json"
       produces:
@@ -44,10 +96,10 @@ paths:
       parameters:
       - in: "body"
         name: "body"
-        description: "Contains code and user_id"
         required: true
         schema:
-          $ref: "#/definitions/LoginParams"
+          $ref: '#/definitions/LoginParams'
+
       responses:
         200:
           description: "Returns 200 OK or Error message"
@@ -58,9 +110,9 @@ paths:
   /store_slr:
     post:
       tags:
-      - "Service"
-      - "Service Management"
-      description: "Copy of finished SLR received from Service Mgmnt for storing"
+      - "Service - Internal"
+      description: "Copy of finished SLR received from Service Management for storing"
+      summary: "Store generated SLR"
       consumes:
       - "application/json"
       produces:
@@ -73,12 +125,44 @@ paths:
         schema:
           $ref: "#/definitions/StoreSLRParams"
       responses:
-        200:
-          description: "Returns 200 OK or Error message"
+        201:
+          description: "Returns SLR id of stored SLR"
+          schema:
+            $ref: '#/definitions/StoreSLRResponse'
         500:
           description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
             $ref: "#/definitions/errors"
+
+  /store_ssr:
+    post:
+      tags:
+      - "Service - Internal"
+      description: "Store Service Link Status Record"
+      summary: "Store generated SSR"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Contains SSR"
+        required: true
+        schema:
+          $ref: "#/definitions/StoreSLRParams"
+      responses:
+        201:
+          description: "Returns ssr_id of stored SSR"
+          schema:
+            $ref: "#/definitions/StoreSSR"
+        500:
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
+          schema:
+            $ref: "#/definitions/errors"
+
+
+
 definitions:
   errors:
       type: object
@@ -105,9 +189,23 @@ definitions:
       code:
         type: "string"
         description: "string containing code"
-      user_id:
+      Email:
         type: "string"
         description: "string containing user_id"
+      Password:
+        type: "string"
+        description: "User password"
+      linkingFrom:
+        type: string
+        description: "Are we linking from Operator or Service"
+      return_url:
+        type: string
+        description: "Base64 encoded URL where we redirect after SLR has been created."
+      operator_id:
+        type: string
+        description: "Operator's unique ID"
+
+
   LinkParams:
     type: "object"
     properties:
@@ -117,6 +215,32 @@ definitions:
       user_id:
         type: "string"
         description: "string containing user_id"
+
+  StoreSSR:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          attributes:
+            type: object
+          type:
+            type: string
+            description: string containing type
+          id:
+            type: string
+
+  StoreSLRResponse:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          id:
+            type: string
+          type:
+            type: string
+
   StoreSLRParams:
     type: object
     properties:
@@ -126,27 +250,11 @@ definitions:
       data:
         type: object
         properties:
-          surrogate_id:
-            type: string
-            description: string containing surrogate_id
-          meta:
-            type: object
-            properties:
-              ssr_id:
-                type: string
-                description: string containing ssr_id
-              slr_id:
-                type: string
-                description: string containing slr_id
           ssr:
             type: object
             properties:
               attributes:
                 type: object
-                properties:
-                  ssr:
-                    type: object
-                    description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-linking.pdf"
               type:
                 type: string
                 description: string containing type
@@ -155,10 +263,6 @@ definitions:
             properties:
               attributes:
                 type: object
-                properties:
-                  slr:
-                    type: object
-                    description: "See: https://github.com/HIIT/mydata-stack/blob/master/mydata-linking.pdf"
               type:
                 type: string
                 description: string containing type

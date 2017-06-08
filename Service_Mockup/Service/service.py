@@ -254,6 +254,7 @@ class StoreSlr(Resource):
         self.helpers.store_slr_JSON(json=request.json["data"]["slr"], slr_id=payload["link_id"], surrogate_id=payload["surrogate_id"])
         debug_log.info("Storing SSR into db")
         self.helpers.store_ssr_JSON(json=request.json["data"]["ssr"])
+        return {"data": {"id": payload["link_id"], "type": "ServiceLinkRecord"}}, 201
 
 
 class StoreSSR(Resource):
