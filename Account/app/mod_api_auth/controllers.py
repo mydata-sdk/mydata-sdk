@@ -1,22 +1,19 @@
 # -*- coding: utf-8 -*-
 
 """
-Minimum viable account - API Auth module
-
 __author__ = "Jani Yli-Kantola"
-__copyright__ = "Digital Health Revolution (c) 2016"
+__copyright__ = ""
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
 __version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
-__date__ = 26.5.2016
 """
+
 import base64
 from functools import wraps
 from uuid import uuid4
-
 from flask import request, current_app
 from app.helpers import get_custom_logger, ApiError
 from app.mod_api_auth.services import get_sqlite_connection, get_sqlite_cursor, store_api_key_to_db, get_api_key, \
@@ -229,10 +226,10 @@ def provide_api_key(missing="Api-Key", endpoint="provide_api_key()"):
     raise ApiError(code=401, title="No required ApiKey at Request Headers", detail=error_detail, source=endpoint)
 
 
-def wrongApiKey():  # TODO: rename
+def wrong_api_key():
     """Sends a 401 response"""
     error_detail = {'0': 'Correct ApiKey MUST be provided for authentication.'}
-    raise ApiError(code=401, title="Invalid ApiKey", detail=error_detail, source="wrongApiKey()")
+    raise ApiError(code=401, title="Invalid ApiKey", detail=error_detail, source="wrong_api_key()")
 
 
 def requires_api_auth_user(f):
@@ -251,7 +248,7 @@ def requires_api_auth_user(f):
             logger.info("Provided Api-Key-User: " + str(api_key))
             if not check_api_auth_user(api_key=api_key):
                 logger.debug("Wrong Api-Key-User")
-                return wrongApiKey()
+                return wrong_api_key()
             logger.info("Correct Api-Key-User")
             logger.info("User Authenticated")
             return f(*args, **kwargs)
@@ -272,7 +269,7 @@ def requires_api_auth_sdk(f):
         else:
             if not check_api_auth_sdk(api_key=api_key):
                 logger.debug("Wrong Api-Key-Sdk")
-                return wrongApiKey()
+                return wrong_api_key()
             return f(*args, **kwargs)
     return decorated
 

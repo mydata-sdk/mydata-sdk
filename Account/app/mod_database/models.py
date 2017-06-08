@@ -12,11 +12,6 @@ __status__ = "Development"
 """
 
 # Import dependencies
-import uuid
-import logging
-import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-
-# Import the database object from the main app module
 from flask import json, current_app
 from app.helpers import get_custom_logger
 from app.mod_database.helpers import execute_sql_insert_2, execute_sql_select_2, execute_sql_update
@@ -259,8 +254,6 @@ class LocalIdentity():
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
 
-        # TODO: Don't allow if role is only criteria
-
         sql_query = "SELECT id, username, LocalIdentityPWDs_id, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND username LIKE %s AND LocalIdentityPWDs_id LIKE %s AND Accounts_id LIKE %s;"
@@ -385,8 +378,6 @@ class LocalIdentityPWD():
     def from_db(self, cursor=None):
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
-
-        # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, password, Accounts_id " \
                     "FROM " + self.table_name + " " \
@@ -521,8 +512,6 @@ class Salt():
     def from_db(self, cursor=None):
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
-
-        # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, salt, LocalIdentities_id, Accounts_id " \
                     "FROM " + self.table_name + " " \
@@ -1105,8 +1094,6 @@ class ServiceLinkRecord():
 
     def from_db(self, cursor=""):
 
-        # TODO: Don't allow if role is only criteria
-
         sql_query = "SELECT id, serviceLinkRecord, Accounts_id, serviceLinkRecordId, serviceId, surrogateId, operatorId, pop_key  " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND serviceLinkRecord LIKE %s AND serviceLinkRecordId LIKE %s AND " \
@@ -1376,8 +1363,6 @@ class ServiceLinkStatusRecord():
     def from_db(self, cursor=None):
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
-
-        # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, serviceLinkStatus, serviceLinkStatusRecord, ServiceLinkRecords_id, serviceLinkRecordId, " \
                     "issued_at, prevRecordId, serviceLinkStatusRecordId, Accounts_id " \
@@ -1762,8 +1747,6 @@ class ConsentRecord():
 
     def from_db(self, cursor=""):
 
-        # TODO: Don't allow if role is only criteria
-
         sql_query = "SELECT id, consentRecord, ServiceLinkRecords_id, surrogateId, consentRecordId, ResourceSetId, serviceLinkRecordId, subjectId, role, consentPairId, Accounts_id " \
                     "FROM " + self.table_name + " " \
                     "WHERE id LIKE %s AND ServiceLinkRecords_id LIKE %s AND surrogateId LIKE %s AND " \
@@ -2024,8 +2007,6 @@ class ConsentStatusRecord():
     def from_db(self, cursor=None):
         if cursor is None:
             raise AttributeError("Provide cursor as parameter")
-
-        # TODO: Don't allow if role is only criteria
 
         sql_query = "SELECT id, consentStatusRecordId, consentStatus, consentStatusRecord, ConsentRecords_id, " \
                     "consentRecordId, issued_at, prevRecordId, Accounts_id " \

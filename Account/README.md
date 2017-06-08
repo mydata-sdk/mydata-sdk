@@ -2,27 +2,18 @@
 ---
 
 # MyData Account
-This is a part of MyData SDK implementation of MyData Architecture.
+MyData Account is a part of MyData SDK implementation of MyData Architecture - Consent Based Approach for Personal Data Management.
 
-## Version
-This is version 1.3
+## Introduction
+MyData Account is a key enabler in service linking and data flow authorisation. It stores all Account  Owner’s service links and consents along with their history in a single place. This helps provide a unified view to all data flow authorizations and it enables the Account Owner to manage and control the authorized data flows.
 
-## High level prerequisites
-- [Flask](http://flask.pocoo.org/)
-- [Flask-RESTful](http://flask-restful.readthedocs.io)
-- [JWCrypto](https://jwcrypto.readthedocs.io/en/stable/)
-- [MySQL 5.6](https://www.mysql.com/)
-- [Python 2.7](https://www.python.org/download/releases/2.7/)
+For more information see technical specification documents of MyData Architecture at [https://hiit.github.io/mydata-stack/](https://hiit.github.io/mydata-stack/)
 
 ## Documentation
 - [Documentation ](doc/)
-- [Deployment](doc/deployment.md)
-- [API documentation](doc/api/)
-- [Database documentation](doc/database/)
-- [Developer one-liners](doc/developer_oneliners.md)
 
 ## Support / Contact / Contribution
-[MyData Architecture](https://github.com/HIIT/mydata-stack)
+- [https://hiit.github.io/mydata-stack/](https://hiit.github.io/mydata-stack/)
 
 ## Copying and License
 This code is licensed under [MIT License (MIT)](LICENSE)

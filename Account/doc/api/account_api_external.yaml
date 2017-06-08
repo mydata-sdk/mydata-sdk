@@ -43,37 +43,35 @@ paths:
     get:
       security:
         - BasicAuth: []
-      summary: 'Get ApiKey for account'
+      summary: 'Account Authentication'
+      description: 'Authenticate MyData Account to make requests to API'
 
       tags:
         - Auth
 
       responses:
         '200':
-          description: ApiKey for authenticated user
+          description: 'Success'
           schema:
             $ref: '#/definitions/apiKeyResponse'
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server error
+          description: 'Internal Server error'
           schema:
             $ref: '#/definitions/errors'
 
 
   /accounts/:
     post:
-      summary: 'Create new MyData Account'
+      summary: 'Create MyData Account'
+      description: 'Create new MyData Account'
 
       parameters:
         - name: newAccount
@@ -88,27 +86,15 @@ paths:
 
       responses:
         '201':
-          description: Account created
+          description: 'Success'
           schema:
             $ref: '#/definitions/newAccountResponse'
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors'
-        '403':
-          description: Forbidden
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -117,7 +103,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      summary: 'Fetch MyData Account by ID'
+      summary: 'Fetch MyData Account'
+      description: 'Fetch MyData Account'
 
       parameters:
         - name: account_id
@@ -131,35 +118,31 @@ paths:
 
       responses:
         '200':
-          description: Account fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/accountResponse'
-        '204':
-          description: No Account with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/errors'
+
     delete:
       security:
         - externalApiKeyAuth: []
-      summary: 'Remove MyData Account by ID'
+      summary: 'Remove MyData Account'
+      description: 'Remove MyData Account'
 
       parameters:
         - name: account_id
@@ -173,17 +156,17 @@ paths:
 
       responses:
         '204':
-          description: Account deleted
-        '401':
-          description: Unauthorized
+          description: 'Success'
+        '400':
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -193,6 +176,7 @@ paths:
       security:
         - externalApiKeyAuth: []
       summary: 'Export MyData Account'
+      description: 'Export MyData Account as JSON object'
 
       parameters:
         - name: account_id
@@ -206,29 +190,23 @@ paths:
 
       responses:
         '200':
-          description: Account exported
+          description: 'Success'
           schema:
             $ref: '#/definitions/accountExportResponse'
-        '204':
-          description: No Account with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -237,7 +215,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Account Info Object'
+      summary: 'Fetch Account Info object listing'
+      description: 'Fetch Account Info object listing of MyData Account'
 
       parameters:
         - name: account_id
@@ -251,29 +230,23 @@ paths:
 
       responses:
         '200':
-          description: Account Info fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/AccountInfoResponseArray'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -282,7 +255,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Account info object by ID'
+      summary: 'Fetch Account Info object'
+      description: 'Fetch Account Info object of MyData Account'
 
       parameters:
         - name: account_id
@@ -293,7 +267,7 @@ paths:
         - name: info_id
           in: path
           type: integer
-          description: 'Account Info ID'
+          description: 'Account Info Object ID'
           required: true
 
       tags:
@@ -301,36 +275,31 @@ paths:
 
       responses:
         '200':
-          description: Account info fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/AccountInfoResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
     patch:
       security:
         - externalApiKeyAuth: []
-      description: 'Update particulars'
+      summary: 'Update Account Info object'
+      description: 'Update Account Info object of MyData Account'
 
       parameters:
         - name: account_id
@@ -355,29 +324,23 @@ paths:
 
       responses:
         '200':
-          description: Account Info updated
+          description: 'Success'
           schema:
             $ref: '#/definitions/AccountInfoResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -388,7 +351,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Event logs for Account'
+      summary: 'Event Log listing'
+      description: 'Fetch Event Log listing of MyData Account'
 
       parameters:
         - name: account_id
@@ -402,31 +366,23 @@ paths:
 
       responses:
         '200':
-          description: Event logs fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/EventLogArray'
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
           schema:
             $ref: '#/definitions/errors'
         '404':
-          description: No content
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -435,7 +391,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch list of Service links related to Account'
+      summary: 'Service Link listing'
+      description: 'Fetch Service Link listing for MyData Account'
 
       parameters:
         - name: account_id
@@ -449,29 +406,23 @@ paths:
 
       responses:
         '200':
-          description: Service link fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/serviceLinksResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -480,7 +431,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Service Link by ID'
+      summary: 'Service Link'
+      description: 'Fetch Service Link for MyData Account'
 
       parameters:
         - name: account_id
@@ -490,7 +442,7 @@ paths:
           required: true
         - name: servicelink_id
           in: path
-          type: integer
+          type: string
           description: 'Service link ID'
           required: true
 
@@ -499,29 +451,23 @@ paths:
 
       responses:
         '200':
-          description: Service link fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/serviceLinkResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -530,7 +476,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch list of Service Link statuses'
+      summary: 'Service Link status listing'
+      description: 'Fetch Service Link status listing for MyData Account'
 
       parameters:
         - name: account_id
@@ -540,7 +487,7 @@ paths:
           required: true
         - name: servicelink_id
           in: path
-          type: integer
+          type: string
           description: 'Service link ID'
           required: true
 
@@ -549,29 +496,23 @@ paths:
 
       responses:
         '200':
-          description: List of Service Link statuses fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/serviceLinkStatusesResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -580,7 +521,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Service Link status by ID'
+      summary: 'Service Link status'
+      description: 'Fetch Service Link status for MyData Account'
 
       parameters:
         - name: account_id
@@ -590,12 +532,12 @@ paths:
           required: true
         - name: servicelink_id
           in: path
-          type: integer
+          type: string
           description: 'Service link ID'
           required: true
         - name: status_id
           in: path
-          type: integer
+          type: string
           description: 'Service link status ID'
           required: true
 
@@ -604,29 +546,23 @@ paths:
 
       responses:
         '200':
-          description: Service link status fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/serviceLinkStatusResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -635,13 +571,13 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      summary: 'Get last Service Link Status Record'
-      description: "Fetch last Service Link Status Record"
+      summary: 'Last Service Link status'
+      description: 'Fetch last Service Link status for MyData Account'
 
       parameters:
         - name: account_id
           in: path
-          type: string
+          type: integer
           description: 'Account ID'
           required: true
         - name: link_id
@@ -655,19 +591,23 @@ paths:
 
       responses:
         '200':
-          description: 'Service Link Status Record'
+          description: 'Success'
           schema:
             $ref: '#/definitions/serviceLinkStatusResponse'
         '400':
           description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
+        '403':
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
         '404':
-          description: 'No Service Link with provided ID'
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: 'General Error'
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -676,7 +616,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch list of Consents related to servicelink'
+      summary: 'Consent listing'
+      description: 'Fetch Consent listing Service Link and for MyData Account'
 
       parameters:
         - name: account_id
@@ -686,7 +627,7 @@ paths:
           required: true
         - name: servicelink_id
           in: path
-          type: integer
+          type: string
           description: 'Service link ID'
           required: true
         - name: get_consent_pair
@@ -700,29 +641,23 @@ paths:
 
       responses:
         '200':
-          description: List of Consents related to servicelink fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/consentsResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -731,7 +666,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Consent by ID'
+      summary: 'Consent'
+      description: 'Fetch Consent for Service Link and MyData Account'
 
       parameters:
         - name: account_id
@@ -741,12 +677,12 @@ paths:
           required: true
         - name: servicelink_id
           in: path
-          type: integer
+          type: string
           description: 'Service link ID'
           required: true
         - name: consent_id
           in: path
-          type: integer
+          type: string
           description: 'Consent ID'
           required: true
         - name: get_consent_pair
@@ -760,29 +696,23 @@ paths:
 
       responses:
         '200':
-          description: Consent fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/consentsResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -791,13 +721,13 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      summary: 'Get Last Consent Record'
-      description: "Fetch Last Consent Record related to Service Link Record"
+      summary: 'Last Consent'
+      description: 'Fetch last Consent for Service Link and MyData Account'
 
       parameters:
         - name: account_id
           in: path
-          type: string
+          type: integer
           description: 'Account ID'
           required: true
         - name: link_id
@@ -816,19 +746,23 @@ paths:
 
       responses:
         '200':
-          description: 'Array of Consent Records'
+          description: 'Success'
           schema:
             $ref: '#/definitions/consentsResponse'
         '400':
           description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
+        '403':
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
         '404':
-          description: 'No Service Link with provided ID'
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: 'General Error'
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -837,7 +771,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch list of Consent statuses'
+      summary: 'Consent status listing'
+      description: 'Fetch Consent status listing for Service Link and MyData Account'
 
       parameters:
         - name: account_id
@@ -847,12 +782,12 @@ paths:
           required: true
         - name: servicelink_id
           in: path
-          type: integer
+          type: string
           description: 'Service link ID'
           required: true
         - name: consent_id
           in: path
-          type: integer
+          type: string
           description: 'Consent ID'
           required: true
         - name: status_id
@@ -866,29 +801,23 @@ paths:
 
       responses:
         '200':
-          description: List of Consent statuses fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/consentStatusesResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -897,7 +826,8 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      description: 'Fetch Consent by ID'
+      summary: 'Consent status'
+      description: 'Fetch Consent status for Service Link and MyData Account'
 
       parameters:
         - name: account_id
@@ -907,17 +837,17 @@ paths:
           required: true
         - name: servicelink_id
           in: path
-          type: integer
+          type: string
           description: 'Service link ID'
           required: true
         - name: consent_id
           in: path
-          type: integer
+          type: string
           description: 'Consent ID'
           required: true
         - name: status_id
           in: path
-          type: integer
+          type: string
           description: 'Status ID'
           required: true
 
@@ -926,29 +856,23 @@ paths:
 
       responses:
         '200':
-          description: Consent fetched
+          description: 'Success'
           schema:
             $ref: '#/definitions/consentStatusResponse'
-        '204':
-          description: No content with given id
         '400':
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors'
-        '401':
-          description: Unauthorized
+          description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
         '403':
-          description: Forbidden
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
+        '404':
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: Internal Server errors
-          schema:
-            $ref: '#/definitions/errors'
-        '503':
-          description: Service Unavailable
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -957,13 +881,13 @@ paths:
     get:
       security:
         - externalApiKeyAuth: []
-      summary: 'Get last Consent Status Record'
-      description: "Fetch last Consent Status Record"
+      summary: 'Last Consent status'
+      description: 'Fetch last Consent status for Service Link and MyData Account'
 
       parameters:
         - name: account_id
           in: path
-          type: string
+          type: integer
           description: 'Account ID'
           required: true
         - name: link_id
@@ -982,19 +906,23 @@ paths:
 
       responses:
         '200':
-          description: 'Consent Status Record'
+          description: 'Success'
           schema:
             $ref: '#/definitions/consentStatusResponse'
         '400':
           description: 'Bad Request'
           schema:
             $ref: '#/definitions/errors'
+        '403':
+          description: 'Forbidden'
+          schema:
+            $ref: '#/definitions/errors'
         '404':
-          description: 'No entry with provided ID'
+          description: 'Not Found'
           schema:
             $ref: '#/definitions/errors'
         '500':
-          description: 'General Error'
+          description: 'Internal Server errors'
           schema:
             $ref: '#/definitions/errors'
 
@@ -1007,56 +935,56 @@ definitions:
     properties:
       status:
         type: string
-        description: HTTP status code as string value.
+        description: 'HTTP status code as string value'
       code:
         type: integer
-        description: HTTP status code
+        description: 'HTTP status code'
       title:
         type: string
-        description: Title of error message.
+        description: 'Title of error message'
       detail:
         type: string
-        description: Detailed error message.
+        description: 'Detailed error message'
       source:
         type: string
-        description: Source URI
+        description: 'Request target URI'
 
   apiKeyResponse:
     type: object
     properties:
       Api-Key:
         type: string
-        description: ApiKey
+        description: 'Account Api Key to be used with API calls'
       account_id:
         type: string
-        description: Account ID
+        description: "Account ID"
 
   newAccount:
     type: object
     properties:
       type:
         type: string
-        description: Resource type 'Account'
+        description: "Resource type 'Account'"
       attributes:
         type: object
         properties:
           username:
             type: string
-            description: Account username
+            description: 'Account username'
             maxLength: 255
           password:
             type: string
             format: password
-            description: Account password
+            description: 'Account password'
             maxLength: 255
             minLength: 8
           firstname:
             type: string
-            description: User's first name
+            description: "User's first name"
             maxLength: 255
           lastname:
             type: string
-            description: User's last name
+            description: "User's last name"
             maxLength: 255
 
   createdAccount:
@@ -1064,10 +992,10 @@ definitions:
     properties:
       type:
         type: string
-        description: Resource type 'Account'
+        description: "Resource type 'Account'"
       id:
         type: string
-        description: Account ID
+        description: "Account ID"
       attributes:
         type: object
         properties:
@@ -1079,10 +1007,10 @@ definitions:
     properties:
       type:
         type: string
-        description: Resource type 'Account'
+        description: "Resource type 'Account'"
       id:
         type: string
-        description: Account ID
+        description: "Account ID"
       attributes:
         type: object
 
@@ -1092,19 +1020,19 @@ definitions:
     properties:
       type:
         type: string
-        description: Resource type 'AccountInfo'
+        description: "Resource type 'AccountInfo'"
       id:
         type: string
-        description: AccountInfo ID
+        description: "AccountInfo ID"
       attributes:
         type: object
         properties:
           firstname:
             type: string
-            description: First name
+            description: "First name"
           lastname:
             type: string
-            description: Last name
+            description: "Last name"
           avatar:
             type: string
             description: 'Base64 avatar image'
@@ -1156,7 +1084,7 @@ definitions:
 
   JWSUnprotectedHeader:
     type: object
-    description: "JWS Unprotected Header"
+    description: "JWS Unprotected Header as defined in RFC 7515"
     properties:
       kid:
         type: string
@@ -1164,7 +1092,7 @@ definitions:
 
   JWSProtectedHeader:
     type: string
-    description: 'JWS Protected Header'
+    description: 'JWS Protected Header as defined in RFC 7515'
 
   serviceLink:
     type: object
@@ -1177,11 +1105,11 @@ definitions:
         description: "ID of resource"
       attributes:
         type: object
-        description: 'Service Link Record as JSON Web Signature (JWS)'
+        description: 'Service Link Record as JSON Web Signature (JWS) as defined in RFC 7515'
         properties:
           payload:
             type: object
-            description: 'JWS Payload. Base64url encoded.'
+            description: 'JWS Payload. Base64url encoded. See MyData Architecture Specifications for more details.'
             properties:
               version:
                 type: string
@@ -1244,7 +1172,7 @@ definitions:
         description: "ID of resource"
       attributes:
         type: object
-        description: 'Service Link Status Record as JSON Web Signature (JWS)'
+        description: 'Service Link Status Record as JSON Web Signature (JWS) as defined in RFC 7515'
         properties:
           header:
             $ref: '#/definitions/JWSUnprotectedHeader'
@@ -1252,7 +1180,7 @@ definitions:
             $ref: '#/definitions/JWSProtectedHeader'
           payload:
             type: object
-            description: 'JWS Payload. Base64url encoded.'
+            description: 'JWS Payload. Base64url encoded. See MyData Architecture Specifications for more details.'
             properties:
               version:
                 type: string
@@ -1301,7 +1229,7 @@ definitions:
         description: "ID of resource"
       attributes:
         type: object
-        description: 'Consent Record as JSON Web Signature (JWS)'
+        description: 'Consent Record as JSON Web Signature (JWS) as defined in RFC 7515'
         properties:
           header:
             $ref: '#/definitions/JWSUnprotectedHeader'
@@ -1309,7 +1237,7 @@ definitions:
             $ref: '#/definitions/JWSProtectedHeader'
           payload:
             type: 'object'
-            description: 'Base64 encoded object containing either Consent Payload of Source Service or Consent Payload of Sink Service. For detailed descriptions of these objects check Models section.'
+            description: 'Base64 encoded object containing either Consent Payload of Source Service or Consent Payload of Sink Service. See MyData Architecture Specifications for more details.'
           signature:
             type: string
             description: "JWS Signature"
@@ -1325,7 +1253,7 @@ definitions:
 
   consentStatusPayload:
     type: object
-    description: 'Consent Status Record Payload'
+    description: 'Consent Status Record Payload. See MyData Architecture Specifications for more details.'
     properties:
       version:
         type: string
@@ -1354,7 +1282,7 @@ definitions:
         description: "ID of resource"
       attributes:
         type: object
-        description: 'Consent Status Record as JSON Web Signature (JWS)'
+        description: 'Consent Status Record as JSON Web Signature (JWS) as defined in RFC 7515'
         properties:
           header:
             $ref: '#/definitions/JWSUnprotectedHeader'
@@ -1392,6 +1320,7 @@ definitions:
         type: string
         description: "ID of resource"
       attributes:
+        description: "See MyData Architecture Specifications for more details."
         type: object
         properties:
           action:
@@ -1417,6 +1346,7 @@ definitions:
 
 
   accountExportResponse:
+    description: "See MyData Architecture Specifications for more details."
     type: object
     properties:
       type:
@@ -1450,11 +1380,11 @@ definitions:
                 description: "ID of resource"
               attributes:
                 type: object
-                description: 'Service Link Record as JSON Web Signature (JWS)'
+                description: 'Service Link Record as JSON Web Signature (JWS) as defined in RFC 7515'
                 properties:
                   payload:
                     type: object
-                    description: 'JWS Payload. Base64url encoded.'
+                    description: 'JWS Payload. Base64url encoded. See MyData Architecture Specifications for more details.'
                     properties:
                       version:
                         type: string
@@ -1505,7 +1435,7 @@ definitions:
                       description: "ID of resource"
                     attributes:
                       type: object
-                      description: 'Consent Record as JSON Web Signature (JWS)'
+                      description: 'Consent Record as JSON Web Signature (JWS) as defined in RFC 7515'
                       properties:
                         header:
                           $ref: '#/definitions/JWSUnprotectedHeader'
@@ -1513,7 +1443,7 @@ definitions:
                           $ref: '#/definitions/JWSProtectedHeader'
                         payload:
                           type: 'object'
-                          description: 'Base64 encoded object containing either Consent Payload of Source Service or Consent Payload of Sink Service. For detailed descriptions of these objects check Models section.'
+                          description: 'Base64 encoded object containing either Consent Payload of Source Service or Consent Payload of Sink Service. See MyData Architecture Specifications for more details.'
                         signature:
                           type: string
                           description: "JWS Signature"
@@ -1521,5 +1451,4 @@ definitions:
                       type: array
                       items:
                         $ref: '#/definitions/consentStatus'
-
 

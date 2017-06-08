@@ -15,21 +15,15 @@ __status__ = "Development"
 import json
 import uuid
 import bcrypt  # https://github.com/pyca/bcrypt/, https://pypi.python.org/pypi/bcrypt/2.0.0
-
-# Import the database object
 from app.app_modules import db
-
-# Import services
 from app.helpers import get_custom_logger, ApiError
 from app.mod_api_auth.controllers import get_account_id_by_api_key, gen_account_api_key
 from app.mod_api_auth.services import delete_entry_from_apikey_sqlite_db
 from app.mod_blackbox.controllers import gen_account_key
-from app.mod_blackbox.services import clear_blackbox_sqlite_db, delete_entry_from_blackbox_sqlite_db
+from app.mod_blackbox.services import delete_entry_from_blackbox_sqlite_db
 from app.mod_database.helpers import get_db_cursor, get_primary_keys_by_account_id, get_slr_ids, \
-    get_slsr_ids, get_cr_ids, get_csr_ids, delete_account_from_database, get_last_slsr_id, get_consent_ids, \
+    get_slsr_ids, get_cr_ids, delete_account_from_database, get_last_slsr_id, get_consent_ids, \
     get_last_consent_id, get_consent_status_id_filter, get_consent_status_ids, get_last_csr_id
-
-# create logger with 'spam_application'
 from app.mod_database.models import AccountInfo, EventLog, ServiceLinkRecord, \
     ServiceLinkStatusRecord, ConsentRecord, ConsentStatusRecord, Account, LocalIdentityPWD, LocalIdentity, Salt
 
@@ -445,7 +439,6 @@ def get_account_infos(account_id=None):
     logger.info("Get AccountInfo objects from database")
     db_entry_list = []
     for id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting AccountInfo with info_id: " + str(id))
         db_entry_dict = get_account_info(account_id=account_id, id=id)
         db_entry_list.append(db_entry_dict)
@@ -635,7 +628,6 @@ def get_event_logs(account_id=None):
     logger.info("Get event_log from database")
     db_entry_list = []
     for id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting event_log with event_log_id: " + str(id))
         db_entry_dict = get_event_log(account_id=account_id, id=id)
         db_entry_list.append(db_entry_dict)
@@ -726,7 +718,6 @@ def account_get_slrs(account_id=None):
     logger.info("Get slrs from database")
     db_entry_list = []
     for id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting slr with slr_id: " + str(id))
         db_entry_dict = account_get_slr(account_id=account_id, slr_id=id)
         db_entry_list.append(db_entry_dict)
@@ -856,7 +847,6 @@ def account_get_slsrs(account_id=None, slr_id=None):
     logger.info("Get slsrs from database")
     db_entry_list = []
     for id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting slsr with account_id: " + str(account_id) + " slr_id: " + str(slr_id) + " slsr_id: " + str(id))
         db_entry_dict = account_get_slsr(account_id=account_id, slr_id=slr_id, slsr_id=id)
         db_entry_list.append(db_entry_dict)
@@ -1129,7 +1119,6 @@ def account_get_crs(surrogate_id="", slr_id="", subject_id="", consent_pair_id="
     cr_list = []
     logger.info("Getting ConsentRecords")
     for entry_id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting ConsentRecord with cr_id: " + str(entry_id))
         db_entry_dict = account_get_cr(cr_id=entry_id, account_id=account_id)
         cr_list.append(db_entry_dict)
@@ -1138,7 +1127,6 @@ def account_get_crs(surrogate_id="", slr_id="", subject_id="", consent_pair_id="
     if consent_pairs:
         logger.info("Getting Consent Record pairs")
         for entry_id in id_list:
-            # TODO: try-except needed?
             logger.info("Getting ConsentRecord with consent_pair_id: " + str(entry_id))
             db_entry_dict = account_get_cr(consent_pair_id=entry_id, account_id=account_id)
             cr_list.append(db_entry_dict)
@@ -1235,7 +1223,6 @@ def account_get_last_cr(surrogate_id="", slr_id="", subject_id="", consent_pair_
     cr_list = []
     logger.info("Getting ConsentRecords")
     for entry_id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting ConsentRecord with cr_id: " + str(entry_id))
         db_entry_dict = account_get_cr(cr_id=entry_id, account_id=account_id)
         cr_list.append(db_entry_dict)
@@ -1244,7 +1231,6 @@ def account_get_last_cr(surrogate_id="", slr_id="", subject_id="", consent_pair_
     if consent_pairs:
         logger.info("Getting Consent Record pairs")
         for entry_id in id_list:
-            # TODO: try-except needed?
             logger.info("Getting ConsentRecord with consent_pair_id: " + str(entry_id))
             db_entry_dict = account_get_cr(consent_pair_id=entry_id, account_id=account_id)
             cr_list.append(db_entry_dict)
@@ -1366,7 +1352,6 @@ def account_get_csrs(account_id=None, consent_id=None, status_id=""):
     logger.info("Get Consent Status Records from database")
     db_entry_list = []
     for entry_id in id_list:
-        # TODO: try-except needed?
         logger.info("Getting Consent Status Record with account_id: " + str(account_id) + " consent_id: " + str(
             consent_id) + " csr_id: " + str(entry_id))
         db_entry_dict = account_get_csr(account_id=account_id, cr_id=consent_id, csr_id=entry_id)

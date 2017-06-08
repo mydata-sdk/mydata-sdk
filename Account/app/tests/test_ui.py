@@ -25,7 +25,7 @@ from app.tests.controller import is_json, validate_json, account_create, default
 from app.tests.schemas.schema_account import schema_account_create, schema_account_auth, schema_account_get, \
     schema_account_info_listing, schema_account_info, schema_account_event_log_listing, schema_account_export
 from app.tests.schemas.schema_authorisation import schema_consent_status_change, schema_give_consent, \
-    schema_consent_listing, schema_consent, schema_consent_status_listing, schema_consent_status
+    schema_consent_listing, schema_consent_status_listing, schema_consent_status
 from app.tests.schemas.schema_error import schema_request_error_detail_as_str, schema_request_error_detail_as_dict
 from app.tests.schemas.schema_service_linking import schema_slr_listing, schema_slr_init, schema_slr_sign, \
     schema_slr_store, schema_slr_status, schema_slr, schema_slr_status_listing

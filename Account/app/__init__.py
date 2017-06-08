@@ -12,7 +12,6 @@ __status__ = "Development"
 """
 
 import sys
-
 from flask import request
 
 reload(sys)
@@ -42,7 +41,6 @@ def create_app(config_filename='config'):
         login_manager.login_view = current_app.config["LOGIN_VIEW"]
         login_manager.login_message = current_app.config["LOGIN_MESSAGE"]
         login_manager.session_protection = current_app.config["SESSION_PROTECTION"]
-        # TODO: Validate next()
 
         # Before each request
         @current_app.before_request
@@ -80,13 +78,11 @@ def create_app(config_filename='config'):
         prefix_api_account = current_app.config["APP_URL_PREFIX"] + "/" + "external"
         prefix_api_service = current_app.config["APP_URL_PREFIX"] + "/" + "internal"
         prefix_api_authorization = current_app.config["APP_URL_PREFIX"] + "/" + "internal"
-        #prefix_api_system = current_app.config["APP_URL_PREFIX"] + "/" + "internal"
 
         # Register blueprint(s)
         current_app.register_blueprint(mod_api_auth, url_prefix=prefix_api_auth)
         current_app.register_blueprint(mod_account_api, url_prefix=prefix_api_account)
         current_app.register_blueprint(mod_service_api, url_prefix=prefix_api_service)
-        #current_app.register_blueprint(mod_system, url_prefix=prefix_api_system)
         current_app.register_blueprint(mod_system)
         current_app.register_blueprint(mod_authorization_api, url_prefix=prefix_api_authorization)
 

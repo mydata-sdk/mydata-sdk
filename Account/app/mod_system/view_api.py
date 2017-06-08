@@ -8,14 +8,7 @@ from flask import current_app
 from flask import json
 from flask import url_for
 from flask_restful import Resource, Api
-import requests
-
-# Import Models
-from werkzeug.routing import BaseConverter
-
 from app.helpers import get_custom_logger, ApiError, make_json_response
-
-# Define the blueprint: 'auth', set its url prefix: app.url/auth
 from app.mod_system.controller import clear_mysql_db, clear_blackbox_db, clear_api_key_db, system_check
 
 mod_system = Blueprint('system', __name__, template_folder='templates')
@@ -26,6 +19,7 @@ logger = get_custom_logger(__name__)
 
 
 class ClearDb(Resource):
+    # TODO: Prevent usage of this functionality
     def get(self):
         """
         Clear Database content

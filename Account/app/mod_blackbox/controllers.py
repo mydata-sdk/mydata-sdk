@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-Minimum viable Key management. NOT FOR PRODUCTION USE.
+Key management module
+This module is meant only for demonstration purposes.
+Module does not provide a secure key store.
+
+THIS MODULE MAY NOT BE USED FOR PRODUCTION.
 
 __author__ = "Jani Yli-Kantola"
 __copyright__ = ""
@@ -12,6 +16,7 @@ __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
 """
+
 import json
 from uuid import uuid4
 from app.helpers import get_custom_logger
