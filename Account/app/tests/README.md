@@ -1,4 +1,4 @@
-# Coverage Reports
+# Tests
 
 This directory contains test cases for MyData Account
 
