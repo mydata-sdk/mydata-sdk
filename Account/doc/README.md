@@ -43,6 +43,7 @@ Uses SQLite database to provide separate data location.
 ### Tests
 
 Test cases for MyData Account can be found from [tests directory](../app/tests)
+
 - SdkTestCase class (in file test_sdk.py) provides test cases for Internal API
 - UiTestCase class (in file test_ui.py) provides test cases for External API
 
