@@ -42,11 +42,18 @@ Uses SQLite database to provide separate data location.
 
 ### Tests
 
-#### Test cases for Internal API
-SdkTestCase class (test_sdk.py) provides test cases for Internal API
+Test cases for MyData Account can be found from [tests directory](../app/tests)
 
-#### Test cases for External API
-UiTestCase class (test_ui.py) provides test cases for External API
+- SdkTestCase class (in file test_sdk.py) provides test cases for Internal API
+- UiTestCase class (in file test_ui.py) provides test cases for External API
+
+#### Test coverage reports
+
+Coverage reports for existing test cases can be found from [coverage-reports directory](../app/tests/coverage-reports)
+
+#### Running the tests
+
+Instructions to run test cases can be found from [deployment instructions](deployment.md)
 
 ## Architecture
 High level description of MyData Account Architecture

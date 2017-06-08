@@ -79,7 +79,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_system_running(self):
+    def test_backend_running(self):
         """
         Test system running
         :return:
@@ -93,7 +93,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_sdk_auth(self):
+    def test_auth_sdk(self):
         """
         SDK authentication
         :return:
@@ -114,7 +114,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_system_routes(self):
+    def test_backend_routes(self):
         """
         Test system running
         :return:
@@ -127,7 +127,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_clear_db_positive(self):
+    def test_clear_db(self):
         """
         Test database clearing
         :return:
@@ -139,7 +139,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_password_too_long(self):
+    def test_account_creation_password_too_long(self):
         """
         Test Account creation. Password too long
         :return:
@@ -155,7 +155,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_password_too_short(self):
+    def test_account_creation_password_too_short(self):
         """
         Test Account creation. Password too short
         :return:
@@ -169,7 +169,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_username_too_long(self):
+    def test_account_creation_username_too_long(self):
         """
         Test Account creation. Username too long
         :return:
@@ -183,7 +183,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_username_too_short(self):
+    def test_account_creation_username_too_short(self):
         """
         Test Account creation. Username too short
         :return:
@@ -197,7 +197,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_firstname_too_long(self):
+    def test_account_creation_firstname_too_long(self):
         """
         Test Account creation. First name too long
         :return:
@@ -211,7 +211,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_firstname_too_short(self):
+    def test_account_creation_firstname_too_short(self):
         """
         Test Account creation. First name too short
         :return:
@@ -225,7 +225,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_lastname_too_long(self):
+    def test_account_creation_lastname_too_long(self):
         """
         Test Account creation. Last name too long
         :return:
@@ -239,7 +239,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_lastname_too_short(self):
+    def test_account_creation_lastname_too_short(self):
         """
         Test Account creation. Last name too short
         :return:
@@ -253,7 +253,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_positive(self):
+    def test_account_creation_positive(self):
         """
         Test Account creation. Positive case
         :return:
@@ -269,13 +269,13 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_create_username_exists(self):
+    def test_account_creation_username_exists(self):
         """
         Test Account creation. Username already exits
         :return:
         """
 
-        account_username, account_password = self.test_account_create_positive()
+        account_username, account_password = self.test_account_creation_positive()
         account_json, account_username, account_password = account_create(username=account_username)
 
         response = self.app.post(self.API_PREFIX_EXTERNAL + '/accounts/', data=account_json, headers=default_headers)
@@ -287,13 +287,13 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_authentication(self):
+    def test_auth_account(self):
         """
         Test user authentication
         :return:
         """
 
-        account_username, account_password = self.test_account_create_positive()
+        account_username, account_password = self.test_account_creation_positive()
 
         request_headers = default_headers
         request_headers['Authorization'] = 'Basic ' + b64encode("{0}:{1}".format(account_username, account_password))
@@ -319,7 +319,7 @@ class UiTestCase(unittest.TestCase):
         :return:
         """
 
-        account_api_key, account_id, account_username, account_password = self.test_account_authentication()
+        account_api_key, account_id, account_username, account_password = self.test_auth_account()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -341,7 +341,7 @@ class UiTestCase(unittest.TestCase):
         :return:
         """
 
-        account_api_key, account_id, account_username, account_password = self.test_account_authentication()
+        account_api_key, account_id, account_username, account_password = self.test_auth_account()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -355,7 +355,7 @@ class UiTestCase(unittest.TestCase):
 
     ##########
     ##########
-    def test_account_authentication_with_deleted_account(self):
+    def test_auth_account_with_deleted_account(self):
         """
         Test user authentication
         :return:
@@ -405,7 +405,7 @@ class UiTestCase(unittest.TestCase):
         :return:
         """
 
-        account_api_key, account_id, account_username, account_password = self.test_account_authentication()
+        account_api_key, account_id, account_username, account_password = self.test_auth_account()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -428,7 +428,7 @@ class UiTestCase(unittest.TestCase):
         :return:
         """
 
-        account_api_key, account_id, account_username, account_password = self.test_account_authentication()
+        account_api_key, account_id, account_username, account_password = self.test_auth_account()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -673,10 +673,10 @@ class UiTestCase(unittest.TestCase):
         """
 
         # Create and Authenticate Account
-        account_api_key, account_id, account_username, account_password = self.test_account_authentication()
+        account_api_key, account_id, account_username, account_password = self.test_auth_account()
 
         # Authenticate Operator-SDK
-        sdk_api_key = self.test_sdk_auth()
+        sdk_api_key = self.test_auth_sdk()
 
         # Authentication for following requests
         request_headers = default_headers

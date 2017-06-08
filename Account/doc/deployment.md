@@ -78,6 +78,11 @@ These instructions are using 'Y3xUcheg' as root password.
 ##### Quit from MySQL shell
 
     quit
+    
+
+#### Run tests (optional)
+
+    python setup.py test
 
 
 #### Create virtual environment
@@ -157,6 +162,11 @@ Before starting make sure that your user belongs to www-data group.
 ##### Quit from MySQL shell
 
     quit
+    
+
+#### Run tests (optional)
+
+    python setup.py test
 
 
 #### Create virtual environment
