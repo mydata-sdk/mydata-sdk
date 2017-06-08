@@ -15,3 +15,8 @@ UiTestCase class (in file test_ui.py) provides test cases for External API
 
 - [External API Coverage report](test_ui/)
 
+## Combined
+Combined coverage report of Internal and External APIs
+
+- [External API Coverage report](combined/)
+
