@@ -11,6 +11,8 @@ For more information see technical specification documents of MyData Architectur
 
 ## Version information
 
+Versions are not backward compatible.
+
 Current version 1.3
  
 ### Version history
