@@ -115,6 +115,13 @@ class Install_CR(Resource):
         # 1) Fetch surrogate_id so we can query our database for slr
         surr_id = crt.get_surrogate_id()
         slr_id = crt.get_slr_id()
+
+        # Verify SLR is Active:
+        if self.helpers.verify_slr_is_active(slr_id) is False:
+            raise DetailedHTTPException(detail={"msg": "SLR not Active",},
+                                        title="Consent Can't be granted with inactive SLR",
+                                        status=403)
+
         debug_log.info("Fetched surr_id({}) and slr_id({})".format(surr_id, slr_id))
 
         slrt = SLR_tool()

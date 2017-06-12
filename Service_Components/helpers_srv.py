@@ -209,6 +209,7 @@ class Helpers:
         debug_log.info("Locking user_id({}) for SLR creation".format(user_id))
         db.close()
 
+
     # TODO: Refactor name to be more meaningful
     def add_surrogate_id_to_code(self, user_id, code, surrogate_id):
         """
@@ -351,6 +352,47 @@ class Helpers:
         if user_id is not None:
             return True
         return False
+
+    def get_lastest_ssr_id(self, slr_id):
+        # Picking first ssr_id since its previous record is "null"
+        record_id = self.query_db(
+            "select slr_id, record_id from ssr_storage where slr_id = %s and prev_record_id = 'null';",
+            (slr_id,))
+        debug_log.info("Picked first SSR_ID in search for latest ({})".format(record_id))
+        # If first ssr_id is in others ssr's previous_record_id field then its not the latest.
+        newer_ssr_id = self.query_db("select slr_id, record_id from ssr_storage where prev_record_id = %s;",
+                                     (record_id,))
+        debug_log.info("Later SSR_ID is ({})".format(newer_ssr_id))
+        # If we don't find newer record but get None, we know we only have one ssr in our chain and latest in it is also the first.
+        if newer_ssr_id is None:
+            return record_id
+        # Else we repeat the previous steps in while loop to go trough all records
+        while True:  # TODO: We probably should see to it that this can't get stuck.
+            try:
+                newer_ssr_id = self.query_db("select slr_id, record_id from ssr_storage where prev_record_id = %s;",
+                                             (record_id,))
+                if newer_ssr_id is None:
+                    debug_log.info("Latest SSR in our chain seems to be ({})".format(newer_ssr_id))
+                    return record_id
+                else:
+                    record_id = newer_ssr_id
+            except Exception as e:
+                debug_log.exception(e)
+                raise e
+
+    def verify_slr_is_active(self, slr_id):
+        ssr_id = self.get_lastest_ssr_id(slr_id)
+        last_ssr_json = self.query_db("select slr_id, json from ssr_storage where record_id = %s;",
+                                     (ssr_id,))
+        debug_log.info("Fetched following JSON for SSR: \n{}".format(last_ssr_json))
+        ssr_json = loads(last_ssr_json)
+        decoded_payload = base_token_tool.decode_payload(ssr_json["attributes"]["payload"])
+        debug_log.info("Decoded SSR payload: \n{}".format(dumps(decoded_payload, indent=2)))
+        status = decoded_payload["sl_status"]
+        if status == "Active":
+            return True
+        return False
+
 
     def verifySurrogate(self, code, surrogate):
         """
