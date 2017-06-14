@@ -22,6 +22,8 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-account
     container_name: account
+    volumes:
+     - "account-key-data:/mydata-sdk-account/app/mod_api_auth/db"
     depends_on:
       - mysql-db
     command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 2
@@ -324,6 +326,7 @@ services:
 
 volumes:
   mysql-data:
+  account-key-data:
   redis-data:
 
 networks:
