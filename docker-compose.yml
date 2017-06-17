@@ -20,12 +20,12 @@ services:
     container_name: mysql-db
     volumes:
       - mysql-data:/var/lib/mysql
-      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-DBinit.sql:/docker-entrypoint-initdb.d/MyDataAccount-DBinit.sql
-      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-UserInit.sql:/docker-entrypoint-initdb.d/MyDataAccount-UserInit.sql
-      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Operator_Components/doc/database/Operator_Components-DBinit.sql:/docker-entrypoint-initdb.d/Operator_Components-DBinit.sql
-      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Components/doc/database/Service_Components-DBinit.sql:/docker-entrypoint-initdb.d/Service_Components-DBinit.sql
-      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Mockup/doc/database/Service_Mockup-DBinit.sql:/docker-entrypoint-initdb.d/Service_Mockup-DBinit.sql
-#      - "./init-db:/docker-entrypoint-initdb.d:ro"
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-DBinit.sql:/docker-entrypoint-initdb.d/MyDataAccount-DBinit.sql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-UserInit.sql:/docker-entrypoint-initdb.d/MyDataAccount-UserInit.sql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Operator_Components/doc/database/Operator_Components-DBinit.sql:/docker-entrypoint-initdb.d/Operator_Components-DBinit.sql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Components/doc/database/Service_Components-DBinit.sql:/docker-entrypoint-initdb.d/Service_Components-DBinit.sql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Mockup/doc/database/Service_Mockup-DBinit.sql:/docker-entrypoint-initdb.d/Service_Mockup-DBinit.sql
+      - "./init-db:/docker-entrypoint-initdb.d:ro"
     environment:
       - MYSQL_ROOT_PASSWORD=Y3xUcheg
       - MYSQL_USER=mydataaccount
@@ -40,6 +40,8 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-account
     container_name: account
+    volumes:
+      - "account-key-data:/mydata-sdk-account/app/mod_api_auth/db"
     depends_on:
       - mysql-db
     command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 2
@@ -50,7 +52,7 @@ services:
       - MYSQL_PASSWORD='wr8gabrA'
       - MYSQL_DB='MyDataAccount'
       - MYSQL_PORT=3306
-      - URL_PREFIX=''
+      - URL_PREFIX='/account/api/v1.3'
 #      - SERVER_NAME=''
 #      - VIRTUAL_HOST=localhost
     ports:
@@ -90,11 +92,11 @@ services:
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
       - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
-      - OPERATOR_ROOT_PATH="/api/1.2"
+      - OPERATOR_ROOT_PATH="/api/1.3"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
       - SERVICE_URL="http://service_components:7000"
-      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://node.registry.sandbox.mydata.fi"
+      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://node.registry.sandbox.koodaacraft.org"
       - VIRTUAL_HOST=localhost.operator
     ports:
       - '5000:5000'
@@ -102,7 +104,7 @@ services:
       - mydata_sdk_demo_network
       - mydata-sandbox-backbone
 
-  service_components:
+  service_component_source:
     build:
       context: .
 #      context: ./Service_Components/
@@ -110,16 +112,18 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Service_Components
-    container_name: service_components
+    container_name: service_component_source
     depends_on:
       - redis
     environment:
+      - IS_SINK=False
+      - IS_SOURCE=True
       - PYTHONUNBUFFERED='true'
       - DATABASE_PATH="./db_Srv.sqlite"
       - MYSQL_HOST='mysql-db'
-      - MYSQL_USER='service'
+      - MYSQL_USER='service_source'
       - MYSQL_PASSWORD='MynorcA'
-      - MYSQL_DB='db_Srv'
+      - MYSQL_DB='db_Srv_Source'
       - MYSQL_PORT=3306
       # Naming this CELERY_BROKER_URL messes things up pretty bad.
       # Issue is discussed here
@@ -129,19 +133,63 @@ services:
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
-      - SERVICE_URL="http://service_mockup:2000"
+      - SERVICE_URL="http://service_mockup_source:2000"
       - OPERATOR_URL="http://operator_components:5000"
-      - SERVICE_ROOT_PATH="/api/1.2"
+      - SERVICE_ROOT_PATH="/api/1.3"
       - SERVICE_CR_PATH="/cr"
       - SERVICE_SLR_PATH="/slr"
-      - VIRTUAL_HOST=localhost.service
+      - VIRTUAL_HOST=localhost.serviceSource
     ports:
       - '7000:7000'
     networks:
       - mydata_sdk_demo_network
       - mydata-sandbox-backbone
 
-  service_mockup:
+
+  service_component_sink:
+    build:
+      context: .
+#      context: ./Service_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Components
+    container_name: service_component_sink
+    depends_on:
+      - redis
+    environment:
+      - IS_SINK=True
+      - IS_SOURCE=False
+      - PYTHONUNBUFFERED='true'
+      - DATABASE_PATH="./db_Srv.sqlite"
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='service_sink'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Srv_Sink'
+      - MYSQL_PORT=3306
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - SERVICE_URL="http://service_mockup_sink:2000"
+      - OPERATOR_URL="http://operator_components:5000"
+      - SERVICE_ROOT_PATH="/api/1.3"
+      - SERVICE_CR_PATH="/cr"
+      - SERVICE_SLR_PATH="/slr"
+      - VIRTUAL_HOST=localhost.serviceSink
+    ports:
+      - '7001:7000'
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+
+
+  service_mockup_source:
     build:
       context: .
 #      context: ./Service_Mockup/
@@ -149,21 +197,50 @@ services:
       args:
         - APP_INSTALL_PATH=/mydata-sdk-components
         - OVERHOLT_APPLICATION_PATH=/Service_Mockup
-    container_name: service_mockup
+    container_name: service_mockup_source
     depends_on:
       - redis
     environment:
       - PYTHONUNBUFFERED='true'
-      - SERVICE_MGMNT_URL="http://service_components:7000"
-      - VIRTUAL_HOST=localhost.srvmockup
+      - SERVICE_MGMNT_URL="http://service_component_source:7000"
+      - VIRTUAL_HOST=localhost.srvmockupSource
       - MYSQL_HOST='mysql-db'
-      - MYSQL_USER='serviceMockup'
+      - MYSQL_USER='MockupSource'
       - MYSQL_PASSWORD='MynorcA'
-      - MYSQL_DB='db_Service_Mockup'
+      - MYSQL_DB='db_Service_Mockup_Source'
       - MYSQL_PORT=3306
+    ports:
+      - '2001:2000'
     networks:
       - mydata_sdk_demo_network
       - mydata-sandbox-backbone
+
+  service_mockup_sink:
+    build:
+      context: .
+#      context: ./Service_Mockup/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Mockup
+    container_name: service_mockup_sink
+    depends_on:
+      - redis
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - SERVICE_MGMNT_URL="http://service_component_sink:7000"
+      - VIRTUAL_HOST=localhost.srvmockupSink
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='MockupSink'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Service_Mockup_Sink'
+      - MYSQL_PORT=3306
+    ports:
+      - '2002:2000' 
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
 
   celery_worker_operator:
     build:
@@ -196,7 +273,7 @@ services:
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
       - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
-      - OPERATOR_ROOT_PATH="/api/1.2"
+      - OPERATOR_ROOT_PATH="/api/1.3"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
       - SERVICE_URL="http://service_components:7000"
@@ -233,7 +310,7 @@ services:
       # Needed in order to run Celery as root.
       - C_FORCE_ROOT="true"
       - MYSQL_HOST='mysql-db'
-      - MYSQL_USER='service'
+      - MYSQL_USER='service'        # Gets the credentials from service that calls the task so works for now, but something to fix
       - MYSQL_PASSWORD='MynorcA'
       - MYSQL_DB='db_Srv'
       - MYSQL_PORT=3306
@@ -241,7 +318,7 @@ services:
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
       - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
-      - OPERATOR_ROOT_PATH="/api/1.2"
+      - OPERATOR_ROOT_PATH="/api/1.3"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
       - SERVICE_URL="http://service_components:7000"
@@ -260,6 +337,7 @@ services:
 
 volumes:
   mysql-data:
+  account-key-data:
   redis-data:
 
 networks:
