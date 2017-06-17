@@ -13,11 +13,11 @@ from Templates import sink_cr_schema, source_cr_schema, csr_schema
 from helpers_srv import validate_json, SLR_tool, CR_tool, Helpers, Sequences
 from srv_tasks import get_AuthToken
 
-api_Service_Mgmnt = Blueprint("api_Service_Mgmnt", __name__)  # TODO Rename this
+api_Authorization_Mgmnt = Blueprint("api_Authorization_Mgmnt", __name__)
 
-CORS(api_Service_Mgmnt)
+CORS(api_Authorization_Mgmnt)
 api = Api()
-api.init_app(api_Service_Mgmnt)
+api.init_app(api_Authorization_Mgmnt)
 
 '''
 
@@ -60,6 +60,8 @@ class Install_CR(Resource):
     def __init__(self):
         super(Install_CR, self).__init__()
         self.helpers = Helpers(current_app.config)
+        self.is_sink = current_app.config["IS_SINK"]
+        self.is_source = current_app.config["IS_SOURCE"]
         self.operator_url = current_app.config["OPERATOR_URL"]
         self.db_path = current_app.config["DATABASE_PATH"]
     @error_handler
@@ -78,9 +80,8 @@ class Install_CR(Resource):
         crt = CR_tool()
         crt.cr = cr_stuff
         role = crt.get_role()
-        errors = []
         sq.task("Verify CR format and mandatory fields")
-        if role == "Source":
+        if role == "Source" and self.is_source:
             debug_log.info("Source CR")
             debug_log.info(dumps(crt.get_CR_payload(), indent=2))
             debug_log.info(type(crt.get_CR_payload()))
@@ -90,9 +91,7 @@ class Install_CR(Resource):
                                                     "validation_errors": errors},
                                             title="Failure in CR validation",
                                             status=400)
-
-
-        else:
+        if role == "Sink" and self.is_sink:
             debug_log.info("Sink CR")
             errors = validate_json(sink_cr_schema, crt.get_CR_payload())
             for e in errors:
@@ -100,6 +99,13 @@ class Install_CR(Resource):
                                                     "validation_errors": errors},
                                             title="Failure in CR validation",
                                             status=400)
+
+        if ((role == "Source" and self.is_source) or (role == "Sink" and self.is_sink)) is False:
+            raise DetailedHTTPException(detail={"msg": "Validating CR format and fields failed."
+                                                       " It is possible CR didn't specify role or that Service is "
+                                                       "configured to be nether sink, source or both"},
+                                        title="Failure in CR validation",
+                                        status=400)
 
         debug_log.info(dumps(crt.get_CR_payload(), indent=2))
         debug_log.info(dumps(crt.get_CSR_payload(), indent=2))
@@ -109,6 +115,13 @@ class Install_CR(Resource):
         # 1) Fetch surrogate_id so we can query our database for slr
         surr_id = crt.get_surrogate_id()
         slr_id = crt.get_slr_id()
+
+        # Verify SLR is Active:
+        if self.helpers.verify_slr_is_active(slr_id) is False:
+            raise DetailedHTTPException(detail={"msg": "SLR not Active",},
+                                        title="Consent Can't be granted with inactive SLR",
+                                        status=403)
+
         debug_log.info("Fetched surr_id({}) and slr_id({})".format(surr_id, slr_id))
 
         slrt = SLR_tool()
@@ -150,27 +163,38 @@ class Install_CR(Resource):
             raise DetailedHTTPException(detail={"msg": "Verifying CSR cr_id == CR cr_id failed",},
                                         title="Failure in CSR verifying",
                                         status=403)
+
+        # # Verify CR before we do intense DB lookups
+        # verify_is_success = crt.verify_cr(slrt.get_cr_keys())
+        # if verify_is_success:
+        #     sq.task("Verify CR is issued by authorized party")
+        #     debug_log.info("CR was verified with key from SLR")
+        # else:
+        #     raise DetailedHTTPException(detail={"msg": "Verifying CR failed",},
+        #                                 title="Failure in CR verifying")
+
+
         # 2) CSR has link to previous CSR
-        prev_csr_id_refers_to_null_as_it_should = crt.get_prev_record_id() == "null"
-        if prev_csr_id_refers_to_null_as_it_should:
+        # If prev csr id is null it means this is first time we handle this CR, thus its the first CSR
+        # Check that previous CSR has not been withdrawn or paused
+        # If previous_id is null this step can be ignored.
+        # Else fetch previous_id from db and check the status.
+        prev_csr_id_refers_to_null = crt.get_prev_record_id() == "null"
+        if prev_csr_id_refers_to_null:
             debug_log.info("prev_csr_id_referred to null as it should.")
         else:
-            # TODO: Check here that the csr chain is intact. and then continue.
+            try:
+                last_csr_state = self.helpers.introspection(crt.get_cr_id_from_csr(), self.operator_url)
+                if last_csr_state in ["Active", "Paused"]:
+                    raise DetailedHTTPException(detail={"msg":"There is existing CR that is active,"
+                                                          " before creating new CR you should change"
+                                                          " status of old accordingly."})
+            except LookupError as e:
+                debug_log.info("Cr_id({}) doesn't have Active status in its last CSR".format(crt.get_cr_id_from_cr()))
             raise DetailedHTTPException(detail={"msg": "Verifying CSR previous_id == 'null' failed",},
                                         title="Failure in CSR verifying",
                                         status=403)
 
-        verify_is_success = crt.verify_cr(slrt.get_cr_keys())
-        if verify_is_success:
-            sq.task("Verify CSR is issued by authorized party")
-            debug_log.info("CSR was verified with key from SLR")
-        else:
-            raise DetailedHTTPException(detail={"msg": "Verifying CSR failed",},
-                                        title="Failure in CSR verifying")
-        # 5) Previous CSR has not been withdrawn
-        # TODO Implement
-        # If previous_id is null this step can be ignored.
-        # Else fetch previous_id from db and check the status.
 
         sq.task("Store CR and CSR")
         store_dict = {
@@ -187,7 +211,7 @@ class Install_CR(Resource):
 
         store_dict["json"] = crt.cr["csr"]
         self.helpers.storeCSR_JSON(store_dict)
-        if role == "Sink":
+        if role == "Sink" and self.is_sink:
             debug_log.info("Requesting auth_token")
             get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, current_app.config)
         return {"status": 200, "msg": "OK"}, 200

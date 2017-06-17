@@ -11,6 +11,14 @@ from flask_restful import Api
 
 import db_handler as db_handler
 
+
+from jwcrypto import jwt, jwk
+from json import dumps, dump, load
+from uuid import uuid4 as guid
+from requests import get, post, patch
+from json import loads
+from core import DetailedHTTPException
+
 # Logging
 debug_log = logging.getLogger("debug")
 
@@ -79,35 +87,57 @@ def register_blueprints(app, package_name, package_path):
     return rv, apis
 
 
-from jwcrypto import jwt, jwk
-from json import dumps, dump, load
-from uuid import uuid4 as guid
-from requests import get, post
-from json import loads
-from core import DetailedHTTPException
+
+
+
+def get_am(current_app, headers):
+    debug_log.info("Creating AccountManagerHandler, got headers:\n{}".format(headers))
+    am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
+    am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
+    am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
+    timeout = current_app.config["TIMEOUT"]
+
+    return AccountManagerHandler(am_url, am_user, am_password, timeout, headers=headers)
 
 class AccountManagerHandler:
-    def __init__(self, account_management_url, account_management_username, account_management_password, timeout):
+    def __init__(self, account_management_url,
+                 account_management_username,
+                 account_management_password,
+                 timeout,
+                 headers):
+        self.headers = headers
         self.username = account_management_username
         self.password = account_management_password  # possibly we don't need this here, does it matter?
         self.url = account_management_url
+        self.user_key = None
+        self.account_id = None
         self.timeout = timeout
         self.endpoint = {
-            "token":        "api/auth/sdk/",
-            "surrogate":    "api/account/{account_id}/service/{service_id}/surrogate/",
-            "sign_slr":     "api/account/{account_id}/servicelink/",
-            "verify_slr":   "api/account/{account_id}/servicelink/verify/",
-            "sign_consent": "api/account/consent/sign/",
-            "consent":      "api/account/{account_id}/servicelink/{source_slr_id}/{sink_slr_id}/consent/",
-            "auth_token":   "api/consent/{sink_cr_id}/authorizationtoken/",
-            "last_csr":     "api/consent/{cr_id}/status/last/",
-            "new_csr":      "api/consent/{cr_id}/status/"} # Works as path to GET missing csr and POST new ones
-        req = get(self.url + self.endpoint["token"], auth=(self.username, self.password), timeout=timeout)
+            "key_sdk":          "account/api/v1.3/internal/auth/sdk/",
+            "verify_user":      "account/api/v1.3/internal/auth/sdk/account/{account_id}/info/",
+            "init_slr_sink":    "account/api/v1.3/internal/accounts/{account_id}/servicelinks/init/sink/",
+            "init_slr_source":  "account/api/v1.3/internal/accounts/{account_id}/servicelinks/init/source/",
+            "surrogate":        "api/account/{account_id}/service/{service_id}/surrogate/",  # Changed
+            "sign_slr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
+            "verify_slr":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/store/",
+            "fetch_slr":        "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/",
+            "fetch_slrs":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/",
+            "store_slr_change": "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/statuses/",
+            "slr_status":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/statuses/last/",
+            "sign_consent":     "api/account/consent/sign/",
+            "consent":          "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{source_slr_id}/{sink_slr_id}/consents/",
+            "fetch_consents":   "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/",
+            "auth_token":       "account/api/v1.3/internal/consents/{sink_cr_id}/authorisationtoken/",
+            "last_csr":         "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/{consent_id}/statuses/last/",
+            "new_csr":          "account/api/v1.3/internal/accounts/{account_id}/consents/{cr_id}/statuses/"}  # Works as path to GET missing csr and POST new ones
 
+
+
+        req = get(self.url + self.endpoint["key_sdk"], auth=(self.username, self.password), timeout=timeout)
         # check if the request for token succeeded
         debug_log.debug("{}  {}  {}".format(req.status_code, req.reason, req.text))
         if req.ok:
-            self.token = loads(req.text)["api_key"]
+            self.token = loads(req.text)["Api-Key-Sdk"]
         else:
             raise DetailedHTTPException(status=req.status_code,
                                         detail={"msg": "Getting account management token failed.",
@@ -116,10 +146,193 @@ class AccountManagerHandler:
 
             # Here could be some code to setup where AccountManager is located etc, get these from ServiceRegistry?
 
+    def url_constructor(self, endpoint="", replace=("", "")):
+        if len(replace[1]) > 0:
+            url = self.url + self.endpoint[endpoint].replace(replace[0], replace[1])
+            debug_log.debug("Constructed url: ".format(url))
+            return url
+        else:
+            url = self.url + self.endpoint[endpoint]
+            debug_log.debug("Constructed url: ".format(url))
+            return url
+
+    def verify_user_key(self, account_id, user_key=None):
+        try:
+            if user_key is None:
+                user_key = self.headers["Api-Key-User"]
+            url = self.url_constructor("verify_user", ("{account_id}", account_id))
+            query = get(url, headers={"Api-Key-Sdk": self.token, "Api-Key-User": user_key}, timeout=self.timeout)
+
+            if query.ok:
+                debug_log.debug("User key verified successfully!")
+                self.user_key = user_key
+                self.account_id = account_id
+                return True
+            else:
+                debug_log.info("User key couldn't be verified.")
+                raise DetailedHTTPException(status=403,
+                                            detail={"msg": "Couldn't authenticate to account with given key."},
+                                            title="Forbidden, invalid or expired auth key.")
+        except KeyError as e:
+            debug_log.debug("Couldn't find user key from headers.")
+            debug_log.exception(e)
+            raise e
+
+    def init_slr(self, code, pop_key=None):
+        debug_log.debug("")
+        def get_link_id():
+            return str(guid())
+
+        template = {
+            "code": code,
+            "data": {
+                "attributes": {
+                    "slr_id": None,
+                }
+            }
+        }
+
+        def init(link_id, template, retry=True):
+            template["data"]["attributes"]["slr_id"] = link_id
+            if pop_key is None:
+                debug_log.debug(
+                    "Filled template for init Source SLR at Account:\n  {}".format(dumps(template, indent=2)))
+                url = self.url_constructor("init_slr_source", ("{account_id}", self.account_id))
+            else:
+                debug_log.info("Pop key is type {} and contains: \n{}".format(type(pop_key), pop_key))
+                template["data"]["attributes"]["pop_key"] = pop_key
+                debug_log.debug("Filled template for init Sink SLR at Account:\n  {}".format(dumps(template, indent=2)))
+                url = self.url_constructor("init_slr_sink", ("{account_id}", self.account_id))
+            query = post(url,
+                         headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                         timeout=self.timeout,
+                         json=template)
+            if query.status_code == 201:
+                return link_id
+            elif query.status_code == 409:
+                debug_log.info("Collision, generating new link_id and retrying.")
+                if retry:
+                    return init(link_id=get_link_id(), template=template, retry=False)
+                raise DetailedHTTPException(title="Couldn't generate unique Service Link ID",
+                                            status=500)
+            else:
+                raise DetailedHTTPException(title="Error Occurred while storing slr_id",
+                                            status=500)
+
+        return init(get_link_id(), template)
+
+    def get_slr(self, slr_id, account_id):
+
+        if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
+            debug_log.error("Account ID mismatch.\n"
+                            "ID '{}' doesn't match with verified id '{}'".format(account_id, self.account_id))
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+
+        debug_log.info("Fetching SLR for link id '{}' that belongs to account '{}'".format(slr_id, account_id))
+        slr = get(self.url + self.endpoint["fetch_slr"]
+                  .replace("{account_id}", account_id)
+                  .replace("{link_id}", slr_id),
+                  headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                  timeout=self.timeout,
+                  )
+        debug_log.info("Request resulted in status {} and content:\n {}".format(slr.status_code, slr.text))
+        if slr.ok:
+            return loads(slr.text)
+        else:
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+
+    def get_slrs(self, account_id):
+
+        if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
+            debug_log.error("Account ID mismatch.\n"
+                            "ID '{}' doesn't match with verified id '{}'".format(account_id, self.account_id))
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+
+        debug_log.info("Fetching SLRs that belongs to account '{}'".format(account_id))
+        slrs = get(self.url + self.endpoint["fetch_slrs"]
+                  .replace("{account_id}", account_id),
+                  headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                  timeout=self.timeout,
+                  )
+        debug_log.info("Request resulted in status {} and content:\n {}".format(slrs.status_code, slrs.text))
+        if slrs.ok:
+            return loads(slrs.text)
+        else:
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLRs for account"},
+                                        title="Not Found")
+
+    def get_surrogate_and_slr_id(self, account_id, service_id):
+        debug_log.info("Fetching surrogate_id and slr_id for account '{}' and service '{}'"
+                       .format(account_id, service_id))
+        slrs = self.get_slrs(account_id=account_id)
+
+        for slr in slrs["data"]:
+            decoded_payload = base_token_tool.decode_payload(slr["attributes"]["payload"])
+            if service_id == decoded_payload["service_id"]:
+                return slr["id"], decoded_payload["surrogate_id"]
+        raise DetailedHTTPException(status=404,
+                                    detail={"msg": "Couldn't find SLR for given service."},
+                                    title="Not Found")
+
+
+
+    def get_last_slr_status(self, slr_id):
+        debug_log.info("Fetching last SSR for id '{}'".format(slr_id))
+        req = get(self.url+self.endpoint["slr_status"]
+                  .replace("{account_id}", self.account_id)
+                  .replace("{link_id}", slr_id),
+                  headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key}, timeout=self.timeout)
+        debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
+        if req.ok:
+            return loads(req.text)
+
+    def get_crs(self, slr_id, account_id, pairs=False):
+
+        if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
+            debug_log.error("Account ID mismatch.\n"
+                            "ID '{}' doesn't match with verified id '{}'".format(account_id, self.account_id))
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+        debug_log.info("Fetching CR's for link id '{}' that belongs to account '{}'".format(slr_id, account_id))
+        query = ""
+        if pairs:
+            query = "?get_consent_pair=true"
+
+        consents = get(self.url + self.endpoint["fetch_consents"]
+                       .replace("{account_id}", account_id)
+                       .replace("{link_id}", slr_id)+query,
+                       headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                       timeout=self.timeout,
+                       )
+        debug_log.info("Request resulted in status {} and content:\n {}".format(consents.status_code, consents.text))
+        if consents.ok:
+            return loads(consents.text)
+        else:
+            if consents.status_code == 404:
+                debug_log.info("Couldn't find consents for the SLR.")
+                return []
+            debug_log.info("Fetching consents failed with: {}"
+                           .format([consents.status_code, consents.reason, consents.text]))
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+
+    def get_cr_pair(self, cr_id):
+        debug_log.info("\nFetching CR pair for CR '{}'".format(cr_id))
+        pass
+
     def get_AuthTokenInfo(self, cr_id):
         req = get(self.url + self.endpoint["auth_token"]
                   .replace("{sink_cr_id}", cr_id),
-                  headers={'Api-Key': self.token}, timeout=self.timeout)
+                  headers={'Api-Key-Sdk': self.token}, timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
         else:
@@ -129,37 +342,42 @@ class AccountManagerHandler:
                                         title=req.reason)
         return templ
 
-    def getSUR_ID(self, service_id, account_id):
-        debug_log.debug(
-            "" + self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
-                                                                                                   service_id))
+    # def getSUR_ID(self, service_id, account_id):
+    #     debug_log.debug(
+    #         "" + self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
+    #                                                                                                service_id))
+    #
+    #     req = get(self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
+    #                                                                                                 service_id),
+    #               headers={'Api-Key-SDK': self.token},
+    #               timeout=self.timeout)
+    #     if req.ok:
+    #         templ = loads(req.text)
+    #     else:
+    #         raise DetailedHTTPException(status=req.status_code,
+    #                                     detail={"msg": "Getting surrogate_id from account management failed.",
+    #                                             "content": req.content},
+    #                                     title=req.reason)
+    #     return templ
 
-        req = get(self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
-                                                                                                    service_id),
-                  headers={'Api-Key': self.token},
-                  timeout=self.timeout)
-        if req.ok:
-            templ = loads(req.text)
-        else:
-            raise DetailedHTTPException(status=req.status_code,
-                                        detail={"msg": "Getting surrogate_id from account management failed.",
-                                                "content": req.content},
-                                        title=req.reason)
-        return templ
-
-    def get_last_csr(self, cr_id):
-        endpoint_url = self.url + self.endpoint["last_csr"].replace("{cr_id}", cr_id)
+    def get_last_csr(self, cr_id, link_id):
+        endpoint_url = self.url + self.endpoint["last_csr"]\
+            .replace("{consent_id}", cr_id)\
+            .replace("{account_id}", self.account_id)\
+            .replace("{link_id}", link_id)
         debug_log.debug("" + endpoint_url)
 
         req = get(endpoint_url,
-                  headers={'Api-Key': self.token},
+                  headers={'Api-Key-Sdk': self.token,
+                           "Api-Key-User": self.user_key},
                   timeout=self.timeout)
+        debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
             templ = loads(req.text)
-            payload = base_token_tool.decode_payload(templ["data"]["attributes"]["csr"]["payload"])
+            payload = base_token_tool.decode_payload(templ["data"]["attributes"]["payload"])
             debug_log.info("Got CSR payload from account:\n{}".format(dumps(payload, indent=2)))
             csr_id = payload["record_id"]
-            return {"csr_id": csr_id}
+            return payload
         else:
             raise DetailedHTTPException(status=req.status_code,
                                         detail={"msg": "Getting last csr from account management failed.",
@@ -167,12 +385,17 @@ class AccountManagerHandler:
                                         title=req.reason)
 
     def create_new_csr(self, cr_id, payload):
-        endpoint_url = self.url + self.endpoint["new_csr"].replace("{cr_id}", cr_id)
-        debug_log.debug("" + endpoint_url)
-        payload = {"data": {"attributes": payload, "type": "ConsentStatusRecord"}}
+        debug_log.info("Issuing new Consent Status Record.")
+        endpoint_url = self.url + self.endpoint["new_csr"]\
+            .replace("{cr_id}", cr_id)\
+            .replace("{account_id}", self.account_id)
+        debug_log.info("POST: {}".format(endpoint_url))
+        payload = {"data": {"attributes": payload, "type": "consent_status_record"}}
         req = post(endpoint_url, json=payload,
-                   headers={'Api-Key': self.token},
+                   headers={'Api-Key-Sdk': self.token,
+                            "Api-Key-User": self.user_key},
                    timeout=self.timeout)
+        debug_log.info("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
             templ = loads(req.text)
             #tool = SLR_tool()
@@ -180,7 +403,7 @@ class AccountManagerHandler:
             debug_log.info("Created CSR:\n{}".format(dumps(templ, indent=2)))
             #csr_id = payload["record_id"]
 
-            return {"csr": templ}
+            return templ
         else:
             raise DetailedHTTPException(status=req.status_code,
                                         detail={"msg": "Creating new csr at account management failed.",
@@ -188,11 +411,13 @@ class AccountManagerHandler:
                                         title=req.reason)
 
     def get_missing_csr(self, cr_id, csr_id):
+        debug_log.debug("Fetching missing CSR's")
         endpoint_url = self.url + self.endpoint["new_csr"].replace("{cr_id}", cr_id)
-        debug_log.debug("" + endpoint_url)
+        debug_log.info("GET: {}".format(endpoint_url))
         payload = {"csr_id": csr_id}
         req = get(endpoint_url, params=payload,
-                   headers={'Api-Key': self.token},
+                  headers={'Api-Key-Sdk': self.token,
+                           "Api-Key-User": self.user_key},
                    timeout=self.timeout)
         if req.ok:
             templ = loads(req.text)
@@ -209,9 +434,10 @@ class AccountManagerHandler:
                                         title=req.reason)
 
     def sign_slr(self, template, account_id):
-        templu = template
-        req = post(self.url + self.endpoint["sign_slr"].replace("{account_id}", account_id), json=templu,
-                   headers={'Api-Key': self.token}, timeout=self.timeout)
+        req = patch(self.url + self.endpoint["sign_slr"]
+                    .replace("{account_id}", self.account_id)
+                    .replace("{link_id}", template["data"]["attributes"]["link_id"]), json=template,
+                    headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key}, timeout=self.timeout)
         debug_log.debug("API token: {}".format(self.token))
         debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
@@ -225,19 +451,55 @@ class AccountManagerHandler:
         debug_log.debug(templ)
         return templ
 
+    def create_ssr(self, surrogate_id, slr_id, sl_status, prev_record_id):
+        allowed_statuses = ["Active", "Withdrawn", "Disabled"]
+        if sl_status not in allowed_statuses:
+            raise TypeError("sl_status must be of type {}".format(allowed_statuses))
+        if prev_record_id is None:
+            raise TypeError("prev_record_id must be defined.")
+
+        payload = {
+            "data": {
+                "type": "ServiceLinkStatusRecord",
+                "attributes": {
+                    "version": "1.3",
+                    "surrogate_id": surrogate_id,
+                    "record_id": str(guid()),
+                    "account_id": self.account_id,
+                    "slr_id": slr_id,
+                    "sl_status": sl_status,
+                    "iat": int(time.time()),
+                    "prev_record_id": prev_record_id
+                },
+            }
+        }
+        req = post(self.url+self.endpoint["store_slr_change"]
+                   .replace("{account_id}", self.account_id)
+                   .replace("{link_id}", slr_id),
+                   json=payload,
+                   headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key}, timeout=self.timeout)
+        debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
+        if req.ok:
+            return loads(req.text)
+        else:
+            raise DetailedHTTPException(title="An Error Has occured on the server. Try again later.",
+                                        status=500,
+                                        detail={"msg": "Failed SLR status change."})
+
+
+
     def verify_slr(self, payload, code, slr, account_id):
         templa = {
             "code": code,
             "data": {
                 "slr": {
-                    "attributes": {
-                        "slr": slr,
-                    },
+                    "attributes": slr,
+                    "id": payload["link_id"],
                     "type": "ServiceLinkRecord",
                 },
                 "ssr": {
                     "attributes": {
-                        "version": "1.2",
+                        "version": "1.3",
                         "surrogate_id": payload["surrogate_id"],
                         "record_id": str(guid()),
                         "account_id": account_id,
@@ -248,20 +510,14 @@ class AccountManagerHandler:
                     },
                     "type": "ServiceLinkStatusRecord"
                 },
-                "surrogate_id": {
-                    "attributes": {
-                        "account_id": "2",
-                        "service_id": payload["service_id"],
-                        "surrogate_id": payload["surrogate_id"]
-                    },
-                    "type": "SurrogateId"
-                }
             }
         }
         debug_log.info("Template sent to Account Manager:")
         debug_log.info(dumps(templa, indent=2))
-        req = post(self.url + self.endpoint["verify_slr"].replace("{account_id}", account_id), json=templa,
-                   headers={'Api-Key': self.token}, timeout=self.timeout)
+        req = post(self.url + self.endpoint["verify_slr"]
+                   .replace("{account_id}", account_id)
+                   .replace("{link_id}", payload["link_id"]), json=templa,
+                   headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key}, timeout=self.timeout)
         return req
 
     def signAndstore(self, sink_cr, sink_csr, source_cr, source_csr, account_id):
@@ -278,21 +534,21 @@ class AccountManagerHandler:
         template = {
             "data": {
                 "source": {
-                    "consentRecordPayload": {
+                    "consent_record_payload": {
                         "type": "ConsentRecord",
                         "attributes": source_cr["cr"]
                     },
-                    "consentStatusRecordPayload": {
+                    "consent_status_record_payload": {
                         "type": "ConsentStatusRecord",
                         "attributes": source_csr,
                     }
                 },
                 "sink": {
-                    "consentRecordPayload": {
+                    "consent_record_payload": {
                         "type": "ConsentRecord",
                         "attributes": sink_cr["cr"],
                     },
-                    "consentStatusRecordPayload": {
+                    "consent_status_record_payload": {
                         "type": "ConsentStatusRecord",
                         "attributes": sink_csr,
                     },
@@ -300,15 +556,15 @@ class AccountManagerHandler:
             },
         }
 
-        slr_id_sink = template["data"]["sink"]["consentRecordPayload"]["attributes"]["common_part"]["slr_id"]
-        slr_id_source = template["data"]["source"]["consentRecordPayload"]["attributes"]["common_part"]["slr_id"]
+        slr_id_sink = template["data"]["sink"]["consent_record_payload"]["attributes"]["common_part"]["slr_id"]
+        slr_id_source = template["data"]["source"]["consent_record_payload"]["attributes"]["common_part"]["slr_id"]
         # print(type(slr_id_source), type(slr_id_sink), account_id)
         debug_log.debug(dumps(template, indent=2))
         req = post(self.url + self.endpoint["consent"].replace("{account_id}", account_id)
                    .replace("{source_slr_id}", slr_id_source).
                    replace("{sink_slr_id}", slr_id_sink),
                    json=template,
-                   headers={'Api-Key': self.token},
+                   headers={'Api-Key-Sdk': self.token, "Api-Key-User": self.user_key},
                    timeout=self.timeout)
         debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
         if req.ok:
@@ -332,7 +588,10 @@ class ServiceRegistryHandler:
             req = get(self.registry_url+service_id)
             service = req.json()
             debug_log.info(service)
-            service = service[0]
+            # TODO: This check is made purely for the reason jsonserver used for developing doesn't wrap json in []
+            # Do we need it in deployment?
+            if isinstance(service, list):
+                service = service[0]
         except Exception as e:
             debug_log.exception(e)
             raise e
@@ -344,7 +603,10 @@ class ServiceRegistryHandler:
             service_id = service_id.encode()
         try:
             service = get(self.registry_url+service_id).json()
-            service = service[0]
+            # TODO: This check is made purely for the reason jsonserver used for developing doesn't wrap json in []
+            # Do we need it in deployment?
+            if isinstance(service, list):
+                service = service[0]
         except Exception as e:
             debug_log.exception(e)
             raise e
@@ -357,6 +619,7 @@ class Helpers:
         self.host = app_config["MYSQL_HOST"]
         self.cert_key_path = app_config["CERT_KEY_PATH"]
         self.keysize = app_config["KEYSIZE"]
+        self.keytype = app_config["KEYTYPE"]
         self.user = app_config["MYSQL_USER"]
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
@@ -382,19 +645,27 @@ class Helpers:
     def get_key(self):
         keysize = self.keysize
         cert_key_path = self.cert_key_path
-        gen3 = {"generate": "RSA", "size": keysize, "kid": self.operator_id}
-        operator_key = jwk.JWK(**gen3)
+        if self.keytype == "RSA":
+            gen3 = {"generate": "RSA", "size": self.keysize, "kid": self.operator_id}
+            protti = {"alg": "RS256"}
+        elif self.keytype == "EC256":
+            gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.operator_id}
+            protti = {"alg": "ES256"}
+        else:  # Defaulting to EC256
+            gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.operator_id}
+            protti = {"alg": "ES256"}
+        service_key = jwk.JWK(**gen3)
         try:
             with open(cert_key_path, "r") as cert_file:
-                operator_key2 = jwk.JWK(**loads(load(cert_file)))
-                operator_key = operator_key2
+                service_key2 = jwk.JWK(**loads(load(cert_file)))
+                service_key = service_key2
         except Exception as e:
             debug_log.error(e)
             with open(cert_key_path, "w+") as cert_file:
-                dump(operator_key.export(), cert_file, indent=2)
-        public_key = loads(operator_key.export_public())
-        full_key = loads(operator_key.export())
-        protti = {"alg": "RS256"}
+                dump(service_key.export(), cert_file, indent=2)
+        public_key = loads(service_key.export_public())
+        full_key = loads(service_key.export())
+
         headeri = {"kid": self.operator_id, "jwk": public_key}
         return {"pub": public_key,
                 "key": full_key,
@@ -407,7 +678,7 @@ class Helpers:
         ##
         return self.change_rs_id_status(rs_id, True)
 
-    # TODO: This should return list, now returns single object.
+    # TODO: This should return list, now returns single object. # Recheck validity
     def get_service_keys(self, surrogate_id):
         """
 
@@ -420,6 +691,19 @@ class Helpers:
 
         debug_log.info("Found keys:\n {}".format(list_of_keys))
         return list_of_keys
+
+    def delete_session(self, code):
+        try:
+            debug_log.info("Deleting session: {}".format(code))
+            db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+            cursor = db.cursor()
+            cursor.execute("DELETE FROM session_store WHERE code=%s ;", (code,))
+            db.commit()
+            cursor.close()
+            debug_log.info("Session {} deleted.".format(code))
+        except Exception as e:
+            debug_log.info("Something went wrong while deleting session {}.".format(code))
+            debug_log.exception(e)
 
     def get_service_key(self, surrogate_id, kid):
         """
@@ -485,13 +769,9 @@ class Helpers:
                 cursor.execute("INSERT INTO session_store (code,json) \
                     VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
                 db.commit()
-                # db.close()
             except IntegrityError as e:
                 debug_log.info("")
                 raise e
-                cursor.execute("UPDATE session_store SET json=%s WHERE code=%s ;", (dumps(DictionaryToStore[key]), key))
-                db.commit()
-                # db.close()
         db.close()
 
     def query_db(self, query, args=()):
@@ -576,7 +856,7 @@ class Helpers:
         # Some of these fields are filled in consent_form.py
         ##
         common_cr = {
-            "version": "1.2",
+            "version": "1.3",
             "cr_id": str(guid()),
             "surrogate_id": sur_id,
             "rs_id": rs_ID,
@@ -602,7 +882,7 @@ class Helpers:
         #  for dataset in consent_form["sink"]["dataset"]]  # 1
         for dataset in consent_form["sink"]["dataset"]:
             for purpose in dataset["purposes"]:
-                _rules.append(purpose)
+                _rules.append(purpose["title"])
 
 
         _rules = list(set(_rules))  # Remove duplicates
@@ -667,6 +947,7 @@ class Helpers:
 
     def gen_csr(self, account_id, consent_record_id, consent_status, previous_record_id):
         _tmpl = {
+            "version": "1.3",
             "record_id": str(guid()),
             "surrogate_id": account_id,
             "cr_id": consent_record_id,
@@ -698,7 +979,13 @@ class Helpers:
                    "pi_id": slr_tool.get_source_cr_id(),  # Resource set id that was assigned in the linked Consent Record
                    }
         key = operator_key
-        header = {"alg": "RS256"}
+
+        if self.keytype == "EC256":
+            header = {"alg": "ES256"}  # TODO: get alg from same place get_key gets it.
+        elif self.keytype == "RSA":
+            header = {"alg": "RS256"}
+        else:  # Defaulting to EC P-256
+            header = {"alg": "ES256"}
         token = jwt.JWT(header=header, claims=payload)
         token.make_signed_token(key)
         return token.serialize()
@@ -717,7 +1004,7 @@ class base_token_tool:
 
 class SLR_tool(base_token_tool):
     def __init__(self):
-        self.slr = {
+        self.slr = {  # TODO: This "example" is really outdated.
             "data": {
                 "source": {
                     "consentRecord": {
@@ -785,14 +1072,12 @@ class SLR_tool(base_token_tool):
 
     def get_SLR_payload(self):
         debug_log.info(dumps(self.slr, indent=2))
-        base64_payload = self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["slr"][
-            "payload"]  # TODO: This is a workaround for structure repetition.
+        base64_payload = self.slr["data"]["service_link_record"]["attributes"]["payload"]
         payload = self.decode_payload(base64_payload)
         return payload
 
     def get_CR_payload(self):
-        base64_payload = self.slr["data"]["source"]["consentRecord"]["attributes"]["cr"]["attributes"]["cr"][
-            "payload"]  # TODO: This is a workaround for structure repetition.
+        base64_payload = self.slr["data"]["consent_record"]["attributes"]["payload"]
         payload = self.decode_payload(base64_payload)
         return payload
 
@@ -823,8 +1108,8 @@ class SLR_tool(base_token_tool):
     def get_source_service_id(self):
         return self.get_CR_payload()["common_part"]["subject_id"]
 
-    def get_sink_service_id(self):
-        return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
+    # def get_sink_service_id(self):
+    #     return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
 
 
 class Sequences:

@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 
 """
-Minimum viable Key management. NOT FOR PRODUCTION USE.
+Key management module
+This module is meant only for demonstration purposes.
+Module does not provide a secure key store.
 
+THIS MODULE MAY NOT BE USED FOR PRODUCTION.
 
 __author__ = "Jani Yli-Kantola"
 __copyright__ = ""
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
@@ -19,16 +22,17 @@ import json
 import os
 import sqlite3
 from jwcrypto import jwk, jws
-
-# create logger with 'spam_application'
-from app.mod_blackbox.helpers import append_description_to_exception, KeyNotFoundError, get_custom_logger, jws_header_fix, \
+from app.helpers import get_custom_logger
+from app.mod_blackbox.helpers import append_description_to_exception, KeyNotFoundError, jws_header_fix, \
     get_current_line_no
 
-logger = get_custom_logger('mod_blackbox_services')
+logger = get_custom_logger(__name__)
 
 DELIMITTER = '/'
-DATABASE = os.path.dirname(os.path.abspath(__file__)) + DELIMITTER + 'blackbox.sqlite'
-#DATABASE = 'blackbox.sqlite'
+DATABASE_BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+DATABASE_DIRECTORY = DELIMITTER + 'db'
+DATABASE_FILE = DELIMITTER + 'blackbox.sqlite'
+DATABASE = DATABASE_BASE_PATH + DATABASE_DIRECTORY + DATABASE_FILE
 
 
 def log_dict_as_json(data=None, pretty=0, lineno=None):
@@ -101,6 +105,16 @@ def get_sqlite_connection():
     else:
         logger.debug("init_db = True")
         init_db = True
+        # If there is no db directory it will be created
+        if DATABASE_DIRECTORY != "./":
+            if not os.path.isdir(DATABASE_DIRECTORY):
+                try:
+                    os.mkdir(DATABASE_DIRECTORY)
+                    print("Creating LOG_PATH: '{}'.".format(DATABASE_DIRECTORY))
+                except IOError:
+                    print("LOG_PATH: '{}' already exists.".format(DATABASE_DIRECTORY))
+                except Exception as e:
+                    print("LOG_PATH: '{}' could not be created. Exception: {}.".format(DATABASE_DIRECTORY, repr(e)))
 
     try:
         connection = sqlite3.connect(DATABASE)
@@ -635,7 +649,7 @@ def jws_verify(jws_object=None, jwk_object=None):
 
 def clear_blackbox_sqlite_db():
     """
-    Initializes SQLite database.
+    Clears SQLite database.
 
     :param connection: Database connection object
     :return: Database connection object
@@ -647,7 +661,7 @@ def clear_blackbox_sqlite_db():
         logger.error('get_sqlite_connection: ' + repr(exp))
         raise
 
-    sql_query = '''DELETE FROM account_keys WHERE account_id > 3;'''
+    sql_query = '''DELETE FROM account_keys;'''
 
     try:
         logger.info('Clearing database')
@@ -663,4 +677,44 @@ def clear_blackbox_sqlite_db():
         connection.commit()
         connection.close()
         logger.info('Database cleared')
+        return True
+
+
+def delete_entry_from_blackbox_sqlite_db(account_id=None):
+    """
+    Delete entry from Blackbox database.
+
+    :return: Database connection object
+    """
+    if account_id is None:
+        raise AttributeError("Provide account_id as parameter")
+
+    try:
+        account_id = str(account_id)
+    except Exception:
+        raise TypeError("account_id MUST be str, not " + str(type(account_id)))
+
+    try:
+        connection = get_sqlite_connection()
+    except Exception as exp:
+        exp = append_description_to_exception(exp=exp, description='Could not get database connection')
+        logger.error('get_sqlite_connection: ' + repr(exp))
+        raise
+
+    sql_query = "DELETE FROM account_keys WHERE account_id='%s';" % (account_id)
+
+    try:
+        logger.info('Deleting entry')
+        logger.debug('Executing: ' + str(sql_query))
+        connection.execute(sql_query)
+    except Exception as exp:
+        exp = append_description_to_exception(exp=exp, description='Could not delete entry from database')
+        logger.error('connection.execute(sql): ' + repr(exp))
+        connection.rollback()
+        connection.close()
+        raise
+    else:
+        connection.commit()
+        connection.close()
+        logger.info('Entry deleted')
         return True

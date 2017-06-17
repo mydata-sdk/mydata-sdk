@@ -278,6 +278,7 @@ sink_cr_schema = {
 }
 
 csr_schema = {
+  "version": "1.3",
   "iat": 1471857663,
   "prev_record_id": "null",
   "cr_id": "833dbc2b-bb11-425c-9c66-42b4c104f8da",

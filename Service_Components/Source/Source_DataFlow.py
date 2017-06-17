@@ -46,9 +46,9 @@ class DataRequest(Resource):
         sq.task("Fetch PoP from authorization header")
         authorization = request.headers["Authorization"]
         debug_log.info(authorization)
-        pop_h = pop_handler(token=authorization.split(" ")[1]) # TODO: Logic to pick up PoP
+        pop_h = pop_handler(token=authorization.split(" ")[1])  # TODO: Logic to pick up PoP, this TODO needs clarification.
         sq.task("Fetch at field from PoP")
-        decoded_pop_token = loads(pop_h.get_at())
+        decoded_pop_token = loads(pop_h.get_decoded_token())
         debug_log.info("Token verified state should be False here, it is: {}".format(pop_h.verified))
 
         debug_log.info(type(decoded_pop_token))
@@ -84,43 +84,30 @@ class DataRequest(Resource):
 
         sq.task("Validate Request(PoP token)")
         pop_h = pop_handler(token=authorization.split(" ")[1], key=pop_key)
-        decoded_pop_token = loads(pop_h.get_at())  # This step affects verified state of object.
+        decoded_pop_token = loads(pop_h.get_decoded_token())  # This step affects verified state of object.
         debug_log.info("Token verified state should be True here, it is: {}".format(pop_h.verified))
         # Validate Request
         if pop_h.verified is False:
             raise ValueError("Request verification failed.")
 
-
-        # Check that related Consent Record exists with the same rs_id # TODO: Bunch of these comments may be outdated, check them all.
-        # Check that auth_token_issuer_key field of CR matches iss-field in Authorization token
-        # Check Token's integrity against the signature
-        # Check Token's validity period includes time of data request
-        # Check Token's "aud" field includes the URI to which the data request was made
-        # Token validated.
-
-        # Validate request # TODO: Check that we fill this properly, we should though.
-        # Check that request was signed with the key in the Token
-        # Request validated.
-
-        # Validate related CR # TODO: Recheck what this should hold and compare what we do.
-        # Validate the related Consent Record as defined in MyData Authorisation Specification
-        # CR Validated.
-
-        # OPT: Introspection # TODO: Implement
-            # introspect = is_introspection_necessary()
         try:
             sq.task("Intropection")
-            self.helpers.introspection(cr_id, self.operator_url)
-            sq.task("Return requested data.")
-            return {"Some test data": "like so", "and it continues": "like so!"}
+            status_of_last_csr = self.helpers.introspection(cr_id, self.operator_url)
+            if status_of_last_csr == "Active":
+                # Process request
+                sq.task("Return requested data.")
+                # This is where the data requested gets fetched and returned.
+                return {"Some test data": "like so", "and it continues": "like so!"}
+            else:
+                # TODO Write somewhere that this returns status of last csr source has verified to Sink
+                debug_log.info("Status of last csr is: {}".format(status_of_last_csr))
+                return {"error message is": "appropriate.", "csr_status": status_of_last_csr}
+
         except LookupError as e:
             debug_log.exception(e)
             return {"error message is": "appropriate."}
-        # Process request
-        # Return.
 
-        status = {"status": "running", "service_mode": "Source"}
-        return status
+        # Return.
 
 api.add_resource(DataRequest, '/datarequest')
 api.add_resource(Status, '/init')

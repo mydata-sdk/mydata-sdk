@@ -33,16 +33,25 @@ class Helpers:
         self.host = app_config["MYSQL_HOST"]
         self.cert_key_path = app_config["CERT_KEY_PATH"]
         self.keysize = app_config["KEYSIZE"]
+        self.keytype = app_config["KEYTYPE"]
         self.user = app_config["MYSQL_USER"]
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
         self.port = app_config["MYSQL_PORT"]
         self.service_id = app_config["SERVICE_ID"]
 
+
     def get_key(self):
-        keysize = self.keysize
         cert_key_path = self.cert_key_path
-        gen3 = {"generate": "RSA", "size": keysize, "kid": self.service_id}
+        if self.keytype == "RSA":
+            gen3 = {"generate": "RSA", "size": self.keysize, "kid": self.service_id}
+            protti = {"alg": "RS256"}
+        elif self.keytype == "EC256":
+            gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.service_id}
+            protti = {"alg": "ES256"}
+        else:  # Defaulting to EC256
+            gen3 = {"generate": "EC", "cvr": "P-256", "kid": self.service_id}
+            protti = {"alg": "ES256"}
         service_key = jwk.JWK(**gen3)
         try:
             with open(cert_key_path, "r") as cert_file:
@@ -54,7 +63,7 @@ class Helpers:
                 dump(service_key.export(), cert_file, indent=2)
         public_key = loads(service_key.export_public())
         full_key = loads(service_key.export())
-        protti = {"alg": "RS256"}
+
         headeri = {"kid": self.service_id, "jwk": public_key}
         return {"pub": public_key,
                 "key": full_key,
@@ -114,28 +123,57 @@ class Helpers:
                 db.close()
                 return None
 
-    def storeJSON(self, DictionaryToStore):
+    def store_slr_JSON(self, json, slr_id, surrogate_id):
         """
         Store SLR into database
-        :param DictionaryToStore: Dictionary in form {"key" : "dict_to_store"}
-        :return: 
+        :param surrogate_id:
+        :param slr_id:
+        :param json:
+        :return:
         """
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info("Storing dictionary:")
-        debug_log.info(DictionaryToStore)
-        for key in DictionaryToStore:
-            debug_log.info("Storing key:")
-            debug_log.info(key)
-            try:
-                cursor.execute("INSERT INTO storage (surrogate_id,json) \
-                    VALUES (%s, %s)", (key, dumps(DictionaryToStore[key])))
-                db.commit()
-            except IntegrityError as e:
-                cursor.execute("UPDATE storage SET json=%s WHERE surrogate_id=%s ;",
-                               (dumps(DictionaryToStore[key]), key))
-                db.commit()
+        debug_log.info("Storing SLR '{}' belonging to surrogate_id '{}' with content:\n {}"
+                       .format(slr_id, surrogate_id, json))
+        cursor.execute("INSERT INTO storage (surrogate_id,json,slr_id) \
+            VALUES (%s, %s, %s)", (surrogate_id, dumps(json), slr_id))
+        db.commit()
         db.close()
+
+    def store_ssr_JSON(self, json):
+        """
+        Store SSR into database
+        :param record_id:
+        :param surrogate_id:
+        :param slr_id:
+        :param json:
+        :return:
+        """
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+        cursor = db.cursor()
+
+        decoded_payload = base_token_tool.decode_payload(json["attributes"]["payload"])
+        record_id = decoded_payload["record_id"]
+        surrogate_id = decoded_payload["surrogate_id"]
+        slr_id = decoded_payload["slr_id"]
+
+
+        debug_log.info("Storing SSR '{}' momentarily.\n {}".format(record_id, decoded_payload))
+        prev_id = decoded_payload["prev_record_id"]
+        if prev_id != "NULL":
+            debug_log.info("Verifying SSR chain is unbroken.\n Looking up previous record '{}'".format(prev_id))
+            prev_record = self.query_db("select record_id, json from ssr_storage where record_id = %s", (prev_id,))
+            if prev_record is None:
+                raise TypeError("Previous record_id is not found")  # Todo We make this basic check but is it enough?
+            debug_log.info("Found record: \n{}".format(prev_record))
+
+        debug_log.info("Storing SSR '{}' belonging to surrogate_id '{}' with content:\n {}"
+                       .format(record_id, surrogate_id, json))
+        cursor.execute("INSERT INTO ssr_storage (surrogate_id,json,record_id,slr_id,prev_record_id) \
+            VALUES (%s, %s, %s, %s, %s)", (surrogate_id, dumps(json), record_id, slr_id, prev_id))
+        db.commit()
+        db.close()
+
 
     def storeToken(self, DictionaryToStore):
         """
@@ -156,42 +194,50 @@ class Helpers:
                 db.commit()
         db.close()
 
-    def storeCode(self, code):
+    def lock_user(self, user_id):
         """
-        Store generated code into database
-        :param code: 
+        Store user into DB while we are linking, preventing further service link attempts until previous one is finished.
+        :param code: {code: "{}{}".format("!", code)}
         :return: None
         """
+        # TODO: Refactor DB name from codes to userlock or something like that.
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        code_key = list(code.keys())[0]
-        code_value = code[code_key]
-        cursor.execute("INSERT INTO codes (ID,code) \
-            VALUES (%s, %s)", (code_key, code_value))
+        cursor.execute("INSERT INTO session_store (ID,code,surrogate_id) \
+            VALUES (%s, %s, %s)", (user_id, user_id, user_id))
         db.commit()
-        debug_log.info("Storing code(key,value): {}, {}".format(code_key, code_value))
+        debug_log.info("Locking user_id({}) for SLR creation".format(user_id))
         db.close()
 
-    def add_surrogate_id_to_code(self, code, surrogate_id):
+
+    # TODO: Refactor name to be more meaningful
+    def add_surrogate_id_to_code(self, user_id, code, surrogate_id):
         """
         Link code with a surrogate_id
         :param code: 
         :param surrogate_id: 
         :return: None
         """
+
+        '''
+        For 1.3 Service service management doesn't generate the code.
+        The problem this creates is that we used to use code to prevent starting the session several times over.
+
+        TODO:
+          Write written description how we lock user from initiating several SLR requests at once.
+
+          1. Check if user_id is in locked table,
+          2. When we know user starts SLR flow, add the user_id into a db that we check to see if we can start
+
+        '''
+
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info("Code we look up is {}".format(code))
-        code = self.query_db("select * from codes where ID = %s;", (code,))
-        debug_log.info("Result for query: {}".format(code))
-        code_from_db = code
-        code_is_valid_and_unused = "!" in code_from_db
-        if (code_is_valid_and_unused):
-            cursor.execute("UPDATE codes SET code=%s WHERE ID=%s ;", (surrogate_id, code))
-            db.commit()
-            db.close()
-        else:
-            raise Exception("Invalid code")
+        cursor.execute("UPDATE session_store SET code=%s WHERE ID=%s ;", (code, user_id))
+        cursor.execute("UPDATE session_store SET surrogate_id=%s WHERE ID=%s ;", (surrogate_id, user_id))
+        db.commit()
+        db.close()
+
 
     def get_cr_json(self, cr_id):
         # TODO: query_db is not really optimal when making two separate queries in row.
@@ -282,16 +328,71 @@ class Helpers:
         debug_log.info("CR has been validated.")
         return loads(combined_decoded)
 
-    def verifyCode(self, code):
+    def delete_session(self, code):
+        try:
+            debug_log.info("Deleting session: {}".format(code))
+            db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+            cursor = db.cursor()
+            cursor.execute("DELETE FROM session_store WHERE code=%s ;", (code,))
+            db.commit()
+            cursor.close()
+            debug_log.info("Session {} deleted.".format(code))
+        except Exception as e:
+            debug_log.info("Something went wrong while deleting session {}.".format(code))
+            debug_log.exception(e)
+
+    def check_lock(self, user_id):
         """
         Verify that code is found in database
-        :param code: 
+        :param user_id:
         :return: Boolean True if code is found in db. 
         """
-        code = self.query_db("select * from codes where ID = %s;", (code,))
-        if code is not None:
+        # TODO: Refactor db names
+        user_id = self.query_db("select * from session_store where ID = %s;", (user_id,))
+        if user_id is not None:
             return True
         return False
+
+    def get_lastest_ssr_id(self, slr_id):
+        # Picking first ssr_id since its previous record is "null"
+        record_id = self.query_db(
+            "select slr_id, record_id from ssr_storage where slr_id = %s and prev_record_id = 'null';",
+            (slr_id,))
+        debug_log.info("Picked first SSR_ID in search for latest ({})".format(record_id))
+        # If first ssr_id is in others ssr's previous_record_id field then its not the latest.
+        newer_ssr_id = self.query_db("select slr_id, record_id from ssr_storage where prev_record_id = %s;",
+                                     (record_id,))
+        debug_log.info("Later SSR_ID is ({})".format(newer_ssr_id))
+        # If we don't find newer record but get None, we know we only have one ssr in our chain and latest in it is also the first.
+        if newer_ssr_id is None:
+            return record_id
+        # Else we repeat the previous steps in while loop to go trough all records
+        while True:  # TODO: We probably should see to it that this can't get stuck.
+            try:
+                newer_ssr_id = self.query_db("select slr_id, record_id from ssr_storage where prev_record_id = %s;",
+                                             (record_id,))
+                if newer_ssr_id is None:
+                    debug_log.info("Latest SSR in our chain seems to be ({})".format(newer_ssr_id))
+                    return record_id
+                else:
+                    record_id = newer_ssr_id
+            except Exception as e:
+                debug_log.exception(e)
+                raise e
+
+    def verify_slr_is_active(self, slr_id):
+        ssr_id = self.get_lastest_ssr_id(slr_id)
+        last_ssr_json = self.query_db("select slr_id, json from ssr_storage where record_id = %s;",
+                                     (ssr_id,))
+        debug_log.info("Fetched following JSON for SSR: \n{}".format(last_ssr_json))
+        ssr_json = loads(last_ssr_json)
+        decoded_payload = base_token_tool.decode_payload(ssr_json["attributes"]["payload"])
+        debug_log.info("Decoded SSR payload: \n{}".format(dumps(decoded_payload, indent=2)))
+        status = decoded_payload["sl_status"]
+        if status == "Active":
+            return True
+        return False
+
 
     def verifySurrogate(self, code, surrogate):
         """
@@ -300,7 +401,7 @@ class Helpers:
         :param surrogate: surrogate_id
         :return: Boolean True if surrogate_id matches code
         """
-        code = self.query_db("select * from codes where ID = %s AND code = %s;", (code, surrogate))
+        code = self.query_db("select * from session_store where code = %s AND surrogate_id = %s;", (code, surrogate))
         if code is not None:
             # TODO: Could we remove code and surrogate_id after this check to ensure they wont be abused later.
             return True
@@ -428,7 +529,8 @@ class Helpers:
         # Get our latest csr_id
 
         # We send cr_id to Operator for inspection.
-        req = get(operator_url + "/api/1.2/cr" + "/introspection/{}".format(cr_id))
+        # TODO: Where do we get these paths?
+        req = get(operator_url + "/api/1.3/cr" + "/introspection/{}".format(cr_id))
         debug_log.info(req.status_code)
         debug_log.info(req.content)
         if req.ok:
@@ -438,11 +540,13 @@ class Helpers:
             debug_log.info("Comparing our latest csr_id ({}) to ({})".format(latest_csr_id, csr_id))
             if csr_id == latest_csr_id:
                 debug_log.info("Verified we have latest csr.")
-                return
+                status = self.query_db("select cr_id, consent_status from csr_storage where csr_id = %s;"
+                                       , (latest_csr_id,))
+                return status
             else:
                 debug_log.info("Our csr({}) is outdated!".format(latest_csr_id))
                 req = get(
-                    operator_url + "/api/1.2/cr" + "/consent/{}/missing_since/{}".format(cr_id, latest_csr_id))
+                    operator_url + "/api/1.3/cr" + "/consent/{}/missing_since/{}".format(cr_id, latest_csr_id))
                 if req.ok:
                     decode_payload = base_token_tool.decode_payload
                     content = loads(req.content)
@@ -467,24 +571,21 @@ class Helpers:
                         }
                         debug_log.info("Storing CSR: \n{}".format(dumps(store_dict, indent=2)))
                         self.storeCSR_JSON(store_dict)
-                    debug_log.info("Stored missing csr's to DB")
+                    debug_log.info("Stored any missing csr's to DB")
                     latest_csr_id = self.get_latest_csr_id(cr_id)
                     status = self.query_db("select cr_id, consent_status from csr_storage where csr_id = %s;"
                                            , (latest_csr_id,))
                     debug_log.info("Our latest csr id now ({}) with status ({})".format(latest_csr_id, status))
-                    if status == "Active":
-                        debug_log.info("Introspection done successfully.")
-                    else:
-                        debug_log.info("Introspection failed.")
-                        raise LookupError("Introspection failed.")
 
+                    debug_log.info("Introspection done successfully.")
+                    return status
 
                 else:
                     raise ValueError("Request to get missing csr's failed with ({}) and reason ({}), content:\n{} "
                                      .format(req.status_code, req.reason, dumps(loads(req.content), indent=2)))
 
         else:
-            raise LookupError("Unable to perform introspect.")
+            raise LookupError("Unable to perform introspection.")
 
     def validate_request_from_ui(self, cr, data_set_id, rs_id):
         debug_log.info("CR passed to validate_request_from_ui:")
@@ -615,6 +716,7 @@ class SLR_tool(base_token_tool):
     def __init__(self):
         # Here you can see the structure this tool handles
         # Do note this default value should be re-assigned before use
+        # TODO: This "example" is really outdated.
         self.slr = {"code": "486b01cb-518a-4838-be63-624f0d86a2a1",
                     "data": {
                         "surrogate_id": "e15053fd-0808-4125-9acf-f0647d62a2bb_486b01cb-518a-4838-be63-624f0d86a2a1",
@@ -682,13 +784,14 @@ class SLR_tool(base_token_tool):
                     }
 
     def get_SLR_payload(self):
-        base64_payload = self.slr["data"]["slr"]["attributes"]["slr"]["payload"]
+        debug_log.info("SLR in tool is:\n {}".format(self.slr))
+        base64_payload = self.slr["attributes"]["payload"]
         debug_log.info("Decoding SLR payload:")
         payload = self.decode_payload(base64_payload)
         return payload
 
     def get_SSR_payload(self):
-        base64_payload = self.slr["data"]["ssr"]["attributes"]["ssr"]["payload"]
+        base64_payload = self.slr["attributes"]["payload"]
         debug_log.info("Decoding SSR payload:")
         payload = self.decode_payload(base64_payload)
         return payload
@@ -716,12 +819,12 @@ class CR_tool(base_token_tool):
         }
 
     def get_CR_payload(self):
-        base64_payload = self.cr["cr"]["attributes"]["cr"]["payload"]
+        base64_payload = self.cr["cr"]["payload"]
         payload = self.decode_payload(base64_payload)
         return payload
 
     def get_CSR_payload(self):
-        base64_payload = self.cr["csr"]["attributes"]["csr"]["payload"]
+        base64_payload = self.cr["csr"]["payload"]
         payload = self.decode_payload(base64_payload)
         return payload
 
@@ -784,7 +887,7 @@ class CR_tool(base_token_tool):
         for key in keys:
             cr_jwk = jwk.JWK(**key)
             cr_jws = jws.JWS()
-            cr = self.cr["cr"]["attributes"]["cr"]
+            cr = self.cr["cr"]
             cr_jws.deserialize(dumps(cr))
 
             try:
@@ -802,7 +905,7 @@ class CR_tool(base_token_tool):
         for key in keys:
             cr_jwk = jwk.JWK(**key)
             csr_jws = jws.JWS()
-            csr = self.cr["csr"]["attributes"]["csr"]
+            csr = self.cr["csr"]
             csr_jws.deserialize(dumps(csr))
             try:
                 csr_jws.verify(cr_jwk)

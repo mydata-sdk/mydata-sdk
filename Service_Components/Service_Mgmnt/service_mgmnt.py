@@ -7,9 +7,9 @@ from base64 import urlsafe_b64decode as decode
 from json import loads, dumps
 from uuid import uuid4 as guid
 
-from flask import request, abort, Blueprint, current_app
+from flask import request, abort, Blueprint, current_app, redirect
 from flask_cors import CORS
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 from jwcrypto import jws, jwk
 from requests import post
 
@@ -28,7 +28,6 @@ sq = Sequences("Service_Components Mgmnt")
 
 '''
 
-
 '''
 
 
@@ -44,125 +43,113 @@ def timeme(method):
     return wrapper
 
 
-class GenCode(Resource):
+class GenerateSurrogateId(Resource):
     def __init__(self):
-        super(GenCode, self).__init__()
-        self.helpers = Helpers(current_app.config)
-        self.storeCode = self.helpers.storeCode
-
-    @error_handler
-    def get(self):
-        code_storage = None
-        try:
-            sq.task("Generate code")
-            code = str(guid())
-            code_storage = {code: "{}{}".format("!", code)}
-            sq.task("Store code in db")
-            self.storeCode(code_storage)
-            sq.reply_to("Operator_Components Mgmnt", "Returning code")
-            return {'code': code}
-        except Exception as e:
-            if code_storage is None:
-                code_storage = "code json structure is broken."
-            raise DetailedHTTPException(exception=e,
-                                        detail={"msg": "Most likely storing code failed.", "code_json": code_storage},
-                                        title="Failure in GenCode endpoint",
-                                        trace=traceback.format_exc(limit=100).splitlines())
-
-
-class UserAuthenticated(Resource):
-    def __init__(self):
-        super(UserAuthenticated, self).__init__()
+        super(GenerateSurrogateId, self).__init__()
         keysize = current_app.config["KEYSIZE"]
         cert_key_path = current_app.config["CERT_KEY_PATH"]
         self.helpers = Helpers(current_app.config)
         self.service_key = self.helpers.get_key()
-
+        self.is_sink = current_app.config["IS_SINK"]
+        self.is_source = current_app.config["IS_SOURCE"]
         self.service_url = current_app.config["SERVICE_URL"]
         self.operator_url = current_app.config["OPERATOR_URL"]
+        self.lock_wait_time = current_app.config["LOCK_WAIT_TIME"]
 
 
     @timeme
     @error_handler
     def post(self):
         try:
+            # TODO: Verify this requests comes from Service Mockup(Is this our responsibility?)
+            # This is now the point we want to double check that similar flow is not going on already for said user.
             debug_log.info("UserAuthenticated class, method post got json:")
             debug_log.info(request.json)
             user_id = request.json["user_id"]
             code = request.json["code"]
+            operator_id = request.json["operator_id"]
 
-            sq.task("Generate surrogate_id.")
-            surrogate_id = "{}_{}".format(str(guid()), code)
+            sq.task("Checking if user_id is locked already.")
+            user_is_locked = self.helpers.check_lock(user_id)
+            if user_is_locked:
+                time.sleep(self.lock_wait_time)
+                user_is_locked = self.helpers.check_lock(user_id)
+            if user_is_locked:
+                return DetailedHTTPException(status=503,
+                                             detail={"msg": "Another SLR linking is in process, please try again once "
+                                                            "linking is over"},
+                                             title="User_id locked for SLR creation.")
+            else:
+                sq.task("Locking user_id.")
+                self.helpers.lock_user(user_id)
 
-            sq.task("Link code to generated surrogate_id")
-            self.helpers.add_surrogate_id_to_code(request.json["code"], surrogate_id)
-            data = {"surrogate_id": surrogate_id, "code": request.json["code"],
-                    "token_key": self.service_key["pub"]}
+                sq.task("Generate surrogate_id.")
+                # TODO: Some logic to surrogate_id's?
+                # code as part of surrogate_id is practically for debugging reasons and serves no other purpose
+                surrogate_id = "{}_{}".format(operator_id, code)
 
-            sq.send_to("Service_Components", "Send surrogate_id to Service_Mockup")
-            endpoint = "/api/1.2/slr/link"
-            content_json = {"code": code, "surrogate_id": surrogate_id}
-            result_service = post("{}{}".format(self.service_url, endpoint), json=content_json)
-            if not result_service.ok:
-                raise DetailedHTTPException(status=result_service.status_code,
-                                            detail={
-                                                "msg": "Something went wrong while posting to Service_Components for /link",
-                                                "Error from Service_Components": loads(result_service.text)},
-                                            title=result_service.reason)
+                sq.task("Link code to generated surrogate_id")
+                self.helpers.add_surrogate_id_to_code(user_id, request.json["code"], surrogate_id)
 
-            sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
-            endpoint = "/api/1.2/slr/link"
-            result = post("{}{}".format(self.operator_url, endpoint), json=data)
-            debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
-            if not result.ok:
-                raise DetailedHTTPException(status=result.status_code,
-                                            detail={
-                                                "msg": "Something went wrong while posting to Operator_SLR for /link",
-                                                "Error from Operator_SLR": loads(result.text)},
-                                            title=result.reason)
-
+                sq.send_to("Service_Mockup", "Send surrogate_id to Service_Mockup")
+                content_json = {"code": code, "surrogate_id": surrogate_id}
+                return content_json
         except DetailedHTTPException as e:
+            self.helpers.delete_session(code)
             e.trace = traceback.format_exc(limit=100).splitlines()
             raise e
         except Exception as e:
+            self.helpers.delete_session(code)
             raise DetailedHTTPException(exception=e,
                                         detail="Something failed in generating and delivering Surrogate_ID.",
                                         trace=traceback.format_exc(limit=100).splitlines())
 
 
-class SignInRedirector(Resource):
+class StartServiceLinking(Resource):
     def __init__(self):
-        super(SignInRedirector, self).__init__()
-        self.service_url = current_app.config["SERVICE_URL"]
+        super(StartServiceLinking, self).__init__()
         self.helpers = Helpers(current_app.config)
+        self.service_key = self.helpers.get_key()
+        self.is_sink = current_app.config["IS_SINK"]
+        self.is_source = current_app.config["IS_SOURCE"]
+        self.service_url = current_app.config["SERVICE_URL"]
+        self.operator_url = current_app.config["OPERATOR_URL"]
+        self.lock_wait_time = current_app.config["LOCK_WAIT_TIME"]
 
-    @error_handler
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('code', type=str, help='session code')
+        self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
+        self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
+        self.parser.add_argument('surrogate_id', type=str, help="surrogate ID")
+        #self.parser.add_argument('service_id', type=str, help="Service's ID")  # Seems unnecessary to the flow.
+
     def post(self):
-        debug_log.info("SignInRedisrector class, method post got json:")
-        debug_log.info(request.json)
-        code = request.json
-
-        sq.task("Verify code from Operator_Components")
-        if self.helpers.verifyCode(code["code"]):
-            try:
-                sq.send_to("Service_Components", "Redirect login to Service_Components")
-                endpoint = "/api/1.2/slr/login"
-                result = post("{}{}".format(self.service_url, endpoint), json=code)
-                if not result.ok:
-                    raise DetailedHTTPException(status=result.status_code,
-                                                detail={
-                                                    "msg": "Something went wrong while redirecting verified code to Service_Components",
-                                                    "Error from Service_Components": loads(result.text)},
-                                                title=result.reason)
-            except DetailedHTTPException as e:
-                e.trace = traceback.format_exc(limit=100).splitlines()
-                raise e
-            except Exception as e:
-                raise DetailedHTTPException(exception=e,
-                                            detail="Failed to POST code/user to Service_Components's /login",
-                                            trace=traceback.format_exc(limit=100).splitlines())
+        args = self.parser.parse_args()
+        debug_log.debug("StartServiceLinking got parameter:\n {}".format(args))
+        data = {"surrogate_id": args["surrogate_id"], "code": args["code"]}
+        if self.is_sink:
+            data["token_key"] = self.service_key["pub"]  # TODO: Onko implementoitava 1.3 mukaisesti siten että
+            # operaattori, service, käyttäjä kohtaiset pop avaimet?
+        sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
+        endpoint = "/api/1.3/slr/link"  # Todo: this needs to be fetched from somewhere
+        result = post("{}{}".format(self.operator_url, endpoint), json=data)
+        debug_log.info("####slr/link reply from operator: {}\n{}".format(result.status_code, result.text))
+        if result.ok:
+            self.helpers.delete_session(args["code"])
+            return result.text, 201
+        elif result.status_code == 500:
+            self.helpers.delete_session(args["code"])
+            raise DetailedHTTPException(status=500,
+                                        detail={"msg": "Linking Service has failed due to server side issue."},
+                                        title="Could not link Service.")
         else:
-            abort(403)
+            self.helpers.delete_session(args["code"])
+            raise DetailedHTTPException(status=result.status_code,
+                                        detail={
+                                            "msg": "Something went wrong while posting to Operator_SLR for /link",
+                                            "Error from Operator_SLR": loads(result.text)},
+                                        title=result.reason)
+
 
 
 def verifyJWS(json_JWS):
@@ -185,13 +172,13 @@ def verifyJWS(json_JWS):
             json_JWS = loads(json_JWS)
 
         if json_JWS.get("header", False):  # Only one signature
-            if (verify(json_web_signature, json_JWS["header"])):
+            if verify(json_web_signature, json_JWS["header"]):
                 return True
             return False
         elif json_JWS.get("signatures", False):  # Multiple signatures
             signatures = json_JWS["signatures"]
             for signature in signatures:
-                if (verify(json_web_signature, signature["header"])):
+                if verify(json_web_signature, signature["header"]):
                     return True
         return False
     except Exception as e:
@@ -212,6 +199,31 @@ def header_fix(malformed_dictionary):  # We do not check if its malformed, we ex
         return malformed_dictionary
     raise ValueError("Received dictionary was not expected type.")
 
+class StoreSSR(Resource):
+    def __init__(self):
+        super(StoreSSR, self).__init__()
+        config = current_app.config
+        self.helpers = Helpers(config)
+        self.service_url = config["SERVICE_URL"]
+
+
+    @timeme
+    @error_handler
+    def post(self):
+        # TODO: This is as naive as it gets, needs some verifications regarding ssr,
+        # or are we leaving this to firewalls, eg. Only this host(operator) can use this endpoint.
+        debug_log.info("Received JSON to SSR endpoint:\n {}".format(request.json))
+        try:
+            self.helpers.store_ssr_JSON(json=request.json["data"])
+            endpoint = "/api/1.3/slr/store_ssr"
+            debug_log.info("Posting SLR for storage in Service Mockup")
+            result = post("{}{}".format(self.service_url, endpoint), json=request.json)  # Send copy to Service_Components
+            return {"id":request.json["data"]["id"]}, 201
+        except Exception as e:
+            debug_log.exception(e)
+            raise e
+
+
 
 class StoreSLR(Resource):
     def __init__(self):
@@ -221,7 +233,6 @@ class StoreSLR(Resource):
         cert_key_path = config["CERT_KEY_PATH"]
         self.helpers = Helpers(config)
         self.service_key = self.helpers.get_key()
-
 
         self.protti = self.service_key["prot"]
         self.headeri = self.service_key["header"]
@@ -233,19 +244,8 @@ class StoreSLR(Resource):
     @timeme
     @error_handler
     def post(self):
-        try:
-            debug_log.info("StoreSLR class method post got json:")
-            debug_log.info(dumps(request.json, indent=2))
 
-            sq.task("Load SLR to object")
-            slr = request.json["slr"]
-            debug_log.info("SLR STORE:\n", slr)
-
-            sq.task("Load slr payload as object")
-            payload = slr["payload"]
-            payload = slr["payload"]
-            debug_log.info("Before padding fix:{}".format(payload))
-
+        def decode_payload(payload):
             sq.task("Fix possible incorrect padding in payload")
             payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
             debug_log.info("After padding fix :{}".format(payload))
@@ -259,7 +259,21 @@ class StoreSLR(Resource):
             debug_log.info("Decoded SLR payload:")
             debug_log.info(type(payload))
             debug_log.info(dumps(payload, indent=2))
+            return payload
 
+        try:
+            debug_log.info("StoreSLR class method post got json:")
+            debug_log.info(dumps(request.json, indent=2))
+
+            sq.task("Load SLR to object")
+            slr = request.json["slr"]
+            debug_log.info("SLR STORE:\n", slr)
+
+            sq.task("Load slr payload as object")
+            payload = slr["payload"]
+            debug_log.info("Before padding fix:{}".format(payload))
+
+            payload = decode_payload(payload)
 
             sq.task("Fetch surrogate_id from decoded SLR payload")
             surrogate_id = payload["surrogate_id"].encode()
@@ -318,7 +332,7 @@ class StoreSLR(Resource):
                                         trace=traceback.format_exc(limit=100).splitlines())
 
         sq.send_to("Operator_Components Mgmnt", "Verify SLR(JWS)")
-        endpoint = "/api/1.2/slr/verify"
+        endpoint = "/api/1.3/slr/verify"
         result = post("{}{}".format(self.operator_url, endpoint), json=req)
         debug_log.info("Sent SLR to Operator for verification, results:")
         debug_log.info("status code:{}\nreason: {}\ncontent: {}".format(result.status_code, result.reason, result.content))
@@ -326,33 +340,45 @@ class StoreSLR(Resource):
         if result.ok:
             sq.task("Store following SLR into db")
             store = loads(loads(result.text))
-            debug_log.debug(dumps(store, indent=2))
-            self.helpers.storeJSON({store["data"]["surrogate_id"]: store})
-            endpoint = "/api/1.2/slr/store_slr"
-            debug_log.info("Posting SLR for storage in Service Mockup")
-            result = post("{}{}".format(self.service_url, endpoint), json=store)  # Send copy to Service_Components
+            slr_store = loads(loads(result.text))["data"]["slr"]
+            ssr_store = loads(loads(result.text))["data"]["ssr"]
+            debug_log.debug("Storing following SLR and SSR:")
+            debug_log.debug(dumps(slr_store, indent=2))
+            debug_log.debug(dumps(ssr_store, indent=2))
+            payload = decode_payload(slr_store["attributes"]["payload"])
+            if surrogate_id == payload["surrogate_id"]:
+                self.helpers.store_slr_JSON(json=slr_store, slr_id=payload["link_id"], surrogate_id=payload["surrogate_id"])
+                self.helpers.store_ssr_JSON(json=ssr_store)
+                endpoint = "/api/1.3/slr/store_slr"
+                debug_log.info("Posting SLR for storage in Service Mockup")
+                result = post("{}{}".format(self.service_url, endpoint), json=store)  # Send copy to Service_Components
+                # TODO: incase this fails we should try again.
+            else:
+                raise DetailedHTTPException(status=500,
+                                            detail={
+                                                "msg": "Surrogate id mismatch",
+                                                "surrogate id's didn't match between requests.": loads(result.text)},
+                                            title=result.reason)
         else:
             raise DetailedHTTPException(status=result.status_code,
                                         detail={"msg": "Something went wrong while verifying SLR with Operator_SLR.",
                                                 "Error from Operator_SLR": loads(result.text)},
                                         title=result.reason)
+        return store, 201
 
     @timeme
     @error_handler
     def get(self):  # Fancy but only used for testing. Should be disabled/removed in production.
         sq.task("Debugging endpoint, fetch SLR's from db and return")
         jsons = {"jsons": {}}
-        counter = 0
         for storage_row in self.helpers.query_db("select * from storage;"):
             debug_log.info(storage_row["json"])
             jsons["jsons"][storage_row["surrogate_id"]] = loads(storage_row["json"])
-            counter = +1
 
         sq.reply_to("Operator_Components Mgmnt", "Return SLR's from db")
         return jsons
 
-
-api.add_resource(GenCode, '/code')
-api.add_resource(SignInRedirector, '/login')
-api.add_resource(UserAuthenticated, '/auth')
+api.add_resource(GenerateSurrogateId, '/auth')
+api.add_resource(StartServiceLinking, '/linking')
 api.add_resource(StoreSLR, '/slr')
+api.add_resource(StoreSSR, '/status')

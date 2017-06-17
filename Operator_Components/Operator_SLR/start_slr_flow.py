@@ -4,15 +4,16 @@ import logging
 import traceback
 from json import loads
 
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, render_template_string, make_response, redirect
 from flask_cors import CORS
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, request
 from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
-
+from base64 import urlsafe_b64encode
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences
-
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am
+from uuid import uuid4 as guid
+import time
 '''
 
 Operator_Components Mgmnt->Service_Components Mgmnt: Fetch code from service_mgmnt
@@ -32,10 +33,10 @@ CORS(api_SLR_Start)
 api = Api()
 api.init_app(api_SLR_Start)
 
+
 # Logger stuff
 debug_log = logging.getLogger("debug")
 sq = Sequences("Operator_Components Mgmnt")
-
 
 class StartSlrFlow(Resource):
     def __init__(self):
@@ -46,6 +47,7 @@ class StartSlrFlow(Resource):
         self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
                                                                current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.request_timeout = current_app.config["TIMEOUT"]
+        self.uid = current_app.config["UID"]
         self.helper = Helpers(current_app.config)
         self.store_session = self.helper.store_session
 
@@ -58,92 +60,54 @@ class StartSlrFlow(Resource):
         """
         debug_log.info("#### Request to start SLR flow with parameters: account_id ({}), service_id ({})"
                        .format(account_id, service_id))
+
         try:
-            try:
-                # We need to store some session information for later parts of flow.
-                session_information = {}
+            AM = get_am(current_app, request.headers)
+            key_check = AM.verify_user_key(account_id)
+            debug_log.info("Verifying User Key resulted: {}".format(key_check))
 
-                sq.task("Fetch service address from Service Registry")
-                service_json = self.service_registry_handler.getService(service_id)
-                service_domain = service_json["serviceInstance"][0]["domain"]
-                service_access_uri = service_json["serviceInstance"][0]["serviceAccessEndPoint"]["serviceAccessURI"]
-                service_login_uri = service_json["serviceInstance"][0]["loginUri"]
+            # We need to store some session information for later parts of flow.
+            session_information = {}
 
-                # Endpoint address for getting code should be fetched somewhere as well.
-                # This is now expecting that every service will use the same endpoint which is unlikely.
-                service_endpoint = "/slr/code"  # TODO: Comment above
-                service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_endpoint)
+            sq.task("Fetch service address from Service Registry")
+            service_json = self.service_registry_handler.getService(service_id)
+            service_domain = service_json["serviceInstance"][0]["loginDomain"]  # Domain to Login of Service
+            service_access_uri = service_json["serviceInstance"][0]["serviceAccessEndPoint"]["serviceAccessURI"]
+            service_login_uri = service_json["serviceInstance"][0]["loginUri"]
 
-                sq.send_to("Service_Components Mgmnt", "Fetch code from service_mgmnt")
-                result = get(service_endpoint, timeout=self.request_timeout)
-                code_status = result.status_code
+            sq.task("Generate code for session")
+            code = str(guid())
 
-                sq.task("Check code request is valid")
-                debug_log.info("Status for the code request is: {}".format(code_status))
-                if code_status is 200:
-                    sq.task("Load code object for use")
-                    code = loads(result.text)
-                    debug_log.info("Session information contains: code {}, account id {} and service_id {}"
-                                   .format(result.text, account_id, service_id))
+            debug_log.info("Session information contains: code {}, account id {} and service_id {}"
+                           .format(code, account_id, service_id))
 
-                    sq.task("Store session_information to database")
-                    session_information[code["code"]] = {"account_id": account_id, "service_id": service_id}
-                    self.store_session(session_information)
+            sq.task("Store session_information to database")
+            session_information[code] = {"account_id": account_id,
+                                         "service_id": service_id,
+                                         "user_key": request.headers["Api-Key-User"]}
+            self.store_session(session_information)
 
-                else:
-                    raise DetailedHTTPException(status=code_status,
-                                                detail={"msg": "Fetching code from Service_Components Mgmnt failed.",
-                                                        "Errors From Service Mgmnt": loads(result.text)},
-                                                title=result.reason)
-            except Timeout:
-                raise DetailedHTTPException(status=504,
-                                            title="Request to Service_Components Mgmnt failed due to TimeoutError.",
-                                            detail="Service_Components Mgmnt might be under heavy load,"
-                                                   " request for code got timeout.",
-                                            trace=traceback.format_exc(limit=100).splitlines())
-            except ConnectionError:
-                raise DetailedHTTPException(status=503,
-                                            title="Request to Service_Components Mgmnt failed due to ConnectionError.",
-                                            detail="Service_Components Mgmnt might be down or unresponsive.",
-                                            trace=traceback.format_exc(limit=100).splitlines())
+            service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)
+            service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
+                # TODO: Get return url from somewhere
+                code, self.uid, urlsafe_b64encode("http://localhost:5000/"), "Operator")
 
-            sq.task("Add user_id(Account) to response from Service dictionary")
-            code["user_id"] = account_id
-
-            try:
-                service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)
-                sq.send_to("Service_Components Mgmnt", "Redirect user to Service_Components Mgmnt login")
-                result = post(service_endpoint, json=code, timeout=self.request_timeout)
-                debug_log.info("#### Response to SLR flow end point: {}\n{}".format(result.status_code, result.text))
-
-                if not result.ok:
-                    raise DetailedHTTPException(status=result.status_code,
-                                                detail={
-                                                    "msg": "Something went wrong while Logging in with code"
-                                                           " to Service_Components Mgmnt",
-                                                    "Error from Service_Components Mgmnt": loads(result.text)},
-                                                title=result.reason)
-                else:
-                    return {"status": "CREATED"}, 201
-            except Timeout:
-                raise DetailedHTTPException(status=504,
-                                            title="Request to Service_Components Mgmnt failed due to TimeoutError.",
-                                            detail="Service_Components Mgmnt might be under heavy load,"
-                                                   " request for code got timeout.",
-                                            trace=traceback.format_exc(limit=100).splitlines())
-            except ConnectionError:
-                raise DetailedHTTPException(status=504,
-                                            title="Request to Service_Components Mgmnt failed due to ConnectionError.",
-                                            detail="Service_Components Mgmnt might be down or unresponsive.",
-                                            trace=traceback.format_exc(limit=100).splitlines())
+            debug_log.info("Redirect url with parameters:\n{}{}\nCode contains: {}".format(service_endpoint,
+                                                                                           service_query,
+                                                                                           code))
+            sq.send_to("UI(Operator)", "Redirect user to Service Mockup login")
+            response = make_response(redirect(service_endpoint+service_query))
+            return response
 
         except DetailedHTTPException as e:
+            self.helper.delete_session(code)
             raise DetailedHTTPException(exception=e,
                                         title="SLR registration failed.",
                                         status=500,
                                         detail="Something failed during creation of SLR.",
                                         trace=traceback.format_exc(limit=100).splitlines())
         except Exception as e:
+            self.helper.delete_session(code)
             raise DetailedHTTPException(status=500,
                                         title="Something went really wrong during SLR registration.",
                                         detail="Error: {}".format(repr(e)),

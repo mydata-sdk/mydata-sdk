@@ -1,5 +1,5 @@
 # Developer one-liners
-Note: Instructions based on Ubuntu 14.04 server
+Note: Instructions based on Ubuntu 16.04 server
 
 
 ## Logging

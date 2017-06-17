@@ -38,17 +38,19 @@ class DebugDataFlow(Resource):
     def __init__(self):
         super(DebugDataFlow, self).__init__()
         self.service_url = current_app.config["SERVICE_URL"]
+        self.own_url = current_app.config["SINK_URL"]
         self.operator_url = current_app.config["OPERATOR_URL"]
         self.helpers = Helpers(current_app.config)
 
     @error_handler
-    def get(self, rs_id):  # TODO Make this a GET
+    def get(self, rs_id):
 
         debug_log.info("Got rs_id {} to DebugDataFlow endpoint".format(rs_id))
-        records = self.helpers.query_db_multiple("select rs_id, cr_id, slr_id, surrogate_id from cr_storage where rs_id = %s;", (rs_id,))
+        records = self.helpers.query_db_multiple("select rs_id, cr_id, slr_id, surrogate_id from cr_storage", ())
         #rs_id =
         debug_log.info("DB query resulted in following results:\n{}".format(records))
         for record in records:
+            rs_id = record[0]
             cr_id = record[1]
             tool = CR_tool()
             tool.cr = self.helpers.get_cr_json(cr_id)
@@ -62,8 +64,7 @@ class DebugDataFlow(Resource):
                                "rs_id": urllib.quote_plus(rs_id)}
                     # TODO get the url from, config
                     debug_log.info(dumps(payload, indent=2))
-                    req = requests.post("http://service_components:7000/api/1.2/sink_flow/dc", json=payload)
-                    debug_log.info("Request status {} and contenr:\n {}".format(req.status_code, req.text))
+                    req = requests.post(self.own_url+"/api/1.3/sink_flow/dc", json=payload)
                     return req.content
 
 
@@ -80,12 +81,12 @@ class DataFlow(Resource):
         def renew_token(operator_url, record_id):
             sq.task("Renewing Auth Token.")
             token = requests.get(
-                "{}/api/1.2/cr/auth_token/{}".format(operator_url, record_id))  # TODO Get api path from some config?
+                "{}/api/1.3/cr/auth_token/{}".format(operator_url, record_id))  # TODO Get api path from some config?
             debug_log.info("{}, {}, {}, {}".format(token.url, token.reason, token.status_code, token.text))
             store_dict = {cr_id: dumps(loads(token.text.encode()))}
             self.helpers.storeToken(store_dict)
 
-        def step_1():
+        def fetch_data_request_urls():
             params = request.json
             debug_log.info(params)
             debug_log.info(request.json)
@@ -109,7 +110,7 @@ class DataFlow(Resource):
             # Data request urls fetched.
             debug_log.info("Data request urls fetched.")
             return cr_id, cr, distribution_urls
-        cr_id, cr, distribution_urls = step_1()
+        cr_id, cr, distribution_urls = fetch_data_request_urls()
 
         sq.task("Validate Authorisation Token")
         surrogate_id = cr["cr"]["common_part"]["surrogate_id"]
@@ -183,4 +184,4 @@ api.add_resource(Status, '/init')
 api.add_resource(DataFlow, '/dc')
 api.add_resource(DebugDataFlow, '/debug_dc/<string:rs_id>')
 #api.add_resource(DataFlow, '/user/<string:user_id>/consentRecord/<string:cr_id>/resourceSet/<string:rs_id>')
-#"http://service_components:7000/api/1.2/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"
+#"http://service_components:7000/api/1.3/sink_flow/user/95479a08-80cc-4359-ba28-b8ca23ff5572_53af88dc-33de-44be-bc30-e0826db9bd6c/consentRecord/cd431509-777a-4285-8211-95c5ac577537/resourceSet/http%3A%2F%2Fservice_components%3A7000%7C%7C9aebb487-0c83-4139-b12c-d7fcea93a3ad"

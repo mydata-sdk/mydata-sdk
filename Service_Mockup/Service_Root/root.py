@@ -30,11 +30,10 @@ def output_json(data, code, headers=None):
 
 class Root(Resource):
     #@error_handler
-
     def get(self):
+        status = {"status": "running"}
+        return status
 
-        status = '{"status": "running"}'
-        return json.loads(status)
 
 api.add_resource(Root, '/')
 

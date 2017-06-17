@@ -3,7 +3,7 @@ timeout = 8
 
 keysize = 512
 
-operator_root_path="/api/1.2"
+operator_root_path="/api/1.3"
 operator_cr_path="/cr"
 operator_slr_path="/slr"
 

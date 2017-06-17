@@ -1,30 +1,26 @@
 # -*- coding: utf-8 -*-
 
 """
-Minimum viable account - API Auth module
-
 __author__ = "Jani Yli-Kantola"
-__copyright__ = "Digital Health Revolution (c) 2016"
+__copyright__ = ""
 __credits__ = ["Harri Hirvonsalo", "Aleksi Palomäki"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "1.3.0"
 __maintainer__ = "Jani Yli-Kantola"
 __contact__ = "https://github.com/HIIT/mydata-stack"
 __status__ = "Development"
-__date__ = 26.5.2016
 """
+
 import base64
 from functools import wraps
 from uuid import uuid4
-
-from flask import request
-
-from app import ApiError
+from flask import request, current_app
+from app.helpers import get_custom_logger, ApiError
 from app.mod_api_auth.services import get_sqlite_connection, get_sqlite_cursor, store_api_key_to_db, get_api_key, \
     get_account_id
-from app.mod_blackbox.helpers import append_description_to_exception, get_custom_logger
+from app.mod_blackbox.helpers import append_description_to_exception
 
-logger = get_custom_logger('mod_api_auth_controllers')
+logger = get_custom_logger(__name__)
 
 
 def store_api_key(account_id=None, account_api_key=None):
@@ -199,8 +195,11 @@ def get_api_key_sdk():
     :return: API Key
     """
 
-    api_key = "682adc10-10e3-478f-8c53-5176d109d7ec"
-    return api_key
+    #sdk_api_key = "682adc10-10e3-478f-8c53-5176d109d7ec"
+    sdk_api_key = current_app.config["SDK_API_KEY"]
+    logger.debug("sdk_api_key: " + sdk_api_key)
+    return sdk_api_key
+
 
 def check_api_auth_sdk(api_key):
     if api_key == get_api_key_sdk():
@@ -211,40 +210,46 @@ def check_api_auth_sdk(api_key):
         return False
 
 
-def provideApiKey(endpoint="provideApiKey()"):
+def provide_api_key(missing="Api-Key", endpoint="provide_api_key()"):
     """Sends a 401 response"""
+    try:
+        missing = str(missing)
+    except Exception as exp:
+        logger.debug("Could not convert missing to str. Using default value.")
+
     try:
         endpoint = str(endpoint)
     except Exception as exp:
         logger.debug("Could not convert endpoint to str. Using default value.")
-    error_detail = {'0': 'ApiKey MUST be provided for authentication.'}
-    raise ApiError(code=401, title="No ApiKey in Request Headers", detail=error_detail, source=endpoint)
+
+    error_detail = missing + " MUST be provided for authentication."
+    raise ApiError(code=401, title="No required ApiKey at Request Headers", detail=error_detail, source=endpoint)
 
 
-def wrongApiKey():
+def wrong_api_key():
     """Sends a 401 response"""
     error_detail = {'0': 'Correct ApiKey MUST be provided for authentication.'}
-    raise ApiError(code=401, title="Invalid ApiKey", detail=error_detail, source="wrongApiKey()")
+    raise ApiError(code=401, title="Invalid ApiKey", detail=error_detail, source="wrong_api_key()")
 
 
 def requires_api_auth_user(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         api_key = None
-        logger.info("Verifying Api-Key")
+        logger.info("Verifying Api-Key-User")
         try:
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-User')
             if api_key is None:
                 raise AttributeError('No Api-Key in Request Headers')
         except Exception as exp:
-            logger.debug("No Api-Key in headers: " + repr(exp))
-            return provideApiKey()
+            logger.debug("No Api-Key-User in headers: " + repr(exp))
+            return provide_api_key(missing="Api-Key-User", endpoint=request.path)
         else:
-            logger.info("Provided Api-Key: " + str(api_key))
+            logger.info("Provided Api-Key-User: " + str(api_key))
             if not check_api_auth_user(api_key=api_key):
-                logger.debug("Wrong Api-Key")
-                return wrongApiKey()
-            logger.info("Correct Api-Key")
+                logger.debug("Wrong Api-Key-User")
+                return wrong_api_key()
+            logger.info("Correct Api-Key-User")
             logger.info("User Authenticated")
             return f(*args, **kwargs)
     return decorated
@@ -255,15 +260,34 @@ def requires_api_auth_sdk(f):
     def decorated(*args, **kwargs):
         api_key = None
         try:
-            api_key = request.headers.get('Api-Key')
+            api_key = request.headers.get('Api-Key-Sdk')
             if api_key is None:
-                raise AttributeError('No API Key in Request Headers')
+                raise AttributeError('No Api-Key-Sdk in Request Headers')
         except Exception as exp:
-            logger.debug("No ApiKey in headers: " + repr(exp))
-            return provideApiKey()
+            logger.debug("No Api-Key-Sdk in headers: " + repr(exp))
+            return provide_api_key(missing="Api-Key-Sdk", endpoint=request.path)
         else:
             if not check_api_auth_sdk(api_key=api_key):
-                logger.debug("Wrong API Key")
-                return wrongApiKey()
+                logger.debug("Wrong Api-Key-Sdk")
+                return wrong_api_key()
             return f(*args, **kwargs)
     return decorated
+
+
+def get_user_api_key(endpoint="get_user_api_key()"):
+    try:
+        api_key_user = request.headers.get('Api-Key-User')
+    except Exception as exp:
+        return provide_api_key(missing="Api-Key-User", endpoint=endpoint)
+    else:
+        return api_key_user
+
+
+def get_sdk_api_key(endpoint="get_sdk_api_key()"):
+    try:
+        api_key_sdk = request.headers.get('Api-Key-Sdk')
+    except Exception as exp:
+        return provide_api_key(missing="Api-Key-Sdk", endpoint=endpoint)
+    else:
+        return api_key_sdk
+
