@@ -452,7 +452,7 @@ class AccountManagerHandler:
         return templ
 
     def create_ssr(self, surrogate_id, slr_id, sl_status, prev_record_id):
-        allowed_statuses = ["Active", "Withdrawn", "Disabled"]
+        allowed_statuses = ["Active", "Removed"]
         if sl_status not in allowed_statuses:
             raise TypeError("sl_status must be of type {}".format(allowed_statuses))
         if prev_record_id is None:
@@ -692,6 +692,12 @@ class Helpers:
         debug_log.info("Found keys:\n {}".format(list_of_keys))
         return list_of_keys
 
+
+    # def get_slr(self, surrogate_id, service_id, service_key):
+    #     service_keys = self.get_service_keys(surrogate_id)
+    #     storage_row = self.query_db_multiple("select * from service_keys_tbl where surrogate_id = %s and kid = %s;",
+    #                                          (surrogate_id, kid,), one=True)
+
     def delete_session(self, code):
         try:
             debug_log.info("Deleting session: {}".format(code))
@@ -716,11 +722,11 @@ class Helpers:
 
         return key_json_from_db
 
-    def store_service_key_json(self, kid, surrogate_id, key_json):
+    def store_service_key_json(self, kid, surrogate_id, key_json, service_id):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json) \
-            VALUES (%s, %s, %s);", (kid, surrogate_id, dumps(key_json)))
+        cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json, service_id) \
+            VALUES (%s, %s, %s, %s);", (kid, surrogate_id, dumps(key_json), service_id))
 
         db.commit()
 #            cursor.execute("UPDATE service_keys_tbl SET key_json=%s WHERE kid=%s ;", (dumps(key_json), kid))
@@ -1004,71 +1010,7 @@ class base_token_tool:
 
 class SLR_tool(base_token_tool):
     def __init__(self):
-        self.slr = {  # TODO: This "example" is really outdated.
-            "data": {
-                "source": {
-                    "consentRecord": {
-                        "attributes": {
-                            "cr": {
-                                "payload": "IntcImNvbW1vbl9wYXJ0XCI6IHtcInNscl9pZFwiOiBcIjcwZjQwNTM1LTY2NzgtNDY1My1hZTdlLWJmMmU1MTc3NGFlNVwiLCBcInZlcnNpb25fbnVtYmVyXCI6IFwiU3RyaW5nXCIsIFwicnNfaWRcIjogXCIyXzM2MWNhOTY5LWMyNTktNDVkOS1iZWUwLTlmMzg4NmY2MjA1NlwiLCBcImNyX2lkXCI6IFwiMDQ3MmEyZTMtZGI2Yy00MTA5LWE1N2EtYzI1YWY5Y2IxNDUxXCIsIFwibm90X2FmdGVyXCI6IFwiU3RyaW5nXCIsIFwic3Vycm9nYXRlX2lkXCI6IFwiZTAyNTE3ZjgtNzkzZi00ZDNkLTg0MGEtNzJhNzFiN2E0OTViXzJcIiwgXCJub3RfYmVmb3JlXCI6IFwiU3RyaW5nXCIsIFwiaXNzdWVkXCI6IDE0NzE2MDQ0MDcsIFwiaXNzdWVkX2F0XCI6IFwiU3RyaW5nXCIsIFwic3ViamVjdF9pZFwiOiBcIjJcIn0sIFwicm9sZV9zcGVjaWZpY19wYXJ0XCI6IHtcImF1dGhfdG9rZW5faXNzdWVyX2tleVwiOiB7fSwgXCJyb2xlXCI6IFwiU291cmNlXCIsIFwicmVzb3VyY2Vfc2V0X2Rlc2NyaXB0aW9uXCI6IHtcInJlc291cmNlX3NldFwiOiB7XCJyc19pZFwiOiBcIlN0cmluZ1wiLCBcImRhdGFzZXRcIjogW3tcImRpc3RyaWJ1dGlvbl9pZFwiOiBcIlN0cmluZ1wiLCBcImRhdGFzZXRfaWRcIjogXCJTdHJpbmdcIn1dfX19LCBcImV4dGVuc2lvbnNcIjoge30sIFwibXZjclwiOiB7fX0i",
-                                "signature": "JuZ_7tNcxO7_P9SGbBptllfVHNuZ2pQQZ4FLJeQISKBgA8pCra3i9Z81VbcachhLwnSBvv1qVVEuFEm5lnHR_g",
-                                "protected": "eyJhbGciOiAiRVMyNTYifQ",
-                                "header": {
-                                    "jwk": {
-                                        "x": "GfJCOXimGb3ZW4IJJIlKUZeoj8GCW7YYJRZgHuYUsds",
-                                        "crv": "P-256",
-                                        "kid": "acc-kid-3802fd17-49f4-48fc-8ac1-09624a52a3ae",
-                                        "kty": "EC",
-                                        "y": "XIpGIZ7bz7uaoj_9L05CQSOw6VykuD6bK4r_OMVQSao"
-                                    },
-                                    "kid": "acc-kid-3802fd17-49f4-48fc-8ac1-09624a52a3ae"
-                                }
-                            }
-                        },
-                        "type": "ConsentRecord"
-                    }
-                },
-                "sink": {
-                    "serviceLinkRecord": {
-                        "attributes": {
-                            "slr": {
-                                "signatures": [
-                                    {
-                                        "signature": "aQB65Kv07kL9Q62INPZXMsNJuvfsEa0OuAI9c83DBTFK8cn1qFhDNZ76vVl84B0wImt3RgsPITNJiW3OvIGdag",
-                                        "protected": "eyJhbGciOiAiRVMyNTYifQ",
-                                        "header": {
-                                            "jwk": {
-                                                "x": "GfJCOXimGb3ZW4IJJIlKUZeoj8GCW7YYJRZgHuYUsds",
-                                                "crv": "P-256",
-                                                "kid": "acc-kid-3802fd17-49f4-48fc-8ac1-09624a52a3ae",
-                                                "kty": "EC",
-                                                "y": "XIpGIZ7bz7uaoj_9L05CQSOw6VykuD6bK4r_OMVQSao"
-                                            },
-                                            "kid": "acc-kid-3802fd17-49f4-48fc-8ac1-09624a52a3ae"
-                                        }
-                                    },
-                                    {
-                                        "signature": "MOBfIeQ6G4Bg6-4Q9v-Ta6_6Otd7sfXBg3YqVimtT0aL-9apMHl-i2lsuOKRySpe-tXnjQKoawjHpP8rTprqcG677TF0AbhS91LLepUsxt-NwdxnkhjDI8TSew0uVBirjY8-ZHYpLinu0ZMtAGoV-0WLuBPC-RBVqgOUQusJQSAfNyb5lpq2bTo7Xkry41XlrjdbE6tXMuGHmc2Hy9eytNf13597Q0xC0cOOlw92A92WT-6J9PLg4oArLgpBe8Tgc2GZp392DyyKvmTVENxEL1WgS5TlsxdKTH8tCSXwq5pWwkmm3Rnxfk3GUgV8hVaz0r3n1xX7EQKboondOpPeosOnpMu4ZrvoDB5aZz0KGTWuVqE7tHmVsG4lLQlww_e2KpTXfmxzLcpsOm_IfsyE-obI4_Dqi60ArjQ-kcMF6Djb0S-i1-PI-vEbSavYbcKdSjWVB1Z5-pw1rfch3inB2t5uzgjXVdipLH_jLvEUx0RrmRtG7Lq_cyJiV4wRW_YVgZbjVFZqwdsygo9-hg7YO9v-GgZr7d3z7nD6M1z4vJbJfmjXjt--2UtoY71DskxFDHUzajaMuwKiM1uBXt_TIUo3gEIM6xTpB5OEDHqN67aRTmhxK-Hqn1iHAxbnilcNjXIULiEfPQuAIpQWelO6j5drRzmyt04yIgrWQqQ5oFA",
-                                        "protected": "eyJhbGciOiAiUlMyNTYifQ",
-                                        "header": {
-                                            "jwk": {
-                                                "n": "v6QswzNJbJj2b9mE3IvPYDZx8K6MiJBDI9RJ1SwEWw0NsblAlxew3YdxvpE0iIfA-G5MHm5sG7DOmNCC9baILosVnG8UGI2QMfhZ8R4Vg-WlKQmGs_jNYaUnD2lr_gs6DTrzmfsYj_UH4NHCCm9CTW-f1s4vMpFaYAPWfTCK2OogBX0BH3f_Q8lFXmdllLN0lT5p18QY9xa9hqWkIbAOPH3Tv66kfJHdSbKeT7HqOeKRj4aBH_kokJWZcMmQAHYPuR2Y46nDQdYKRt822tmEONalupSzNdEErlSzKZ5uPileqIAitHTG0QFzL1ZfiqfI861nrKlFi3LOhXGzk_skXZYZGvLLAZ1TtBIUcM97VyBlJVNRpK9fypLyHN3ezxuazwwZ4gi8-T39E2Xpr0TRj5eVfoflau6LF4MgwQTs6PyKzkwKlcipTcrmMMhoT9MYNih_Sb2E7qlF_gXEfgFzcXO8AkArwGoNlpvYdZdNyu4u6mviH7-ZK6YnkudI6qRCrbG7sYltGXO809NdSnGklMqXDSvghlgHvagLyXJ4C8geRH_9aGzYVjweYmwQxgBMFtpvzotd1KIoeFkKFIXf1p9P02AwgQJSVTdVHltNU9Vkom-TLcO3SZ5FvpC5W1hS67bkD_qStQPWAZ-RtWH0QkjJFGdQVLdK07uZNkSVee8",
-                                                "kid": "SRVMGNT-RSA-4096",
-                                                "e": "AQAB",
-                                                "kty": "RSA"
-                                            },
-                                            "kid": "SRVMGNT-RSA-4096"
-                                        }
-                                    }
-                                ],
-                                "payload": "IntcIm9wZXJhdG9yX2lkXCI6IFwiQUNDLUlELVJBTkRPTVwiLCBcImNyZWF0ZWRcIjogMTQ3MTYwNDQwNSwgXCJzdXJyb2dhdGVfaWRcIjogXCJkMTJjN2UyOC04NzRiLTQwNDAtYmVjNS02NzkzYTYwMzhjMTlfMlwiLCBcInRva2VuX2tleVwiOiB7XCJrZXlcIjoge1wiblwiOiBcInY2UXN3ek5KYkpqMmI5bUUzSXZQWURaeDhLNk1pSkJESTlSSjFTd0VXdzBOc2JsQWx4ZXczWWR4dnBFMGlJZkEtRzVNSG01c0c3RE9tTkNDOWJhSUxvc1ZuRzhVR0kyUU1maFo4UjRWZy1XbEtRbUdzX2pOWWFVbkQybHJfZ3M2RFRyem1mc1lqX1VINE5IQ0NtOUNUVy1mMXM0dk1wRmFZQVBXZlRDSzJPb2dCWDBCSDNmX1E4bEZYbWRsbExOMGxUNXAxOFFZOXhhOWhxV2tJYkFPUEgzVHY2NmtmSkhkU2JLZVQ3SHFPZUtSajRhQkhfa29rSldaY01tUUFIWVB1UjJZNDZuRFFkWUtSdDgyMnRtRU9OYWx1cFN6TmRFRXJsU3pLWjV1UGlsZXFJQWl0SFRHMFFGekwxWmZpcWZJODYxbnJLbEZpM0xPaFhHemtfc2tYWllaR3ZMTEFaMVR0QklVY005N1Z5QmxKVk5ScEs5ZnlwTHlITjNlenh1YXp3d1o0Z2k4LVQzOUUyWHByMFRSajVlVmZvZmxhdTZMRjRNZ3dRVHM2UHlLemt3S2xjaXBUY3JtTU1ob1Q5TVlOaWhfU2IyRTdxbEZfZ1hFZmdGemNYTzhBa0Fyd0dvTmxwdllkWmROeXU0dTZtdmlINy1aSzZZbmt1ZEk2cVJDcmJHN3NZbHRHWE84MDlOZFNuR2tsTXFYRFN2Z2hsZ0h2YWdMeVhKNEM4Z2VSSF85YUd6WVZqd2VZbXdReGdCTUZ0cHZ6b3RkMUtJb2VGa0tGSVhmMXA5UDAyQXdnUUpTVlRkVkhsdE5VOVZrb20tVExjTzNTWjVGdnBDNVcxaFM2N2JrRF9xU3RRUFdBWi1SdFdIMFFrakpGR2RRVkxkSzA3dVpOa1NWZWU4XCIsIFwiZVwiOiBcIkFRQUJcIiwgXCJrdHlcIjogXCJSU0FcIiwgXCJraWRcIjogXCJTUlZNR05ULVJTQS00MDk2XCJ9fSwgXCJsaW5rX2lkXCI6IFwiYTk4ZDg4Y2ItZDA3ZS00YTMyLTk3ODctY2IzODgxZDBiMDZlXCIsIFwib3BlcmF0b3Jfa2V5XCI6IHtcInVzZVwiOiBcInNpZ1wiLCBcImVcIjogXCJBUUFCXCIsIFwia3R5XCI6IFwiUlNBXCIsIFwiblwiOiBcIndITUFwQ2FVSkZpcHlGU2NUNzgxd2VuTm5mbU5jVkQxZTBmSFhfcmVfcWFTNWZvQkJzN1c0aWE1bnVxNjVFQWJKdWFxaGVPR2FEamVIaVU4V1Q5cWdnYks5cTY4SXZUTDN1bjN6R2o5WmQ3N3MySXdzNE1BSW1EeWN3Rml0aDE2M3lxdW9ETXFMX1YySXl5Mm45Uzloa1M5ZkV6cXJsZ01sYklnczJtVkJpNmdWVTJwYnJTN0gxUGFSV194YlFSX1puN19laV9uOFdlWFA1d2NEX3NJYldNa1NCc3VVZ21jam9XM1ktNW1ERDJWYmRFejJFbWtZaTlHZmstcDlBenlVbk56ZkIyTE1jSk1aekpWUWNYaUdCTzdrcG9uRkEwY3VIMV9CR0NsZXJ6Mnh2TWxXdjlPVnZzN3ZDTmRlQV9mano2eloyMUtadVo0RG1nZzBrOTRsd1wifSwgXCJ2ZXJzaW9uXCI6IFwiMS4yXCIsIFwiY3Jfa2V5c1wiOiBbe1wieVwiOiBcIlhJcEdJWjdiejd1YW9qXzlMMDVDUVNPdzZWeWt1RDZiSzRyX09NVlFTYW9cIiwgXCJ4XCI6IFwiR2ZKQ09YaW1HYjNaVzRJSkpJbEtVWmVvajhHQ1c3WVlKUlpnSHVZVXNkc1wiLCBcImNydlwiOiBcIlAtMjU2XCIsIFwia3R5XCI6IFwiRUNcIiwgXCJraWRcIjogXCJhY2Mta2lkLTM4MDJmZDE3LTQ5ZjQtNDhmYy04YWMxLTA5NjI0YTUyYTNhZVwifV0sIFwic2VydmljZV9pZFwiOiBcIjFcIn0i"
-                            }
-                        },
-                        "type": "ServiceLinkRecord"
-                    }
-                }
-            }
-        }
+        self.slr = {}
 
     def get_SLR_payload(self):
         debug_log.info(dumps(self.slr, indent=2))
@@ -1107,9 +1049,6 @@ class SLR_tool(base_token_tool):
 
     def get_source_service_id(self):
         return self.get_CR_payload()["common_part"]["subject_id"]
-
-    # def get_sink_service_id(self):
-    #     return self.slr["data"]["sink"]["serviceLinkRecord"]["attributes"]["slr"]["attributes"]["service_id"]
 
 
 class Sequences:

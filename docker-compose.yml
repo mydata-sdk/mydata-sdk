@@ -24,6 +24,7 @@ services:
     container_name: account
     volumes:
      - "account-key-data:/mydata-sdk-account/app/mod_api_auth/db"
+     - "account-blackbox-data:/mydata-sdk-account/app/mod_blackbox/db"
     depends_on:
       - mysql-db
     command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 2
@@ -327,6 +328,7 @@ services:
 volumes:
   mysql-data:
   account-key-data:
+  account-blackbox-data:
   redis-data:
 
 networks:

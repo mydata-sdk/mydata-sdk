@@ -16,6 +16,7 @@ from base64 import urlsafe_b64decode as decode64
 from uuid import uuid4 as guid
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from helpers_mock import Helpers
+from Templates import users
 
 debug_log = logging.getLogger("debug")
 
@@ -58,7 +59,11 @@ def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
-    return username == 'Matti' and password == 'Uusio'
+    compared_pw = users.get(username, None)
+    if compared_pw is not None:
+        return password == compared_pw
+    else:
+        return False
 
 
 def authenticate():

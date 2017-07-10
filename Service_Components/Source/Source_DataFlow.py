@@ -105,7 +105,8 @@ class DataRequest(Resource):
 
         except LookupError as e:
             debug_log.exception(e)
-            return {"error message is": "appropriate."}
+            e.message = "Introspection Failed."
+            raise e
 
         # Return.
 

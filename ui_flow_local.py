@@ -83,7 +83,7 @@ def initialize(account_url):
 
 # TODO: Refactor and return something.
 # Creates two Service Links by making a GET-request to Operator backend.
-def create_service_link(operator_url, service_id, user_key):
+def create_service_link(operator_url, service_id, user_key, service_acc, service_pass):
     print("\n##### CREATE A SERVICE LINK #####")
     print("User key is: {}".format(user_key["Api-Key-User"]))
     slr_flow = get(operator_url + "api/1.3/slr/account/2/service/"+service_id,
@@ -102,8 +102,8 @@ def create_service_link(operator_url, service_id, user_key):
         params_dict[key] = value
     print(json.dumps(params_dict, indent=2))
     print("Adding Debug Credentials to the data for posting..")
-    params_dict["Email"] = "Matti"
-    params_dict["Password"] = "Uusio"
+    params_dict["Email"] = service_acc
+    params_dict["Password"] = service_pass
 
 
     print("POSTing the data to the Service Mockup Login (Simulating filling the form and hitting Submit")
@@ -324,8 +324,8 @@ if __name__ == '__main__':
 
     # SLR
     if not args.skip_slr:
-        slr_1 = create_service_link(args.operator_url, args.sink_id, user_key)
-        slr_2 = create_service_link(args.operator_url, args.source_id, user_key)
+        slr_1 = create_service_link(args.operator_url, args.sink_id, user_key, "Matti_Sink", "Uusio")
+        slr_2 = create_service_link(args.operator_url, args.source_id, user_key, "Matti_Source", "Uusio")
 
     # Consent
     if not args.skip_consent:

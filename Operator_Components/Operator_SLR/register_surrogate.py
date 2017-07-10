@@ -117,7 +117,8 @@ class RegisterSurrogate(Resource):
 
                     self.Helpers.store_service_key_json(kid=token_key["kid"],
                                                         surrogate_id=js["surrogate_id"],
-                                                        key_json=service_keys)
+                                                        key_json=service_keys,
+                                                        service_id=service_info["id"])
             except Exception as e:
                 debug_log.exception(e)
                 self.Helpers.delete_session(code)

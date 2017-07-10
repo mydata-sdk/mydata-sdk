@@ -7,7 +7,7 @@ from flask import Blueprint, current_app
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import AccountManagerHandler
+from helpers_op import get_am
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_Introspection_blueprint", __name__)
@@ -25,11 +25,6 @@ class Introspection(Resource):
         self.am_user = current_app.config["ACCOUNT_MANAGEMENT_USER"]
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
         self.timeout = current_app.config["TIMEOUT"]
-        try:
-            self.AM = AccountManagerHandler(self.am_url, self.am_user, self.am_password, self.timeout)
-        except Exception as e:
-            debug_log.warn("Initialization of AccountManager failed. We will crash later but note it here.\n{}"
-                           .format(repr(e)))
 
     @error_handler
     def get(self, cr_id):

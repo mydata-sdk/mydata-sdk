@@ -97,7 +97,7 @@ class SlrStatus(Resource):
 
                 created_ssr = am.create_ssr(surrogate_id=surrogate_id,
                                             slr_id=slr_id,
-                                            sl_status="Disabled",
+                                            sl_status="Removed",
                                             prev_record_id=prev_record_id,
                                             )
 

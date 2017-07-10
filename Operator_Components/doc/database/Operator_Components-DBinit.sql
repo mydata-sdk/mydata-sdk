@@ -62,16 +62,19 @@ ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
 -- -----------------------------------------------------
--- Table `db_Operator`.`keys_tbl` TODO: Check this, used to have kid as PK but would cause fails since service gives same key for all surrogates atm.
+-- Table `db_Operator`.`keys_tbl`
 -- -----------------------------------------------------
+-- Fix: Surrogate and service id as composite primary key ensures unique pair,
+--      surrogate must be unique to a single service.
 DROP TABLE IF EXISTS `db_Operator`.`service_keys_tbl` ;
 
 CREATE TABLE IF NOT EXISTS `db_Operator`.`service_keys_tbl` (
   `kid` LONGTEXT NOT NULL,
   `surrogate_id` LONGTEXT NOT NULL,
   `key_json` LONGTEXT NOT NULL,
+  `service_id` LONGTEXT NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`surrogate_id`(255)))
+  PRIMARY KEY (`service_id`(255), `surrogate_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 

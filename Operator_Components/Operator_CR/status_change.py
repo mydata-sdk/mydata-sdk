@@ -6,8 +6,7 @@ from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import get_am
-from helpers_op import Helpers
+from helpers_op import get_am, Helpers
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_Status_Change_blueprint", __name__)
