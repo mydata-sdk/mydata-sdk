@@ -86,10 +86,6 @@ def register_blueprints(app, package_name, package_path):
                 apis.append(item)
     return rv, apis
 
-
-
-
-
 def get_am(current_app, headers):
     debug_log.info("Creating AccountManagerHandler, got headers:\n{}".format(headers))
     am_url = current_app.config["ACCOUNT_MANAGEMENT_URL"]
@@ -100,6 +96,8 @@ def get_am(current_app, headers):
     return AccountManagerHandler(am_url, am_user, am_password, timeout, headers=headers)
 
 class AccountManagerHandler:
+
+
     def __init__(self, account_management_url,
                  account_management_username,
                  account_management_password,
@@ -281,8 +279,6 @@ class AccountManagerHandler:
                                     detail={"msg": "Couldn't find SLR for given service."},
                                     title="Not Found")
 
-
-
     def get_last_slr_status(self, slr_id):
         debug_log.info("Fetching last SSR for id '{}'".format(slr_id))
         req = get(self.url+self.endpoint["slr_status"]
@@ -341,24 +337,6 @@ class AccountManagerHandler:
                                                 "content": req.content},
                                         title=req.reason)
         return templ
-
-    # def getSUR_ID(self, service_id, account_id):
-    #     debug_log.debug(
-    #         "" + self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
-    #                                                                                                service_id))
-    #
-    #     req = get(self.url + self.endpoint["surrogate"].replace("{account_id}", account_id).replace("{service_id}",
-    #                                                                                                 service_id),
-    #               headers={'Api-Key-SDK': self.token},
-    #               timeout=self.timeout)
-    #     if req.ok:
-    #         templ = loads(req.text)
-    #     else:
-    #         raise DetailedHTTPException(status=req.status_code,
-    #                                     detail={"msg": "Getting surrogate_id from account management failed.",
-    #                                             "content": req.content},
-    #                                     title=req.reason)
-    #     return templ
 
     def get_last_csr(self, cr_id, link_id):
         endpoint_url = self.url + self.endpoint["last_csr"]\
@@ -485,8 +463,6 @@ class AccountManagerHandler:
             raise DetailedHTTPException(title="An Error Has occured on the server. Try again later.",
                                         status=500,
                                         detail={"msg": "Failed SLR status change."})
-
-
 
     def verify_slr(self, payload, code, slr, account_id):
         templa = {
