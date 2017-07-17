@@ -138,6 +138,14 @@ OPERATOR_URL = {{ OPERATOR_URL }}
 OPERATOR_URL = "http://localhost:5000"
 {% endif %}
 
+
+{% if RETURN_URL is defined %}
+RETURN_URL = {{ RETURN_URL }}
+{% else %}
+RETURN_URL = "http://localhost:5000/"
+{% endif %}
+
+
 {% if OPERATOR_UID is defined %}
 OPERATOR_UID = {{ OPERATOR_UID }}
 {% else %}

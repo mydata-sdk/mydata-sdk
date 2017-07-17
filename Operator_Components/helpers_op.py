@@ -941,7 +941,7 @@ class Helpers:
 
     def gen_auth_token(self, auth_token_info):
         operator_key = jwk.JWK(**self.get_key()["key"])
-        slr_tool = SLR_tool()
+        slr_tool = JWS_tool()
         slr_tool.slr = auth_token_info
         debug_log.debug(dumps(slr_tool.get_SLR_payload(), indent=2))
         debug_log.debug(dumps(slr_tool.get_CR_payload(), indent=2))
@@ -984,7 +984,7 @@ class base_token_tool:
         return payload
 
 
-class SLR_tool(base_token_tool):
+class JWS_tool(base_token_tool):
     def __init__(self):
         self.slr = {}
 

@@ -48,6 +48,7 @@ class StartSlrFlow(Resource):
                                                                current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
         self.request_timeout = current_app.config["TIMEOUT"]
         self.uid = current_app.config["UID"]
+        self.return_url = current_app.config["RETURN_URL"]
         self.helper = Helpers(current_app.config)
         self.store_session = self.helper.store_session
 
@@ -90,7 +91,7 @@ class StartSlrFlow(Resource):
             service_endpoint = "{}{}{}".format(service_domain, service_access_uri, service_login_uri)
             service_query = "?code={}&operator_id={}&return_url={}&linkingFrom={}".format(
                 # TODO: Get return url from somewhere
-                code, self.uid, urlsafe_b64encode("http://localhost:5000/"), "Operator")
+                code, self.uid, urlsafe_b64encode(self.return_url), "Operator")
 
             debug_log.info("Redirect url with parameters:\n{}{}\nCode contains: {}".format(service_endpoint,
                                                                                            service_query,
