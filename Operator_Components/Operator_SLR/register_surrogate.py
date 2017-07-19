@@ -109,8 +109,8 @@ class RegisterSurrogate(Resource):
                 self.payload["surrogate_id"] = js["surrogate_id"]
                 #self.payload["token_key"] = {"key": token_key}
 
-                sq.task("Store surrogate_id and keys for CR steps later on.")
-                if service_type != "output":
+                if service_type == "input" or service_type == "both":
+                    sq.task("Store surrogate_id and keys for CR steps later on.")
                     token_key = js["token_key"]  # Todo: source has no need to send this, make the difference.
                     service_keys = {"token_key": token_key,
                                     "pop_key": token_key}
@@ -128,7 +128,7 @@ class RegisterSurrogate(Resource):
 
             # Create template
             # TODO: Currently you can generate endlessly new slr even if one exists already
-            if service_type == "input":
+            if service_type == "input" or service_type == "both":
                 result = AM.init_slr(code, pop_key=token_key)
             else:
                 result = AM.init_slr(code)

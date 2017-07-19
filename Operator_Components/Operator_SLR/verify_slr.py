@@ -101,6 +101,7 @@ class VerifySLR(Resource):
                                             detail="SLR verification has failed.",
                                             trace=traceback.format_exc(limit=100).splitlines())
             if reply.ok:
+                # TODO: Should session db be cleared here?
                 sq.reply_to("Service_Components Mgmnt", "201, SLR VERIFIED")
                 debug_log.info("Account Manager replied {} with content:\n{}".format(reply.status_code, reply.text))
                 return reply.text, reply.status_code

@@ -174,7 +174,7 @@ class UserLogin(Resource):
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin POST args contain:\n {}".format(dumps(args, indent=2)))
         debug_log.info(dumps(request.json, indent=2))
-        user_id = encode64(request.authorization.username)  # TODO: Placeholder for actual login.
+        user_id = encode64(request.authorization.username)
         code = args["code"]
         self.helpers.store_code_user({code: user_id})
 
