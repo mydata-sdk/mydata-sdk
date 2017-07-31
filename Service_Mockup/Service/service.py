@@ -65,13 +65,13 @@ def check_auth(username, password):
     else:
         return False
 
-
+from instance import settings
 def authenticate():
     """Sends a 401 response that enables basic auth"""
     return Response(
     'Could not verify your access level for that URL.\n'
     'You have to login with proper credentials', 401,
-    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+    {'WWW-Authenticate': 'Basic realm="Login with your {} credentials"'.format(settings.NAME)})
 
 
 def requires_auth(f):
