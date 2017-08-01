@@ -211,6 +211,8 @@ class UserLogin(Resource):
             raise e
         reply_json = loads(linking_result.text)
         debug_log.info("Encoding json as reply to ui: \n{}".format(reply_json))
+        if isinstance(reply_json, dict):
+            reply_json = dumps(reply_json)
         return redirect("{}?results={}".format(decode64(args["return_url"]), encode64(reply_json)), code=302)
 
 
