@@ -170,7 +170,7 @@ class UserLogin(Resource):
                 return json_response["surrogate_id"]
             except Exception as e:
                 debug_log.exception(e)
-
+        debug_log.info("Received following data to POST on ServiceMockup:\n{}\n\n{}\n\n{}".format(request.headers, request.json, request))
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin POST args contain:\n {}".format(dumps(args, indent=2)))
         debug_log.info(dumps(request.json, indent=2))
