@@ -14,7 +14,7 @@ from jwcrypto import jws, jwk
 from requests import post
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_srv import Helpers, Sequences
+from helpers_srv import Helpers, Sequences, format_request
 
 api_Service_Mgmnt = Blueprint("api_Service_Mgmnt", __name__)
 
@@ -60,6 +60,7 @@ class GenerateSurrogateId(Resource):
     @timeme
     @error_handler
     def post(self):
+        debug_log.info(format_request(request))
         try:
             # TODO: Verify this requests comes from Service Mockup(Is this our responsibility?)
             # This is now the point we want to double check that similar flow is not going on already for said user.
@@ -124,6 +125,7 @@ class StartServiceLinking(Resource):
         #self.parser.add_argument('service_id', type=str, help="Service's ID")  # Seems unnecessary to the flow.
 
     def post(self):
+        debug_log.info(format_request(request))
         args = self.parser.parse_args()
         debug_log.debug("StartServiceLinking got parameter:\n {}".format(args))
         data = {"surrogate_id": args["surrogate_id"], "code": args["code"]}
@@ -153,6 +155,7 @@ class StartServiceLinking(Resource):
 
 
 def verifyJWS(json_JWS):
+    debug_log.info(format_request(request))
     def verify(jws, header):
         try:
             sign_key = jwk.JWK(**header["jwk"])
@@ -210,6 +213,7 @@ class StoreSSR(Resource):
     @timeme
     @error_handler
     def post(self):
+        debug_log.info(format_request(request))
         # TODO: This is as naive as it gets, needs some verifications regarding ssr,
         # or are we leaving this to firewalls, eg. Only this host(operator) can use this endpoint.
         debug_log.info("Received JSON to SSR endpoint:\n {}".format(request.json))
@@ -244,7 +248,7 @@ class StoreSLR(Resource):
     @timeme
     @error_handler
     def post(self):
-
+        debug_log.info(format_request(request))
         def decode_payload(payload):
             sq.task("Fix possible incorrect padding in payload")
             payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.

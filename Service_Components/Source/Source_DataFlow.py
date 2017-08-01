@@ -9,7 +9,7 @@ from flask_restful import Resource, Api
 from jwcrypto import jwk, jwt
 
 from DetailedHTTPException import error_handler
-from helpers_srv import Helpers, Sequences
+from helpers_srv import Helpers, Sequences, format_request
 from signed_requests.json_builder import pop_handler
 
 debug_log = logging.getLogger("debug")
@@ -43,6 +43,7 @@ class DataRequest(Resource):
 
     @error_handler
     def get(self):
+        debug_log.info(format_request(request))
         sq.task("Fetch PoP from authorization header")
         authorization = request.headers["Authorization"]
         debug_log.info(authorization)
