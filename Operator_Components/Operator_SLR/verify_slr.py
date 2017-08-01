@@ -10,7 +10,7 @@ from flask_cors import CORS
 from flask_restful import Resource, Api
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import AccountManagerHandler, Helpers, Sequences, get_am
+from helpers_op import AccountManagerHandler, Helpers, Sequences, get_am, format_request
 
 # Flask init
 api_SLR_Verify = Blueprint("api_SLR_blueprint", __name__)
@@ -48,6 +48,7 @@ class VerifySLR(Resource):
 
     @error_handler
     def post(self):
+        debug_log.info(format_request(request))
 
         debug_log.info("VerifySLR method post got parameters: \n{}".format(dumps(request.json, indent=2)))
 

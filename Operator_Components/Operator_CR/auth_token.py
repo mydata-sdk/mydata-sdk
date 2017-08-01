@@ -7,7 +7,7 @@ from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import Helpers, Sequences, get_am
+from helpers_op import Helpers, Sequences, get_am, format_request
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_AuthToken_blueprint", __name__)
@@ -39,6 +39,7 @@ class AuthToken(Resource):
         # Generate Auth Token and save it.
         # helper.py has the function template, look into it.
         ##
+        debug_log.info(format_request(request))
         debug_log.info("Got Request for Auth_token, given cr_id ({})".format(cr_id))
         am = get_am(current_app, request.headers)
 

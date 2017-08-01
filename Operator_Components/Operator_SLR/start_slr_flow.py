@@ -11,7 +11,7 @@ from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
 from base64 import urlsafe_b64encode
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, format_request
 from uuid import uuid4 as guid
 import time
 '''
@@ -59,8 +59,11 @@ class StartSlrFlow(Resource):
         :param account_id: Account Manager user id
         :param service_id: Service id as in Service Registry
         """
+        debug_log.info(format_request(request))
         debug_log.info("#### Request to start SLR flow with parameters: account_id ({}), service_id ({})"
                        .format(account_id, service_id))
+
+
 
         try:
             AM = get_am(current_app, request.headers)

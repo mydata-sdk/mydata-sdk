@@ -49,8 +49,10 @@ class SlrStatus(Resource):
         :param account_id:  Account Manager user id
         :param service_id:  Service id as in Service Registry
         """
+        debug_log.info(format_request(request))
         debug_log.info("#### Request to change SLR status with parameters: account_id ({}), service_id ({}), slr_id ({})"
                        .format(account_id, service_id, slr_id))
+
         try:
             am = get_am(current_app, request.headers)
             # Verify Api-Key-User

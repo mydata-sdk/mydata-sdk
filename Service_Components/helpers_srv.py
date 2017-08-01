@@ -636,6 +636,15 @@ class Helpers:
         # debug_log.info(aud)
         return token
 
+def format_request(request):
+    dicti = request.__dict__["environ"]
+    msg = "Request from: {}\n Request to: {}\n Type: {}\n Content Type: {}\n Content Length: {}\n"\
+        .format(dicti["REMOTE_ADDR"]+":"+str(dicti["REMOTE_PORT"]),
+                dicti["HTTP_HOST"]+dicti["SCRIPT_NAME"]+dicti["PATH_INFO"],
+                dicti["REQUEST_METHOD"],
+                dicti["CONTENT_TYPE"],
+                dicti["CONTENT_LENGTH"])
+    return msg
 
 def register_blueprints(app, package_name, package_path):
     """Register all Blueprint instances on the specified Flask application found

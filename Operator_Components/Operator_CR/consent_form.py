@@ -9,7 +9,7 @@ from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import Consent_form_Out
 from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
-from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences, get_am
+from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences, get_am, format_request
 from op_tasks import CR_installer
 from requests import post
 
@@ -43,6 +43,7 @@ class ConsentFormHandler(Resource):
         """get
         :return: Returns Consent form to UI for user input.
         """
+        debug_log.info(format_request(request))
         # TODO: We probably should check if user has SLR's for given services before proceeding.
         _consent_form = Consent_form_Out
         service_ids = request.args
@@ -101,7 +102,7 @@ class ConsentFormHandler(Resource):
         """post
         :return: Returns 201 when consent has been created
         """
-
+        debug_log.info(format_request(request))
         debug_log.info("ConsentFormHandler post got json:\n{}".format(dumps(request.json, indent=2)))
 
         AM = get_am(current_app, request.headers)

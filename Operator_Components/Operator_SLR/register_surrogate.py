@@ -12,7 +12,7 @@ from flask_restful import Resource, Api
 from requests import post
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, format_request
 
 # Flask init
 api_SLR_RegisterSur = Blueprint("api_SLR_RegisterSur", __name__)
@@ -67,6 +67,7 @@ class RegisterSurrogate(Resource):
 
     @error_handler
     def post(self):
+        debug_log.info(format_request(request))
         try:
 
             debug_log.info("RegisterSurrogate method post got following parameters as json:\n{}"

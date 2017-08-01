@@ -15,7 +15,7 @@ from base64 import urlsafe_b64decode as decode64
 
 from uuid import uuid4 as guid
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_mock import Helpers
+from helpers_mock import Helpers, format_request
 from Templates import users
 
 debug_log = logging.getLogger("debug")
@@ -112,6 +112,7 @@ class UserLogin(Resource):
     @error_handler
     @requires_auth
     def get(self):
+        debug_log.info(format_request(request))
         args = self.parser.parse_args()
         debug_log.info("Mockup UserLogin GET got args: \n{}".format(dumps(args, indent=2)))
         # TODO: Use template file or get this from somewhere.
@@ -152,6 +153,7 @@ class UserLogin(Resource):
     @requires_auth
     @error_handler
     def post(self):
+        debug_log.info(format_request(request))
         def link_surrogate_id(json_response, user_id):
             try:  # Remove this check once debugging is done. TODO
                 response_user_id = self.helpers.get_user_id_with_code(args["code"])
@@ -170,9 +172,11 @@ class UserLogin(Resource):
                 return json_response["surrogate_id"]
             except Exception as e:
                 debug_log.exception(e)
-        debug_log.info("Received following data to POST on ServiceMockup:\n{}\n\n{}\n\n{}".format(request.headers, request.json, request))
+        debug_log.info("Received following data to POST on ServiceMockup:\n{}"
+                       .format(dumps(request.json, indent=2))
+                      )
         args = self.parser.parse_args()
-        debug_log.info("Mockup UserLogin POST args contain:\n {}".format(dumps(args, indent=2)))
+        debug_log.info("Args contain:\n {}".format(dumps(args, indent=2)))
         debug_log.info(dumps(request.json, indent=2))
         user_id = encode64(request.authorization.username)
         code = args["code"]
@@ -219,6 +223,7 @@ class RegisterSur(Resource):
     @timeme
     @error_handler
     def post(self):
+        debug_log.info(format_request(request))
         try:  # Remove this check once debugging is done. TODO
             user_id = self.helpers.get_user_id_with_code(request.json["code"])
             debug_log.info("We got surrogate_id {} for user_id {}".format(request.json["surrogate_id"], user_id))
@@ -237,6 +242,7 @@ class StoreSlr(Resource):
     @timeme
     @error_handler
     def post(self):
+        debug_log.info(format_request(request))
         def decode_payload(payload):
             #sq.task("Fix possible incorrect padding in payload")
             payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
@@ -271,6 +277,7 @@ class StoreSSR(Resource):
     @timeme
     @error_handler
     def post(self):
+        debug_log.info(format_request(request))
         # TODO: This is as naive as it gets, needs some verifications regarding ssr,
         # or are we leaving this to firewalls, eg. Only this host(operator) can use this endpoint.
         debug_log.info("Received JSON to SSR endpoint:\n {}".format(request.json))
