@@ -132,15 +132,12 @@ class Helpers:
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         debug_log.info("Mapping surrogate_id '{}' with user_id '{}'".format(surrogate_id, user_id))
-        try:
-            cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id) \
-                    VALUES (%s, %s)", [user_id, surrogate_id])
-            db.commit()
-        except Exception as e:  # TODO: Is this acceptable behaviour?
-            debug_log.exception(e)
-            debug_log.info("Surrogate_id '{}' mapped with user '{}' already.".format(user_id, surrogate_id))
-            db.commit()
-            db.close()
+
+        cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id) \
+                VALUES (%s, %s)", [user_id, surrogate_id])
+        db.commit()
+        db.close()
+
             
 def read_key(path, password=None):
     ##

@@ -155,23 +155,20 @@ class UserLogin(Resource):
     def post(self):
         debug_log.info(format_request(request))
         def link_surrogate_id(json_response, user_id):
-            try:  # Remove this check once debugging is done. TODO
-                response_user_id = self.helpers.get_user_id_with_code(args["code"])
-                if response_user_id == user_id:
-                    pass
-                else:
-                    raise DetailedHTTPException(
-                        status=403,
-                        detail={"msg": "Response was for different user_id than expected."
-                                 },
-                        title="User ID mismatch."
-                    )
-                debug_log.info("We got surrogate_id {} for user_id {}".format(json_response["surrogate_id"], user_id))
-                debug_log.info(dumps(json_response, indent=2))
-                self.helpers.storeSurrogateJSON(user_id, json_response["surrogate_id"])
-                return json_response["surrogate_id"]
-            except Exception as e:
-                debug_log.exception(e)
+            response_user_id = self.helpers.get_user_id_with_code(args["code"])
+            if response_user_id == user_id:
+                pass
+            else:
+                raise DetailedHTTPException(
+                    status=403,
+                    detail={"msg": "Response was for different user_id than expected."
+                             },
+                    title="User ID mismatch."
+                )
+            debug_log.info("We got surrogate_id {} for user_id {}".format(json_response["surrogate_id"], user_id))
+            debug_log.info(dumps(json_response, indent=2))
+            self.helpers.storeSurrogateJSON(user_id, json_response["surrogate_id"])
+            return json_response["surrogate_id"]
         debug_log.info("Received following data to POST on ServiceMockup:\n{}"
                        .format(dumps(request.json, indent=2))
                       )
