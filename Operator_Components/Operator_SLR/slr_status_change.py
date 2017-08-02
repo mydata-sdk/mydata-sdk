@@ -11,7 +11,7 @@ from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, base_token_tool
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, base_token_tool, format_request
 '''
 
 '''
