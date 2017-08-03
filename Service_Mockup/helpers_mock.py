@@ -24,6 +24,16 @@ class Helpers:
         self.passwd = app_config["MYSQL_PASSWORD"]
         self.db = app_config["MYSQL_DB"]
         self.port = app_config["MYSQL_PORT"]
+        self.operator_url = app_config["OPERATOR_URL"]
+
+    def get_operator_url(self, operator_id):
+        return self.operator_url
+
+    def get_operator_access_url(self, operator_id):
+        return "/api/1.3/dummyui/"
+
+    def get_operator_login_url(self, operator_id):
+        return self.get_operator_url(operator_id)+ self.get_operator_access_url(operator_id) + "linking_service"
 
     def query_db(self, query, args=()):
         """
@@ -128,13 +138,15 @@ class Helpers:
 
         # Letting world burn if user was not in db. Fail fast, fail hard.
 
-    def storeSurrogateJSON(self, user_id, surrogate_id):
+    def storeSurrogateJSON(self, user_id, surrogate_id, operator_id):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        debug_log.info("Mapping surrogate_id '{}' with user_id '{}'".format(surrogate_id, user_id))
+        debug_log.info("Mapping surrogate_id '{}' with user_id '{}' for operator '{}'".format(surrogate_id,
+                                                                                              user_id,
+                                                                                              operator_id))
 
-        cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id) \
-                VALUES (%s, %s)", [user_id, surrogate_id])
+        cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id, operator_id) \
+                VALUES (%s, %s, %s)", [user_id, surrogate_id, operator_id])
         db.commit()
         db.close()
 

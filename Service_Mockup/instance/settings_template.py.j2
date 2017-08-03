@@ -10,10 +10,22 @@ SERVICE_MGMNT_URL = "http://localhost:7000"
 {% if NAME is defined %}
 NAME = {{ NAME }}
 {% else %}
-
 NAME = "Unconfigured Service"
 {% endif %}
 
+
+{% if SERVICE_ID is defined %}
+SERVICE_ID = {{ SERVICE_ID }}
+{% else %}
+SERVICE_ID = "Unconfigured Service"
+{% endif %}
+
+
+{% if OPERATOR_URL is defined %}
+OPERATOR_URL = {{ OPERATOR_URL }}
+{% else %}
+OPERATOR_URL = "http://localhost:5000"
+{% endif %}
 
 
 {% if DATABASE_PATH is defined %}

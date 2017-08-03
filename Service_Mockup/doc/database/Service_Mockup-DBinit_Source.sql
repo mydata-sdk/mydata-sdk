@@ -73,6 +73,7 @@ DROP TABLE IF EXISTS `db_Service_Mockup_Source`.`surrogate_and_user_mapping` ;
 CREATE TABLE IF NOT EXISTS `db_Service_Mockup_Source`.`surrogate_and_user_mapping` (
   `user_id` LONGTEXT NOT NULL,
   `surrogate_id` LONGTEXT NOT NULL,
+  `operator_id` LONGTEXT NOT NULL,
   PRIMARY KEY (`user_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;

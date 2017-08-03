@@ -184,6 +184,7 @@ services:
       - MYSQL_DB='db_Service_Mockup_Source'
       - MYSQL_PORT=3306
       - NAME='MyLocation'
+      - SERVICE_ID='582f2bf50cf2f4663ec4f01f'
     ports:
       - '2001:2000'
     networks:
@@ -210,6 +211,7 @@ services:
       - MYSQL_DB='db_Service_Mockup_Sink'
       - MYSQL_PORT=3306
       - NAME='PHR'
+      - SERVICE_ID='582f2bf50cf2f4663ec4f020'
     networks:
       - mydata_sdk_demo_network
     ports:

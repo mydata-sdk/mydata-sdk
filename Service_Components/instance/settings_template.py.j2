@@ -59,16 +59,11 @@ MYSQL_PORT = 3306
 {% endif %}
 
 
-
-
-
-# Setting to /tmp or other ramdisk makes it faster.
+# Setting to /tmp or other ramdisk makes it faster. This is probably outdated, #TODO Check if so
 {% if DATABASE_PATH is defined %}
 DATABASE_PATH = {{ DATABASE_PATH }}
 {% else %}
-
-DATABASE_PATH = "./db_Operator.sqlite" 
-
+DATABASE_PATH = "./db_Operator.sqlite"
 {% endif %}
 
 
@@ -102,7 +97,6 @@ CERT_PASSWORD_PATH = {{ CERT_PASSWORD_PATH }}
 {% else %}
 CERT_PASSWORD_PATH = "./cert_pw"
 {% endif %}
-
 
 
 {% if SERVICE_URL is defined %}

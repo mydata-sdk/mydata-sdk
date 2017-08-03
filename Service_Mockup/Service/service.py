@@ -154,7 +154,7 @@ class UserLogin(Resource):
     @error_handler
     def post(self):
         debug_log.info(format_request(request))
-        def link_surrogate_id(json_response, user_id):
+        def link_surrogate_id(json_response, user_id, operator_id):
             response_user_id = self.helpers.get_user_id_with_code(args["code"])
             if response_user_id == user_id:
                 pass
@@ -167,11 +167,11 @@ class UserLogin(Resource):
                 )
             debug_log.info("We got surrogate_id {} for user_id {}".format(json_response["surrogate_id"], user_id))
             debug_log.info(dumps(json_response, indent=2))
-            self.helpers.storeSurrogateJSON(user_id, json_response["surrogate_id"])
+            self.helpers.storeSurrogateJSON(user_id, json_response["surrogate_id"], operator_id)
             return json_response["surrogate_id"]
         debug_log.info("Received following data to POST on ServiceMockup:\n{}"
                        .format(dumps(request.json, indent=2))
-                      )
+                       )
         args = self.parser.parse_args()
         debug_log.info("Args contain:\n {}".format(dumps(args, indent=2)))
         debug_log.info(dumps(request.json, indent=2))
@@ -182,7 +182,7 @@ class UserLogin(Resource):
         debug_log.info("User logged in with id ({})".format(format(user_id)))
 
         endpoint = "/api/1.3/slr/auth"  # TODO: This needs to be fetched from somewhere.
-        data = {"code": code, "user_id": user_id, "operator_id": args["operator_id"]}
+        data = {"user_id": user_id, "operator_id": args["operator_id"]}
         result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=data)
         if not result.ok:
             raise DetailedHTTPException(status=result.status_code,
@@ -193,13 +193,15 @@ class UserLogin(Resource):
                                         title=result.reason)
         debug_log.info(result.text)
         try:
-            surrogate_id = link_surrogate_id(loads(result.text), user_id)  # Returns surrogate_id for convenience
+            operator_id = args["operator_id"]
+            surrogate_id = link_surrogate_id(loads(result.text), user_id, operator_id)  # Returns surrogate_id for convenience
             endpoint = "/api/1.3/slr/linking"  # TODO: This needs to be fetched from somewhere.
 
             data = {"code": code,
                     "operator_id": args["operator_id"],
                     "return_url": args["return_url"],
-                    "surrogate_id": surrogate_id}
+                    "surrogate_id": surrogate_id,
+                    "user_id": user_id}
             linking_result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=data)
             debug_log.debug("Service Linking resulted in:\n {}\n {}".format(linking_result.status_code,
                                                                             linking_result.text))
@@ -211,26 +213,6 @@ class UserLogin(Resource):
         if isinstance(reply_json, dict):
             reply_json = dumps(reply_json)
         return redirect("{}?results={}".format(decode64(args["return_url"]), encode64(reply_json)), code=302)
-
-
-class RegisterSur(Resource):
-    def __init__(self):
-        super(RegisterSur, self).__init__()
-#        self.db_path = current_app.config["DATABASE_PATH"]
-        self.helpers = Helpers(current_app.config)
-
-    @timeme
-    @error_handler
-    def post(self):
-        debug_log.info(format_request(request))
-        try:  # Remove this check once debugging is done. TODO
-            user_id = self.helpers.get_user_id_with_code(request.json["code"])
-            debug_log.info("We got surrogate_id {} for user_id {}".format(request.json["surrogate_id"], user_id))
-            debug_log.info(dumps(request.json, indent=2))
-            self.helpers.storeSurrogateJSON({user_id: request.json})
-        except Exception as e:
-            debug_log.exception(e)
-
 
 class StoreSlr(Resource):
     def __init__(self):
@@ -288,6 +270,5 @@ class StoreSSR(Resource):
             raise e
 
 api.add_resource(UserLogin, '/login')
-api.add_resource(RegisterSur, '/link')
 api.add_resource(StoreSlr, '/store_slr')
 api.add_resource(StoreSSR, '/store_ssr')

@@ -171,6 +171,12 @@ OPERATOR_SLR_PATH = {{ OPERATOR_SLR_PATH }}
 OPERATOR_SLR_PATH = "/slr"
 {% endif %}
 
+{% if OPERATOR_DUMMYUI_PATH is defined %}
+OPERATOR_DUMMYUI_PATH = {{ OPERATOR_DUMMYUI_PATH }}
+{% else %}
+OPERATOR_DUMMYUI_PATH = "/dummyui"
+{% endif %}
+
 {% if SERVICE_URL is defined %}
 SERVICE_URL = {{ SERVICE_URL }}
 {% else %}

@@ -67,7 +67,6 @@ class GenerateSurrogateId(Resource):
             debug_log.info("UserAuthenticated class, method post got json:")
             debug_log.info(request.json)
             user_id = request.json["user_id"]
-            code = request.json["code"]
             operator_id = request.json["operator_id"]
 
             sq.task("Checking if user_id is locked already.")
@@ -76,7 +75,7 @@ class GenerateSurrogateId(Resource):
                 time.sleep(self.lock_wait_time)
                 user_is_locked = self.helpers.check_lock(user_id)
             if user_is_locked:
-                return DetailedHTTPException(status=503,
+                raise DetailedHTTPException(status=503,
                                              detail={"msg": "Another SLR linking is in process, please try again once "
                                                             "linking is over"},
                                              title="User_id locked for SLR creation.")
@@ -89,18 +88,13 @@ class GenerateSurrogateId(Resource):
                 # surrogate_id is meant to be unique between operator and service.
                 surrogate_id = "{}_{}".format(user_id, operator_id)
 
-                sq.task("Link code to generated surrogate_id")
-                self.helpers.add_surrogate_id_to_code(user_id, request.json["code"], surrogate_id)
-
                 sq.send_to("Service_Mockup", "Send surrogate_id to Service_Mockup")
-                content_json = {"code": code, "surrogate_id": surrogate_id}
+                content_json = {"surrogate_id": surrogate_id}
                 return content_json
         except DetailedHTTPException as e:
-            self.helpers.delete_session(code)
             e.trace = traceback.format_exc(limit=100).splitlines()
             raise e
         except Exception as e:
-            self.helpers.delete_session(code)
             raise DetailedHTTPException(exception=e,
                                         detail="Something failed in generating and delivering Surrogate_ID.",
                                         trace=traceback.format_exc(limit=100).splitlines())
@@ -122,6 +116,7 @@ class StartServiceLinking(Resource):
         self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
         self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
         self.parser.add_argument('surrogate_id', type=str, help="surrogate ID")
+        self.parser.add_argument('user_id', type=str, help="Service User ID")
         #self.parser.add_argument('service_id', type=str, help="Service's ID")  # Seems unnecessary to the flow.
 
     def post(self):
@@ -129,9 +124,14 @@ class StartServiceLinking(Resource):
         args = self.parser.parse_args()
         debug_log.debug("StartServiceLinking got parameter:\n {}".format(args))
         data = {"surrogate_id": args["surrogate_id"], "code": args["code"]}
+        user_id = args["user_id"]
+
+        sq.task("Link code to generated surrogate_id")
+        self.helpers.add_surrogate_id_to_code(user_id, args["code"], args["surrogate_id"])
+
         if self.is_sink:
-            data["token_key"] = self.service_key["pub"]  # TODO: Onko implementoitava 1.3 mukaisesti siten että
-            # operaattori, service, käyttäjä kohtaiset pop avaimet?
+            data["token_key"] = self.service_key["pub"]  # TODO: Are we implementing according to 1.3 in such way that we have
+            # operator, service, user specific pop keys?
         sq.send_to("Operator_Components Mgmnt", "Send Operator_Components request to make SLR")
         endpoint = "/api/1.3/slr/link"  # Todo: this needs to be fetched from somewhere
         result = post("{}{}".format(self.operator_url, endpoint), json=data)
