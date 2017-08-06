@@ -325,7 +325,7 @@ if __name__ == '__main__':
     # SLR
     if not args.skip_slr:
         slr_1 = create_service_link(args.operator_url, args.sink_id, user_key, "Matti_Sink", "Uusio")
-        #slr_2 = create_service_link(args.operator_url, args.source_id, user_key, "Matti_Source", "Uusio")
+        slr_2 = create_service_link(args.operator_url, args.source_id, user_key, "Matti_Source", "Uusio")
 
     # Consent
     if not args.skip_consent:
@@ -343,8 +343,8 @@ if __name__ == '__main__':
         print("Sleeping 5 seconds before removing SLR to allow possible CR flow to finish.")
         time.sleep(5)
         sink_slr_id = slr_1["data"]["slr"]["id"]
-        #source_slr_id = slr_2["data"]["slr"]["id"]
-        #print("Sink SLR_ID: {}\nSource SLR_ID: {}".format(sink_slr_id, source_slr_id))
+        source_slr_id = slr_2["data"]["slr"]["id"]
+        print("Sink SLR_ID: {}\nSource SLR_ID: {}".format(sink_slr_id, source_slr_id))
         result = remove_slr(args.operator_url, user_key, sink_slr_id, args.sink_id)
 
         print("\n\nRequesting Last SSR for Sink")
@@ -352,5 +352,13 @@ if __name__ == '__main__':
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
         print(response)
+
+
+        print("\n\nRequesting Last SSR for Source")
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last".format(source_slr_id),
+                  headers={"Api-Key-User": user_key["Api-Key-User"]})
+        response = json.dumps(json.loads(req.text), indent=2)
+        print(response)
+
         #result = remove_slr(args.operator_url, user_key, source_slr_id, args.source_id)
         pass
