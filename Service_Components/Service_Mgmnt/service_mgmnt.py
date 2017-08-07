@@ -88,13 +88,18 @@ class GenerateSurrogateId(Resource):
                 # surrogate_id is meant to be unique between operator and service.
                 surrogate_id = "{}_{}".format(user_id, operator_id)
 
+                # Store surrogate_id to database
+                self.helpers.add_surrogate_id_to_user_id(user_id, surrogate_id)
+
                 sq.send_to("Service_Mockup", "Send surrogate_id to Service_Mockup")
                 content_json = {"surrogate_id": surrogate_id}
                 return content_json
         except DetailedHTTPException as e:
+            self.helpers.delete_session(surrogate_id=surrogate_id)
             e.trace = traceback.format_exc(limit=100).splitlines()
             raise e
         except Exception as e:
+            self.helpers.delete_session(user=user_id)
             raise DetailedHTTPException(exception=e,
                                         detail="Something failed in generating and delivering Surrogate_ID.",
                                         trace=traceback.format_exc(limit=100).splitlines())
@@ -116,7 +121,7 @@ class StartServiceLinking(Resource):
         self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
         self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
         self.parser.add_argument('surrogate_id', type=str, help="surrogate ID")
-        self.parser.add_argument('user_id', type=str, help="Service User ID")
+        # TODO: Verify service_id is unnecessary.
         #self.parser.add_argument('service_id', type=str, help="Service's ID")  # Seems unnecessary to the flow.
 
     def post(self):
@@ -124,10 +129,9 @@ class StartServiceLinking(Resource):
         args = self.parser.parse_args()
         debug_log.debug("StartServiceLinking got parameter:\n {}".format(args))
         data = {"surrogate_id": args["surrogate_id"], "code": args["code"]}
-        user_id = args["user_id"]
 
         sq.task("Link code to generated surrogate_id")
-        self.helpers.add_surrogate_id_to_code(user_id, args["code"], args["surrogate_id"])
+        self.helpers.add_code_to_surrogate_id(args["code"], args["surrogate_id"])
 
         if self.is_sink:
             data["token_key"] = self.service_key["pub"]  # TODO: Are we implementing according to 1.3 in such way that we have

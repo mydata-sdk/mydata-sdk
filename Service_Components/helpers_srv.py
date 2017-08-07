@@ -201,6 +201,8 @@ class Helpers:
         :return: None
         """
         # TODO: Refactor DB name from codes to userlock or something like that.
+        # TODO: This naming is confusing, one can't know we're touching session_store with this function
+        # let alone initiate it.
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         cursor.execute("INSERT INTO session_store (ID,code,surrogate_id) \
@@ -210,31 +212,18 @@ class Helpers:
         db.close()
 
 
-    # TODO: Refactor name to be more meaningful
-    def add_surrogate_id_to_code(self, user_id, code, surrogate_id):
-        """
-        Link code with a surrogate_id
-        :param code: 
-        :param surrogate_id: 
-        :return: None
-        """
-
-        '''
-        For 1.3 Service service management doesn't generate the code.
-        The problem this creates is that we used to use code to prevent starting the session several times over.
-
-        TODO:
-          Write written description how we lock user from initiating several SLR requests at once.
-
-          1. Check if user_id is in locked table,
-          2. When we know user starts SLR flow, add the user_id into a db that we check to see if we can start
-
-        '''
-
+    def add_surrogate_id_to_user_id(self, user_id, surrogate_id):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        cursor.execute("UPDATE session_store SET code=%s WHERE ID=%s ;", (code, user_id))
         cursor.execute("UPDATE session_store SET surrogate_id=%s WHERE ID=%s ;", (surrogate_id, user_id))
+        db.commit()
+        db.close()
+
+    def add_code_to_surrogate_id(self, code, surrogate_id):
+        db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
+        cursor = db.cursor()
+        cursor.execute("UPDATE session_store SET code=%s WHERE surrogate_id=%s ;", (code, surrogate_id))
+        #cursor.execute("UPDATE session_store SET surrogate_id=%s WHERE ID=%s ;", (surrogate_id, user_id))
         db.commit()
         db.close()
 
@@ -328,12 +317,17 @@ class Helpers:
         debug_log.info("CR has been validated.")
         return loads(combined_decoded)
 
-    def delete_session(self, code):
+    def delete_session(self, code=None, user=None, surrogate_id=None):
         try:
             debug_log.info("Deleting session: {}".format(code))
             db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
             cursor = db.cursor()
-            cursor.execute("DELETE FROM session_store WHERE code=%s ;", (code,))
+            if code is None and surrogate_id is not None:
+                cursor.execute("DELETE FROM session_store WHERE surrogate_id=%s ;", (surrogate_id,))
+            elif code is None and user is not None:
+                cursor.execute("DELETE FROM session_store WHERE ID=%s ;", (user,))
+            else:
+                cursor.execute("DELETE FROM session_store WHERE code=%s ;", (code,))
             db.commit()
             cursor.close()
             debug_log.info("Session {} deleted.".format(code))

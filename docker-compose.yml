@@ -74,7 +74,7 @@ services:
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
-      - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
+      - OPERATOR_UID="Operator112"
       - OPERATOR_ROOT_PATH="/api/1.3"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"

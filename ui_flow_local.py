@@ -21,7 +21,7 @@ Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
 def initialize(account_url):
 
     def get_api_key(account_url=account_url, account=("pasi", "0nk0va"), endpoint="external/auth/user/"):
-        print("\nFetching Account Key for account '{}'".format(account[0]))
+        print("\nFetching Account Key for account '{}' from endpoint {}".format(account[0], account_url+endpoint))
         api_json = get(account_url+endpoint, auth=account).text
         print("Received following key:\n {}".format(api_json))
         return api_json
