@@ -10,7 +10,7 @@ from flask_restful import Resource, Api
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import sink_cr_schema, source_cr_schema, csr_schema
-from helpers_srv import validate_json, SLR_tool, CR_tool, Helpers, Sequences
+from helpers_srv import validate_json, SLR_tool, CR_tool, Helpers, Sequences, base_token_tool
 from srv_tasks import get_AuthToken
 
 api_Authorization_Mgmnt = Blueprint("api_Authorization_Mgmnt", __name__)
@@ -209,15 +209,46 @@ class Install_CR(Resource):
         }
         self.helpers.storeCR_JSON(store_dict)
 
+        # Remove unused items from dict, csr db doesn't need all of those.
+        store_dict.pop("rs_id", None)
+        store_dict.pop("slr_id", None)
+
         store_dict["json"] = crt.cr["csr"]
         self.helpers.storeCSR_JSON(store_dict)
         if role == "Sink" and self.is_sink:
             debug_log.info("Requesting auth_token")
             get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, current_app.config)
-        return {"status": 200, "msg": "OK"}, 200
+        return {"id": crt.get_cr_id_from_cr()}, 201
+
+    @error_handler
+    def patch(self):
+        payload = request.json
+
+        # Decode payload
+        decoded_payload = base_token_tool.decode_payload(payload["data"]["attributes"]["payload"])
+
+        # Create template for StoreCSR_JSON
+        store_dict = {
+            "csr_id": decoded_payload["record_id"],
+            "consent_status": decoded_payload["consent_status"],
+            "previous_record_id": decoded_payload["prev_record_id"],
+            "cr_id": decoded_payload["cr_id"],
+            "surrogate_id": decoded_payload["surrogate_id"],
+            "json": payload["data"]  # possibly store the base64 representation
+        }
+
+        # Store CSR to database
+        self.helpers.storeCSR_JSON(store_dict)
+
+        # Forward change to Service
+        # To be implemented.....
 
 
-api.add_resource(Install_CR, '/add_cr')
+        return {"id": decoded_payload["record_id"]}, 201
+        pass
+
+
+api.add_resource(Install_CR, '/cr_management')
 
 
 # if __name__ == '__main__':

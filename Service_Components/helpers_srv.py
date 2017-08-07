@@ -463,10 +463,8 @@ class Helpers:
         cr_id = DictionaryToStore["cr_id"]
         csr_id = DictionaryToStore["csr_id"]
         consent_status = DictionaryToStore["consent_status"]
-        rs_id = DictionaryToStore["rs_id"]
         surrogate_id = DictionaryToStore["surrogate_id"]
         previous_record_id = DictionaryToStore["previous_record_id"]
-        slr_id = DictionaryToStore["slr_id"]
         json = DictionaryToStore["json"]
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
@@ -474,10 +472,9 @@ class Helpers:
         debug_log.info(DictionaryToStore)
         # debug_log.info(key)
         try:
-            cursor.execute("INSERT INTO csr_storage (cr_id, csr_id, previous_record_id, consent_status, surrogate_id, slr_id, rs_id, json) \
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                           [cr_id, csr_id, previous_record_id, consent_status, surrogate_id, slr_id, rs_id,
-                            dumps(json)])
+            cursor.execute("INSERT INTO csr_storage (cr_id, csr_id, previous_record_id, consent_status, surrogate_id, json) \
+                VALUES (%s, %s, %s, %s, %s, %s)",
+                           [cr_id, csr_id, previous_record_id, consent_status, surrogate_id, dumps(json)])
             db.commit()
         except IntegrityError as e:
             # db.execute("UPDATE csr_storage SET json=? WHERE cr_id=? ;", [dumps(DictionaryToStore[key]), key])

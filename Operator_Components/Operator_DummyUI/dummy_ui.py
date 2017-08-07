@@ -132,36 +132,51 @@ class LinkingUi(Resource):
                                }
         self.store_session(session_information)
 
-        # Make request to register surrogate_id
-        data = {"code": code,
+
+
+        try:
+            # Make request to register surrogate_id
+            data = {"code": code,
                 "operator_id": self.operator_id,
                 "return_url": return_url,
                 "surrogate_id": surrogate_id,
                 }
 
-        # Fetch service information:
-        service_json = self.service_registry_handler.getService(service_id)
-        service_domain = service_json["serviceInstance"][0]["domain"]  # Domain to Login of Service
-        service_access_uri = service_json["serviceInstance"][0]["serviceAccessEndPoint"]["serviceAccessURI"]
-        service_linking_uri = "/slr/linking"
+            # Fetch service information:
+            service_json = self.service_registry_handler.getService(service_id)
+            service_domain = service_json["serviceInstance"][0]["domain"]  # Domain to Login of Service
+            service_access_uri = service_json["serviceInstance"][0]["serviceAccessEndPoint"]["serviceAccessURI"]
+            service_linking_uri = "/slr/linking"
 
-        service_url = service_domain+service_access_uri+service_linking_uri
-        debug_log.info("Sending linking request to Service at: {}".format(service_url))
-        linking_result = post(service_url, json=data)
-        debug_log.debug("Service Linking resulted in:\n {}\n {}".format(linking_result.status_code,
-                                                                        linking_result.text))
+            service_url = service_domain+service_access_uri+service_linking_uri
 
+            # Initiate Service Link Process
+            debug_log.info("Sending linking request to Service at: {}".format(service_url))
+            linking_result = post(service_url, json=data)
+            debug_log.debug("Service Linking resulted in:\n {}\n {}".format(linking_result.status_code,
+                                                                            linking_result.text))
+            # If SLR was created success fully load it as a dictionary, on errors we delete session.
+            if linking_result.ok:
+                reply_json = loads(linking_result.text)
+            else:
+                self.helper.delete_session(code)
+                raise DetailedHTTPException(title=linking_result.reason,
+                                            status=linking_result.status_code,
+                                            detail={"msg": linking_result.text})
+            debug_log.info("Encoding json as reply to ui: \n{}".format(reply_json))
+            if isinstance(reply_json, dict):
+                reply_json = dumps(reply_json)
+            self.helper.delete_session(code)
+            return redirect("{}?results={}".format(decode64(args["return_url"]), encode64(reply_json)), code=302)
 
-        if linking_result.ok:
-            reply_json = loads(linking_result.text)
-        else:
-            raise DetailedHTTPException(title=linking_result.reason,
-                                        status=linking_result.status_code,
-                                        detail={"msg": linking_result.text})
-        debug_log.info("Encoding json as reply to ui: \n{}".format(reply_json))
-        if isinstance(reply_json, dict):
-            reply_json = dumps(reply_json)
-        return redirect("{}?results={}".format(decode64(args["return_url"]), encode64(reply_json)), code=302)
+        except DetailedHTTPException as e:
+            self.helper.delete_session(code)
+            raise e
+        except Exception as e:
+            self.helper.delete_session(code)
+            raise DetailedHTTPException(status=500,
+                                        exception=e,
+                                        title="Something went wrong during service linking, try again.")
 
 
 api.add_resource(LinkingUi, '/linking_service')

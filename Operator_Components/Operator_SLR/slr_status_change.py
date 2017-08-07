@@ -2,12 +2,12 @@
 __author__ = 'alpaloma'
 import logging
 import traceback
-from json import loads
+from json import loads, dumps
 
 from flask import Blueprint, current_app, render_template_string, make_response, redirect
 from flask_cors import CORS
 from flask_restful import Resource, Api, request
-from requests import get, post
+from requests import get, post, patch
 from requests.exceptions import ConnectionError, Timeout
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
@@ -53,6 +53,8 @@ class SlrStatus(Resource):
         debug_log.info("#### Request to change SLR status with parameters: account_id ({}), service_id ({}), slr_id ({})"
                        .format(account_id, service_id, slr_id))
 
+        service_url = self.service_registry_handler.getService_url(service_id)
+
         try:
             am = get_am(current_app, request.headers)
             # Verify Api-Key-User
@@ -69,7 +71,7 @@ class SlrStatus(Resource):
                     raise TypeError("This SLR isn't Active to begin with.")
                 prev_record_id = last_ssr_payload["record_id"]
                 debug_log.info("Got Decoded SLR Payload:\n {}".format(decoded_slr))
-                consents = am.get_crs(slr_id, account_id, pairs=True)
+                consents = am.get_crs(slr_id, account_id, pairs=True)["data"]
 
                 # Loop trough the consents and fetch pairs.
                 # Step redundant since endpoint at Account gives us paired consent as well.
@@ -77,20 +79,43 @@ class SlrStatus(Resource):
                 raise e
 
             try:
-                def csr_active(csr):
-                    # Implement
-                    return True
+                def csr_active(payload):
+                    return payload["consent_status"] == "Active"
 
                 # Get CR statuses
                 crs_to_disable = []
-                if False:  # TODO: Implement once we have real consents
-                    for consent in consents:
-                        cr_id = consent["data"]["id"]
-                        raw_csr = am.get_last_csr(cr_id)
-                        if csr_active(raw_csr):
-                            crs_to_disable.append(cr_id)
+                for consent in consents:
+                    cr_id = consent["id"]
+                    decoded_cr_payload = base_token_tool.decode_payload(consent["attributes"]["payload"])
+                    consent_slr_id = decoded_cr_payload["common_part"]["slr_id"]
+                    decoded_csr_payload = am.get_last_csr(cr_id, consent_slr_id)
+                    debug_log.info("Fetched decoded csr payload: \n{}".format(decoded_csr_payload))
+                    if csr_active(decoded_csr_payload):
+                        crs_to_disable.append(decoded_csr_payload)
 
-                pass
+                for cr_to_disable in crs_to_disable:
+                    # Fill CSR template for disabled CR
+                    csr_template = self.helper.gen_csr(account_id=account_id,
+                                                       consent_record_id=cr_to_disable["cr_id"],
+                                                       consent_status="Disabled",
+                                                       previous_record_id=cr_to_disable["record_id"])
+
+                    try:
+                        # Create new CSR at Account (After this CR is 'disbled' in Account as well.)
+                        removed_cr_csr = am.create_new_csr(cr_to_disable["cr_id"], csr_template)
+                        debug_log.info("Got Following CSR from Account:\n{}".format(removed_cr_csr))
+
+                        # Patch the CR status change to services
+                        endpoint = self.helper.get_service_cr_endpoint(service_id)
+                        req = patch(service_url+endpoint, json=removed_cr_csr)
+                        debug_log.debug("Posted CSR to service:\n{}  {}  {}  {}".format(req.status_code,
+                                                                                        req.reason,
+                                                                                        req.text,
+                                                                                        req.content))
+
+                    except Exception as e:
+                        debug_log.exception(e)
+
             except Exception as e:
                 raise e
 
@@ -103,21 +128,18 @@ class SlrStatus(Resource):
                                             prev_record_id=prev_record_id,
                                             )
 
-
-                pass
             except Exception as e:
                 raise e
 
             try:
                 # Notify Service of SLR status chanege
-                service_url = self.service_registry_handler.getService_url(service_id)
+
                 endpoint = "/api/1.3/slr/status"
                 req = post(service_url+endpoint, json=created_ssr)
                 debug_log.debug("Posted SSR to service:\n{}  {}  {}  {}"
                                 .format(req.status_code, req.reason, req.text, req.content))
 
                 return created_ssr
-                pass
 
 
             except Exception as e:

@@ -362,7 +362,7 @@ class AccountManagerHandler:
                                                 "content": req.content},
                                         title=req.reason)
 
-    def create_new_csr(self, cr_id, payload):
+    def create_new_csr(self, cr_id, payload): # TODO: cr_id is in payload, no need to have it passed as argument.
         debug_log.info("Issuing new Consent Status Record.")
         endpoint_url = self.url + self.endpoint["new_csr"]\
             .replace("{cr_id}", cr_id)\
@@ -972,6 +972,9 @@ class Helpers:
         token.make_signed_token(key)
         return token.serialize()
 
+    def get_service_cr_endpoint(self, service_id):
+        return "/api/1.3/cr/cr_management"
+
 class base_token_tool:
 
     @staticmethod
@@ -983,6 +986,8 @@ class base_token_tool:
         debug_log.info(payload)
         return payload
 
+
+# Perhaps worth noting that we're using interal variabled and could be worth stop using them if possible.
 def format_request(request):
     dicti = request.__dict__["environ"]
     msg = "Request from: {}\n Request to: {}\n Type: {}\n Content Type: {}\n Content Length: {}\n"\

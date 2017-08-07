@@ -61,9 +61,7 @@ CREATE TABLE IF NOT EXISTS `db_Srv_Sink`.`csr_storage` (
   `previous_record_id` VARCHAr(255) NOT NULL,
   `consent_status` VARCHAR(10) NOT NULL,
   `json` LONGTEXT NOT NULL,
-  `slr_id` LONGTEXT NOT NULL,
   `surrogate_id` LONGTEXT NOT NULL,
-  `rs_id` LONGTEXT NOT NULL,
   PRIMARY KEY (`csr_id`(255)))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
