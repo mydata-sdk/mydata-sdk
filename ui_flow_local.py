@@ -348,17 +348,46 @@ if __name__ == '__main__':
         result = remove_slr(args.operator_url, user_key, sink_slr_id, args.sink_id)
 
         print("\n\nRequesting Last SSR for Sink")
-        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last".format(sink_slr_id),
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last"
+                  .format(sink_slr_id),
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
         print(response)
 
 
         print("\n\nRequesting Last SSR for Source")
-        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last".format(source_slr_id),
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last"
+                  .format(source_slr_id),
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
         print(response)
 
+        print("\n\nRequesting list of Consent Records for Sink")
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/consents/{}/statuses"
+                  .format(sink_slr_id, cr_ids["sink_cr_id"]),
+                  headers={"Api-Key-User": user_key["Api-Key-User"]})
+        response = json.dumps(json.loads(req.text), indent=2)
+
+        print(response)
+        print("\n\nRequesting LAST of Consent Records for Sink")
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/consents/{}/statuses/last"
+                  .format(sink_slr_id, cr_ids["sink_cr_id"]),
+                  headers={"Api-Key-User": user_key["Api-Key-User"]})
+        response = json.dumps(json.loads(req.text), indent=2)
+        print(response)
+
+        print("\n\nRequesting list of Consent Records for Source")
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/consents/{}/statuses"
+                  .format(source_slr_id, cr_ids["source_cr_id"]),
+                  headers={"Api-Key-User": user_key["Api-Key-User"]})
+        response = json.dumps(json.loads(req.text), indent=2)
+
+        print(response)
+        print("\n\nRequesting LAST of Consent Records for Source")
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/consents/{}/statuses/last"
+                  .format(source_slr_id, cr_ids["source_cr_id"]),
+                  headers={"Api-Key-User": user_key["Api-Key-User"]})
+        response = json.dumps(json.loads(req.text), indent=2)
+        print(response)
         #result = remove_slr(args.operator_url, user_key, source_slr_id, args.source_id)
         pass
