@@ -95,10 +95,12 @@ class GenerateSurrogateId(Resource):
                 content_json = {"surrogate_id": surrogate_id}
                 return content_json
         except DetailedHTTPException as e:
-            self.helpers.delete_session(surrogate_id=surrogate_id)
+            debug_log.exception(e)
+            self.helpers.delete_session(user=user_id)
             e.trace = traceback.format_exc(limit=100).splitlines()
             raise e
         except Exception as e:
+            debug_log.exception(e)
             self.helpers.delete_session(user=user_id)
             raise DetailedHTTPException(exception=e,
                                         detail="Something failed in generating and delivering Surrogate_ID.",
