@@ -345,7 +345,11 @@ if __name__ == '__main__':
         sink_slr_id = slr_1["data"]["slr"]["id"]
         source_slr_id = slr_2["data"]["slr"]["id"]
         print("Sink SLR_ID: {}\nSource SLR_ID: {}".format(sink_slr_id, source_slr_id))
+        print("Removing Sink SLR")
         result = remove_slr(args.operator_url, user_key, sink_slr_id, args.sink_id)
+
+        print("Removing Source SLR")
+        result = remove_slr(args.operator_url, user_key, source_slr_id, args.source_id)
 
         print("\n\nRequesting Last SSR for Sink")
         req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last"

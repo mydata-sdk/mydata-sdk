@@ -159,42 +159,6 @@ class StartServiceLinking(Resource):
                                         title=result.reason)
 
 
-
-def verifyJWS(json_JWS):
-    def verify(jws, header):
-        try:
-            sign_key = jwk.JWK(**header["jwk"])
-            jws.verify(sign_key)
-            return True
-        except Exception as e:
-            debug_log.info("JWS verification failed with:")
-            debug_log.info(repr(e))
-
-    try:
-
-        json_web_signature = jws.JWS()
-        if (isinstance(json_JWS, dict)):
-            json_web_signature.deserialize(dumps(json_JWS))
-        elif (isinstance(json_JWS, str)):
-            json_web_signature = jws.JWS(json_JWS)
-            json_JWS = loads(json_JWS)
-
-        if json_JWS.get("header", False):  # Only one signature
-            if verify(json_web_signature, json_JWS["header"]):
-                return True
-            return False
-        elif json_JWS.get("signatures", False):  # Multiple signatures
-            signatures = json_JWS["signatures"]
-            for signature in signatures:
-                if verify(json_web_signature, signature["header"]):
-                    return True
-        return False
-    except Exception as e:
-        debug_log.info("JWS verification failed with:")
-        debug_log.info("M:", repr(e))
-        return False
-
-
 def header_fix(malformed_dictionary):  # We do not check if its malformed, we expect it to be.
     if malformed_dictionary.get("signature", False):
         malformed_dictionary["header"] = loads(malformed_dictionary["header"])
@@ -310,7 +274,7 @@ class StoreSLR(Resource):
             sign_key = jwk.JWK(**payload["cr_keys"][0])
 
             sq.task("Verify SLR was signed using the key shipped with it")
-            debug_log.info(verifyJWS(slr))
+            debug_log.info(self.helpers.verifyJWS(slr))
             verify = jwssa.verify(sign_key)  # Verifying changes the state of this object
         except Exception as e:
             raise DetailedHTTPException(title="Verifying JWS signature failed",

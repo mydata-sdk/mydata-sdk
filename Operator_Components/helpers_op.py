@@ -123,6 +123,7 @@ class AccountManagerHandler:
             "store_slr_change": "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/statuses/",
             "slr_status":       "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/statuses/last/",
             "sign_consent":     "api/account/consent/sign/",
+            "services_slr":     "account/api/v1.3/internal/services/{service_id}/servicelinks?account_id={account_id}",
             "consent":          "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{source_slr_id}/{sink_slr_id}/consents/",
             "fetch_consents":   "account/api/v1.3/internal/accounts/{account_id}/servicelinks/{link_id}/consents/",
             "auth_token":       "account/api/v1.3/internal/consents/{sink_cr_id}/authorisationtoken/",
@@ -218,6 +219,46 @@ class AccountManagerHandler:
                                             status=500)
 
         return init(get_link_id(), template)
+
+    def get_slr_with_service_id(self, service_id, account_id):
+        if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
+            debug_log.error("Account ID mismatch.\n"
+                            "ID '{}' doesn't match with verified id '{}'".format(account_id, self.account_id))
+            raise DetailedHTTPException(status=404,
+                                        detail={"msg": "Couldn't find SLR with given id."},
+                                        title="Not Found")
+
+        debug_log.info("Fetching SLR's for service id '{}' that belongs to account '{}'".format(service_id, account_id))
+        slr = get(self.url + self.endpoint["services_slr"]
+                  .replace("{account_id}", account_id)
+                  .replace("{service_id}", service_id),
+                  headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
+                  timeout=self.timeout,
+                  )
+        debug_log.info("Request resulted in status {} and content:\n {}".format(slr.status_code, slr.text))
+        if slr.ok:
+            return loads(slr.text)
+        elif slr.status_code == 404:
+            debug_log.info("No slr's found, returning empty data list.")
+            return {"data": []}
+        else:
+            raise DetailedHTTPException(status=slr.status_code,
+                                        detail={"msg": slr.text},
+                                        title=slr.reason)
+
+    def check_for_existing_slr(self, service_id, account_id):
+        debug_log.info("Checking if account '{}' has existing Active SLR's for service '{}'"
+                       .format(account_id, service_id))
+        existing_slrs = self.get_slr_with_service_id(service_id, account_id)
+        for slr in existing_slrs["data"]:
+            slr_id = slr["id"]
+            last_ssr = self.get_last_slr_status(slr_id)
+            last_ssr_payload = base_token_tool.decode_payload(last_ssr["data"]["attributes"]["payload"])
+            if last_ssr_payload["sl_status"] == "Active":
+                raise DetailedHTTPException(status=409,
+                                        detail={"msg": "an Active SLR exist for this user and service, "
+                                                       "please disable existing SLR before creating new one."},
+                                        title="Existing Active SLR found.")
 
     def get_slr(self, slr_id, account_id):
 
@@ -701,12 +742,17 @@ class Helpers:
     def store_service_key_json(self, kid, surrogate_id, key_json, service_id):
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
-        cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json, service_id) \
-            VALUES (%s, %s, %s, %s);", (kid, surrogate_id, dumps(key_json), service_id))
-
-        db.commit()
-#            cursor.execute("UPDATE service_keys_tbl SET key_json=%s WHERE kid=%s ;", (dumps(key_json), kid))
-#            db.commit()
+        try:
+            cursor.execute("INSERT INTO service_keys_tbl (kid, surrogate_id, key_json, service_id) \
+                VALUES (%s, %s, %s, %s);", (kid, surrogate_id, dumps(key_json), service_id))
+            db.commit()
+        except Exception as e:
+            debug_log.exception(e)
+            debug_log.debug("Apparently we have stored service keys for given surrogate_id '{}' and service '{}'\n"
+                            "Updating existing keys."
+                            .format(surrogate_id, service_id))
+            cursor.execute("UPDATE service_keys_tbl SET key_json=%s WHERE kid=%s ;", (dumps(key_json), kid))
+            db.commit()
         debug_log.info("Stored key_json({}) for surrogate_id({}) into DB".format(key_json, surrogate_id))
         cursor.close()
 

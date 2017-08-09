@@ -39,11 +39,11 @@ class RegisterSurrogate(Resource):
     def __init__(self):
         super(RegisterSurrogate, self).__init__()
         self.app = current_app
-        self.Helpers = Helpers(self.app.config)
+        self.helpers = Helpers(self.app.config)
         operator_id = self.app.config["UID"]
         self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
                                                                current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
-        self.operator_key = self.Helpers.get_key()
+        self.operator_key = self.helpers.get_key()
         self.request_timeout = self.app.config["TIMEOUT"]
 
         self.payload = \
@@ -78,9 +78,9 @@ class RegisterSurrogate(Resource):
             sq.task("Load account_id and service_id from database")
             code = js["code"]
             try:
-                stored_session_from_db = self.Helpers.query_db_multiple("select json from session_store where code=%s;",
-                                                                    (code,),
-                                                                    one=True)[0]
+                stored_session_from_db = self.helpers.query_db_multiple("select json from session_store where code=%s;",
+                                                                        (code,),
+                                                                        one=True)[0]
             except TypeError as e:
                 debug_log.info("Failed restoring session from DB with code '{}'".format(code))
                 debug_log.exception(e)
@@ -116,13 +116,14 @@ class RegisterSurrogate(Resource):
                     service_keys = {"token_key": token_key,
                                     "pop_key": token_key}
 
-                    self.Helpers.store_service_key_json(kid=token_key["kid"],
+                    self.helpers.store_service_key_json(kid=token_key["kid"],
                                                         surrogate_id=js["surrogate_id"],
                                                         key_json=service_keys,
                                                         service_id=service_info["id"])
             except Exception as e:
                 debug_log.exception(e)
-                self.Helpers.delete_session(code)
+                if "code" in locals():
+                    self.helper.delete_session(code)
                 raise DetailedHTTPException(exception=e,
                                             detail={"msg": "Received Invalid JSON that may not contain surrogate_id",
                                                     "json": js})
@@ -155,7 +156,7 @@ class RegisterSurrogate(Resource):
             try:
                 reply = AM.sign_slr(template, account_id)
             except AttributeError as e:
-                self.Helpers.delete_session(code)
+                self.helpers.delete_session(code)
                 raise DetailedHTTPException(status=502,
                                             title="It would seem initiating Account Manager Handler has failed.",
                                             detail="Account Manager might be down or unresponsive.",
@@ -185,26 +186,29 @@ class RegisterSurrogate(Resource):
                 response = post("{}{}".format(service_url, endpoint), json=req, timeout=self.request_timeout)
                 debug_log.info("Service Mgmnt replied with status code ({})".format(response.status_code))
                 if not response.ok:
-                    self.Helpers.delete_session(code)
+                    self.helpers.delete_session(code)
                     raise DetailedHTTPException(status=response.status_code,
                                                 detail={"Error from Service_Components Mgmnt": loads(response.text)},
                                                 title=response.reason)
             except DetailedHTTPException as e:
                 raise e
             except Exception as e:
-                self.Helpers.delete_session(code)
+                self.helpers.delete_session(code)
                 raise DetailedHTTPException(exception=e, detail="Sending SLR to service has failed",
                                             trace=traceback.format_exc(limit=100).splitlines())
 
         except DetailedHTTPException as e:
-            self.Helpers.delete_session(code)
+            if "code" in locals():
+                self.helpers.delete_session(code)
             raise e
         except Exception as e:
-            self.Helpers.delete_session(code)
+            if "code" in locals():
+                self.helpers.delete_session(code)
             raise DetailedHTTPException(title="Creation of SLR has failed.", exception=e,
                                         trace=traceback.format_exc(limit=100).splitlines())
         # SLR is made at this point and returned to the Service Mgmnt, session can be deleted.
-        self.Helpers.delete_session(code)
+        if "code" in locals():
+            self.helpers.delete_session(code)
         return loads(response.text), 201
 
 api.add_resource(RegisterSurrogate, '/link')

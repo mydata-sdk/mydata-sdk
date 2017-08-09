@@ -70,6 +70,9 @@ class StartSlrFlow(Resource):
             key_check = AM.verify_user_key(account_id)
             debug_log.info("Verifying User Key resulted: {}".format(key_check))
 
+            # Check Active SLR for this account/service pair doesn't exist
+            AM.check_for_existing_slr(service_id, account_id)
+
             # We need to store some session information for later parts of flow.
             session_information = {}
 
@@ -104,14 +107,18 @@ class StartSlrFlow(Resource):
             return response
 
         except DetailedHTTPException as e:
-            self.helper.delete_session(code)
+            debug_log.exception(e)
+            if "code" in locals():
+                self.helper.delete_session(code)
             raise DetailedHTTPException(exception=e,
                                         title="SLR registration failed.",
                                         status=500,
                                         detail="Something failed during creation of SLR.",
                                         trace=traceback.format_exc(limit=100).splitlines())
         except Exception as e:
-            self.helper.delete_session(code)
+            debug_log.exception(e)
+            if "code" in locals():
+                self.helper.delete_session(code)
             raise DetailedHTTPException(status=500,
                                         title="Something went really wrong during SLR registration.",
                                         detail="Error: {}".format(repr(e)),

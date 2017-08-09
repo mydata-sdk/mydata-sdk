@@ -174,6 +174,39 @@ class Helpers:
         db.commit()
         db.close()
 
+    def verifyJWS(json_JWS):
+        def verify(jws, header):
+            try:
+                sign_key = jwk.JWK(**header["jwk"])
+                jws.verify(sign_key)
+                return True
+            except Exception as e:
+                debug_log.info("JWS verification failed with:")
+                debug_log.info(repr(e))
+
+        try:
+
+            json_web_signature = jws.JWS()
+            if (isinstance(json_JWS, dict)):
+                json_web_signature.deserialize(dumps(json_JWS))
+            elif (isinstance(json_JWS, str)):
+                json_web_signature = jws.JWS(json_JWS)
+                json_JWS = loads(json_JWS)
+
+            if json_JWS.get("header", False):  # Only one signature
+                if verify(json_web_signature, json_JWS["header"]):
+                    return True
+                return False
+            elif json_JWS.get("signatures", False):  # Multiple signatures
+                signatures = json_JWS["signatures"]
+                for signature in signatures:
+                    if verify(json_web_signature, signature["header"]):
+                        return True
+            return False
+        except Exception as e:
+            debug_log.info("JWS verification failed with:")
+            debug_log.info("M:", repr(e))
+            return False
 
     def storeToken(self, DictionaryToStore):
         """

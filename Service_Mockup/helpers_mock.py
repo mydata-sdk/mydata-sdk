@@ -139,14 +139,20 @@ class Helpers:
         # Letting world burn if user was not in db. Fail fast, fail hard.
 
     def storeSurrogateJSON(self, user_id, surrogate_id, operator_id):
+
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         debug_log.info("Mapping surrogate_id '{}' with user_id '{}' for operator '{}'".format(surrogate_id,
                                                                                               user_id,
                                                                                               operator_id))
 
-        cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id, operator_id) \
+        try:
+            cursor.execute("INSERT INTO surrogate_and_user_mapping (user_id, surrogate_id, operator_id) \
                 VALUES (%s, %s, %s)", [user_id, surrogate_id, operator_id])
+        except Exception as e:
+            debug_log.exception(e)
+            debug_log.debug("Storing surrogate_id into user/surrogate mapping FAILED,"
+                            " likely surrogate_id assigned already.")
         db.commit()
         db.close()
 
