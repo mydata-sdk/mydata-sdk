@@ -991,6 +991,11 @@ class SdkTestCase(unittest.TestCase):
         response_data_dict = json.loads(response.data)
         slsr_id_from_response = response_data_dict['data']['id']
 
+        # ID verification
+        verification_id_array = [slsr_id]
+        id_to_verify = str(response_data_dict['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, slr_id, slsr_id_from_response
 
     ##########

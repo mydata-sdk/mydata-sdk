@@ -933,7 +933,7 @@ def account_get_last_slr_status(account_id=None, slr_id=None, endpoint="get_last
     # Append ID to ServiceLinkStatusRecord Object
     try:
         logger.info("Append ID to ServiceLinkStatusRecord object: " + slsr_entry.log_entry)
-        slsr_entry.consent_status_record_id = slsr_id
+        slsr_entry.service_link_status_record_id = slsr_id
     except Exception as exp:
         error_title = "Failed to append ID to ServiceLinkStatusRecord object"
         logger.error(error_title + ": " + repr(exp))
