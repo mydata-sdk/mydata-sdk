@@ -3387,6 +3387,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
 
+        # ID verification
+        verification_id_array = [source_cr_id]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -3452,6 +3458,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent))
+
+        # ID verification
+        verification_id_array = [source_cr_id]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
@@ -3541,6 +3552,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
 
+        # ID verification
+        verification_id_array = [source_csr_id, source_csr_id_new]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -3628,6 +3645,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        # ID verification
+        verification_id_array = [source_csr_id]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
@@ -3739,6 +3761,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
 
+        # ID verification
+        verification_id_array = [source_csr_id_new]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -3826,6 +3853,18 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_authorisation_token_data))
+
+        # ID verification
+
+        ## Source's Consent Record
+        verification_id_array = [source_cr_id_array[0]]
+        id_to_verify = str(json.loads(response.data)['data']['consent_record']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="Source's Consent Record ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        ## Sink's Service Link Record
+        verification_id_array = [sink_slr_id]
+        id_to_verify = str(json.loads(response.data)['data']['service_link_record']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="Sink's Service Link Record ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
