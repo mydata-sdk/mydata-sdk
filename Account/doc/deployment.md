@@ -26,14 +26,7 @@ These instructions are using 'Y3xUcheg' as root password.
 
 
 ### System wide dependencies with apt
-    sudo apt -y install build-essential
-    sudo apt -y install libssl-dev
-    sudo apt -y install libffi-dev
-    sudo apt -y install python
-    sudo apt -y install python-dev
-    sudo apt -y install python-pip
-    sudo apt -y install libmysqlclient-dev
-    sudo apt -y install git
+    sudo apt -y install build-essential libssl-dev libffi-dev python python-dev python-pip libmysqlclient-dev git
 
 
 ### System wide dependencies with pip
@@ -78,11 +71,6 @@ These instructions are using 'Y3xUcheg' as root password.
 ##### Quit from MySQL shell
 
     quit
-    
-
-#### Run tests (optional)
-
-    python setup.py test
 
 
 #### Create virtual environment
@@ -90,6 +78,11 @@ These instructions are using 'Y3xUcheg' as root password.
     virtualenv venv
     source ./venv/bin/activate
     ./venv/bin/pip install -r requirements.txt
+    
+
+#### Run tests (optional)
+
+    python setup.py test
 
 
 #### Config
