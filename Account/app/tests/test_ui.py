@@ -1075,17 +1075,7 @@ class UiTestCase(unittest.TestCase):
         # ID verification
         verification_id_array = [source_ssr_id_new]
         id_to_verify = str(json.loads(response.data)['data']['id'])
-        try:
-            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
-        except AssertionError:
-            print("IDs")
-            print("source_slr_id: " + str(source_slr_id))
-            print("sink_slr_id: " + str(sink_slr_id))
-            print("source_ssr_id: " + str(source_ssr_id))
-            print("source_ssr_id_new: " + str(source_ssr_id_new))
-            print("sink_ssr_id: " + str(sink_ssr_id))
-            print("sink_ssr_id_new: " + str(sink_ssr_id_new))
-            raise
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
