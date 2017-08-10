@@ -897,6 +897,8 @@ class UiTestCase(unittest.TestCase):
             cr_id_fault=False
         )
 
+        source_csr_id_array.append(source_csr_id_new)
+
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
@@ -921,7 +923,7 @@ class UiTestCase(unittest.TestCase):
         sink_cr_id = sink_cr_id_array[0]
         sink_csr_id = sink_csr_id_array[0]
 
-        # Change Consent Status of Source Service
+        # Change Consent Status of Sink Service
         consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + sink_cr_id + "/statuses/"
         consent_status_change_payload, sink_csr_id_new = generate_consent_status_payload(
             surrogate_id=self.SINK_SURROGATE_ID,
@@ -931,6 +933,7 @@ class UiTestCase(unittest.TestCase):
             misformatted_payload=False,
             cr_id_fault=False
         )
+        sink_csr_id_array.append(sink_csr_id_new)
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
@@ -1325,6 +1328,12 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
 
+        # ID verification
+        verification_id_array = source_cr_id_array + sink_cr_id_array
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1346,6 +1355,12 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
+
+        # ID verification
+        verification_id_array = [source_cr_id_array[0], sink_cr_id_array[0]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1369,6 +1384,12 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
 
+        # ID verification
+        verification_id_array = [source_cr_id_array[-1], sink_cr_id_array[-1]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1384,12 +1405,18 @@ class UiTestCase(unittest.TestCase):
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
 
-        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id_array[0]) + "/statuses/"
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(sink_slr_id) + "/consents/" + str(sink_cr_id_array[0]) + "/statuses/"
 
         response = self.app.get(url, headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
+
+        # ID verification
+        verification_id_array = sink_csr_id_array
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1401,7 +1428,7 @@ class UiTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array = self.test_for_account_change_consent_status_sink()
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array = self.test_for_account_change_consent_status_source()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -1412,6 +1439,12 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
+
+        # ID verification
+        verification_id_array = source_csr_id_array
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1434,6 +1467,11 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        # ID verification
+        verification_id_array = [str(source_csr_id_array[0])]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
