@@ -729,7 +729,7 @@ class UiTestCase(unittest.TestCase):
 
         # Store Service Link of Source Service
         source_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/store/"
-        source_slr_store_payload = generate_sl_store_payload(
+        source_slr_store_payload, ssr_id = generate_sl_store_payload(
             slr_id=source_slr_id,
             slr_signed=json.loads(source_slr_sign_response.data)['data'],
             surrogate_id=self.SOURCE_SURROGATE_ID,
@@ -744,7 +744,7 @@ class UiTestCase(unittest.TestCase):
 
         # Store Service Link of Sink Service
         sink_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + sink_slr_id + "/store/"
-        sink_slr_store_payload = generate_sl_store_payload(
+        sink_slr_store_payload, ssr_id = generate_sl_store_payload(
             slr_id=sink_slr_id,
             slr_signed=json.loads(sink_slr_sign_response.data)['data'],
             surrogate_id=self.SINK_SURROGATE_ID,
