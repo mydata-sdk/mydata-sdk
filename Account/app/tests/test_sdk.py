@@ -508,7 +508,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
-        payload = generate_sl_store_payload(
+        payload, ssr_id = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
             surrogate_id=self.SINK_SURROGATE_ID,
@@ -539,7 +539,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
-        payload = generate_sl_store_payload(
+        payload, ssr_id = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
             surrogate_id=self.SINK_SURROGATE_ID,
@@ -571,7 +571,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
-        payload = generate_sl_store_payload(
+        payload, ssr_id = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
             surrogate_id=self.SINK_SURROGATE_ID,
@@ -693,7 +693,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
-        payload = generate_sl_store_payload(
+        payload, ssr_id = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
             surrogate_id=self.SOURCE_SURROGATE_ID,
@@ -706,7 +706,7 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_store))
 
-        return account_id, account_api_key, sdk_api_key, slr_id
+        return account_id, account_api_key, sdk_api_key, slr_id, ssr_id
 
     ##########
     ##########
@@ -724,7 +724,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
-        payload = generate_sl_store_payload(
+        payload, ssr_id = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
             surrogate_id=self.SOURCE_SURROGATE_ID,
@@ -756,7 +756,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
-        payload = generate_sl_store_payload(
+        payload, ssr_id = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
             surrogate_id=self.SOURCE_SURROGATE_ID,
@@ -788,7 +788,7 @@ class SdkTestCase(unittest.TestCase):
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
 
         url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + slr_id + "/store/"
-        payload = generate_sl_store_payload(
+        payload, ssr_id = generate_sl_store_payload(
             slr_id=slr_id,
             slr_signed=slr_data['data'],
             surrogate_id=self.SINK_SURROGATE_ID,
@@ -811,7 +811,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -823,6 +823,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_listing))
+
+        # ID verification
+        verification_id_array = [slr_id]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, slr_id
 
@@ -847,6 +853,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr))
 
+        # ID verification
+        verification_id_array = [slr_id]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, slr_id
 
     ##########
@@ -857,7 +868,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -880,8 +891,8 @@ class SdkTestCase(unittest.TestCase):
         Test Fetch SLR status listing
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
-
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -895,6 +906,13 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status_listing))
         response_data_dict = json.loads(response.data)
         slsr_id = response_data_dict['data'][0]['id']
+
+        # ID verification
+        verification_id_array = [ssr_id]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
 
     ##########
@@ -905,7 +923,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
@@ -941,6 +959,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+
+        # ID verification
+        verification_id_array = [slsr_id]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, slr_id, slsr_id
 
@@ -1030,7 +1053,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1052,7 +1075,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1074,7 +1097,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1086,6 +1109,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_listing))
 
+        # ID verification
+        verification_id_array = [slr_id]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, slr_id
 
     ##########
@@ -1096,7 +1125,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1108,6 +1137,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_listing))
 
+        # ID verification
+        verification_id_array = [slr_id]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, slr_id
 
     ##########
@@ -1118,7 +1153,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1140,7 +1175,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1162,7 +1197,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1184,7 +1219,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1206,7 +1241,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1229,7 +1264,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1241,6 +1276,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr))
 
+        # ID verification
+        verification_id_array = [slr_id]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, slr_id
 
     ##########
@@ -1251,7 +1291,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1274,7 +1314,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1419,7 +1459,7 @@ class SdkTestCase(unittest.TestCase):
         :return: account_id, account_api_key, sdk_api_key, slr_id
         """
 
-        account_id, account_api_key, sdk_api_key, slr_id = self.test_slr_store_source()
+        account_id, account_api_key, sdk_api_key, slr_id, ssr_id = self.test_slr_store_source()
 
         request_headers = default_headers
         request_headers['Api-Key-Sdk'] = str(sdk_api_key)
@@ -1504,7 +1544,7 @@ class SdkTestCase(unittest.TestCase):
 
         # Store Service Link of Source Service
         source_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/store/"
-        source_slr_store_payload = generate_sl_store_payload(
+        source_slr_store_payload, ssr_id = generate_sl_store_payload(
             slr_id=source_slr_id,
             slr_signed=json.loads(source_slr_sign_response.data)['data'],
             surrogate_id=self.SOURCE_SURROGATE_ID,
@@ -1519,7 +1559,7 @@ class SdkTestCase(unittest.TestCase):
 
         # Store Service Link of Sink Service
         sink_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + sink_slr_id + "/store/"
-        sink_slr_store_payload = generate_sl_store_payload(
+        sink_slr_store_payload, ssr_id = generate_sl_store_payload(
             slr_id=sink_slr_id,
             slr_signed=json.loads(sink_slr_sign_response.data)['data'],
             surrogate_id=self.SINK_SURROGATE_ID,
@@ -2304,6 +2344,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
 
+        # ID verification
+        verification_id_array = source_cr_id_array
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id
 
     ##########
@@ -2328,6 +2374,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
+
+        # ID verification
+        verification_id_array = source_cr_id_array + sink_cr_id_array
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
@@ -2423,6 +2475,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
 
+        # ID verification
+        verification_id_array = [source_cr_id_array[0]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
     ##########
@@ -2447,6 +2505,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
+
+        # ID verification
+        verification_id_array = [source_cr_id_array[0], sink_cr_id_array[0]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
@@ -2542,6 +2606,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
 
+        # ID verification
+        verification_id_array = [source_cr_id_array[-1]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
     ##########
@@ -2566,6 +2636,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
+
+        # ID verification
+        verification_id_array = [source_cr_id_array[-1], sink_cr_id_array[-1]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
@@ -2661,6 +2737,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
 
+        # ID verification
+        verification_id_array = source_cr_id_array + sink_cr_id_array
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
     ##########
@@ -2709,6 +2791,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
 
+        # ID verification
+        verification_id_array = [source_cr_id_array[0]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
     ##########
@@ -2733,6 +2821,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
+
+        # ID verification
+        verification_id_array = [source_cr_id_array[0], sink_cr_id_array[0]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 
@@ -2803,6 +2897,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
 
+        # ID verification
+        verification_id_array = [source_csr_id, source_csr_id_new]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -2827,6 +2927,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
         unittest.TestCase.assertEqual(self, len(json.loads(response.data)['data']), count, msg="Response array is containing {} objects instead of {} expexted objects".format(len(json.loads(response.data)['data']), count))
+
+        # ID verification
+        verification_id_array = [source_csr_id_new]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
@@ -2897,6 +3003,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
 
+        # ID verification
+        verification_id_array = [source_csr_id]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -2942,6 +3053,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
+
+        # ID verification
+        verification_id_array = [source_csr_id, source_csr_id_new]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
@@ -3011,6 +3128,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        # ID verification
+        verification_id_array = [source_csr_id_new]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
@@ -3104,6 +3226,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
 
+        # ID verification
+        verification_id_array = [source_csr_id_new]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -3172,6 +3299,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        # ID verification
+        verification_id_array = [source_csr_id_new]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
@@ -3243,6 +3375,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
 
+        # ID verification
+        verification_id_array = [source_cr_id]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -3308,6 +3446,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent))
+
+        # ID verification
+        verification_id_array = [source_cr_id]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
@@ -3397,6 +3540,12 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
 
+        # ID verification
+        verification_id_array = [source_csr_id, source_csr_id_new]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -3484,6 +3633,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        # ID verification
+        verification_id_array = [source_csr_id]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
@@ -3595,6 +3749,11 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
 
+        # ID verification
+        verification_id_array = [source_csr_id_new]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_cr_id, source_csr_id, source_csr_id_new, sink_slr_id, sink_ssr_id, sink_cr_id, sink_csr_id
 
     ##########
@@ -3682,6 +3841,18 @@ class SdkTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_authorisation_token_data))
+
+        # ID verification
+
+        ## Source's Consent Record
+        verification_id_array = [source_cr_id_array[0]]
+        id_to_verify = str(json.loads(response.data)['data']['consent_record']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="Source's Consent Record ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        ## Sink's Service Link Record
+        verification_id_array = [sink_slr_id]
+        id_to_verify = str(json.loads(response.data)['data']['service_link_record']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="Sink's Service Link Record ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, sink_slr_id, sink_ssr_id, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array, count
 

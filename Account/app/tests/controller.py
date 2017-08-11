@@ -270,7 +270,7 @@ def generate_sl_store_payload(service_key=None, service_kid=None, slr_id=None, s
 
     payload = json.dumps(sl_store_payload)
 
-    return payload
+    return payload, record_id
 
 
 def generate_sls_store_payload(slr_id=None, surrogate_id=None, record_id=None, status="Active", prev_record_id=None, misformatted_payload=False):
