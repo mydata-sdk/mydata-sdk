@@ -55,7 +55,7 @@ CSRF_SESSION_KEY = str(os.urandom(24))
 SECRET_KEY = str(os.urandom(24))
 
 # SDK Api-Key
-SDK_API_KEY = b64encode(str(uuid4()) + "-" + str(uuid4()))
+SDK_API_KEY = b64encode(str(uuid4()) + str(os.urandom(24)) + str(uuid4()))
 
 # http://flask-restful-cn.readthedocs.org/en/0.3.5/reqparse.html#error-handling
 BUNDLE_ERRORS = True
