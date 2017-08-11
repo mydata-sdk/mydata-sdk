@@ -123,6 +123,17 @@ class Helpers:
                 db.close()
                 return None
 
+    def get_slr_key(self, surrogate_id):
+        # Now we fetch the SLR and put it to SLR_Tool
+        slr_tool = SLR_tool()
+        slr = self.get_slr(surrogate_id)
+        slr_tool.slr = slr
+        # Fetch key from SLR.
+        keys = slr_tool.get_cr_keys()
+        debug_log.info("Got following key(s) from SLR: {}".format(keys))
+        sign_key = jwk.JWK(**keys[0])
+        return sign_key
+
     def store_slr_JSON(self, json, slr_id, surrogate_id):
         """
         Store SLR into database
@@ -156,9 +167,12 @@ class Helpers:
         record_id = decoded_payload["record_id"]
         surrogate_id = decoded_payload["surrogate_id"]
         slr_id = decoded_payload["slr_id"]
-        #slr = self.get_slr(surrogate_id)
+        ssr = json["attributes"]
+        debug_log.info("Got '{}' containing \n'{}' \nFor ssr.".format(type(ssr), ssr))
+        sign_key = self.get_slr_key(surrogate_id)
 
-        #sign_key = jwk.JWK(**payload["cr_keys"][0])
+        self.verify_JWS(ssr, sign_key)
+        debug_log.info("SSR verified with key from associated SLR successfully.")
 
 
         debug_log.info("Storing SSR '{}' momentarily.\n {}".format(record_id, decoded_payload))
@@ -176,6 +190,18 @@ class Helpers:
             VALUES (%s, %s, %s, %s, %s)", (surrogate_id, dumps(json), record_id, slr_id, prev_id))
         db.commit()
         db.close()
+
+    def verify_JWS(self, jws_to_verify, sign_key):
+        debug_log.info("Verifying JWS: \n'{}'\n With key: {}".format(jws_to_verify, sign_key))
+        # Create empty JWS object for the SSR
+        json_web_signature = jws.JWS()
+        if (isinstance(jws_to_verify, dict)):
+            json_web_signature.deserialize(dumps(jws_to_verify))
+        elif (isinstance(jws_to_verify, str)):
+            json_web_signature = jws.JWS(jws_to_verify)
+
+        # Verify the SSR with key from SLR
+        json_web_signature.verify(sign_key)
 
     def verifyJWS(self, json_JWS):
         def verify(jws, header):
@@ -469,11 +495,23 @@ class Helpers:
         :param DictionaryToStore: Dictionary in form {"key" : "dict_to_store"}
         :return: None
         """
+        debug_log.info("Got '{}' to store as CR".format(DictionaryToStore))
         cr_id = DictionaryToStore["cr_id"]
         rs_id = DictionaryToStore["rs_id"]
         surrogate_id = DictionaryToStore["surrogate_id"]
         slr_id = DictionaryToStore["slr_id"]
         json = DictionaryToStore["json"]
+
+        # Fetch key from SLR
+        sign_key = self.get_slr_key(surrogate_id)
+
+        cr_json = json.get("attributes", None)
+        if cr_json is None:
+            cr_json = json
+
+        # Verify JWS is signed appropriately
+        self.verify_JWS(cr_json, sign_key)
+
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         debug_log.info("Storing following CR structure:")
@@ -496,12 +534,25 @@ class Helpers:
         :param DictionaryToStore: Dictionary in form {"key" : "dict_to_store"}
         :return: None
         """
+        debug_log.info("Got '{}' to store as CSR".format(DictionaryToStore))
         cr_id = DictionaryToStore["cr_id"]
         csr_id = DictionaryToStore["csr_id"]
         consent_status = DictionaryToStore["consent_status"]
         surrogate_id = DictionaryToStore["surrogate_id"]
         previous_record_id = DictionaryToStore["previous_record_id"]
         json = DictionaryToStore["json"]
+
+        # Fetch key from SLR
+        sign_key = self.get_slr_key(surrogate_id)
+        csr_json = json.get("attributes", None)
+        if csr_json is None:
+            csr_json = json
+
+        # Verify JWS is signed appropriately
+        self.verify_JWS(csr_json, sign_key)
+
+
+
         db = db_handler.get_db(host=self.host, password=self.passwd, user=self.user, port=self.port, database=self.db)
         cursor = db.cursor()
         debug_log.info("Storing following csr structure:")

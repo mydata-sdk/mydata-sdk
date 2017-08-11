@@ -973,11 +973,11 @@ class Helpers:
     def Gen_ki_cr(self, everything):
         return {}
 
-    def gen_csr(self, account_id, consent_record_id, consent_status, previous_record_id):
+    def gen_csr(self, surrogate_id, consent_record_id, consent_status, previous_record_id):
         _tmpl = {
             "version": "1.3",
             "record_id": str(guid()),
-            "surrogate_id": account_id,
+            "surrogate_id": surrogate_id,
             "cr_id": consent_record_id,
             "consent_status": consent_status,  # "Active/Disabled/Withdrawn"
             "iat": int(time.time()),

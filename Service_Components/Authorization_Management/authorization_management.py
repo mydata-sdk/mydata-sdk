@@ -214,6 +214,7 @@ class Install_CR(Resource):
         store_dict.pop("slr_id", None)
 
         store_dict["json"] = crt.cr["csr"]
+        debug_log.info("WORKING GAVE US: {}".format(store_dict["json"]))
         self.helpers.storeCSR_JSON(store_dict)
         if role == "Sink" and self.is_sink:
             debug_log.info("Requesting auth_token")
@@ -234,10 +235,11 @@ class Install_CR(Resource):
             "previous_record_id": decoded_payload["prev_record_id"],
             "cr_id": decoded_payload["cr_id"],
             "surrogate_id": decoded_payload["surrogate_id"],
-            "json": payload["data"]  # possibly store the base64 representation
+            "json": payload["data"]["attributes"]  # possibly store the base64 representation
         }
 
         # Store CSR to database
+        debug_log.info("BROKEN GAVE US: {}".format(store_dict["json"]))
         self.helpers.storeCSR_JSON(store_dict)
 
         # Forward change to Service
