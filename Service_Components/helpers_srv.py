@@ -156,6 +156,9 @@ class Helpers:
         record_id = decoded_payload["record_id"]
         surrogate_id = decoded_payload["surrogate_id"]
         slr_id = decoded_payload["slr_id"]
+        #slr = self.get_slr(surrogate_id)
+
+        #sign_key = jwk.JWK(**payload["cr_keys"][0])
 
 
         debug_log.info("Storing SSR '{}' momentarily.\n {}".format(record_id, decoded_payload))
@@ -174,7 +177,7 @@ class Helpers:
         db.commit()
         db.close()
 
-    def verifyJWS(json_JWS):
+    def verifyJWS(self, json_JWS):
         def verify(jws, header):
             try:
                 sign_key = jwk.JWK(**header["jwk"])
