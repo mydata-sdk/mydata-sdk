@@ -1305,7 +1305,7 @@ def account_get_csr(csr_id="", cr_id="", prev_record_id="", account_id="", curso
     return db_entry_object.to_api_dict
 
 
-def account_get_csrs(account_id=None, consent_id=None, status_id=""):
+def account_get_csrs(account_id=None, consent_id=None):
     """
     Get all consent status record entries related to Consent Record
     :param account_id:
@@ -1316,8 +1316,6 @@ def account_get_csrs(account_id=None, consent_id=None, status_id=""):
         raise AttributeError("Provide account_id as parameter")
     if consent_id is None:
         raise AttributeError("Provide consent_id as parameter")
-    if status_id is None:
-        raise AttributeError("Provide status_id as parameter")
 
     # Get table name
     logger.info("Create Consent Status Record object")
@@ -1334,16 +1332,10 @@ def account_get_csrs(account_id=None, consent_id=None, status_id=""):
         logger.error('Could not get database cursor: ' + repr(exp))
         raise
 
-    # Get primary key filter
-    try:
-        cursor, filter_id = get_consent_status_id_filter(cursor=cursor, csr_id=status_id, table_name=table_name)
-    except Exception as exp:
-        logger.error('Could not get primary key list: ' + repr(exp))
-        raise
-
     # Get primary keys for Consent Status Records
     try:
-        cursor, id_list = get_consent_status_ids(cursor=cursor, cr_id=consent_id, primary_key_filter=filter_id, table_name=table_name)
+        logger.info("Get primary keys for Consent Status Records")
+        cursor, id_list = get_consent_status_ids(cursor=cursor, account_id=account_id, cr_id=consent_id, primary_key_filter=0, table_name=table_name)
     except Exception as exp:
         logger.error('Could not get primary key list: ' + repr(exp))
         raise

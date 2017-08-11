@@ -1495,15 +1495,6 @@ class ApiConsentStatusesForServiceLinkRecord(Resource):
         if verify_account_id_match(account_id=account_id, api_key=api_key_user, endpoint=endpoint):
             logger.info("Account IDs are matching")
 
-        # Check query variables
-        try:
-            status_id = request.args.get('status_id', "")
-            status_id = str(status_id)
-        except Exception as exp:
-            raise ApiError(code=400, title="Unsupported status_id", detail=repr(exp), source=endpoint)
-        else:
-            logger.info("status_id from query params: {}".format(status_id))
-
         # Get Consent Record
         try:
             logger.info("Fetching Consent Record")
@@ -1524,7 +1515,7 @@ class ApiConsentStatusesForServiceLinkRecord(Resource):
         # Get Consent Status Records
         try:
             logger.info("Fetching Consent Status Records")
-            db_entries = account_get_csrs(account_id=account_id, consent_id=consent_id, status_id=status_id)
+            db_entries = account_get_csrs(account_id=account_id, consent_id=consent_id)
         except IndexError as exp:
             error_title = "Consent Status Records not found with provided information"
             error_detail = "Account ID was {} Service Link ID was {}, and Consent ID was {}. Status ID from query parameters was {}.".format(account_id, link_id, consent_id, status_id)

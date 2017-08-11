@@ -790,11 +790,6 @@ paths:
           type: string
           description: 'Consent ID'
           required: true
-        - name: status_id
-          in: query
-          type: string
-          description: "Last valid Consent Status Record ID"
-          required: false
 
       tags:
         - MyData Consent
