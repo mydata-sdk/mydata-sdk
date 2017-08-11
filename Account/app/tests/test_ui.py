@@ -309,6 +309,8 @@ class UiTestCase(unittest.TestCase):
         account_api_key = response_json["Api-Key-User"]
         account_id = response_json["account_id"]
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id, account_username, account_password
 
     ##########
@@ -331,6 +333,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_get))
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id
 
     ##########
@@ -350,6 +354,8 @@ class UiTestCase(unittest.TestCase):
 
         response = self.app.delete(url, headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 204, msg=response.data)
+
+        print("Request made to: " + url)
 
         return account_api_key, account_id, account_username, account_password
 
@@ -373,6 +379,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id, account_username, account_password
 
     ##########
@@ -394,6 +402,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 401, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_dict))
+
+        print("Request made to: " + url)
 
         return account_api_key, account_id
 
@@ -418,6 +428,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info_listing))
         account_info_id = json.loads(response.data)['data'][0]['id']
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id, account_info_id
 
     ##########
@@ -439,6 +451,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_api_key, account_id
 
@@ -463,6 +477,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
         account_avatar = json.loads(response.data)['data']['attributes']['avatar']
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id, account_info_id, account_avatar
 
     ##########
@@ -485,6 +501,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id
 
     ##########
@@ -506,6 +524,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_api_key, account_id
 
@@ -536,6 +556,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id
 
     ##########
@@ -559,6 +581,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
+
+        print("Request made to: " + url)
 
         return account_api_key, account_id
 
@@ -584,6 +608,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id
 
     ##########
@@ -607,6 +633,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
+
+        print("Request made to: " + url)
 
         return account_api_key, account_id
 
@@ -632,6 +660,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_info))
 
+        print("Request made to: " + url)
+
         return account_api_key, account_id
 
     ##########
@@ -655,6 +685,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 400, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_api_key, account_id
 
@@ -729,7 +761,7 @@ class UiTestCase(unittest.TestCase):
 
         # Store Service Link of Source Service
         source_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + source_slr_id + "/store/"
-        source_slr_store_payload = generate_sl_store_payload(
+        source_slr_store_payload, ssr_id = generate_sl_store_payload(
             slr_id=source_slr_id,
             slr_signed=json.loads(source_slr_sign_response.data)['data'],
             surrogate_id=self.SOURCE_SURROGATE_ID,
@@ -744,7 +776,7 @@ class UiTestCase(unittest.TestCase):
 
         # Store Service Link of Sink Service
         sink_slr_store_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + sink_slr_id + "/store/"
-        sink_slr_store_payload = generate_sl_store_payload(
+        sink_slr_store_payload, ssr_id = generate_sl_store_payload(
             slr_id=sink_slr_id,
             slr_signed=json.loads(sink_slr_sign_response.data)['data'],
             surrogate_id=self.SINK_SURROGATE_ID,
@@ -788,6 +820,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id
 
     ##########
@@ -818,6 +852,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 201, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_slr_status))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new
 
@@ -897,6 +933,8 @@ class UiTestCase(unittest.TestCase):
             cr_id_fault=False
         )
 
+        source_csr_id_array.append(source_csr_id_new)
+
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=consent_status_change_response.data), msg=consent_status_change_response.data)
@@ -921,7 +959,7 @@ class UiTestCase(unittest.TestCase):
         sink_cr_id = sink_cr_id_array[0]
         sink_csr_id = sink_csr_id_array[0]
 
-        # Change Consent Status of Source Service
+        # Change Consent Status of Sink Service
         consent_status_change_url = self.API_PREFIX_INTERNAL + "/accounts/" + str(account_id) + "/consents/" + sink_cr_id + "/statuses/"
         consent_status_change_payload, sink_csr_id_new = generate_consent_status_payload(
             surrogate_id=self.SINK_SURROGATE_ID,
@@ -931,6 +969,7 @@ class UiTestCase(unittest.TestCase):
             misformatted_payload=False,
             cr_id_fault=False
         )
+        sink_csr_id_array.append(sink_csr_id_new)
 
         consent_status_change_response = self.app.post(consent_status_change_url, data=consent_status_change_payload, headers=request_headers)
         unittest.TestCase.assertEqual(self, consent_status_change_response.status_code, 201, msg=consent_status_change_response.data)
@@ -968,6 +1007,8 @@ class UiTestCase(unittest.TestCase):
             id_to_verify = str(record_object['id'])
             unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -994,6 +1035,8 @@ class UiTestCase(unittest.TestCase):
         verification_id_array = [source_slr_id]
         id_to_verify = str(json.loads(response.data)['data']['id'])
         unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1023,6 +1066,8 @@ class UiTestCase(unittest.TestCase):
             id_to_verify = str(record_object['id'])
             unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1050,6 +1095,8 @@ class UiTestCase(unittest.TestCase):
         id_to_verify = str(json.loads(response.data)['data']['id'])
         unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1075,17 +1122,9 @@ class UiTestCase(unittest.TestCase):
         # ID verification
         verification_id_array = [source_ssr_id_new]
         id_to_verify = str(json.loads(response.data)['data']['id'])
-        try:
-            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
-        except AssertionError:
-            print("IDs")
-            print("source_slr_id: " + str(source_slr_id))
-            print("sink_slr_id: " + str(sink_slr_id))
-            print("source_ssr_id: " + str(source_ssr_id))
-            print("source_ssr_id_new: " + str(source_ssr_id_new))
-            print("sink_ssr_id: " + str(sink_ssr_id))
-            print("sink_ssr_id_new: " + str(sink_ssr_id_new))
-            raise
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1112,6 +1151,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1133,6 +1174,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1156,6 +1199,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1177,6 +1222,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1200,6 +1247,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1221,6 +1270,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1244,6 +1295,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1265,6 +1318,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1288,6 +1343,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1309,6 +1366,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1335,6 +1394,14 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
 
+        # ID verification
+        verification_id_array = source_cr_id_array + sink_cr_id_array
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1356,6 +1423,14 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
+
+        # ID verification
+        verification_id_array = [source_cr_id_array[0], sink_cr_id_array[0]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1379,6 +1454,14 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_listing))
 
+        # ID verification
+        verification_id_array = [source_cr_id_array[-1], sink_cr_id_array[-1]]
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1394,34 +1477,20 @@ class UiTestCase(unittest.TestCase):
         request_headers = default_headers
         request_headers['Api-Key-User'] = str(account_api_key)
 
-        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id_array[0]) + "/statuses/"
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(sink_slr_id) + "/consents/" + str(sink_cr_id_array[0]) + "/statuses/"
 
         response = self.app.get(url, headers=request_headers)
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
 
-        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
+        # ID verification
+        verification_id_array = sink_csr_id_array
+        for record_object in json.loads(response.data)['data']:
+            id_to_verify = str(record_object['id'])
+            unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
-    ##########
-    ##########
-    def test_fetch_consent_status_listing_filtered(self):
-        """
-        Test Fetch Consent Statuses for Service
-        :return: account_id, account_api_key, sdk_api_key, slr_id
-        """
-
-        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array = self.test_for_account_change_consent_status_sink()
-
-        request_headers = default_headers
-        request_headers['Api-Key-User'] = str(account_api_key)
-
-        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id_array[0]) + "/statuses/?status_id=" + str(source_csr_id_array[0])
-
-        response = self.app.get(url, headers=request_headers)
-        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
-        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
-        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status_listing))
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1445,7 +1514,44 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
 
+        # ID verification
+        verification_id_array = [str(source_csr_id_array[0])]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
+
+    ##########
+    ##########
+    def test_fetch_consent_status_last(self):
+        """
+        Test Fetch last Consent Statuses for Service
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array = self.test_for_account_change_consent_status_sink()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id_array[0]) + "/statuses/last/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        # ID verification
+        verification_id_array = [str(source_csr_id_array[-1])]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        print("Request made to: " + url)
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
+
 
     ##########
     ##########
@@ -1470,6 +1576,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1491,6 +1599,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1514,6 +1624,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1535,6 +1647,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1558,6 +1672,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1579,6 +1695,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1602,6 +1720,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1623,6 +1743,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 403, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1646,6 +1768,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1667,6 +1791,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1690,6 +1816,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1711,6 +1839,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1734,6 +1864,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1755,6 +1887,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 404, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_request_error_detail_as_str))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
@@ -1778,6 +1912,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_event_log_listing))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1799,6 +1935,8 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
         unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
         unittest.TestCase.assertTrue(self, validate_json(response.data, schema_account_export))
+
+        print("Request made to: " + url)
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 

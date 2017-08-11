@@ -64,7 +64,7 @@ schema_system_status = {
             "consent": {
               "type": "integer"
             },
-            "consent_record": {
+            "consent_status": {
               "type": "integer"
             },
             "service_link": {
@@ -78,7 +78,7 @@ schema_system_status = {
             "service_link",
             "consent",
             "account",
-            "consent_record",
+            "consent_status",
             "service_link_status"
           ],
           "type": "object"

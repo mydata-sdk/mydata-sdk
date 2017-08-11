@@ -137,7 +137,7 @@ def get_db_statistics():
             'service_link': slr_count,
             'service_link_status': ssr_count,
             'consent': cr_count,
-            'consent_record': csr_count
+            'consent_status': csr_count
         }
         return count_dict
 
