@@ -971,6 +971,8 @@ class UiTestCase(unittest.TestCase):
             id_to_verify = str(record_object['id'])
             unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
+        print("Request made to: " + url)
+
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
 
     ##########
@@ -1474,6 +1476,34 @@ class UiTestCase(unittest.TestCase):
         unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
 
         return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
+
+    ##########
+    ##########
+    def test_fetch_consent_status_last(self):
+        """
+        Test Fetch last Consent Statuses for Service
+        :return: account_id, account_api_key, sdk_api_key, slr_id
+        """
+
+        account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array = self.test_for_account_change_consent_status_sink()
+
+        request_headers = default_headers
+        request_headers['Api-Key-User'] = str(account_api_key)
+
+        url = self.API_PREFIX_EXTERNAL + "/accounts/" + str(account_id) + "/servicelinks/" + str(source_slr_id) + "/consents/" + str(source_cr_id_array[0]) + "/statuses/last/"
+
+        response = self.app.get(url, headers=request_headers)
+        unittest.TestCase.assertEqual(self, response.status_code, 200, msg=response.data)
+        unittest.TestCase.assertTrue(self, is_json(json_object=response.data), msg=response.data)
+        unittest.TestCase.assertTrue(self, validate_json(response.data, schema_consent_status))
+
+        # ID verification
+        verification_id_array = [str(source_csr_id_array[-1])]
+        id_to_verify = str(json.loads(response.data)['data']['id'])
+        unittest.TestCase.assertIn(self, id_to_verify, verification_id_array, msg="ID {} not one of {}".format(id_to_verify, verification_id_array))
+
+        return account_id, account_api_key, sdk_api_key, source_slr_id, source_ssr_id, source_ssr_id_new, sink_slr_id, sink_ssr_id, sink_ssr_id_new, source_cr_id_array, source_csr_id_array, sink_cr_id_array, sink_csr_id_array
+
 
     ##########
     ##########

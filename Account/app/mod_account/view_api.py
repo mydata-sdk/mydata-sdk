@@ -1911,7 +1911,7 @@ account_api.add_resource(
 )
 
 account_api.add_resource(
-    ApiLastConsentForServiceLinkRecord,
+    ApiAccountConsentStatusLastForServiceLinkRecord,
     '/accounts/<string:account_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/statuses/last',
     '/accounts/<string:account_id>/servicelinks/<string:link_id>/consents/<string:consent_id>/statuses/last/',
     endpoint='account-csr-last'
