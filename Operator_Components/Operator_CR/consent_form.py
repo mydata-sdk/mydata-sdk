@@ -45,8 +45,18 @@ class ConsentFormHandler(Resource):
         """
         debug_log.info(format_request(request))
         # TODO: We probably should check if user has SLR's for given services before proceeding.
+
+        am = get_am(current_app, request.headers)
+        key_check = am.verify_user_key(account_id)
+        debug_log.info("Verifying User Key resulted: {}".format(key_check))
+
         _consent_form = Consent_form_Out
         service_ids = request.args
+
+        # Check that We don't have existing Active Consent between the two services
+        am.check_existing_consent(service_id_sink=service_ids["sink"],
+                                      service_id_source=service_ids["source"],
+                                      account_id=account_id)
 
         sq.task("Fetch services")
         sink = self.getService(service_ids["sink"])
@@ -105,13 +115,18 @@ class ConsentFormHandler(Resource):
         debug_log.info(format_request(request))
         debug_log.info("ConsentFormHandler post got json:\n{}".format(dumps(request.json, indent=2)))
 
-        AM = get_am(current_app, request.headers)
-        key_check = AM.verify_user_key(account_id)
+        am = get_am(current_app, request.headers)
+        key_check = am.verify_user_key(account_id)
         debug_log.info("Verifying User Key resulted: {}".format(key_check))
 
         _consent_form = request.json
         sink_srv_id = _consent_form["sink"]["service_id"]
         source_srv_id = _consent_form["source"]["service_id"]
+
+        # Check that We don't have existing Active Consent between the two services
+        am.check_existing_consent(service_id_sink=sink_srv_id,
+                                      service_id_source=source_srv_id,
+                                      account_id=account_id)
 
         sq.task("Validate RS_ID")
         # Validate RS_ID (RS_ID exists and not used before)
@@ -126,9 +141,9 @@ class ConsentFormHandler(Resource):
 
 
         # Get slr and surrogate_id
-        slr_id_sink, surrogate_id_sink = AM.get_surrogate_and_slr_id(account_id, sink_srv_id)
+        slr_id_sink, surrogate_id_sink = am.get_surrogate_and_slr_id(account_id, sink_srv_id)
         # One for Sink, one for Source
-        slr_id_source, surrogate_id_source = AM.get_surrogate_and_slr_id(account_id, source_srv_id)
+        slr_id_source, surrogate_id_source = am.get_surrogate_and_slr_id(account_id, source_srv_id)
 
         sink_keys = self.Helpers.get_service_keys(surrogate_id_sink)
         try:
@@ -191,7 +206,7 @@ class ConsentFormHandler(Resource):
                                           "null")
 
         sq.send_to("Account Manager", "Send CR/CSR to sign and store")
-        result = AM.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
+        result = am.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
 
         debug_log.info("CR/CSR structure the Account Manager signed:\n{}".format(dumps(result, indent=2)))
         sink_cr = result["data"]["sink"]["consent_record"]["attributes"]
