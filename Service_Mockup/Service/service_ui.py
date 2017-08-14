@@ -122,7 +122,7 @@ class LinkingUi(Resource):
         user_id = encode64(request.authorization.username)
 
         # Send Management the Operator id and get Surrogate_ID
-        endpoint = "/api/1.3/slr/auth"  # TODO: This needs to be fetched from somewhere.
+        endpoint = "/api/1.3/slr/surrogate_id"  # TODO: This needs to be fetched from somewhere.
         data = {"user_id": user_id, "operator_id": args["operator_id"]}
         result = post("{}{}".format(current_app.config["SERVICE_MGMNT_URL"], endpoint), json=data)
         if not result.ok:

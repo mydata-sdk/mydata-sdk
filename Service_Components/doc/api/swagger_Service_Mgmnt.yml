@@ -1,18 +1,16 @@
 ---
 swagger: "2.0"
 info:
-  version: "1.2.1"
+  version: "1.3"
   title: "Service Management SLR API"
 host: "example.service_mgmnt.example"
 basePath: "/api/1.3/slr"
 paths:
-  /auth:
+  /linking:
     post:
       tags:
-      - "Service Management"
-      - "Service"
-      description: "Service calls this after user has authenticated. Causes Service\
-        \ Management to generate surrogate_id for the operator. This endpoint starts a long chain of events."
+      - "Service Linking"
+      description: "Begins Service Linking process with Operator"
       consumes:
       - "application/json"
       produces:
@@ -20,14 +18,37 @@ paths:
       parameters:
       - in: "body"
         name: "body"
-        description: "code and user_id."
+        description: "Information required to start linking process with the operator"
         required: true
         schema:
-          $ref: "#/definitions/LoginParams"
+          $red: "#/definitions/StartLinkingParams"
       responses:
-        200:
-          description: "Returns 200 OK so Service Mngmt knows SLR was verified\
-            \ successfully"
+        201:
+          description: "Returns 201 Created containing created Service Link"
+        500:
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
+          schema:
+            $ref: "#/definitions/errors"
+
+  /surrogate_id:
+    post:
+      tags:
+      - "Service Linking"
+      description: "Called to generate a surrogate_id between Operator and a Service"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Operator_id and user_id."
+        required: true
+        schema:
+          $ref: "#/definitions/GenSurrogateParams"
+      responses:
+        201:
+          description: "Returns 201 CREATED with generated surrogate_id"
         500:
           description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
           schema:
@@ -78,15 +99,33 @@ definitions:
           type: string
           description: Source URI
 
-  LoginParams:
+  GenSurrogateParams:
     type: "object"
     properties:
-      code:
+      operator_id:
         type: "string"
-        description: "string containing code"
+        description: "string containing operator_id"
       user_id:
         type: "string"
         description: "string containing user_id."
+
+  StartLinkingParams:
+    type: "object"
+    properties:
+      operator_id:
+        type: "string"
+        description: "string containing operator_id"
+      code:
+        type: "string"
+        description: "string containing code."
+      surrogate_id:
+        type: "string"
+        description: "string containing surrogate_id."
+      return_url:
+        type: "string"
+        description: "string containing return_url."
+
+
   SlrParams:
     type: "object"
     properties:

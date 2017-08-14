@@ -3,7 +3,7 @@ import logging
 import traceback
 from json import dumps
 
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException

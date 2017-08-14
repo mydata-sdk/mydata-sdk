@@ -95,7 +95,7 @@ class SlrStatus(Resource):
 
                 for cr_to_disable in crs_to_disable:
                     # Fill CSR template for disabled CR
-                    cr_surrogate_id = cr_to_disable["surrogate_id"] 
+                    cr_surrogate_id = cr_to_disable["surrogate_id"]
                     csr_template = self.helper.gen_csr(surrogate_id=cr_surrogate_id,
                                                        consent_record_id=cr_to_disable["cr_id"],
                                                        consent_status="Disabled",
