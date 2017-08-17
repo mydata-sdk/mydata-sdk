@@ -14,7 +14,7 @@ from jwcrypto import jws, jwk
 from requests import post
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_srv import Helpers, Sequences, format_request
+from helpers_srv import Helpers, Sequences, api_logging
 
 api_Service_Mgmnt = Blueprint("api_Service_Mgmnt", __name__)
 
@@ -59,13 +59,11 @@ class GenerateSurrogateId(Resource):
 
     @timeme
     @error_handler
+    @api_logging
     def post(self):
-        debug_log.info(format_request(request))
         try:
             # TODO: Verify this requests comes from Service Mockup(Is this our responsibility?)
             # This is now the point we want to double check that similar flow is not going on already for said user.
-            debug_log.info("UserAuthenticated class, method post got json:")
-            debug_log.info(request.json)
             user_id = request.json["user_id"]
             operator_id = request.json["operator_id"]
 
@@ -126,8 +124,9 @@ class StartServiceLinking(Resource):
         # TODO: Verify service_id is unnecessary.
         #self.parser.add_argument('service_id', type=str, help="Service's ID")  # Seems unnecessary to the flow.
 
+    @error_handler
+    @api_logging
     def post(self):
-
         args = self.parser.parse_args()
         debug_log.debug("StartServiceLinking got parameter:\n {}".format(args))
         data = {"surrogate_id": args["surrogate_id"], "code": args["code"]}
@@ -181,10 +180,10 @@ class StoreSSR(Resource):
 
     @timeme
     @error_handler
+    @api_logging
     def post(self):
         # TODO: This is as naive as it gets, needs some verifications regarding ssr,
         # or are we leaving this to firewalls, eg. Only this host(operator) can use this endpoint.
-        debug_log.info("Received JSON to SSR endpoint:\n {}".format(request.json))
         try:
             self.helpers.store_ssr_JSON(json=request.json["data"])
             endpoint = "/api/1.3/slr/store_ssr"
@@ -215,6 +214,7 @@ class StoreSLR(Resource):
 
     @timeme
     @error_handler
+    @api_logging
     def post(self):
 
         def decode_payload(payload):
@@ -234,9 +234,6 @@ class StoreSLR(Resource):
             return payload
 
         try:
-            debug_log.info("StoreSLR class method post got json:")
-            debug_log.info(dumps(request.json, indent=2))
-
             sq.task("Load SLR to object")
             slr = request.json["slr"]
             debug_log.info("SLR STORE:\n", slr)
@@ -311,9 +308,9 @@ class StoreSLR(Resource):
 
         if result.ok:
             sq.task("Store following SLR into db")
-            store = loads(loads(result.text))
-            slr_store = loads(loads(result.text))["data"]["slr"]
-            ssr_store = loads(loads(result.text))["data"]["ssr"]
+            store = loads(result.text)
+            slr_store = loads(result.text)["data"]["slr"]
+            ssr_store = loads(result.text)["data"]["ssr"]
             debug_log.debug("Storing following SLR and SSR:")
             debug_log.debug(dumps(slr_store, indent=2))
             debug_log.debug(dumps(ssr_store, indent=2))
@@ -340,6 +337,7 @@ class StoreSLR(Resource):
 
     @timeme
     @error_handler
+    @api_logging
     def get(self):  # Fancy but only used for testing. Should be disabled/removed in production.
         sq.task("Debugging endpoint, fetch SLR's from db and return")
         jsons = {"jsons": {}}

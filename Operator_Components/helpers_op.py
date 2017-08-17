@@ -10,14 +10,13 @@ from flask import Blueprint
 from flask_restful import Api
 
 import db_handler as db_handler
-
-
 from jwcrypto import jwt, jwk
 from json import dumps, dump, load
 from uuid import uuid4 as guid
 from requests import get, post, patch
 from json import loads
 from core import DetailedHTTPException
+import collections
 
 # Logging
 debug_log = logging.getLogger("debug")
@@ -1036,13 +1035,113 @@ class base_token_tool:
 # Perhaps worth noting that we're using interal variabled and could be worth stop using them if possible.
 def format_request(request):
     dicti = request.__dict__["environ"]
-    msg = "Request from: {}\n Request to: {}\n Type: {}\n Content Type: {}\n Content Length: {}\n"\
-        .format(dicti["REMOTE_ADDR"]+":"+str(dicti["REMOTE_PORT"]),
-                dicti["HTTP_HOST"]+dicti["SCRIPT_NAME"]+dicti["PATH_INFO"],
-                dicti["REQUEST_METHOD"],
-                dicti["CONTENT_TYPE"],
-                dicti["CONTENT_LENGTH"])
+    msg_tuples = [("From", dicti["REMOTE_ADDR"]+":"+str(dicti["REMOTE_PORT"])),
+                  ("To", request.url),
+                  ("Type", request.method),
+                  ("ContentType", dicti["CONTENT_TYPE"]),
+                  ("ContentLength", dicti["CONTENT_LENGTH"]),
+                  ("Flask Blueprint", request.blueprint),
+                  ("Flask Arguments", request.view_args)
+                  ]
+    msg_tmpl = collections.OrderedDict(msg_tuples)
+    js = request.get_json(silent=True)
+    if js is not None:
+        msg_tmpl["JSON"] = js
+
+    req_form = request.form
+    if len(req_form.keys()) > 0:
+        msg_tmpl["FORM"] = req_form
+
+    req_query = request.args
+    if len(req_query.keys()) > 0:
+        msg_tmpl["QUERY"] = req_query
+
+    msg = dumps(msg_tmpl, indent=2)
     return msg
+
+
+def format_response(response):
+    response_dict = response.__dict__
+    headers = {}
+    resp_headers = response.headers
+    for header in resp_headers.keys():
+        headers[header] = resp_headers[header]
+
+    msg_tuples = [
+        ("Status", response.status),
+        ("Status Code", response.status_code),
+        ("Headers", headers)
+    ]
+    msg_tmpl = collections.OrderedDict(msg_tuples)
+    data = response.get_data(as_text=True)
+    try:
+        data = loads(data)
+    except Exception as e:
+        pass
+    msg_tmpl["Data"] = data
+    msg = dumps(msg_tmpl, indent=2)
+    return msg
+
+
+from functools import wraps
+from flask import request, make_response
+from werkzeug.wrappers import Response
+def api_logging(func):
+    @wraps(func)
+    def loggedfunc(*args, **kwargs):
+        req_msg = format_request(request)
+        debug_log.info(req_msg)
+
+        resp = func(*args, **kwargs)
+        debug_log.info(type(resp))
+        debug_log.info(resp)
+
+        # We know well how to handle Response objects
+        if isinstance(resp, Response):
+            resp_msg = format_response(resp)
+
+        # Handle dict's
+        elif isinstance(resp, dict):
+            resp = make_response((dumps(resp), 200, {"Content-Type": "application/json"}))
+            resp_msg = format_response(resp)
+
+        # Handle Nonetype
+        elif resp is None:
+            resp = make_response(("", 200, {"Content-Type": "text/html"}))
+            resp_msg = format_response(resp)
+
+        # Handle tuples with status code and header
+        else:
+            if isinstance(resp[0], dict):
+
+                content = dumps(resp[0])
+                status_code = resp[1]
+                content_type = {"Content-Type": "application/json"}
+                resp = make_response((content, status_code, content_type))
+
+            elif resp[0] is None:
+                status_code = 200
+                if len(resp) > 1:
+                    if resp[1] is not None:
+                        status_code = resp[1]
+                resp = make_response(("", status_code, {"Content-Type": "text/html"}))
+
+            else:
+                content = str(resp[0])
+                status_code = resp[1]
+
+                if len(resp) <= 2:
+                    content_type = {"Content-Type": "text/html"}
+                else:
+                    content_type = resp[2]
+                resp = make_response((content, status_code, content_type))
+            resp_msg = format_response(resp)
+
+        debug_log.info(resp_msg)
+        return resp
+    return loggedfunc
+
+
 
 class JWS_tool(base_token_tool):
     def __init__(self):

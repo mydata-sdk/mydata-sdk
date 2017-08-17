@@ -10,7 +10,7 @@ from flask_restful import Resource, Api
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import sink_cr_schema, source_cr_schema, csr_schema
-from helpers_srv import validate_json, SLR_tool, CR_tool, Helpers, Sequences, base_token_tool
+from helpers_srv import validate_json, SLR_tool, CR_tool, Helpers, Sequences, base_token_tool, api_logging
 from srv_tasks import get_AuthToken
 
 api_Authorization_Mgmnt = Blueprint("api_Authorization_Mgmnt", __name__)
@@ -64,12 +64,12 @@ class Install_CR(Resource):
         self.is_source = current_app.config["IS_SOURCE"]
         self.operator_url = current_app.config["OPERATOR_URL"]
         self.db_path = current_app.config["DATABASE_PATH"]
+
     @error_handler
+    @api_logging
     def post(self):
         debug_log.info("arrived at Install_CR")
         cr_stuff = request.json
-
-        debug_log.info(dumps(cr_stuff, indent=2))
         sq.task("Install CR/CSR")
         '''post
 
@@ -222,6 +222,7 @@ class Install_CR(Resource):
         return {"id": crt.get_cr_id_from_cr()}, 201
 
     @error_handler
+    @api_logging
     def patch(self):
         payload = request.json
 

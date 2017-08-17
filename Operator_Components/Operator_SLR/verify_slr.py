@@ -10,10 +10,10 @@ from flask_cors import CORS
 from flask_restful import Resource, Api
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import AccountManagerHandler, Helpers, Sequences, get_am, format_request
+from helpers_op import AccountManagerHandler, Helpers, Sequences, get_am, api_logging
 
 # Flask init
-api_SLR_Verify = Blueprint("api_SLR_blueprint", __name__)
+api_SLR_Verify = Blueprint("api_SLR_Verify", __name__)
 CORS(api_SLR_Verify)
 api = Api()
 api.init_app(api_SLR_Verify)
@@ -47,11 +47,8 @@ class VerifySLR(Resource):
         self.Helpers = Helpers(current_app.config)
 
     @error_handler
+    @api_logging
     def post(self):
-        debug_log.info(format_request(request))
-
-        debug_log.info("VerifySLR method post got parameters: \n{}".format(dumps(request.json, indent=2)))
-
         sq.task("Load SLR to object")
         slr = request.json["slr"]
         debug_log.info("{} {}".format("SLR from request payload json:\n", slr))

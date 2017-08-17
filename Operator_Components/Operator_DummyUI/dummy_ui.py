@@ -15,12 +15,12 @@ from base64 import urlsafe_b64decode as decode64
 
 from uuid import uuid4 as guid
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, format_request, ServiceRegistryHandler
+from helpers_op import Helpers, api_logging, ServiceRegistryHandler
 
 
 debug_log = logging.getLogger("debug")
 
-api_operator_ui_blueprint = Blueprint("api_service_ui_blueprint", __name__)
+api_operator_ui_blueprint = Blueprint("api_Operator_Dummy_UI", __name__)
 
 CORS(api_operator_ui_blueprint)
 api = Api()
@@ -49,8 +49,8 @@ class LinkingUi(Resource):
                                                                current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
 
     @error_handler
+    @api_logging
     def get(self):
-        debug_log.info(format_request(request))
         args = self.parser.parse_args()
         args["operator_id"] = self.operator_id
         args["provider"] = args["service_id"]
@@ -89,12 +89,10 @@ class LinkingUi(Resource):
         response = make_response(render_template_string(tmpl_str, **args), 200)
         return response
 
+    @error_handler
+    @api_logging
     def post(self):
-        debug_log.info(format_request(request))
         args = self.parser.parse_args()
-        debug_log.info(dumps(args, indent=2))
-
-
 
         def get_api_key(account_url=self.account_url+"account/api/v1.3/", user=None, password=None, endpoint="external/auth/user/"):
             debug_log.info("\nFetching Account Key for account '{}' from endpoint: {}".format(user+":"+password, account_url+endpoint))

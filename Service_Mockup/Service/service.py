@@ -15,12 +15,12 @@ from base64 import urlsafe_b64decode as decode64
 
 from uuid import uuid4 as guid
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_mock import Helpers, format_request
+from helpers_mock import Helpers, api_logging
 from Templates import users
 
 debug_log = logging.getLogger("debug")
 
-api_Root_blueprint = Blueprint("api_Root_blueprint", __name__)  # TODO Rename better
+api_Root_blueprint = Blueprint("api_ServiceMockup_Service", __name__)  # TODO Rename better
 
 CORS(api_Root_blueprint)
 api = Api()
@@ -111,10 +111,9 @@ class UserLogin(Resource):
 
     @error_handler
     @requires_auth
+    @api_logging
     def get(self):
-        debug_log.info(format_request(request))
         args = self.parser.parse_args()
-        debug_log.info("Mockup UserLogin GET got args: \n{}".format(dumps(args, indent=2)))
         # TODO: Use template file or get this from somewhere.
         if args["linkingFrom"] == "Operator":
             args["fromOperator"] = ""
@@ -152,8 +151,8 @@ class UserLogin(Resource):
     # linkingFrom = args["linkingFrom"]
     @requires_auth
     @error_handler
+    @api_logging
     def post(self):
-        debug_log.info(format_request(request))
         def link_surrogate_id(json_response, user_id, operator_id):
             response_user_id = self.helpers.get_user_id_with_code(args["code"])
             if response_user_id == user_id:
@@ -169,9 +168,6 @@ class UserLogin(Resource):
             debug_log.info(dumps(json_response, indent=2))
             self.helpers.storeSurrogateJSON(user_id, json_response["surrogate_id"], operator_id)
             return json_response["surrogate_id"]
-        debug_log.info("Received following data to POST on ServiceMockup:\n{}"
-                       .format(dumps(request.json, indent=2))
-                       )
         args = self.parser.parse_args()
         debug_log.info("Args contain:\n {}".format(dumps(args, indent=2)))
         debug_log.info(dumps(request.json, indent=2))
@@ -222,8 +218,8 @@ class StoreSlr(Resource):
 
     @timeme
     @error_handler
+    @api_logging
     def post(self):
-        debug_log.info(format_request(request))
         def decode_payload(payload):
             #sq.task("Fix possible incorrect padding in payload")
             payload += '=' * (-len(payload) % 4)  # Fix incorrect padding of base64 string.
@@ -239,7 +235,6 @@ class StoreSlr(Resource):
             debug_log.info(type(payload))
             debug_log.info(dumps(payload, indent=2))
             return payload
-        debug_log.info(dumps(request.json, indent=2))
         store = request.json
         payload = decode_payload(store["data"]["slr"]["attributes"]["payload"])
         debug_log.info("Storing SLR into db")
@@ -257,11 +252,11 @@ class StoreSSR(Resource):
 
     @timeme
     @error_handler
+    @api_logging
     def post(self):
-        debug_log.info(format_request(request))
+
         # TODO: This is as naive as it gets, needs some verifications regarding ssr,
         # or are we leaving this to firewalls, eg. Only this host(operator) can use this endpoint.
-        debug_log.info("Received JSON to SSR endpoint:\n {}".format(request.json))
         try:
             self.helpers.store_ssr_JSON(json=request.json["data"])
             return {"id":request.json["data"]["id"]}, 201

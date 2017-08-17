@@ -11,13 +11,13 @@ from requests import get, post, patch
 from requests.exceptions import ConnectionError, Timeout
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, base_token_tool, format_request
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, base_token_tool, api_logging
 '''
 
 '''
 
 # Blueprint and Flask api stuff
-api_SLR_Start = Blueprint("api_SLR_change", __name__)
+api_SLR_Start = Blueprint("api_SLR_Status_Change", __name__)
 CORS(api_SLR_Start)
 api = Api()
 api.init_app(api_SLR_Start)
@@ -42,6 +42,7 @@ class SlrStatus(Resource):
         self.store_session = self.helper.store_session
 
     @error_handler
+    @api_logging
     def post(self, account_id, service_id, slr_id):
         """
         
@@ -49,10 +50,6 @@ class SlrStatus(Resource):
         :param account_id:  Account Manager user id
         :param service_id:  Service id as in Service Registry
         """
-        debug_log.info(format_request(request))
-        debug_log.info("#### Request to change SLR status with parameters: account_id ({}), service_id ({}), slr_id ({})"
-                       .format(account_id, service_id, slr_id))
-
         service_url = self.service_registry_handler.getService_url(service_id)
 
         try:
@@ -140,8 +137,7 @@ class SlrStatus(Resource):
                 debug_log.debug("Posted SSR to service:\n{}  {}  {}  {}"
                                 .format(req.status_code, req.reason, req.text, req.content))
 
-                return created_ssr
-
+                return created_ssr, 201
 
             except Exception as e:
                 raise e

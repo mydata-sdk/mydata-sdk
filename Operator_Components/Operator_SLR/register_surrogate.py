@@ -12,7 +12,7 @@ from flask_restful import Resource, Api
 from requests import post
 
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, format_request
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, api_logging
 
 # Flask init
 api_SLR_RegisterSur = Blueprint("api_SLR_RegisterSur", __name__)
@@ -66,12 +66,9 @@ class RegisterSurrogate(Resource):
         self.timeout = current_app.config["TIMEOUT"]
 
     @error_handler
+    @api_logging
     def post(self):
-        debug_log.info(format_request(request))
         try:
-
-            debug_log.info("RegisterSurrogate method post got following parameters as json:\n{}"
-                           .format(dumps(request.json, indent=2)))
             sq.task("Load json payload as object")
             js = request.json
 

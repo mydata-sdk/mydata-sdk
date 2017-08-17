@@ -7,10 +7,10 @@ from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import Helpers, Sequences, get_am, format_request
+from helpers_op import Helpers, Sequences, get_am, api_logging
 
 # Init Flask
-api_CR_blueprint = Blueprint("api_AuthToken_blueprint", __name__)
+api_CR_blueprint = Blueprint("api_AuthToken", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
 
@@ -30,6 +30,7 @@ class AuthToken(Resource):
         self.gen_auth_token = helper_object.gen_auth_token
 
     @error_handler
+    @api_logging
     def get(self, cr_id):
         '''get
 
@@ -39,12 +40,7 @@ class AuthToken(Resource):
         # Generate Auth Token and save it.
         # helper.py has the function template, look into it.
         ##
-        debug_log.info(format_request(request))
-        debug_log.info("Got Request for Auth_token, given cr_id ({})".format(cr_id))
         am = get_am(current_app, request.headers)
-
-
-
         try:
             result = am.get_AuthTokenInfo(cr_id)
         except AttributeError as e:

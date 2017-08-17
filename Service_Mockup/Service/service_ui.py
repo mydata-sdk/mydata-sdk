@@ -15,7 +15,7 @@ from base64 import urlsafe_b64decode as decode64
 
 from uuid import uuid4 as guid
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_mock import Helpers, format_request
+from helpers_mock import Helpers, api_logging
 from Templates import users
 
 debug_log = logging.getLogger("debug")
@@ -83,8 +83,8 @@ class LinkingUi(Resource):
 
     @error_handler
     @requires_auth
+    @api_logging
     def get(self):
-        debug_log.info(format_request(request))
         args = self.parser.parse_args()
         # TODO: Use template file or get this from somewhere.
         args["provider"] = settings.NAME
@@ -115,8 +115,8 @@ class LinkingUi(Resource):
 
     @error_handler
     @requires_auth
+    @api_logging
     def post(self):
-        debug_log.info(format_request(request))
         args = self.parser.parse_args()
         operator_id = args["operator_id"]
         user_id = encode64(request.authorization.username)

@@ -7,10 +7,10 @@ from flask import Blueprint, current_app
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import format_request, get_am
+from helpers_op import api_logging, get_am
 
 # Init Flask
-api_CR_blueprint = Blueprint("api_Introspection_blueprint", __name__)
+api_CR_blueprint = Blueprint("api_Introspection", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
 
@@ -27,12 +27,12 @@ class Introspection(Resource):
         self.timeout = current_app.config["TIMEOUT"]
 
     @error_handler
+    @api_logging
     def get(self, cr_id):
         '''post
 
         :return: Returns latest csr id for source
         '''
-        debug_log.info(format_request(request))
         try:
             debug_log.info("We received request for latest csr id for cr_id ({})".format(cr_id))
             result = self.AM.get_last_csr(cr_id)
@@ -59,12 +59,12 @@ class IntrospectionMissing(Resource):
                            .format(repr(e)))
 
     @error_handler
+    @api_logging
     def get(self, cr_id, csr_id):
         """get
 
         :return: Returns latest csr for source
         """
-        debug_log.info(format_request(request))
         try:
             debug_log.info("We received introspection request for cr_id ({})".format(cr_id))
             result = self.AM.get_missing_csr(cr_id, csr_id)

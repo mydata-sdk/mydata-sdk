@@ -6,10 +6,10 @@ from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import get_am, Helpers, format_request
+from helpers_op import get_am, Helpers, api_logging
 
 # Init Flask
-api_CR_blueprint = Blueprint("api_Status_Change_blueprint", __name__)
+api_CR_blueprint = Blueprint("api_Status_Change", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
 
@@ -27,12 +27,12 @@ class StatusChange(Resource):
         self.helper_object = Helpers(current_app.config)
 
     @error_handler
+    @api_logging
     def post(self, acc_id, srv_id, cr_id, new_status):
         '''post
 
         :return: Change status of CR
         '''
-        debug_log.info(format_request(request))
         try:
             allowed_states = ["Active", "Disabled", "Withdrawn"]
             if new_status in allowed_states:

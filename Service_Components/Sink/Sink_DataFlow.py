@@ -9,7 +9,7 @@ from flask_restful import Resource, Api
 from jwcrypto import jwk
 
 from DetailedHTTPException import error_handler
-from helpers_srv import Helpers, CR_tool, Sequences, format_request
+from helpers_srv import Helpers, CR_tool, Sequences, api_logging
 from signed_requests.signed_request_auth import SignedRequest
 
 debug_log = logging.getLogger("debug")
@@ -30,6 +30,7 @@ sq = Sequences("Service_Components Mgmnt (Sink)")
 
 class Status(Resource):
     @error_handler
+    @api_logging
     def get(self):
         status = {"status": "running", "service_mode": "Sink"}
         return status
@@ -43,8 +44,8 @@ class DebugDataFlow(Resource):
         self.helpers = Helpers(current_app.config)
 
     @error_handler
+    @api_logging
     def get(self, rs_id):
-        debug_log.info(format_request(request))
         debug_log.info("Got rs_id {} to DebugDataFlow endpoint".format(rs_id))
         records = self.helpers.query_db_multiple("select rs_id, cr_id, slr_id, surrogate_id from cr_storage", ())
         #rs_id =
@@ -77,8 +78,8 @@ class DataFlow(Resource):
         self.helpers = Helpers(current_app.config)
 
     @error_handler
+    @api_logging
     def post(self):  # TODO Make this a GET, is this valid anymore?
-        debug_log.info(format_request(request))
         def renew_token(operator_url, record_id):
             sq.task("Renewing Auth Token.")
             token = requests.get(

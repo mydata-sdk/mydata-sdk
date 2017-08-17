@@ -9,7 +9,7 @@ from DetailedHTTPException import DetailedHTTPException, error_handler
 from Templates import Consent_form_Out
 from flask import request, Blueprint, current_app
 from flask_restful import Resource, Api
-from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences, get_am, format_request
+from helpers_op import AccountManagerHandler, Helpers, ServiceRegistryHandler, Sequences, get_am, api_logging
 from op_tasks import CR_installer
 from requests import post
 
@@ -18,7 +18,7 @@ debug_log = logging.getLogger("debug")
 sq = Sequences("Operator_Components Mgmnt")
 
 # Init Flask
-api_CR_blueprint = Blueprint("api_CR_blueprint", __name__)
+api_CR_blueprint = Blueprint("api_ConsentForm", __name__)
 api = Api()
 api.init_app(api_CR_blueprint)
 
@@ -39,11 +39,11 @@ class ConsentFormHandler(Resource):
         self.operator_url = current_app.config["OPERATOR_URL"]
 
     @error_handler
+    @api_logging
     def get(self, account_id):
         """get
         :return: Returns Consent form to UI for user input.
         """
-        debug_log.info(format_request(request))
         # TODO: We probably should check if user has SLR's for given services before proceeding.
         _consent_form = Consent_form_Out
         service_ids = request.args
@@ -98,13 +98,11 @@ class ConsentFormHandler(Resource):
         return _consent_form
 
     @error_handler
+    @api_logging
     def post(self, account_id):
         """post
         :return: Returns 201 when consent has been created
         """
-        debug_log.info(format_request(request))
-        debug_log.info("ConsentFormHandler post got json:\n{}".format(dumps(request.json, indent=2)))
-
         AM = get_am(current_app, request.headers)
         key_check = AM.verify_user_key(account_id)
         debug_log.info("Verifying User Key resulted: {}".format(key_check))

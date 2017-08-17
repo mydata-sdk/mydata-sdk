@@ -11,7 +11,7 @@ from requests import get, post
 from requests.exceptions import ConnectionError, Timeout
 from base64 import urlsafe_b64encode
 from DetailedHTTPException import DetailedHTTPException, error_handler
-from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, format_request
+from helpers_op import Helpers, ServiceRegistryHandler, Sequences, get_am, format_request, api_logging
 from uuid import uuid4 as guid
 import time
 '''
@@ -53,13 +53,13 @@ class StartSlrFlow(Resource):
         self.store_session = self.helper.store_session
 
     @error_handler
+    @api_logging
     def get(self, account_id, service_id):
         """
 
         :param account_id: Account Manager user id
         :param service_id: Service id as in Service Registry
         """
-        debug_log.info(format_request(request))
         debug_log.info("#### Request to start SLR flow with parameters: account_id ({}), service_id ({})"
                        .format(account_id, service_id))
 
