@@ -146,7 +146,7 @@ def give_consent(operator_url, sink_id, source_id, user_key):
     ids = {"sink": sink_id, "source": source_id}
 
     print("\n###### 1.FETCH CONSENT FORM ######")
-    req = get(operator_url + "api/1.3/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id))
+    req = get(operator_url + "api/1.3/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id), headers={"Api-Key-User": user_key["Api-Key-User"]})
     if not req.ok:
         print("Fetching consent form consent failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
@@ -243,6 +243,13 @@ if __name__ == '__main__':
                         default="http://localhost:7001/",
                         required=False)
 
+    # Tests
+    help_string_test_duplicate_consent_form = \
+        "Try create a new consent record while an Active one exists"
+    parser.add_argument("--test_duplicate_cf",
+                        help=help_string_test_duplicate_consent_form,
+                        action="store_true",
+                        required=False)
 
     # Skips
     help_string_skip_init = \
@@ -334,6 +341,14 @@ if __name__ == '__main__':
         cr_ids = consents["crs"]
 
         make_cr_status_changes(args.operator_url, args.sink_id, cr_ids["sink_cr_id"], user_key)
+
+        if args.test_duplicate_cf:
+            print("\n\nTesting creation of consent while Active one exists.\n\n")
+            consents = give_consent(args.operator_url, args.sink_id, args.source_id, user_key)
+            rs_id = consents["rs_id"]
+            cr_ids = consents["crs"]
+            #make_cr_status_changes(args.operator_url, args.sink_id, cr_ids["sink_cr_id"], user_key)
+
 
         # Debug Data Flow
         if not args.skip_data:

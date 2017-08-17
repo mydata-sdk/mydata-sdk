@@ -259,6 +259,37 @@ class AccountManagerHandler:
                                                        "please disable existing SLR before creating new one."},
                                         title="Existing Active SLR found.")
 
+
+    def check_existing_consent(self, service_id_sink, service_id_source, account_id):
+
+        debug_log.info("Checking if account '{}' has existing CR's for service's '{}' and '{}'"
+                       .format(account_id, service_id_sink, service_id_source))
+        existing_slrs = self.get_slr_with_service_id(service_id_sink, account_id)
+        for slr in existing_slrs["data"]:
+            # Get all slr's for sink
+            slr_id = slr["id"]
+            last_ssr = self.get_last_slr_status(slr_id)
+            last_ssr_payload = base_token_tool.decode_payload(last_ssr["data"]["attributes"]["payload"])
+            # We don't care about disabled SLR's
+            if last_ssr_payload["sl_status"] == "Active":
+                # For each active SLR fetch all cr's, check that cr's subject field and compare it to source.
+                crs = self.get_crs(slr_id, account_id)["data"]
+                for consent in crs:
+                    debug_log.debug("Fetched consent: \n{}".format(consent))
+                    cr_payload = base_token_tool.decode_payload(consent["attributes"]["payload"])
+
+                    # Fetch last csr for the source set in role_specific_part of sink cr:
+                    source_csr = self.get_last_csr_with_cr_id(cr_payload["role_specific_part"]["source_cr_id"],
+                                                              account_id)
+
+                    # Pairs are supposed to be in sync, so if this is active, so is the sink one.
+                    if source_csr["consent_status"] == "Active":
+                        raise DetailedHTTPException(status=409,
+                                        detail={"msg": "an Active CR exist for this user and selected services, "
+                                                       "please disable existing CR before creating new one."},
+                                        title="Existing Active CR found.")
+
+
     def get_slr(self, slr_id, account_id):
 
         if self.account_id != account_id:  # Someone tries to get slr that doesn't belong to them.
@@ -354,7 +385,7 @@ class AccountManagerHandler:
         else:
             if consents.status_code == 404:
                 debug_log.info("Couldn't find consents for the SLR.")
-                return []
+                return {"data":[]}
             debug_log.info("Fetching consents failed with: {}"
                            .format([consents.status_code, consents.reason, consents.text]))
             raise DetailedHTTPException(status=404,
@@ -401,6 +432,29 @@ class AccountManagerHandler:
                                         detail={"msg": "Getting last csr from account management failed.",
                                                 "content": req.content},
                                         title=req.reason)
+
+
+    def get_last_csr_with_cr_id(self, cr_id, account_id):
+        endpoint_url = self.url + self.endpoint["new_csr"].replace("{cr_id}", cr_id).replace("{account_id}", self.account_id)+"last"
+        debug_log.debug("" + endpoint_url)
+
+        req = get(endpoint_url,
+                  headers={'Api-Key-Sdk': self.token,
+                           "Api-Key-User": self.user_key},
+                  timeout=self.timeout)
+        debug_log.debug("{}  {}  {}  {}".format(req.status_code, req.reason, req.text, req.content))
+        if req.ok:
+            templ = loads(req.text)
+            payload = base_token_tool.decode_payload(templ["data"]["attributes"]["payload"])
+            debug_log.info("Got CSR payload from account:\n{}".format(dumps(payload, indent=2)))
+            csr_id = payload["record_id"]
+            return payload
+        else:
+            raise DetailedHTTPException(status=req.status_code,
+                                        detail={"msg": "Getting last csr from account management failed.",
+                                                "content": req.content},
+                                        title=req.reason)
+
 
     def create_new_csr(self, cr_id, payload): # TODO: cr_id is in payload, no need to have it passed as argument.
         debug_log.info("Issuing new Consent Status Record.")

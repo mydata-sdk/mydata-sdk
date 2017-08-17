@@ -91,7 +91,7 @@ class GenerateSurrogateId(Resource):
 
                 sq.send_to("Service_Mockup", "Send surrogate_id to Service_Mockup")
                 content_json = {"surrogate_id": surrogate_id}
-                return content_json
+                return content_json, 201
         except DetailedHTTPException as e:
             debug_log.exception(e)
             self.helpers.delete_session(user=user_id)
@@ -348,7 +348,7 @@ class StoreSLR(Resource):
         sq.reply_to("Operator_Components Mgmnt", "Return SLR's from db")
         return jsons
 
-api.add_resource(GenerateSurrogateId, '/auth')
+api.add_resource(GenerateSurrogateId, '/surrogate_id')
 api.add_resource(StartServiceLinking, '/linking')
 api.add_resource(StoreSLR, '/slr')
 api.add_resource(StoreSSR, '/status')

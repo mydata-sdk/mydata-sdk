@@ -24,7 +24,7 @@ paths:
       security:
         - apiKeyUser: []
       tags:
-      - "Operator External - SLR"
+      - "Operator UI"
       description: "Entrypoint for creating new SLR with service.\nWill take UUID\
         \ of service to link with as paramater. Returns redirect to Service Login. This endpoint will start chain of events."
       summary: "Start Process of creating SLR"
@@ -66,7 +66,7 @@ paths:
       security:
         - apiKeyUser: []
       tags:
-      - "Operator External - SLR"
+      - "Operator UI"
       description: "Endpoint for Disabling Active SLR."
       summary: "Disable an active SLR"
       parameters:
