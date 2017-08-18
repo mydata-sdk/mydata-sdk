@@ -338,3 +338,4 @@ volumes:
 
 networks:
   mydata_sdk_demo_network:
+  mydata-sandbox-backbone
