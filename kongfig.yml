@@ -27,7 +27,8 @@ apis:
       strip_request_path: true
       preserve_host: false
       upstream_url: http://operator_components:5000 # (required)
-  - name: service_components.local # unique api name
+
+  - name: service_component_source.local # unique api name
     ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
     plugins:
       - name: cors
@@ -36,11 +37,12 @@ apis:
             preflight_continue: false
             credentials: false
     attributes:
-      request_host: service-mgmt.sandbox.koodaacraft.org
+      request_host: service-source.sandbox.koodaacraft.org
       strip_request_path: true
       preserve_host: false
-      upstream_url: http://service_components:7000 # (required)
-  - name: service_mockup.local # unique api name
+      upstream_url: http://service_component_source:7000 # (required)
+
+  - name: service_component_sink.local # unique api name
     ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
     plugins:
       - name: cors
@@ -49,8 +51,38 @@ apis:
             preflight_continue: false
             credentials: false
     attributes:
-      request_host: service-mockup.sandbox.koodaacraft.org
+      request_host: service-sink.sandbox.koodaacraft.org
       strip_request_path: true
       preserve_host: false
-      upstream_url: http://service_mockup:2000 # (required)
+      upstream_url: http://service_component_sink:7000 # (required)
+
+
+  - name: service_mockup_source.local # unique api name
+    ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
+    plugins:
+      - name: cors
+        attributes:
+          config:
+            preflight_continue: false
+            credentials: false
+    attributes:
+      request_host: service-mockup-source.sandbox.koodaacraft.org
+      strip_request_path: true
+      preserve_host: false
+      upstream_url: http://service_mockup_source:2001 # (required)
+
+
+  - name: service_mockup_sink.local # unique api name
+    ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
+    plugins:
+      - name: cors
+        attributes:
+          config:
+            preflight_continue: false
+            credentials: false
+    attributes:
+      request_host: service-mockup-sink.sandbox.koodaacraft.org
+      strip_request_path: true
+      preserve_host: false
+      upstream_url: http://service_mockup_sink:2002 # (required)
 
