@@ -1,0 +1,473 @@
+version: '2'
+
+services:
+
+  kongfig:
+    image: mashupmill/kongfig
+# Alternatively you can specify kongfig.yml using ENV_VAR
+# https://github.com/MashupMill/docker-kongfig/blob/master/entrypoint.sh#L23
+#    environment:
+#      - CONFIG=/config/
+    volumes:
+      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/:/config/
+    command: --path kongfig.yml --host kong:8001
+    networks:
+      - mydata-sandbox-backbone
+
+
+  mysql-db:
+    image: mysql:5.6
+    container_name: mysql-db
+    volumes:
+      - mysql-data:/var/lib/mysql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-DBinit.sql:/docker-entrypoint-initdb.d/MyDataAccount-DBinit.sql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-UserInit.sql:/docker-entrypoint-initdb.d/MyDataAccount-UserInit.sql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Operator_Components/doc/database/Operator_Components-DBinit.sql:/docker-entrypoint-initdb.d/Operator_Components-DBinit.sql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Components/doc/database/Service_Components-DBinit.sql:/docker-entrypoint-initdb.d/Service_Components-DBinit.sql
+#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Mockup/doc/database/Service_Mockup-DBinit.sql:/docker-entrypoint-initdb.d/Service_Mockup-DBinit.sql
+      - "./init-db:/docker-entrypoint-initdb.d:ro"
+    environment:
+      - MYSQL_ROOT_PASSWORD=Y3xUcheg
+      - MYSQL_USER=mydataaccount
+      - MYSQL_PASSWORD=wr8gabrA
+    networks:
+      - mydata_sdk_demo_network
+
+  account:
+    build:
+      context: ./Account/
+      dockerfile: Dockerfile-account
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-account
+    container_name: account
+    volumes:
+<<<<<<< HEAD
+      - "account-key-data:/mydata-sdk-account/app/mod_api_auth/db"
+=======
+     - "account-key-data:/mydata-sdk-account/app/mod_api_auth/db"
+     - "account-blackbox-data:/mydata-sdk-account/app/mod_blackbox/db"
+>>>>>>> origin/slr-1.3
+    depends_on:
+      - mysql-db
+    command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 2
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='mydataaccount'
+      - MYSQL_PASSWORD='wr8gabrA'
+      - MYSQL_DB='MyDataAccount'
+      - MYSQL_PORT=3306
+      - URL_PREFIX='/account/api/v1.3'
+#      - SERVER_NAME=''
+#      - VIRTUAL_HOST=localhost
+    ports:
+      - '8080:8080'
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+  operator_components:
+    build:
+      context: .
+#      context: context: ./Operator_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Operator_Components
+    container_name: operator_components
+    depends_on:
+      - redis
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - DEBUG_MODE=True
+      - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
+      - ACCOUNT_MANAGEMENT_USER="test_sdk"
+      - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
+      - DATABASE_PATH="./db_Operator.sqlite"
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='operator'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Operator'
+      - MYSQL_PORT=3306
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+<<<<<<< HEAD
+      - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
+      - OPERATOR_ROOT_PATH="/api/1.3"
+      - OPERATOR_CR_PATH="/cr"
+      - OPERATOR_SLR_PATH="/slr"
+      - SERVICE_URL="http://service_components:7000"
+      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://node.registry.sandbox.koodaacraft.org"
+=======
+      - OPERATOR_UID="Operator112"
+      - OPERATOR_ROOT_PATH="/api/1.3"
+      - OPERATOR_CR_PATH="/cr"
+      - OPERATOR_SLR_PATH="/slr"
+      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://jsonserver"
+>>>>>>> origin/slr-1.3
+      - VIRTUAL_HOST=localhost.operator
+    ports:
+      - '5000:5000'
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+  service_component_source:
+    build:
+      context: .
+#      context: ./Service_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Components
+    container_name: service_component_source
+    depends_on:
+      - redis
+    environment:
+      - IS_SINK=False
+      - IS_SOURCE=True
+      - PYTHONUNBUFFERED='true'
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='service_source'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Srv_Source'
+      - MYSQL_PORT=3306
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - SERVICE_URL="http://service_mockup_source:2000"
+      - OPERATOR_URL="http://operator_components:5000"
+      - SERVICE_ROOT_PATH="/api/1.3"
+      - SERVICE_CR_PATH="/cr"
+      - SERVICE_SLR_PATH="/slr"
+      - VIRTUAL_HOST=localhost.serviceSource
+    ports:
+      - '7000:7000'
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+
+  service_component_sink:
+    build:
+      context: .
+#      context: ./Service_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Components
+    container_name: service_component_sink
+    depends_on:
+      - redis
+    environment:
+      - IS_SINK=True
+      - IS_SOURCE=False
+      - PYTHONUNBUFFERED='true'
+      - DATABASE_PATH="./db_Srv.sqlite"
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='service_sink'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Srv_Sink'
+      - MYSQL_PORT=3306
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - SERVICE_URL="http://service_mockup_sink:2000"
+      - OPERATOR_URL="http://operator_components:5000"
+      - SERVICE_ROOT_PATH="/api/1.3"
+      - SERVICE_CR_PATH="/cr"
+      - SERVICE_SLR_PATH="/slr"
+      - VIRTUAL_HOST=localhost.serviceSink
+    ports:
+      - '7001:7000'
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+
+
+  service_mockup_source:
+    build:
+      context: .
+#      context: ./Service_Mockup/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Mockup
+    container_name: service_mockup_source
+    depends_on:
+      - redis
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - SERVICE_MGMNT_URL="http://service_component_source:7000"
+      - VIRTUAL_HOST=localhost.srvmockupSource
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='MockupSource'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Service_Mockup_Source'
+      - MYSQL_PORT=3306
+    ports:
+      - '2001:2000'
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+<<<<<<< HEAD
+  service_mockup_sink:
+=======
+  service_component_sink:
+    build:
+      context: .
+#      context: ./Service_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Components
+    container_name: service_component_sink
+    depends_on:
+      - redis
+    environment:
+      - IS_SOURCE=False
+      - IS_SINK=True
+      - PYTHONUNBUFFERED='true'
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='service_sink'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Srv_Sink'
+      - MYSQL_PORT=3306
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - SERVICE_URL="http://service_mockup_sink:2000"
+      - OPERATOR_URL="http://operator_components:5000"
+      - SERVICE_ROOT_PATH="/api/1.3"
+      - SERVICE_CR_PATH="/cr"
+      - SERVICE_SLR_PATH="/slr"
+      - VIRTUAL_HOST=localhost.serviceSink
+    ports:
+      - '7001:7000'
+    networks:
+      - mydata_sdk_demo_network
+
+  service_mockup_source:
+>>>>>>> origin/slr-1.3
+    build:
+      context: .
+#      context: ./Service_Mockup/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Mockup
+<<<<<<< HEAD
+    container_name: service_mockup_sink
+=======
+    container_name: service_mockup_source
+>>>>>>> origin/slr-1.3
+    depends_on:
+      - redis
+    environment:
+      - PYTHONUNBUFFERED='true'
+<<<<<<< HEAD
+      - SERVICE_MGMNT_URL="http://service_component_sink:7000"
+      - VIRTUAL_HOST=localhost.srvmockupSink
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='MockupSink'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Service_Mockup_Sink'
+      - MYSQL_PORT=3306
+    ports:
+      - '2002:2000' 
+=======
+      - SERVICE_MGMNT_URL="http://service_component_source:7000"
+      - VIRTUAL_HOST=localhost.srvmockup
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='MockupSource'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Service_Mockup_Source'
+      - MYSQL_PORT=3306
+      - NAME='MyLocation'
+      - SERVICE_ID='582f2bf50cf2f4663ec4f01f'
+    ports:
+      - '2001:2000'
+>>>>>>> origin/slr-1.3
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+
+  service_mockup_sink:
+    build:
+      context: .
+#      context: ./Service_Mockup/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Mockup
+    container_name: service_mockup_sink
+    depends_on:
+      - redis
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - SERVICE_MGMNT_URL="http://service_component_sink:7000"
+      - VIRTUAL_HOST=localhost.srvmockupSink
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='MockupSink'
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Service_Mockup_Sink'
+      - MYSQL_PORT=3306
+      - NAME='PHR'
+      - SERVICE_ID='582f2bf50cf2f4663ec4f020'
+    networks:
+      - mydata_sdk_demo_network
+    ports:
+      - '2002:2000'
+
+
+
+
+  celery_worker_operator:
+    build:
+      context: .
+#      context: context: ./Operator_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Operator_Components
+    container_name: celery_worker_operator
+    depends_on:
+      - redis
+    # We can move docker-entrypoint.sh back to Dockerfile once we move to uwsgi (get rid of dumb-init)
+#    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
+    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A op_tasks worker -Q op_queue"]
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
+      - ACCOUNT_MANAGEMENT_USER="test_sdk"
+      - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
+      - DATABASE_PATH="./db_Operator.sqlite"
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      # Needed in order to run Celery as root.
+      - C_FORCE_ROOT="true"
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
+      - OPERATOR_ROOT_PATH="/api/1.3"
+      - OPERATOR_CR_PATH="/cr"
+      - OPERATOR_SLR_PATH="/slr"
+      - SERVICE_URL="http://service_components:7000"
+      - VIRTUAL_HOST=localhost.celeryworker.operator
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+  celery_worker_service:
+    build:
+      context: .
+#      context: context: ./Service_Components/
+      dockerfile: Dockerfile-overholt
+      args:
+        - APP_INSTALL_PATH=/mydata-sdk-components
+        - OVERHOLT_APPLICATION_PATH=/Service_Components
+    container_name: celery_worker_service
+    depends_on:
+      - redis
+    # We can move docker-entrypoint.sh back to Dockerfile once we move to uwsgi (get rid of dumb-init)
+#    command: ["sh", "-c", "cd /mydata-sdk-components/Operator_Components && celery -A tasks worker"]
+    command: ["/docker-entrypoint-overholt.sh", "sh", "-c", "cd /mydata-sdk-components/Service_Components && celery -A srv_tasks worker -Q srv_queue"]
+    environment:
+      - PYTHONUNBUFFERED='true'
+      - ACCOUNT_MANAGEMENT_URL='http://account:8080/'
+      - ACCOUNT_MANAGEMENT_USER="test_sdk"
+      - ACCOUNT_MANAGEMENT_PASSWORD="test_sdk_pw"
+      - DATABASE_PATH="./db_Srv.sqlite"
+      # Naming this CELERY_BROKER_URL messes things up pretty bad.
+      # Issue is discussed here
+      # https://github.com/celery/celery/issues/2765#issuecomment-228224236
+      - SELERY_BROKER_URL='redis://redis:6379/0'
+      - SELERY_RESULT_BACKEND='redis://redis:6379/0'
+      # Needed in order to run Celery as root.
+      - C_FORCE_ROOT="true"
+      - MYSQL_HOST='mysql-db'
+      - MYSQL_USER='service'        # Gets the credentials from service that calls the task so works for now, but something to fix
+      - MYSQL_PASSWORD='MynorcA'
+      - MYSQL_DB='db_Srv'
+      - MYSQL_PORT=3306
+      - CERT_PATH="./service_key.jwk"
+      - CERT_KEY_PATH="./service_key.jwk"
+      - CERT_PASSWORD_PATH="./cert_pw"
+      - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
+      - OPERATOR_ROOT_PATH="/api/1.3"
+      - OPERATOR_CR_PATH="/cr"
+      - OPERATOR_SLR_PATH="/slr"
+      - SERVICE_URL="http://service_components:7000"
+      - VIRTUAL_HOST=localhost.celeryworker.service
+    networks:
+      - mydata_sdk_demo_network
+      - mydata-sandbox-backbone
+
+  redis:
+    image: redis:3.2-alpine
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - mydata_sdk_demo_network
+
+  jsonserver:
+    image: ondrejmo/json-server
+    container_name: jsonserver
+    volumes:
+      - ./serviceregistry.json:/data/db.json
+      - ./routes.json:/data/routes.json
+    entrypoint:
+      - json-server 
+      - db.json
+      - --routes
+      - routes.json
+      - -p 80
+    ports:
+      - 4444:80
+    networks:
+      - mydata_sdk_demo_network
+       
+
+volumes:
+  mysql-data:
+  account-key-data:
+<<<<<<< HEAD
+=======
+  account-blackbox-data:
+>>>>>>> origin/slr-1.3
+  redis-data:
+
+networks:
+  mydata_sdk_demo_network:
+  mydata-sandbox-backbone:
+    external: true
+

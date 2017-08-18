@@ -1,0 +1,83 @@
+---
+swagger: "2.0"
+info:
+  version: "1.2.1"
+  title: "Authorization Management API"
+
+host: "example.service_mgmnt.example"
+basePath: "/api/1.3/cr"
+paths:
+  /add_cr:
+    post:
+      tags:
+      - "Authorization Management"
+      - "Operator"
+      description: "Operator calls this to give CR/CSR to the service"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "payload"
+        required: true
+        schema:
+          $ref: "#/definitions/CRCSRParams"
+      responses:
+        200:
+          description: "Returns 200 OK"
+        500:
+          description: "Internal server error. The actual status code and content of the error message may vary depending on error occurred."
+          schema:
+            $ref: "#/definitions/errors"
+        400:
+          description: "Bad Request"
+          schema:
+            $ref: "#/definitions/errors"
+        403:
+          description: "Forbidden"
+          schema:
+            $ref: "#/definitions/errors"
+definitions:
+  errors:
+      type: object
+      properties:
+        status:
+          type: string
+          description: HTTP status code as string value.
+        code:
+          type: integer
+          description: HTTP status code
+        title:
+          type: string
+          description: Title of error message.
+        detail:
+          type: string
+          description: Detailed error message.
+        source:
+          type: string
+          description: Source URI
+
+  CRCSRParams:
+    type: "object"
+    properties:
+      source:
+        type: object
+        properties:
+          cr:
+            type: object
+            description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-data-authz.pdf"
+
+          csr:
+            type: object
+            description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-data-authz.pdf"
+      sink:
+        type: object
+        properties:
+          cr:
+            type: object
+            description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-data-authz.pdf"
+          csr:
+            type: object
+            description: "See: https://github.com/HIIT/mydata-stack/raw/gh-pages/mydata-data-authz.pdf"

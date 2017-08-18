@@ -20,11 +20,6 @@ services:
     container_name: mysql-db
     volumes:
       - mysql-data:/var/lib/mysql
-#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-DBinit.sql:/docker-entrypoint-initdb.d/MyDataAccount-DBinit.sql
-#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Account/doc/database/MyDataAccount-UserInit.sql:/docker-entrypoint-initdb.d/MyDataAccount-UserInit.sql
-#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Operator_Components/doc/database/Operator_Components-DBinit.sql:/docker-entrypoint-initdb.d/Operator_Components-DBinit.sql
-#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Components/doc/database/Service_Components-DBinit.sql:/docker-entrypoint-initdb.d/Service_Components-DBinit.sql
-#      - ${COMPOSEROOT}/mydata-sdk-bleeding-edge/Service_Mockup/doc/database/Service_Mockup-DBinit.sql:/docker-entrypoint-initdb.d/Service_Mockup-DBinit.sql
       - "./init-db:/docker-entrypoint-initdb.d:ro"
     environment:
       - MYSQL_ROOT_PASSWORD=Y3xUcheg
@@ -41,7 +36,8 @@ services:
         - APP_INSTALL_PATH=/mydata-sdk-account
     container_name: account
     volumes:
-      - "account-key-data:/mydata-sdk-account/app/mod_api_auth/db"
+     - "account-key-data:/mydata-sdk-account/app/mod_api_auth/db"
+     - "account-blackbox-data:/mydata-sdk-account/app/mod_blackbox/db"
     depends_on:
       - mysql-db
     command: uwsgi --socket 0.0.0.0:8080 --protocol=http -w wsgi --callable app --processes 2
@@ -91,7 +87,7 @@ services:
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
-      - OPERATOR_UID="41e19fcd-1951-455f-9169-a303f990f52d"
+      - OPERATOR_UID="Operator112"
       - OPERATOR_ROOT_PATH="/api/1.3"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
@@ -119,7 +115,6 @@ services:
       - IS_SINK=False
       - IS_SOURCE=True
       - PYTHONUNBUFFERED='true'
-      - DATABASE_PATH="./db_Srv.sqlite"
       - MYSQL_HOST='mysql-db'
       - MYSQL_USER='service_source'
       - MYSQL_PASSWORD='MynorcA'
@@ -143,8 +138,6 @@ services:
       - '7000:7000'
     networks:
       - mydata_sdk_demo_network
-      - mydata-sandbox-backbone
-
 
   service_component_sink:
     build:
@@ -158,10 +151,9 @@ services:
     depends_on:
       - redis
     environment:
-      - IS_SINK=True
       - IS_SOURCE=False
+      - IS_SINK=True
       - PYTHONUNBUFFERED='true'
-      - DATABASE_PATH="./db_Srv.sqlite"
       - MYSQL_HOST='mysql-db'
       - MYSQL_USER='service_sink'
       - MYSQL_PASSWORD='MynorcA'
@@ -209,6 +201,8 @@ services:
       - MYSQL_PASSWORD='MynorcA'
       - MYSQL_DB='db_Service_Mockup_Source'
       - MYSQL_PORT=3306
+      - NAME='MyLocation'
+      - SERVICE_ID='582f2bf50cf2f4663ec4f01f'
     ports:
       - '2001:2000'
     networks:
@@ -235,6 +229,8 @@ services:
       - MYSQL_PASSWORD='MynorcA'
       - MYSQL_DB='db_Service_Mockup_Sink'
       - MYSQL_PORT=3306
+      - NAME='PHR'
+      - SERVICE_ID='582f2bf50cf2f4663ec4f020'
     ports:
       - '2002:2000' 
     networks:
@@ -280,7 +276,6 @@ services:
       - VIRTUAL_HOST=localhost.celeryworker.operator
     networks:
       - mydata_sdk_demo_network
-      - mydata-sandbox-backbone
 
   celery_worker_service:
     build:
@@ -338,10 +333,8 @@ services:
 volumes:
   mysql-data:
   account-key-data:
+  account-blackbox-data:
   redis-data:
 
 networks:
   mydata_sdk_demo_network:
-  mydata-sandbox-backbone:
-    external: true
-

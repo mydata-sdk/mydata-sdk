@@ -13,6 +13,7 @@ from uuid import uuid4
 #Service_ID_Sink     = "582b7df00cf2727145535754"  # PHR
 Service_ID_Source   = "582f2bf50cf2f4663ec4f01f"  # MyLocation
 Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
+#Service_ID_Sink = "58c7c3d70cf2deab82d1fe3e"
 
 # TODO: Add more printing. Now user barely knows if initialization happened and did it succeed or not.
 # Sends JSON-payloads to Account that create three new accounts.
@@ -75,7 +76,7 @@ def initialize(account_url):
 # Creates two Service Links by making a GET-request to Operator backend.
 def create_service_link(operator_url, service_id):
     print("\n##### CREATE A SERVICE LINK #####")
-    slr_flow = get(operator_url + "api/1.2/slr/account/2/service/"+service_id)
+    slr_flow = get(operator_url + "api/1.3/slr/account/2/service/"+service_id)
     if not slr_flow.ok:
         print("Creation of first SLR failed with status ({}) reason ({}) and the following content:\n{}".format(
             slr_flow.status_code,
@@ -99,7 +100,7 @@ def give_consent(operator_url, sink_id, source_id):
     ids = {"sink": sink_id, "source": source_id}
 
     print("\n###### 1.FETCH CONSENT FORM ######")
-    req = get(operator_url + "api/1.2/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id))
+    req = get(operator_url + "api/1.3/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id))
     if not req.ok:
         print("Fetching consent form consent failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
@@ -111,7 +112,7 @@ def give_consent(operator_url, sink_id, source_id):
     print("\n###### 2.SEND CONSENT FORM ######")
     print(req.url, req.reason, req.status_code, req.text)
     js = json.loads(req.text)
-    req = post(operator_url + "api/1.2/cr/consent_form/account/2", json=js)
+    req = post(operator_url + "api/1.3/cr/consent_form/account/2", json=js)
     if not req.ok:
         print("Granting consent failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
@@ -133,7 +134,7 @@ def make_data_request(service_url, rs_id):
     print("\n##### Make_data_request #####")
     print("\n##### Waiting {} seconds for previous actions to complete #####".format(wait_time))
     time.sleep(wait_time)
-    req = get(service_url + "api/1.2/sink_flow/debug_dc/{}".format(rs_id))
+    req = get(service_url + "api/1.3/sink_flow/debug_dc/{}".format(rs_id))
     if not req.ok:
         print(req.text, req.url)
         print("Debug Data request failed with status ({}) reason ({}) and the following content:\n{}".format(
@@ -176,11 +177,11 @@ if __name__ == '__main__':
                         required=False)
 
     help_string_service_url = \
-        "URL to Sink backend. Defaults to 'http://localhost:7000/'."
+        "URL to Sink backend. Defaults to 'http://localhost:7001/'."
     parser.add_argument("--service_url",
                         help=help_string_service_url,
                         type=str,
-                        default="http://localhost:7000/",
+                        default="http://localhost:7001/",
                         required=False)
 
 
