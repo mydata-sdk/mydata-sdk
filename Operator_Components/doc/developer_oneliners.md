@@ -1,4 +1,0 @@
-# Developer One-liners
-
-TBD
-

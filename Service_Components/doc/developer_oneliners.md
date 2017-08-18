@@ -1,3 +1,0 @@
-# Developer one-liners
-
-TBD
