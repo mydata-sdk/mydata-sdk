@@ -195,7 +195,7 @@ services:
     environment:
       - PYTHONUNBUFFERED='true'
       - SERVICE_MGMNT_URL="http://service_component_source:7000"
-      - VIRTUAL_HOST=localhost.srvmockupSource
+#      - VIRTUAL_HOST=localhost.srvmockupSource
       - MYSQL_HOST='mysql-db'
       - MYSQL_USER='MockupSource'
       - MYSQL_PASSWORD='MynorcA'
@@ -223,7 +223,7 @@ services:
     environment:
       - PYTHONUNBUFFERED='true'
       - SERVICE_MGMNT_URL="http://service_component_sink:7000"
-      - VIRTUAL_HOST=localhost.srvmockupSink
+#      - VIRTUAL_HOST=localhost.srvmockupSink
       - MYSQL_HOST='mysql-db'
       - MYSQL_USER='MockupSink'
       - MYSQL_PASSWORD='MynorcA'

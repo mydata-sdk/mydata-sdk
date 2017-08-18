@@ -69,7 +69,7 @@ apis:
       request_host: service-mockup-source.sandbox.koodaacraft.org
       strip_request_path: true
       preserve_host: false
-      upstream_url: http://service_mockup_source:2001 # (required)
+      upstream_url: http://service_mockup_source:2000 # (required)
 
 
   - name: service_mockup_sink.local # unique api name
@@ -84,5 +84,5 @@ apis:
       request_host: service-mockup-sink.sandbox.koodaacraft.org
       strip_request_path: true
       preserve_host: false
-      upstream_url: http://service_mockup_sink:2002 # (required)
+      upstream_url: http://service_mockup_sink:2000 # (required)
 
