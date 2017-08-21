@@ -15,7 +15,7 @@ from requests import post
 
 # Logging
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt")
+sq = Sequences("OpMgmt")
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_ConsentForm", __name__)
@@ -44,8 +44,10 @@ class ConsentFormHandler(Resource):
         """get
         :return: Returns Consent form to UI for user input.
         """
-        # TODO: We probably should check if user has SLR's for given services before proceeding.
-
+        sq.opt("UI Gets Consent Form from Operator")
+        sq.activate()
+        sq.message_from("OpUi", "GET Consent Form")
+        sq.task("Verify MyData Account Key")
         am = get_am(current_app, request.headers)
         key_check = am.verify_user_key(account_id)
         debug_log.info("Verifying User Key resulted: {}".format(key_check))
@@ -54,11 +56,14 @@ class ConsentFormHandler(Resource):
         service_ids = request.args
 
         # Check that We don't have existing Active Consent between the two services
+        sq.task("Check for existing SLR's and that no Active CR exist for the service pair.")
         am.check_existing_consent(service_id_sink=service_ids["sink"],
                                       service_id_source=service_ids["source"],
                                       account_id=account_id)
 
-        sq.task("Fetch services")
+        sq.send_to("SrvReg", "Fetch service descriptions.")
+        sq.reply_from("SrvReg", "Service Description.")
+        sq.task("Create Consent Form template.")
         sink = self.getService(service_ids["sink"])
         _consent_form["sink"]["service_id"] = sink["serviceId"]
         _consent_form["sink"]["dataset"] = []  # Clear out template.
@@ -98,13 +103,15 @@ class ConsentFormHandler(Resource):
             }
             _consent_form["source"]["dataset"].append(item)
 
-        sq.task("Generate RS_ID")
+        sq.task("Generate RS_ID for the template.")
         source_domain = source["serviceInstance"][0]["domain"]
         rs_id = self.Helpers.gen_rs_id(source_domain)
         sq.task("Store generated RS_ID")
         _consent_form["source"]["rs_id"] = rs_id
 
-        sq.reply_to("UI", msg="Consent Form+RS_ID")
+        sq.reply_to("OpUi", "Return Consent Form+RS_ID")
+        sq.deactivate()
+        sq.opt(end=True)
         return _consent_form
 
     @error_handler
@@ -113,6 +120,10 @@ class ConsentFormHandler(Resource):
         """post
         :return: Returns 201 when consent has been created
         """
+        sq.opt("Operator Receives ConsentForm and creates CR/CSR")
+        sq.message_from("OpUi", "POST ConsentForm")
+        sq.activate()
+        sq.task("Verify MyData Account Key")
         am = get_am(current_app, request.headers)
         key_check = am.verify_user_key(account_id)
         debug_log.info("Verifying User Key resulted: {}".format(key_check))
@@ -126,7 +137,7 @@ class ConsentFormHandler(Resource):
                                       service_id_source=source_srv_id,
                                       account_id=account_id)
 
-        sq.task("Validate RS_ID")
+        sq.task("Validate RS_ID in ConsentForm")
         # Validate RS_ID (RS_ID exists and not used before)
         if self.Helpers.validate_rs_id(_consent_form["source"]["rs_id"]):
             self.Helpers.store_consent_form(_consent_form)  # Store Consent Form
@@ -135,13 +146,18 @@ class ConsentFormHandler(Resource):
                                         detail="RS_ID could not be validated.",
                                         status=403)
 
-        sq.send_to("Account Manager", "GET surrogate_id & slr_id")
+        sq.send_to("acc", "GET surrogate_id & slr_id")
+
 
 
         # Get slr and surrogate_id
         slr_id_sink, surrogate_id_sink = am.get_surrogate_and_slr_id(account_id, sink_srv_id)
         # One for Sink, one for Source
         slr_id_source, surrogate_id_source = am.get_surrogate_and_slr_id(account_id, source_srv_id)
+
+        sq.reply_from("acc", "surrogate_id & slr_id")
+
+        sq.task("Fetch sink_keys's")
 
         sink_keys = self.Helpers.get_service_keys(surrogate_id_sink)
         try:
@@ -203,8 +219,9 @@ class ConsentFormHandler(Resource):
         source_csr = self.Helpers.gen_csr(surrogate_id_source, source_cr["cr"]["common_part"]["cr_id"], "Active",
                                           "null")
 
-        sq.send_to("Account Manager", "Send CR/CSR to sign and store")
+        sq.send_to("acc", "Send CR/CSR to sign and store")
         result = am.signAndstore(sink_cr, sink_csr, source_cr, source_csr, account_id)
+        sq.reply_from("acc", "Signed Sink and Source CR/CSR")
 
         debug_log.info("CR/CSR structure the Account Manager signed:\n{}".format(dumps(result, indent=2)))
         sink_cr = result["data"]["sink"]["consent_record"]["attributes"]
@@ -218,9 +235,11 @@ class ConsentFormHandler(Resource):
 
         debug_log.info("CR/CSR payload sent to celery task"
                        " for sending to services:\n{}".format(dumps(crs_csrs_payload, indent=2)))
-        sq.send_to("Service_Components Mgmnt (Sink)", "Post CR-Sink, CSR-Sink")
-        sq.send_to("Service_Components Mgmnt (Source)", "Post CR-Source, CSR-Source")
+        sq.send_to("SrvMgmtsink", "Post CR-Sink, CSR-Sink")
+        sq.send_to("SrvMgmtsource", "Post CR-Source, CSR-Source")
         CR_installer.delay(crs_csrs_payload, self.SH.getService_url(sink_srv_id), self.SH.getService_url(source_srv_id))
+        sq.reply_to("OpUi", "Sink & Source cr_id")
+        sq.deactivate()
         return {"data":{
                     "attributes": {"sink_cr_id": common_cr_sink["cr_id"], "source_cr_id": common_cr_source["cr_id"]},
                     "type": "ConsentRecordIDs",}

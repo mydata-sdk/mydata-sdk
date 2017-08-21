@@ -41,7 +41,11 @@ Using the code we link surrogate id to MyData Account and service confirming the
 logger = logging.getLogger("sequence")
 debug_log = logging.getLogger("debug")
 
-sq = Sequences("Service_Components Mgmnt")
+from instance.settings import IS_SINK
+if IS_SINK:
+    sq = Sequences("SrvMgmtsink")
+else:
+    sq = Sequences("SrvMgmtsource")
 
 
 def timeme(method):
@@ -70,13 +74,15 @@ class Install_CR(Resource):
     def post(self):
         debug_log.info("arrived at Install_CR")
         cr_stuff = request.json
+
+        sq.activate()
+
         sq.task("Install CR/CSR")
         '''post
 
         :return: Returns 202
         '''
 
-        sq.task("CR Received")
         crt = CR_tool()
         crt.cr = cr_stuff
         role = crt.get_role()
@@ -110,13 +116,14 @@ class Install_CR(Resource):
         debug_log.info(dumps(crt.get_CR_payload(), indent=2))
         debug_log.info(dumps(crt.get_CSR_payload(), indent=2))
 
-        sq.task("Verify CR integrity")
         # SLR includes CR keys which means we need to get key from stored SLR and use it to verify this
         # 1) Fetch surrogate_id so we can query our database for slr
+        sq.task("Fetch surrogate_id and slr_id from the CR")
         surr_id = crt.get_surrogate_id()
         slr_id = crt.get_slr_id()
 
-        # Verify SLR is Active:
+        sq.task("Verify SLR is Active for this CR")
+        # Verify SLR is Active: TODO: This could probably return SLR so we don't fetch it second time below.
         if self.helpers.verify_slr_is_active(slr_id) is False:
             raise DetailedHTTPException(detail={"msg": "SLR not Active",},
                                         title="Consent Can't be granted with inactive SLR",
@@ -124,29 +131,17 @@ class Install_CR(Resource):
 
         debug_log.info("Fetched surr_id({}) and slr_id({})".format(surr_id, slr_id))
 
+        sq.task("Verify CR is signed with keys in associated SLR")
         slrt = SLR_tool()
         slrt.slr = self.helpers.get_slr(surr_id)
         verify_is_success = crt.verify_cr(slrt.get_cr_keys())
         if verify_is_success:
-            sq.task("Verify CR is issued by authorized party")
             debug_log.info("CR was verified with key from SLR")
         else:
-            raise DetailedHTTPException(detail={"msg": "Verifying CR failed",},
+            raise DetailedHTTPException(detail={"msg": "Verifying CR failed", },
                                         title="Failure in CR verifying",
                                         status=403)
 
-        sq.task("Verify CSR integrity")
-        # SLR includes CR keys which means we need to get key from stored SLR and use it to verify this
-        verify_is_success = crt.verify_csr(slrt.get_cr_keys())
-
-        if verify_is_success:
-            debug_log.info("CSR was verified with key from SLR")
-        else:
-            raise DetailedHTTPException(detail={"msg": "Verifying CSR failed",},
-                                        title="Failure in CSR verifying",
-                                        status=403)
-
-        sq.task("Verify Status Record")
 
         sq.task("Verify CSR format and mandatory fields")
         errors = validate_json(csr_schema, crt.get_CSR_payload())
@@ -164,6 +159,19 @@ class Install_CR(Resource):
                                         title="Failure in CSR verifying",
                                         status=403)
 
+
+        sq.task("Verify CSR is signed with keys in associated SLR")
+        # SLR includes CR keys which means we need to get key from stored SLR and use it to verify this
+        verify_is_success = crt.verify_csr(slrt.get_cr_keys())
+
+        if verify_is_success:
+            debug_log.info("CSR was verified with key from SLR")
+        else:
+            raise DetailedHTTPException(detail={"msg": "Verifying CSR failed",},
+                                        title="Failure in CSR verifying",
+                                        status=403)
+
+
         # # Verify CR before we do intense DB lookups
         # verify_is_success = crt.verify_cr(slrt.get_cr_keys())
         # if verify_is_success:
@@ -179,6 +187,8 @@ class Install_CR(Resource):
         # Check that previous CSR has not been withdrawn or paused
         # If previous_id is null this step can be ignored.
         # Else fetch previous_id from db and check the status.
+
+        sq.task("Verify CSR chain is intact.")
         prev_csr_id_refers_to_null = crt.get_prev_record_id() == "null"
         if prev_csr_id_refers_to_null:
             debug_log.info("prev_csr_id_referred to null as it should.")
@@ -214,16 +224,19 @@ class Install_CR(Resource):
         store_dict.pop("slr_id", None)
 
         store_dict["json"] = crt.cr["csr"]
-        debug_log.info("WORKING GAVE US: {}".format(store_dict["json"]))
         self.helpers.storeCSR_JSON(store_dict)
+        sq.reply_to("OpMgmt", "201 cr_id")
         if role == "Sink" and self.is_sink:
             debug_log.info("Requesting auth_token")
+            sq.task("Request AuthToken from Operator")
             get_AuthToken.delay(crt.get_cr_id_from_cr(), self.operator_url, current_app.config)
+        sq.deactivate()
         return {"id": crt.get_cr_id_from_cr()}, 201
 
     @error_handler
     @api_logging
     def patch(self):
+        # TODO: Currently only Operator actually verifies we're not being fed crap.
         payload = request.json
 
         # Decode payload
@@ -238,17 +251,18 @@ class Install_CR(Resource):
             "surrogate_id": decoded_payload["surrogate_id"],
             "json": payload["data"]["attributes"]  # possibly store the base64 representation
         }
-
+        sq.activate()
+        sq.task("Store new CSR into Database.")
         # Store CSR to database
-        debug_log.info("BROKEN GAVE US: {}".format(store_dict["json"]))
         self.helpers.storeCSR_JSON(store_dict)
 
         # Forward change to Service
         # To be implemented.....
 
-
+        sq.reply_to("OpMgmt", "201 csr_id")
+        sq.deactivate()
         return {"id": decoded_payload["record_id"]}, 201
-        pass
+
 
 
 api.add_resource(Install_CR, '/cr_management')

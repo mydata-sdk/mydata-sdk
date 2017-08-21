@@ -22,7 +22,7 @@ api.init_app(api_SLR_RegisterSur)
 
 # Logging
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt")
+sq = Sequences("OpMgmt")
 
 '''
 Service_Components Mgmnt->Operator_Components Mgmnt: Send Operator_Components request to make SLR

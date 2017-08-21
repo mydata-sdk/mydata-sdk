@@ -7,7 +7,7 @@ from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import api_logging, get_am
+from helpers_op import api_logging, get_am, Sequences
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_Introspection", __name__)
@@ -16,7 +16,7 @@ api.init_app(api_CR_blueprint)
 
 # Logging
 debug_log = logging.getLogger("debug")
-
+sq = Sequences("OpMgmt")
 
 class Introspection(Resource):
     def __init__(self):

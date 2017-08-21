@@ -6,7 +6,7 @@ from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import get_am, Helpers, api_logging
+from helpers_op import get_am, Helpers, api_logging, Sequences
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_Status_Change", __name__)
@@ -15,7 +15,7 @@ api.init_app(api_CR_blueprint)
 
 # Logging
 debug_log = logging.getLogger("debug")
-
+sq = Sequences("OpMgmt")
 
 class StatusChange(Resource):
     def __init__(self):
@@ -33,6 +33,10 @@ class StatusChange(Resource):
 
         :return: Change status of CR
         '''
+        sq.opt("Start CR status change.")
+        sq.message_from("OpUi, ")
+        sq.activate()
+        sq.task()
         try:
             allowed_states = ["Active", "Disabled", "Withdrawn"]
             if new_status in allowed_states:

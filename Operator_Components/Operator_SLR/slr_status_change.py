@@ -25,7 +25,7 @@ api.init_app(api_SLR_Start)
 
 # Logger stuff
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt")
+sq = Sequences("OpMgmt")
 
 
 class SlrStatus(Resource):
