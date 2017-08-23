@@ -91,7 +91,7 @@ services:
       - OPERATOR_ROOT_PATH="/api/1.3"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
-      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://dev.registry.sandbox.koodaacraft.org"
+      - SERVICE_REGISTRY_SEARCH_DOMAIN="http://node.registry.sandbox.koodaacraft.org"
       - VIRTUAL_HOST=localhost.operator
     ports:
       - '5000:5000'
@@ -127,8 +127,8 @@ services:
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
-      - SERVICE_URL="http://service_mockup_source:2000"
-      - OPERATOR_URL="http://operator_components:5000"
+      - SERVICE_URL="http://service-mockup-source.sandbox.koodaacraft.org"
+      - OPERATOR_URL="http://operator-mgmt.sandbox.koodaacraft.org"
       - SERVICE_ROOT_PATH="/api/1.3"
       - SERVICE_CR_PATH="/cr"
       - SERVICE_SLR_PATH="/slr"
@@ -167,8 +167,8 @@ services:
       - CERT_PATH="./service_key.jwk"
       - CERT_KEY_PATH="./service_key.jwk"
       - CERT_PASSWORD_PATH="./cert_pw"
-      - SERVICE_URL="http://service_mockup_sink:2000"
-      - OPERATOR_URL="http://operator_components:5000"
+      - SERVICE_URL="http://service-mockup-sink.sandbox.koodaacraft.org"
+      - OPERATOR_URL="http://operator-mgmt.sandbox.koodaacraft.org"
       - SERVICE_ROOT_PATH="/api/1.3"
       - SERVICE_CR_PATH="/cr"
       - SERVICE_SLR_PATH="/slr"
@@ -194,7 +194,7 @@ services:
       - redis
     environment:
       - PYTHONUNBUFFERED='true'
-      - SERVICE_MGMNT_URL="http://service_component_source:7000"
+      - SERVICE_MGMNT_URL="http://service-source.sandbox.koodaacraft.org"
 #      - VIRTUAL_HOST=localhost.srvmockupSource
       - MYSQL_HOST='mysql-db'
       - MYSQL_USER='MockupSource'
@@ -222,7 +222,7 @@ services:
       - redis
     environment:
       - PYTHONUNBUFFERED='true'
-      - SERVICE_MGMNT_URL="http://service_component_sink:7000"
+      - SERVICE_MGMNT_URL="http://service-sink.sandbox.koodaacraft.org"
 #      - VIRTUAL_HOST=localhost.srvmockupSink
       - MYSQL_HOST='mysql-db'
       - MYSQL_USER='MockupSink'
@@ -272,7 +272,7 @@ services:
       - OPERATOR_ROOT_PATH="/api/1.3"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
-      - SERVICE_URL="http://service_components:7000"
+      - SERVICE_URL="" # Check if this is used, it shouldn't be.
       - VIRTUAL_HOST=localhost.celeryworker.operator
     networks:
       - mydata_sdk_demo_network
@@ -316,7 +316,7 @@ services:
       - OPERATOR_ROOT_PATH="/api/1.3"
       - OPERATOR_CR_PATH="/cr"
       - OPERATOR_SLR_PATH="/slr"
-      - SERVICE_URL="http://service_components:7000"
+      - SERVICE_URL=""
       - VIRTUAL_HOST=localhost.celeryworker.service
     networks:
       - mydata_sdk_demo_network

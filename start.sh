@@ -12,5 +12,5 @@ sh reset_db.sh
 #docker volume rm mydatasdkbleedingedge_redis-data   # Clean Redis db
 reset                                               # Reset terminal
 docker-compose down --remove-orphans                # Clean out trash.
-docker-compose up --build                           # Put the thing up and running
+docker-compose up --build -d                          # Put the thing up and running
 
