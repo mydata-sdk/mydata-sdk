@@ -2,8 +2,20 @@
 from requests import post
 from factory import create_celery_app
 import logging
+from helpers_op import Sequences
 # Logging
 debug_log = logging.getLogger("debug")
+
+logger = logging.getLogger("sequence")
+try:
+    from restapi_logging_handler import RestApiHandler
+
+    restapihandler = RestApiHandler("http://172.17.0.1:9004/")
+    logger.addHandler(restapihandler)
+
+except Exception as e:
+    pass
+
 
 celery = create_celery_app()
 

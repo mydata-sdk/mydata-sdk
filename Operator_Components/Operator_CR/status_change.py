@@ -6,7 +6,7 @@ from flask import Blueprint, current_app, request
 from flask_restful import Api, Resource
 
 from DetailedHTTPException import error_handler, DetailedHTTPException
-from helpers_op import get_am, Helpers, api_logging
+from helpers_op import get_am, Helpers, api_logging, Sequences, ServiceRegistryHandler
 
 # Init Flask
 api_CR_blueprint = Blueprint("api_Status_Change", __name__)
@@ -15,7 +15,7 @@ api.init_app(api_CR_blueprint)
 
 # Logging
 debug_log = logging.getLogger("debug")
-
+sq = Sequences("OpMgmt")
 
 class StatusChange(Resource):
     def __init__(self):
@@ -25,6 +25,8 @@ class StatusChange(Resource):
         self.am_password = current_app.config["ACCOUNT_MANAGEMENT_PASSWORD"]
         self.timeout = current_app.config["TIMEOUT"]
         self.helper_object = Helpers(current_app.config)
+        self.service_registry_handler = ServiceRegistryHandler(current_app.config["SERVICE_REGISTRY_SEARCH_DOMAIN"],
+                                                               current_app.config["SERVICE_REGISTRY_SEARCH_ENDPOINT"])
 
     @error_handler
     @api_logging
@@ -33,6 +35,10 @@ class StatusChange(Resource):
 
         :return: Change status of CR
         '''
+        sq.opt("Start CR status change.")
+        sq.message_from("OpUi", "POST: Change CR status")
+        sq.activate()
+        sq.task("Verify new state is supported one.")
         try:
             allowed_states = ["Active", "Disabled", "Withdrawn"]
             if new_status in allowed_states:
@@ -45,7 +51,12 @@ class StatusChange(Resource):
                 am = get_am(current_app, request.headers)
                 key_check = am.verify_user_key(acc_id)
                 debug_log.info("Verifying User Key resulted: {}".format(key_check))
+
                 link_id, surrogate_id = am.get_surrogate_and_slr_id(acc_id, srv_id)
+
+
+
+
                 previous_csr = am.get_last_csr(cr_id, link_id)
                 previous_csr_id = previous_csr["record_id"]
                 previous_status = previous_csr["consent_status"]
@@ -60,9 +71,11 @@ class StatusChange(Resource):
                                                 detail={"msg": "Status change to Withdrawn is final."},
                                                 status=409)
 
-                csr_payload = self.helper_object.gen_csr(surrogate_id, cr_id, new_status, previous_csr_id)
-                debug_log.info("Created CSR payload:\n {}".format(csr_payload))
-                csr = am.create_new_csr(cr_id, csr_payload)
+                csr = self.helper_object.change_cr_pair_status(link_id, acc_id, am, self.service_registry_handler, new_status)
+
+
+
+
             else:
                 raise DetailedHTTPException(title="Unable to change consent status to {}.".format(new_status),
                                             detail={"msg": "Unsupported Status Change"},

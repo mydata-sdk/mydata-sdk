@@ -25,7 +25,7 @@ api.init_app(api_SLR_Start)
 
 # Logger stuff
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt")
+sq = Sequences("OpMgmt")
 
 
 class SlrStatus(Resource):
@@ -75,47 +75,7 @@ class SlrStatus(Resource):
             except Exception as e:
                 raise e
 
-            try:
-                def csr_active(payload):
-                    return payload["consent_status"] == "Active"
-
-                # Get CR statuses
-                crs_to_disable = []
-                for consent in consents:
-                    cr_id = consent["id"]
-                    decoded_cr_payload = base_token_tool.decode_payload(consent["attributes"]["payload"])
-                    consent_slr_id = decoded_cr_payload["common_part"]["slr_id"]
-                    decoded_csr_payload = am.get_last_csr(cr_id, consent_slr_id)
-                    debug_log.info("Fetched decoded csr payload: \n{}".format(decoded_csr_payload))
-                    if csr_active(decoded_csr_payload):
-                        crs_to_disable.append(decoded_csr_payload)
-
-                for cr_to_disable in crs_to_disable:
-                    # Fill CSR template for disabled CR
-                    cr_surrogate_id = cr_to_disable["surrogate_id"]
-                    csr_template = self.helper.gen_csr(surrogate_id=cr_surrogate_id,
-                                                       consent_record_id=cr_to_disable["cr_id"],
-                                                       consent_status="Disabled",
-                                                       previous_record_id=cr_to_disable["record_id"])
-
-                    try:
-                        # Create new CSR at Account (After this CR is 'disbled' in Account as well.)
-                        removed_cr_csr = am.create_new_csr(cr_to_disable["cr_id"], csr_template)
-                        debug_log.info("Got Following CSR from Account:\n{}".format(removed_cr_csr))
-
-                        # Patch the CR status change to services
-                        endpoint = self.helper.get_service_cr_endpoint(service_id)
-                        req = patch(service_url+endpoint, json=removed_cr_csr)
-                        debug_log.debug("Posted CSR to service:\n{}  {}  {}  {}".format(req.status_code,
-                                                                                        req.reason,
-                                                                                        req.text,
-                                                                                        req.content))
-
-                    except Exception as e:
-                        debug_log.exception(e)
-
-            except Exception as e:
-                raise e
+            self.helper.change_cr_pair_status(slr_id, account_id, am, self.service_registry_handler, "Withdrawn")
 
             try:
                 # Create new SLR status

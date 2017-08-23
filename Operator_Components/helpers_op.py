@@ -371,11 +371,11 @@ class AccountManagerHandler:
         debug_log.info("Fetching CR's for link id '{}' that belongs to account '{}'".format(slr_id, account_id))
         query = ""
         if pairs:
-            query = "?get_consent_pair=true"
+            query = "?get_consent_pair=True"
 
         consents = get(self.url + self.endpoint["fetch_consents"]
                        .replace("{account_id}", account_id)
-                       .replace("{link_id}", slr_id)+query,
+                       .replace("{link_id}", slr_id).rstrip("/")+query,
                        headers={"Api-Key-Sdk": self.token, "Api-Key-User": self.user_key},
                        timeout=self.timeout,
                        )
@@ -741,6 +741,73 @@ class Helpers:
                 "key": full_key,
                 "prot": protti,
                 "header": headeri}
+
+
+    def change_cr_pair_status(self, slr_id, account_id, AccountHandlerInstance, service_registry_handler, new_status):
+        def csr_active(payload):
+            return payload["consent_status"] == "Active" or payload["consent_status"] == "Disabled"
+
+        try:
+            # Fetch Consent Pair
+            am = AccountHandlerInstance
+            consents = am.get_crs(slr_id, account_id, pairs=True)["data"]
+            debug_log.info("Fetched consent pair: {}".format(consents))
+
+            # We want to give back csr id's we've created, store them here
+            created_csr_ids = {}
+
+            # Map CR's to Subject id's
+            cr_service_id_mapping = {}
+
+            # Get CR statuses
+            crs_to_disable = []
+            for consent in consents:
+                cr_id = consent["id"]
+                decoded_cr_payload = base_token_tool.decode_payload(consent["attributes"]["payload"])
+                consent_slr_id = decoded_cr_payload["common_part"]["slr_id"]
+                service_id = decoded_cr_payload["common_part"]["subject_id"]
+                service_type = decoded_cr_payload["common_part"]["role"]
+                cr_service_id_mapping[cr_id] = {"service_id": service_id, "role": service_type}
+                decoded_csr_payload = am.get_last_csr(cr_id, consent_slr_id)
+                debug_log.info("Fetched decoded csr payload: \n{}".format(decoded_csr_payload))
+                if csr_active(decoded_csr_payload):
+                    crs_to_disable.append(decoded_csr_payload)
+
+            for cr_to_disable in crs_to_disable:
+                # Fill CSR template for disabled CR
+                cr_surrogate_id = cr_to_disable["surrogate_id"]
+                csr_template = self.gen_csr(surrogate_id=cr_surrogate_id,
+                                                   consent_record_id=cr_to_disable["cr_id"],
+                                                   consent_status=new_status,
+                                                   previous_record_id=cr_to_disable["record_id"])
+
+                try:
+                    # Get service_id for this cr we're disabling
+                    service_id = cr_service_id_mapping[cr_to_disable["cr_id"]]["service_id"]
+
+                    # Create new CSR at Account (After this CR is 'disabled' in Account as well.)
+                    removed_cr_csr = am.create_new_csr(cr_to_disable["cr_id"], csr_template)
+                    debug_log.info("Got Following CSR from Account:\n{}".format(removed_cr_csr))
+
+                    # Patch the CR status change to services
+                    service_url = service_registry_handler.getService_url(service_id)
+                    endpoint = self.get_service_cr_endpoint(service_id)
+                    req = patch(service_url + endpoint, json=removed_cr_csr)
+                    debug_log.debug("Posted CSR to service:\n{}  {}  {}  {}".format(req.status_code,
+                                                                                    req.reason,
+                                                                                    req.text,
+                                                                                    req.content))
+                    created_csr_ids[cr_service_id_mapping[cr_to_disable["cr_id"]]["role"]] = csr_template["record_id"]
+
+
+                except Exception as e:
+                    debug_log.exception(e)
+            return created_csr_ids
+
+
+        except Exception as e:
+            raise e
+
 
     def validate_rs_id(self, rs_id):
         ##
@@ -1141,12 +1208,7 @@ from functools import wraps
 from flask import request, make_response
 from werkzeug.wrappers import Response
 def api_logging(func):
-    @wraps(func)
-    def loggedfunc(*args, **kwargs):
-        req_msg = format_request(request)
-        debug_log.info(req_msg)
-
-        resp = func(*args, **kwargs)
+    def handle_resp(resp):
         debug_log.info(type(resp))
         debug_log.info(resp)
 
@@ -1191,8 +1253,19 @@ def api_logging(func):
                 resp = make_response((content, status_code, content_type))
             resp_msg = format_response(resp)
 
+        return resp, resp_msg
+
+    @wraps(func)
+    def loggedfunc(*args, **kwargs):
+        req_msg = format_request(request)
+        debug_log.info(req_msg)
+
+        resp = func(*args, **kwargs)
+        resp, resp_msg = handle_resp(resp)
+
         debug_log.info(resp_msg)
         return resp
+
     return loggedfunc
 
 
@@ -1259,17 +1332,36 @@ class Sequences:
 
         return self.seq_tool(msg=content, box=False, to=self.name)
 
-    def seq_tool(self, msg=None, to="Change_Me", box=False, dotted=False):
+    def reply_from(self, origin="Origin_Name", msg=""):
+        return self.seq_tool(msg=msg, to=self.name, dotted=True, alt_name=origin)
 
+    def message_from(self, origin="Origin_Name", msg=""):
+        return self.seq_tool(msg=msg, to=self.name, dotted=False, alt_name=origin)
+
+    def activate(self):
+        return self.seq_form("activate " + self.name)
+
+    def deactivate(self):
+        return self.seq_form("deactivate " + self.name)
+
+    def seq_tool(self, msg=None, to="Change_Me", box=False, dotted=False, alt_name=False):
+        name = self.name
+        if alt_name:
+            name = alt_name
         if box:
-            form = 'Note over {}: {}'.format(self.name, msg)
+            form = 'Note over {}: {}'.format(name, msg)
             return self.seq_form(form, )
         elif dotted:
-            form = "{}-->{}: {}".format(self.name, to, msg)
+            form = "{}-->{}: {}".format(name, to, msg)
             return self.seq_form(form)
         else:
-            form = "{}->{}: {}".format(self.name, to, msg)
+            form = "{}->{}: {}".format(name, to, msg)
             return self.seq_form(form)
+
+    def opt(self, op_name="", end=False):
+        if end:
+            return self.seq_form("end")
+        return self.seq_form("opt "+op_name)
 
     def seq_form(self, line):
         self.logger.info(dumps({"seq": line, "time": time.time()}))

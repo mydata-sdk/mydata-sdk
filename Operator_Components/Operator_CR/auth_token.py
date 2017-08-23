@@ -16,7 +16,7 @@ api.init_app(api_CR_blueprint)
 
 # Logging
 debug_log = logging.getLogger("debug")
-sq = Sequences("Operator_Components Mgmnt")
+sq = Sequences("OpMgmt")
 
 
 class AuthToken(Resource):
@@ -42,15 +42,26 @@ class AuthToken(Resource):
         ##
         am = get_am(current_app, request.headers)
         try:
+            sq.opt("Generate Auth Token")
+            sq.message_from("SrvMgmtsink", "GET AuthToken")
+            sq.activate()
+            sq.send_to("acc", "Get AuthTokenInfo")
+
             result = am.get_AuthTokenInfo(cr_id)
+
+            sq.reply_from("acc", "AuthTokenInfo")
         except AttributeError as e:
             raise DetailedHTTPException(status=502,
                                         title="It would seem initiating Account Manager Handler has failed.",
                                         detail="Account Manager might be down or unresponsive.",
                                         trace=traceback.format_exc(limit=100).splitlines())
         debug_log.info("Account Manager gave following Auth Token Info:\n{}".format(dumps(result, indent=2)))
+        sq.task("Generate AuthToken")
         token = self.gen_auth_token(result)
         debug_log.info("Generated auth token: {}".format(token))
+        sq.reply_to("SrvMgmtsink", "AuthToken")
+        sq.deactivate()
+        sq.opt(end=True)
         return {"auth_token": token}
 
 
