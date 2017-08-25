@@ -6,6 +6,7 @@ import traceback
 from base64 import urlsafe_b64decode as decode
 from json import loads, dumps
 from uuid import uuid4 as guid
+from hashlib import sha256
 
 from flask import request, abort, Blueprint, current_app, redirect
 from flask_cors import CORS
@@ -52,6 +53,7 @@ class GenerateSurrogateId(Resource):
         self.service_key = self.helpers.get_key()
         self.is_sink = current_app.config["IS_SINK"]
         self.is_source = current_app.config["IS_SOURCE"]
+        self.service_id = current_app.config["SERVICE_ID"]
         self.service_url = current_app.config["SERVICE_URL"]
         self.operator_url = current_app.config["OPERATOR_URL"]
         self.lock_wait_time = current_app.config["LOCK_WAIT_TIME"]
@@ -84,7 +86,7 @@ class GenerateSurrogateId(Resource):
                 sq.task("Generate surrogate_id.")
                 # TODO: Some logic to surrogate_id's?
                 # surrogate_id is meant to be unique between operator and service.
-                surrogate_id = "{}_{}".format(user_id, operator_id)
+                surrogate_id = sha256("{}_{}_{}".format(self.service_id, user_id, operator_id)).hexdigest()
 
                 # Store surrogate_id to database
                 self.helpers.add_surrogate_id_to_user_id(user_id, surrogate_id)
