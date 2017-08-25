@@ -55,7 +55,7 @@ from functools import wraps
 from flask import request, Response
 
 
-def check_auth(username, password):
+def valid_credentials(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
@@ -78,7 +78,7 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
+        if not auth or not valid_credentials(auth.username, auth.password):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
@@ -105,12 +105,11 @@ class UserLogin(Resource):
         self.parser.add_argument('code', type=str, help='session code')
         self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
         self.parser.add_argument('return_url', type=str, help='Url safe Base64 coded return url.')
-        self.parser.add_argument('Password', type=str, help="Password for user.")
-        self.parser.add_argument('Email', type=str, help="Email/Username.")
+        self.parser.add_argument('pword', type=str, help="Password for user.")
+        self.parser.add_argument('username', type=str, help="Email/Username.")
         self.parser.add_argument('linkingFrom', type=str, help='Origin of the linking request(?)')  # TODO: Clarify?
 
     @error_handler
-    @requires_auth
     @api_logging
     def get(self):
         args = self.parser.parse_args()
@@ -126,6 +125,8 @@ class UserLogin(Resource):
                 <legend>Link {{provider}} with Operator({{ operator_id }})</legend>
                 <div class="form-group">
                   <div class="col-lg-10 col-lg-offset-1">
+                    Username:<input name="username" id="username"></input><br>
+                    Password:<input name="pword" id="pword"></input>
                     <button type="reset" class="btn btn-default">Cancel</button>
                     <button type="submit" class="btn btn-primary">Submit</button>
                   </div>
@@ -149,7 +150,6 @@ class UserLogin(Resource):
     # operator_id = args["operator_id"],
     # return_url = args["return_url"],
     # linkingFrom = args["linkingFrom"]
-    @requires_auth
     @error_handler
     @api_logging
     def post(self):
@@ -171,7 +171,12 @@ class UserLogin(Resource):
         args = self.parser.parse_args()
         debug_log.info("Args contain:\n {}".format(dumps(args, indent=2)))
         debug_log.info(dumps(request.json, indent=2))
-        user_id = encode64(request.authorization.username)
+        user_id = args["username"]
+        user_pw = args["pword"]
+        if not valid_credentials(user_id, user_pw):
+            raise DetailedHTTPException(status=401,
+                                        detail={"msg": "Unauthorized, check your login credentials."}
+                                        )
         code = args["code"]
         self.helpers.store_code_user({code: user_id})
 
