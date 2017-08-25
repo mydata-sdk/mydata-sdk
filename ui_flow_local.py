@@ -8,12 +8,9 @@ from base64 import urlsafe_b64decode as decode
 from base64 import urlsafe_b64encode as encode
 
 # TODO: Maybe these should be given as parameters
-#Service_ID_Source   = "57f3a57b0cf2fcf22eea33a2"  # MyLocation
-#Service_ID_Sink     = "57f3a57b0cf2fcf22eea33a3"  # PHR
-#Service_ID_Source   = "582b7df00cf2727145535753"  # MyLocation
-#Service_ID_Sink     = "582b7df00cf2727145535754"  # PHR
 Service_ID_Source   = "582f2bf50cf2f4663ec4f01f"  # MyLocation
 Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
+
 
 # TODO: Add more printing. Now user barely knows if initialization happened and did it succeed or not.
 # Sends JSON-payloads to Account that create three new accounts.
@@ -81,6 +78,7 @@ def initialize(account_url):
 
     return json.loads(get_api_key())
 
+
 # TODO: Refactor and return something.
 # Creates two Service Links by making a GET-request to Operator backend.
 def create_service_link(operator_url, service_id, user_key, service_acc, service_pass):
@@ -105,7 +103,6 @@ def create_service_link(operator_url, service_id, user_key, service_acc, service
     params_dict["Email"] = service_acc
     params_dict["Password"] = service_pass
 
-
     print("POSTing the data to the Service Mockup Login (Simulating filling the form and hitting Submit")
     result = post(slr_flow.url.split("?")[0], json=params_dict, auth=(params_dict["Email"], params_dict["Password"""]))
     print(result.url, result.reason, result.status_code, result.text)
@@ -128,6 +125,7 @@ def create_service_link(operator_url, service_id, user_key, service_acc, service
         print(slr_flow.url, slr_flow.reason, slr_flow.status_code, slr_flow.text)
     return decoded_json
 
+
 def remove_slr(operatorl_url, user_key, slr_id, service_id):
     print("\n#### REMOVE SERVICE LINK ####")
     print("Removing SLR: {}".format(slr_id))
@@ -135,6 +133,8 @@ def remove_slr(operatorl_url, user_key, slr_id, service_id):
                     headers={"Api-Key-User": user_key["Api-Key-User"]})
     print(result.url, result.reason, result.status_code, result.text)
     return result.text
+
+
 # TODO: Refactor and return something.
 # Gives a Consent for these Services by sending a Consent form as JSON-payload to Operator backend.
 # Should print "201 Created" if the Consent was executed succesfully.
@@ -176,8 +176,10 @@ def give_consent(operator_url, sink_id, source_id, user_key):
     print("\n\n")
     return {"rs_id": js["source"]["rs_id"], "crs": json.loads(req.text)["data"]["attributes"]}
 
+
 def make_cr_status_changes(operator_url, srv_id, cr_id, user_key):
     print("\n###### 3.CHANGE CONSENT STATUS ######\n")
+
     def status_change(operator_url, srv_id, cr_id, user_key, status):
         print("\n  ## Change status of cr '{}' to {}.".format(cr_id, status))
         req = post(operator_url + "api/1.3/cr/account_id/2/service/{}/consent/{}/status/{}".format(srv_id, cr_id, status),
@@ -331,8 +333,8 @@ if __name__ == '__main__':
 
     # SLR
     if not args.skip_slr:
-        slr_1 = create_service_link(args.operator_url, args.sink_id, user_key, "Matti_Sink", "Uusio")
-        slr_2 = create_service_link(args.operator_url, args.source_id, user_key, "Matti_Source", "Uusio")
+        slr_1 = create_service_link(args.operator_url, args.sink_id, user_key, "user1", "1234")
+        slr_2 = create_service_link(args.operator_url, args.source_id, user_key, "user39", "1234")
 
     # Consent
     if not args.skip_consent:
