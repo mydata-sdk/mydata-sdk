@@ -31,7 +31,7 @@ from functools import wraps
 from flask import request, Response
 
 
-def check_auth(username, password):
+def valid_credentials(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
@@ -79,10 +79,11 @@ class LinkingUi(Resource):
         self.helpers = Helpers(current_app.config)
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('operator_id', type=str, help='Operator UUID.')
+        self.parser.add_argument('Password', type=str, help="Password for user.")
+        self.parser.add_argument('Email', type=str, help="Email/Username.")
 
 
     @error_handler
-    @requires_auth
     @api_logging
     def get(self):
         args = self.parser.parse_args()
@@ -95,6 +96,8 @@ class LinkingUi(Resource):
                 <legend>Link {{provider}} with Operator({{ operator_id }})</legend>
                 <div class="form-group">
                   <div class="col-lg-10 col-lg-offset-1">
+                    Username:<input name="Email" id="username"></input><br>
+                    Password:<input name="Password" id="pword"></input>
                     <button type="reset" class="btn btn-default">Cancel</button>
                     <button type="submit" class="btn btn-primary">Submit</button>
                   </div>
@@ -114,12 +117,18 @@ class LinkingUi(Resource):
         return response
 
     @error_handler
-    @requires_auth
     @api_logging
     def post(self):
         args = self.parser.parse_args()
         operator_id = args["operator_id"]
-        user_id = encode64(request.authorization.username)
+        user_id = args["Email"]
+        user_pw = args["Password"]
+
+        if not valid_credentials(user_id, user_pw):
+            raise DetailedHTTPException(status=401,
+                                        detail={"msg": "Unauthorized, check your login credentials."}
+                                        )
+
 
         # Send Management the Operator id and get Surrogate_ID
         endpoint = "/api/1.3/slr/surrogate_id"  # TODO: This needs to be fetched from somewhere.
