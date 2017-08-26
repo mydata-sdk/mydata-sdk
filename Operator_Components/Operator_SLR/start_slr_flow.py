@@ -125,4 +125,45 @@ class StartSlrFlow(Resource):
                                         exception=e,
                                         trace=traceback.format_exc(limit=100).splitlines())
 
+class CancelSlrFlow(Resource):
+    def __init__(self):
+        """
+
+        """
+        super(CancelSlrFlow, self).__init__()
+        self.helper = Helpers(current_app.config)
+
+    @error_handler
+    @api_logging
+    def delete(self, account_id, code):
+        AM = get_am(current_app, request.headers)
+        key_check = AM.verify_user_key(account_id)
+        debug_log.info("Verifying User Key resulted: {}".format(key_check))
+
+        sq.task("Load json payload as object")
+        js = request.json
+
+        sq.task("Load account_id from database")
+        code = js["code"]
+        try:
+            stored_session_from_db = self.helper.restore_session(code)
+        except TypeError as e:
+            debug_log.info("Failed restoring session from DB with code '{}'".format(code))
+            debug_log.exception(e)
+            raise DetailedHTTPException(status=403,
+                                        detail={"msg": "Invalid or expired session"},
+                                        title="Invalid session")
+        debug_log.debug("The session data contains: {}".format(stored_session_from_db))
+        session_data = loads(stored_session_from_db)
+        debug_log.debug("{}  {}".format(type(stored_session_from_db), stored_session_from_db))
+        account_id_from_session = session_data["account_id"]
+
+        if account_id_from_session == account_id:
+            self.helper.delete_session(code)
+
+        return {"msg": {"status": "deleted", "id": code}}, 200
+
+
+
 api.add_resource(StartSlrFlow, '/account/<string:account_id>/service/<string:service_id>')
+api.add_resource(CancelSlrFlow, '/account/<string:account_id>/session_code/<string:code>')

@@ -75,9 +75,7 @@ class RegisterSurrogate(Resource):
             sq.task("Load account_id and service_id from database")
             code = js["code"]
             try:
-                stored_session_from_db = self.helpers.query_db_multiple("select json from session_store where code=%s;",
-                                                                        (code,),
-                                                                        one=True)[0]
+                stored_session_from_db = self.helpers.restore_session(code)
             except TypeError as e:
                 debug_log.info("Failed restoring session from DB with code '{}'".format(code))
                 debug_log.exception(e)

@@ -747,6 +747,9 @@ class Helpers:
                 "prot": protti,
                 "header": headeri}
 
+    def restore_session(self, code):
+        return self.query_db_multiple("select json from session_store where code=%s;", (code,),
+                                      one=True)[0]
 
     def change_cr_pair_status(self, slr_id, account_id, AccountHandlerInstance, service_registry_handler, new_status):
         def csr_active(payload):
@@ -1267,7 +1270,8 @@ def api_logging(func):
 
         resp = func(*args, **kwargs)
         resp, resp_msg = handle_resp(resp)
-
+        debug_log.info("API COMPILATION:")
+        debug_log.info(req_msg)
         debug_log.info(resp_msg)
         return resp
 
