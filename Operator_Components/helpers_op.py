@@ -345,7 +345,12 @@ class AccountManagerHandler:
         for slr in slrs["data"]:
             decoded_payload = base_token_tool.decode_payload(slr["attributes"]["payload"])
             if service_id == decoded_payload["service_id"]:
-                return slr["id"], decoded_payload["surrogate_id"]
+                # Check this SLR is active.
+                last_ssr = self.get_last_slr_status(slr["id"])
+                last_ssr_payload = base_token_tool.decode_payload(last_ssr["data"]["attributes"]["payload"])
+                # We don't care about disabled SLR's
+                if last_ssr_payload["sl_status"] == "Active":
+                    return slr["id"], decoded_payload["surrogate_id"]
         raise DetailedHTTPException(status=404,
                                     detail={"msg": "Couldn't find SLR for given service."},
                                     title="Not Found")

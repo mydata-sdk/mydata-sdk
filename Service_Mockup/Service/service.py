@@ -168,6 +168,7 @@ class UserLogin(Resource):
         '''
         # Render Login template
         response = make_response(render_template_string(tmpl_str, **args), 200)
+        response.headers["Content-Type"] = "text/html"
         return response
 
     # code = args["code"],

@@ -11,6 +11,8 @@ from base64 import urlsafe_b64encode as encode
 Service_ID_Source   = "582f2bf50cf2f4663ec4f01f"  # MyLocation
 Service_ID_Sink     = "582f2bf50cf2f4663ec4f020"  # PHR
 
+# Stop at each step?
+interactive = True
 
 # TODO: Add more printing. Now user barely knows if initialization happened and did it succeed or not.
 # Sends JSON-payloads to Account that create three new accounts.
@@ -83,6 +85,9 @@ def initialize(account_url):
 # Creates two Service Links by making a GET-request to Operator backend.
 def create_service_link(operator_url, service_id, user_key, service_acc, service_pass):
     print("\n##### CREATE A SERVICE LINK #####")
+    print("\n service_id: {}\n service_acc: {}".format(service_id, service_acc))
+    if interactive:
+        a = raw_input("Press Enter to continue:")
     print("User key is: {}".format(user_key["Api-Key-User"]))
     slr_flow = get(operator_url + "api/1.3/slr/account/2/service/"+service_id,
                    headers={"Api-Key-User": user_key["Api-Key-User"]})
@@ -131,6 +136,8 @@ def create_service_link(operator_url, service_id, user_key, service_acc, service
 def remove_slr(operatorl_url, user_key, slr_id, service_id):
     print("\n#### REMOVE SERVICE LINK ####")
     print("Removing SLR: {}".format(slr_id))
+    if interactive:
+        a = raw_input("Press Enter to continue:")
     result = post("{}api/1.3/slr/account/2/service/{}/slr/{}".format(operatorl_url, service_id, slr_id),
                     headers={"Api-Key-User": user_key["Api-Key-User"]})
     print(result.url, result.reason, result.status_code, result.text)
@@ -146,6 +153,9 @@ def give_consent(operator_url, sink_id, source_id, user_key):
 
     # This format needs to be specified, even if done with url params instead.
     ids = {"sink": sink_id, "source": source_id}
+    print(ids)
+    if interactive:
+        a = raw_input("Press Enter to continue:")
 
     print("\n###### 1.FETCH CONSENT FORM ######")
     req = get(operator_url + "api/1.3/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id), headers={"Api-Key-User": user_key["Api-Key-User"]})
@@ -181,6 +191,10 @@ def give_consent(operator_url, sink_id, source_id, user_key):
 
 def make_cr_status_changes(operator_url, srv_id, cr_id, user_key):
     print("\n###### 3.CHANGE CONSENT STATUS ######\n")
+    print(" service_id: {}\n cr_id: {}".format(srv_id, cr_id))
+
+    if interactive:
+        a = raw_input("Press Enter to continue:")
 
     def status_change(operator_url, srv_id, cr_id, user_key, status):
         print("\n  ## Change status of cr '{}' to {}.".format(cr_id, status))
@@ -252,6 +266,14 @@ if __name__ == '__main__':
         "Try create a new consent record while an Active one exists"
     parser.add_argument("--test_duplicate_cf",
                         help=help_string_test_duplicate_consent_form,
+                        action="store_true",
+                        required=False)
+
+    # Debug
+    help_string_interactive = \
+        "Interactive mode, stop between steps"
+    parser.add_argument("--interactive",
+                        help=help_string_interactive,
                         action="store_true",
                         required=False)
 
@@ -328,6 +350,8 @@ if __name__ == '__main__':
     print(args.skip_init)
     print(args.sink_id)
     print(args.source_id)
+    if not args.interactive:
+        interactive = False
 
     if not args.skip_init:
         # Do not skip init
