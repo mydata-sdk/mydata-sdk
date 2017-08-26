@@ -91,7 +91,7 @@ def create_service_link(operator_url, service_id, user_key, service_acc, service
     print("It returned us url:", slr_flow.url)
     print(slr_flow.url, slr_flow.reason, slr_flow.status_code, slr_flow.text)
 
-    print("Extracting parameters from the url...")
+    print("\nExtracting parameters from the url...")
     params = slr_flow.url.split("/")[-1].split("?")[-1].split("&")
     params_dict = {}
     for item in params:  # This is done bit funny to avoid losing paddings from return_url
@@ -99,17 +99,19 @@ def create_service_link(operator_url, service_id, user_key, service_acc, service
         value = item.split("{}{}".format(key, "="))[1]
         params_dict[key] = value
     print(json.dumps(params_dict, indent=2))
-    print("Adding Debug Credentials to the data for posting..")
+    print("\nAdding Debug Credentials to the data for posting..")
     params_dict["Email"] = service_acc
     params_dict["Password"] = service_pass
 
-    print("POSTing the data to the Service Mockup Login (Simulating filling the form and hitting Submit")
+    print("\nPOSTing the data to the Service Mockup Login (Simulating filling the form and hitting Submit")
     result = post(slr_flow.url.split("?")[0], json=params_dict, auth=(params_dict["Email"], params_dict["Password"""]))
     print(result.url, result.reason, result.status_code, result.text)
-    print("Parsing response JSON from query parameters..")
+    if result.headers["Content-Type"] == "application/json":
+        print(json.dumps(json.loads(result.content), indent=2))
+    print("\nParsing response JSON from query parameters..")
     base = result.url.split("results=")[1]
     base = decode(str(base))
-    print("Result decoded to: \n{}".format(base))
+    print("\nResult decoded to: \n{}".format(base))
     decoded_json = json.loads(base)
 
     # if not slr_flow.ok:

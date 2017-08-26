@@ -742,6 +742,9 @@ class Helpers:
                 "prot": protti,
                 "header": headeri}
 
+    def restore_session(self, code):
+        return self.query_db_multiple("select json from session_store where code=%s;", (code,),
+                                      one=True)[0]
 
     def change_cr_pair_status(self, slr_id, account_id, AccountHandlerInstance, service_registry_handler, new_status):
         def csr_active(payload):
