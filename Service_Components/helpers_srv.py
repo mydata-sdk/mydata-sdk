@@ -819,6 +819,8 @@ def api_logging(func):
                 resp = make_response((content, status_code, content_type))
             resp_msg = format_response(resp)
 
+        debug_log.info("API COMPILATION:")
+        debug_log.info(req_msg)
         debug_log.info(resp_msg)
         return resp
     return loggedfunc

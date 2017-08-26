@@ -1265,7 +1265,8 @@ def api_logging(func):
 
         resp = func(*args, **kwargs)
         resp, resp_msg = handle_resp(resp)
-
+        debug_log.info("API COMPILATION:")
+        debug_log.info(req_msg)
         debug_log.info(resp_msg)
         return resp
 
