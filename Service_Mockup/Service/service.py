@@ -119,28 +119,52 @@ class UserLogin(Resource):
         else:
             args["fromOperator"] = "hidden"
         tmpl_str = '''
-        <html><header></header><body>
-                    <form class="form-horizontal" action="" method="POST">
-              <fieldset>
-                <legend>Link {{provider}} with Operator({{ operator_id }})</legend>
-                <div class="form-group">
-                  <div class="col-lg-10 col-lg-offset-1">
-                    Username:<input name="Email" id="username"></input><br>
-                    Password:<input name="Password" id="pword"></input>
-                    <button type="reset" class="btn btn-default">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Submit</button>
+        <html>
+            <header>
+                <!-- Latest compiled and minified CSS -->
+                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+                
+                <!-- Optional theme -->
+                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+                
+                <!-- Latest compiled and minified JavaScript -->
+                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+            </header>
+            <body>
+                <div class="container">
+                 <div class="row">
+                  <div class="col-md-12">
+                      <div class="col-md-4"><br/>
+                      </div>
+                      <div class="col-md-4">
+                        <form class="form-horizontal" action="" method="POST">
+                          <fieldset>
+                            <legend>Link {{provider}} with Operator({{ operator_id }})</legend>
+                            <div class="form-group">
+                              <div class="col-lg-10 col-lg-offset-1">
+                                Username:<input name="Email" id="username"></input><br>
+                                Password :<input name="Password" id="pword"></input><br>
+                                <div align=center>
+                                    <button type="reset" class="btn btn-danger">Cancel</button>
+                                    <button type="submit" class="btn btn-success">Submit</button>
+                                </div>
+                              </div>
+                            </div>
+                          </fieldset>
+                          <div {{ fromOperator }}>
+                            <p> By linking service to Operator, you agree to the <a href="#LinkToToS">Terms of Service</a></p>
+                          </div>
+                          <input type="hidden" name="code" value="{{ code }}">
+                          <input type="hidden" name="return_url" value="{{ return_url }}">
+                          <input type="hidden" name="operator_id" value="{{ operator_id }}">
+                          <input type="hidden" name="linkingFrom" value="{{ linkingFrom }}">
+                        </form>
+                     </div>
                   </div>
+                 </div>
                 </div>
-              </fieldset>
-              <div {{ fromOperator }}>
-                <p> By linking service to Operator, you agree to the <a href="#LinkToToS">Terms of Service</a></p>
-              </div>
-              <input type="hidden" name="code" value="{{ code }}">
-              <input type="hidden" name="return_url" value="{{ return_url }}">
-              <input type="hidden" name="operator_id" value="{{ operator_id }}">
-              <input type="hidden" name="linkingFrom" value="{{ linkingFrom }}">
-            </form>
-        </body></html>
+            </body>
+        </html>
         '''
         # Render Login template
         response = make_response(render_template_string(tmpl_str, **args), 200)
