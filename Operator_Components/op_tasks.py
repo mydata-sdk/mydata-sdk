@@ -19,7 +19,7 @@ except Exception as e:
 
 celery = create_celery_app()
 
-@celery.task
+@celery.task(ignore_result=True)
 def CR_installer(crs_csrs_payload, sink_url, source_url):
     # Get these as parameter or inside crs_csrs_payload
     endpoint = "/api/1.3/cr/cr_management"
