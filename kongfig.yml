@@ -10,7 +10,7 @@ apis:
             preflight_continue: false
             credentials: false
     attributes:
-      request_host: account.sandbox.koodaacraft.org
+      request_host: account.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://account:8080 # (required)
@@ -23,7 +23,7 @@ apis:
             preflight_continue: false
             credentials: false
     attributes:
-      request_host: operator-mgmt.sandbox.koodaacraft.org
+      request_host: operator-mgmt.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://operator_components:5000 # (required)
@@ -37,7 +37,7 @@ apis:
             preflight_continue: false
             credentials: false
     attributes:
-      request_host: service-source.sandbox.koodaacraft.org
+      request_host: service-source.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://service_component_source:7000 # (required)
@@ -51,11 +51,10 @@ apis:
             preflight_continue: false
             credentials: false
     attributes:
-      request_host: service-sink.sandbox.koodaacraft.org
+      request_host: service-sink.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://service_component_sink:7000 # (required)
-
 
   - name: service_mockup_source.local # unique api name
     ensure: "present" # Set to "removed" to have Kongfig ensure the API is removed. Default is prese$
@@ -66,7 +65,7 @@ apis:
             preflight_continue: false
             credentials: false
     attributes:
-      request_host: service-mockup-source.sandbox.koodaacraft.org
+      request_host: service-mockup-source.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://service_mockup_source:2000 # (required)
@@ -81,7 +80,7 @@ apis:
             preflight_continue: false
             credentials: false
     attributes:
-      request_host: service-mockup-sink.sandbox.koodaacraft.org
+      request_host: service-mockup-sink.sandbox.mydata.fi
       strip_request_path: true
       preserve_host: false
       upstream_url: http://service_mockup_sink:2000 # (required)
