@@ -37,7 +37,8 @@ Checkout master-branch.
 
 #### Configure
 
-You can find configurable settings in /instance/settings.py
+You can find configurable settings in /instance/settings.py.
+There you can configure whether service is sink or source.
 
 #### Start
 
