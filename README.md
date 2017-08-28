@@ -46,9 +46,6 @@ Deployment instructions for each component can be found from module's documentat
 
 ## Documentation
 
-Documentation is available for each component in their respective folders.
-
-## Support
 [MyData Architecture](https://github.com/mydata-sdk/mydata-docs)
 
 
