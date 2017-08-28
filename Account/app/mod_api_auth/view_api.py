@@ -214,6 +214,6 @@ class AccountInfo(Resource):
 
 
 # Register resources
-api.add_resource(ApiKeyUser, '/external/auth/user/', endpoint='api_auth_user')
-api.add_resource(ApiKeySDK, '/internal/auth/sdk/', endpoint='api_auth_sdk')
-api.add_resource(AccountInfo, '/internal/auth/sdk/account/<string:account_id>/info/', endpoint='api_auth_account_info')
+api.add_resource(ApiKeyUser, '/external/auth/user/', '/external/auth/user', endpoint='api_auth_user')
+api.add_resource(ApiKeySDK, '/internal/auth/sdk/','/internal/auth/sdk',  endpoint='api_auth_sdk')
+api.add_resource(AccountInfo, '/internal/auth/sdk/account/<string:account_id>/info/', '/internal/auth/sdk/account/<string:account_id>/info', endpoint='api_auth_account_info')

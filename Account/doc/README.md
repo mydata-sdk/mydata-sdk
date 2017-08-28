@@ -10,9 +10,25 @@
 
 ## Detailed Documentation
 - [Deployment](deployment.md)
-- [API documentation](api/)
 - [Database documentation](database/)
 - [Developer one-liners](developer_oneliners.md)
+
+### API Documentation
+
+API documentation is provided in format of OpenAPI Specification. API documentation can be visualised with following tools.
+
+- [Swagger Editor](http://swagger.io/swagger-editor/)
+- [Swagger UI](http://swagger.io/swagger-ui/)
+
+#### Internal API
+API exposed for MyData Operator’s internal functions and components.
+
+- [Internal Account API documentation](account_api_internal.yaml)
+
+#### External API
+API exposed for realising an Operator front-end e.g. as a mobile native app or a web app.
+
+- [External Account API documentation](account_api_external.yaml)
 
 
 ## Application Modules
