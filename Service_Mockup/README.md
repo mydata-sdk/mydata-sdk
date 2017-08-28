@@ -21,10 +21,15 @@ MyData SDK Service Components i.a. by implementing API endpoints Service Compone
 - [ Deployment ](doc/deployment.md)
 - [ API documentation ](doc/api/)
 
+### Version history
+Version numbers are corresponding with Architecture version numbering.
+#### Version 2.0
+TBD
+
 ## Repository structure
 
 ## Support / Contact / Contribution
-[MyData Architecture](https://github.com/HIIT/mydata-stack)
+[MyData Architecture](https://github.com/mydata-sdk)
 
 ## Copying and License
 This code is licensed under [MIT License](LICENSE)
