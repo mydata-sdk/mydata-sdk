@@ -235,6 +235,7 @@ class UserLogin(Resource):
         except Exception as e:
             raise e
         reply_json = loads(linking_result.text)
+        reply_json = {"slr_id": reply_json["data"]["slr"]["id"], "ssr_id": reply_json["data"]["ssr"]["id"]}
         debug_log.info("Encoding json as reply to ui: \n{}".format(reply_json))
         if isinstance(reply_json, dict):
             reply_json = dumps(reply_json)
