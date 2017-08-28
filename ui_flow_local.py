@@ -393,7 +393,8 @@ if __name__ == '__main__':
 
         print("Removing Source SLR")
         result = remove_slr(args.operator_url, user_key, source_slr_id, args.source_id)
-        
+
+    if False:
         print("\nFetching records from Account for debugging purposes.")
 
         print("\n\nRequesting Last SSR for Sink")
