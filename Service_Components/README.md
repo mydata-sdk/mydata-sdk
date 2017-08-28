@@ -23,10 +23,16 @@ Service Components implement
 - [ Developer one-liners ](doc/developer_oneliners.md)
 - [ API documentation ](doc/api/)
 
+## Version information
+
+Versions are not backward compatible.
+
+Current version 2.0
+
 ## Repository structure
 
 ## Support / Contact / Contribution
-[MyData Architecture](https://github.com/HIIT/mydata-stack)
+[MyData Architecture](https://github.com/mydata-sdk)
 
 ## Copying and License
 This code is licensed under [MIT License](LICENSE)
