@@ -5,7 +5,7 @@
 MyData Account is a part of MyData SDK implementation of MyData Architecture - Consent Based Approach for Personal Data Management.
 
 ## Introduction
-MyData Account is a key enabler in service linking and data flow authorisation. It stores all Account  Ownerâ€™s service links and consents along with their history in a single place. This helps provide a unified view to all data flow authorizations and it enables the Account Owner to manage and control the authorized data flows.
+MyData Account is a key enabler in service linking and data flow authorisation. It stores all Account  Owner’s service links and consents along with their history in a single place. This helps provide a unified view to all data flow authorizations and it enables the Account Owner to manage and control the authorized data flows.
 
 For more information see technical specification documents of MyData Architecture at [https://hiit.github.io/mydata-stack/](https://hiit.github.io/mydata-stack/)
 
@@ -13,10 +13,12 @@ For more information see technical specification documents of MyData Architectur
 
 Versions are not backward compatible.
 
-Current version 1.3
+Current version 2.0
  
 ### Version history
 Version numbers are corresponding with Architecture version numbering.
+#### Version 2.0
+TBD
 
 #### Version 1.3
 
@@ -53,7 +55,7 @@ Version numbers are corresponding with Architecture version numbering.
 - [Documentation ](doc/)
 
 ## Support / Contact / Contribution
-- [https://hiit.github.io/mydata-stack/](https://hiit.github.io/mydata-stack/)
+- [https://github.com/mydata-sdk](https://github.com/mydata-sdk)
 
 ## Copying and License
 This code is licensed under [MIT License (MIT)](LICENSE)
