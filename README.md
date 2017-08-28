@@ -49,7 +49,7 @@ Note that data transfer is currently not working.
 
 Deployment instructions for each component can be found from module's documentation.
 
-## Documentation
+## Specifications
 
 [MyData Architecture](https://github.com/mydata-sdk/mydata-docs)
 
