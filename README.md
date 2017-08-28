@@ -3,12 +3,17 @@
 # MyData SDK Components
 This is a part of MyData-SDK implementation of MyData Architecture.
 
+
 Components are split to their own folders
 
 - [ MyData Account ](/Account/)
 - [ Operator Components ](/Operator_Components/)
 - [ Service Components ](/Service_Components/)
 - [ Service Mockup ](/Service_Mockup/)
+
+
+## Version
+2.0 beta release, final release will be made in September 2017
 
 ## Prerequisites
 - [Flask](http://flask.pocoo.org/)
