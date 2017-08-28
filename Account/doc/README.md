@@ -23,12 +23,11 @@ API documentation is provided in format of OpenAPI Specification. API documentat
 #### Internal API
 API exposed for MyData Operator’s internal functions and components.
 
-- [Internal Account API documentation](account_api_internal.yaml)
-
 #### External API
 API exposed for realising an Operator front-end e.g. as a mobile native app or a web app.
 
-- [External Account API documentation](account_api_external.yaml)
+#### API documentation available at
+API Documentation is available at [MyData-Docs repository](https://github.com/mydata-sdk/mydata-docs/tree/master/api_specs)
 
 
 ## Application Modules
