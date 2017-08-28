@@ -393,6 +393,8 @@ if __name__ == '__main__':
 
         print("Removing Source SLR")
         result = remove_slr(args.operator_url, user_key, source_slr_id, args.source_id)
+        
+        print("\nFetching records from Account for debugging purposes.")
 
         print("\n\nRequesting Last SSR for Sink")
         req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last"
