@@ -1,0 +1,308 @@
+[
+		{
+			"id": "582f2bf50cf2f4663ec4f020",
+			"serviceId": "582f2bf50cf2f4663ec4f020",
+			"serviceInstance": [
+				{
+					"serviceInstanceId": "1517066740",
+					"serviceInstanceTitle": "PHR",
+					"hostingEntity": "PHR Corp.",
+					"serviceInstanceVersion": "0.1",
+					"createdOnDate": 1479486453360,
+					"modifiedOnDate": 1479486453360,
+					"createdByUserId": "582f2bf50cf2f4663ec4f01e",
+					"modifiedByUserId": null,
+					"serviceAccessEndPoint": {
+						"serviceAccessURI": "/api/1.3",
+						"binding": [],
+						"availability": null
+					},
+					"bindingRequestEndPoint": null,
+					"availabilityRequestEndPoint": null,
+					"domain": "http://service_component_sink:7000",
+					"loginDomain": "http://localhost:2002",
+					"loginUri": "/slr/login",
+					"cert": "String"
+				}
+			],
+			"serviceDescription": {
+				"serviceDescriptionTitle": "PHR",
+				"serviceDescriptionVersion": "0.0.1",
+				"serviceIconURI": "https://placehold.it/350x150",
+				"serviceType": "sink",
+				"maturity": "Release",
+				"keywords": [
+					"health",
+					"fitness"
+				],
+				"serviceProviderId": null,
+				"createdOnDate": 1479486453360,
+				"modifiedOnDate": 1479486453360,
+				"modifiedByUserId": null,
+				"createdByUserId": "582f2bf50cf2f4663ec4f01e",
+				"ownerGroup": "public",
+				"availabilityDeclaration": null,
+				"dependency": [],
+				"humanReadableDescription": {
+					"humanReadableDescriptionURI": null,
+					"humanReadableDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer cursus eget urna eu semper. Suspendisse ac fringilla sapien. Aliquam id sem nulla. Phasellus lobortis dolor magna, sed scelerisque ex vehicula a. Integer non posuere turpis. Sed lobortis ante massa, sed dictum mi maximus id."
+				},
+				"technicalServiceDescription": [],
+				"userRating": null,
+				"userFeedback": [],
+				"serviceDataDescription": [
+					{
+						"dataDescriptionId": "2098095914",
+						"dataset": [
+							{
+								"datasetId": "1016542858",
+								"accrualPeriodicity": null,
+								"contactPoint": null,
+								"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin dignissim.",
+								"distribution": [],
+								"issued": 1456794061,
+								"keyword": [
+									"fitness",
+									"health",
+									"weight",
+									"sleep",
+									"blood-pressure",
+									"heart-rate",
+									"calories",
+									"calories-burned",
+									"distance-travelled",
+									"distance",
+									"elevation-travelled",
+									"elevation",
+									"number-of-steps",
+									"steps",
+									"biking",
+									"hiking",
+									"location",
+									"food",
+									"pharmacy",
+									"finance",
+									"insurance",
+									"shopping"
+								],
+								"language": "fi",
+								"modified": 1456794061,
+								"publisher": null,
+								"serviceDataType": "input",
+								"spatial": null,
+								"structure": [],
+								"subject": [],
+								"temporal": null,
+								"theme": [],
+								"title": "Data Collector",
+								"purpose": [
+									"Core Function",
+									"Contracted Service",
+									"Delivery",
+									"Contact Requested",
+									"Personalized Experience",
+									"Marketing",
+									"Marketing Third Parties",
+									"SharingUsefor Delivery",
+									"Disclosure for Marketing",
+									"3rd Party Disclosure for Core Function",
+									"Legally Required Data Retention",
+									"Required by Law Enforcement or Government",
+									"Protecting Your Health",
+									"Protecting Our Interests",
+									"Improve Performance"
+								]
+							}
+						],
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin dignissim.",
+						"schemaId": null,
+						"serviceDataDescriptionUri": null,
+						"serviceSchema": null,
+						"subject": [],
+						"taxonomy": null,
+						"title": "Fitness and Health Data",
+						"issued": 1456794061,
+						"modified": 1456794061
+					}
+				],
+				"serviceProvider": {
+					"id": "a4066606-14eb-46c1-912d-ec3bdc9f36b8",
+					"vatNumber": "33a59c5e",
+					"name": "PHR Corp.",
+					"address1": "Esimerkkitie 684",
+					"address2": "",
+					"postalCode": "33240",
+					"city": "TAMPERE",
+					"state": "Pirkanmaa",
+					"country": "Finland",
+					"contactEmail": "info@example.fi",
+					"contactTel": "+358 050 123 4567",
+					"jurisdiction": "FI"
+				},
+				"compatibleServices": [
+					"582f2bf50cf2f4663ec4f022",
+					"582f2bf50cf2f4663ec4f01f",
+					"582f2bf50cf2f4663ec4f021",
+					"582f2bf60cf2f4663ec4f024"
+				]
+			}
+		},
+		{
+			"id": "582f2bf50cf2f4663ec4f01f",
+			"serviceId": "582f2bf50cf2f4663ec4f01f",
+			"serviceInstance": [
+				{
+					"serviceInstanceId": "1517066740",
+					"serviceInstanceTitle": "MyLocation",
+					"hostingEntity": "MyLocation Corp.",
+					"serviceInstanceVersion": "0.1",
+					"createdOnDate": 1479486453178,
+					"modifiedOnDate": 1479486453178,
+					"createdByUserId": "582f2bf50cf2f4663ec4f01e",
+					"modifiedByUserId": null,
+					"serviceAccessEndPoint": {
+						"serviceAccessURI": "/api/1.3",
+						"binding": [],
+						"availability": null
+					},
+					"bindingRequestEndPoint": null,
+					"availabilityRequestEndPoint": null,
+					"domain": "http://service_component_source:7000",
+					"loginDomain": "http://localhost:2001",
+					"loginUri": "/slr/login",
+					"cert": "String"
+				}
+			],
+			"serviceDescription": {
+				"serviceDescriptionTitle": "MyLocation",
+				"serviceDescriptionVersion": "0.0.1",
+				"serviceIconURI": "https://placehold.it/350x150",
+				"serviceType": "source",
+				"maturity": "Release",
+				"keywords": [
+					"fitness"
+				],
+				"serviceProviderId": null,
+				"createdOnDate": 1479486453178,
+				"modifiedOnDate": 1479486453178,
+				"modifiedByUserId": null,
+				"createdByUserId": "582f2bf50cf2f4663ec4f01e",
+				"ownerGroup": "public",
+				"availabilityDeclaration": null,
+				"dependency": [],
+				"humanReadableDescription": {
+					"humanReadableDescriptionURI": null,
+					"humanReadableDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer cursus eget urna eu semper. Suspendisse ac fringilla sapien. Aliquam id sem nulla. Phasellus lobortis dolor magna, sed scelerisque ex vehicula a. Integer non posuere turpis. Sed lobortis ante massa, sed dictum mi maximus id."
+				},
+				"technicalServiceDescription": [],
+				"userRating": null,
+				"userFeedback": [],
+				"serviceDataDescription": [
+					{
+						"dataDescriptionId": "1855852513",
+						"dataset": [
+							{
+								"datasetId": "1260696963",
+								"accrualPeriodicity": null,
+								"contactPoint": null,
+								"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin dignissim.",
+								"distribution": [
+									{
+										"accessURL": "/source_flow/datarequest",
+										"distributionId": "1460195839",
+										"downloadURL": null,
+										"format": "application/json",
+										"issued": 1451610062,
+										"modified": 1451610062,
+										"rights": "/rights/termsOfService",
+										"technicalDescriptionURI": null,
+										"title": "Location"
+									}
+								],
+								"issued": 1451610062,
+								"keyword": [
+									"fitness",
+									"location",
+									"biking"
+								],
+								"language": "fi",
+								"modified": 1451610062,
+								"publisher": null,
+								"serviceDataType": "output",
+								"spatial": null,
+								"structure": [],
+								"subject": [],
+								"temporal": null,
+								"theme": [],
+								"title": "Biking",
+								"purpose": []
+							},
+							{
+								"datasetId": "68348157",
+								"accrualPeriodicity": null,
+								"contactPoint": null,
+								"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin dignissim.",
+								"distribution": [
+									{
+										"accessURL": "/source_flow/datarequest",
+										"distributionId": "1971207201",
+										"downloadURL": null,
+										"format": "application/json",
+										"issued": 1451610062,
+										"modified": 1451610062,
+										"rights": "/rights/termsOfService",
+										"technicalDescriptionURI": null,
+										"title": "Location"
+									}
+								],
+								"issued": 1451610062,
+								"keyword": [
+									"fitness",
+									"location",
+									"hiking"
+								],
+								"language": "fi",
+								"modified": 1451610062,
+								"publisher": null,
+								"serviceDataType": "output",
+								"spatial": null,
+								"structure": [],
+								"subject": [],
+								"temporal": null,
+								"theme": [],
+								"title": "Hiking",
+								"purpose": []
+							}
+						],
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin dignissim.",
+						"schemaId": null,
+						"serviceDataDescriptionUri": null,
+						"serviceSchema": null,
+						"subject": [],
+						"taxonomy": null,
+						"title": "Fitness data",
+						"issued": 1451610062,
+						"modified": 1451610062
+					}
+				],
+				"serviceProvider": {
+					"id": "238f4202-5af6-458a-9485-eb4ab816f802",
+					"vatNumber": "33a59e20",
+					"name": "MyLocation Corp.",
+					"address1": "Esimerkkitie 684",
+					"address2": "",
+					"postalCode": "33240",
+					"city": "TAMPERE",
+					"state": "Pirkanmaa",
+					"country": "Finland",
+					"contactEmail": "info@example.fi",
+					"contactTel": "+358 050 123 4567",
+					"jurisdiction": "FI"
+				},
+				"compatibleServices": [
+					"582f2bf50cf2f4663ec4f020",
+					"582f2bf50cf2f4663ec4f023"
+				]
+			}
+		}
+	]
