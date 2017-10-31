@@ -19,15 +19,19 @@ interactive = True
 # Needed in order to start_ui_flow() -function to work.
 def initialize(account_url):
 
-    def get_api_key(account_url=account_url, account=("pasi", "0nk0va"), endpoint="external/auth/user/"):
+    username = "example_username-" + str(uuid4())
+    username_2 = "example_username-2" + str(uuid4())
+    username_3 = "example_username-3" + str(uuid4())
+    password = "example_password"
+    create_endpoint = "external/accounts/"
+    
+    def get_api_key(account_url=account_url, account=(username_2, "0nk0va"), endpoint="external/auth/user/"):
         print("\nFetching Account Key for account '{}' from endpoint {}".format(account[0], account_url+endpoint))
         api_json = get(account_url+endpoint, auth=account).text
         print("Received following key:\n {}".format(api_json))
         return api_json
 
-    username = "example_username-" + str(uuid4())
-    password = "example_password"
-    create_endpoint = "external/accounts/"
+
 
     print ("\n##### CREATE USER ACCOUNTS #####")
     print("NOTE: Throws an error if run for second time as you cannot "
@@ -55,7 +59,7 @@ def initialize(account_url):
     user_data["data"]["attributes"]["firstname"] = "Iso"
     user_data["data"]["attributes"]["lastname"] = "Pasi"
     user_data["data"]["attributes"]["email"] = "iso.pasi@example.org"
-    user_data["data"]["attributes"]["username"] = "pasi"
+    user_data["data"]["attributes"]["username"] = username_2
     user_data["data"]["attributes"]["password"] = "0nk0va"
     resp = post(account_url + create_endpoint,
                 json=user_data)
@@ -65,7 +69,7 @@ def initialize(account_url):
     user_data["data"]["attributes"]["firstname"] = "Dude"
     user_data["data"]["attributes"]["lastname"] = "Dudeson"
     user_data["data"]["attributes"]["email"] = "dude.dudeson@example.org"
-    user_data["data"]["attributes"]["username"] = "mydata"
+    user_data["data"]["attributes"]["username"] = username_3
     user_data["data"]["attributes"]["password"] = "Hello"
     resp = post(account_url + create_endpoint,
                 json=user_data)
@@ -89,10 +93,10 @@ def create_service_link(operator_url, service_id, user_key, service_acc, service
     if interactive:
         a = raw_input("Press Enter to continue:")
     print("User key is: {}".format(user_key["Api-Key-User"]))
-    slr_flow = get(operator_url + "api/1.3/slr/account/2/service/"+service_id,
+    slr_flow = get(operator_url + "api/1.3/slr/account/" + str(user_key["account_id"]) + "/service/"+service_id,
                    headers={"Api-Key-User": user_key["Api-Key-User"]})
     #print(slr_flow.history)
-    print("We made a request to:", slr_flow.history[0].url)
+    #print("We made a request to:", slr_flow.history[0].url)
     print("It returned us url:", slr_flow.url)
     print(slr_flow.url, slr_flow.reason, slr_flow.status_code, slr_flow.text)
 
@@ -138,7 +142,7 @@ def remove_slr(operatorl_url, user_key, slr_id, service_id):
     print("Removing SLR: {}".format(slr_id))
     if interactive:
         a = raw_input("Press Enter to continue:")
-    result = post("{}api/1.3/slr/account/2/service/{}/slr/{}".format(operatorl_url, service_id, slr_id),
+    result = post("{}api/1.3/slr/account/" + str(user_key["account_id"]) + "/service/{}/slr/{}".format(operatorl_url, service_id, slr_id),
                     headers={"Api-Key-User": user_key["Api-Key-User"]})
     print(result.url, result.reason, result.status_code, result.text)
     return result.text
@@ -158,7 +162,7 @@ def give_consent(operator_url, sink_id, source_id, user_key):
         a = raw_input("Press Enter to continue:")
 
     print("\n###### 1.FETCH CONSENT FORM ######")
-    req = get(operator_url + "api/1.3/cr/consent_form/account/2?sink={}&source={}".format(sink_id, source_id), headers={"Api-Key-User": user_key["Api-Key-User"]})
+    req = get(operator_url + "api/1.3/cr/consent_form/account/" + str(user_key["account_id"]) + "?sink={}&source={}".format(sink_id, source_id), headers={"Api-Key-User": user_key["Api-Key-User"]})
     if not req.ok:
         print("Fetching consent form consent failed with status ({}) reason ({}) and the following content:\n{}".format(
             req.status_code,
@@ -171,7 +175,7 @@ def give_consent(operator_url, sink_id, source_id, user_key):
     print("\n###### 2.SEND CONSENT FORM ######")
     print(req.url, req.reason, req.status_code, req.text)
     js = json.loads(req.text)
-    req = post(operator_url + "api/1.3/cr/consent_form/account/2", json=js,
+    req = post(operator_url + "api/1.3/cr/consent_form/account/" + str(user_key["account_id"]) + "", json=js,
                headers={"Api-Key-User": user_key["Api-Key-User"]})
     if not req.ok:
         print("Granting consent failed with status ({}) reason ({}) and the following content:\n{}".format(
@@ -198,7 +202,7 @@ def make_cr_status_changes(operator_url, srv_id, cr_id, user_key):
 
     def status_change(operator_url, srv_id, cr_id, user_key, status):
         print("\n  ## Change status of cr '{}' to {}.".format(cr_id, status))
-        req = post(operator_url + "api/1.3/cr/account_id/2/service/{}/consent/{}/status/{}".format(srv_id, cr_id, status),
+        req = post(operator_url + "api/1.3/cr/account_id/" + str(user_key["account_id"]) + "/service/{}/consent/{}/status/{}".format(srv_id, cr_id, status),
                    headers={"Api-Key-User": user_key["Api-Key-User"]})
         print(req.url, req.reason, req.status_code)
         print(json.dumps(json.loads(req.text), indent=2))
@@ -398,7 +402,7 @@ if __name__ == '__main__':
         print("\nFetching records from Account for debugging purposes.")
 
         print("\n\nRequesting Last SSR for Sink")
-        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last"
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/" + str(user_key["account_id"]) + "/servicelinks/{}/statuses/last"
                   .format(sink_slr_id),
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
@@ -406,35 +410,35 @@ if __name__ == '__main__':
 
 
         print("\n\nRequesting Last SSR for Source")
-        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/statuses/last"
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/" + str(user_key["account_id"]) + "/servicelinks/{}/statuses/last"
                   .format(source_slr_id),
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
         print(response)
 
         print("\n\nRequesting list of Consent Records for Sink")
-        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/consents/{}/statuses"
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/" + str(user_key["account_id"]) + "/servicelinks/{}/consents/{}/statuses"
                   .format(sink_slr_id, cr_ids["sink_cr_id"]),
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
 
         print(response)
         print("\n\nRequesting LAST of Consent Records for Sink")
-        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/consents/{}/statuses/last"
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/" + str(user_key["account_id"]) + "/servicelinks/{}/consents/{}/statuses/last"
                   .format(sink_slr_id, cr_ids["sink_cr_id"]),
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
         print(response)
 
         print("\n\nRequesting list of Consent Records for Source")
-        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/consents/{}/statuses"
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/" + str(user_key["account_id"]) + "/servicelinks/{}/consents/{}/statuses"
                   .format(source_slr_id, cr_ids["source_cr_id"]),
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
 
         print(response)
         print("\n\nRequesting LAST of Consent Records for Source")
-        req = get("http://localhost:8080/account/api/v1.3/external/accounts/2/servicelinks/{}/consents/{}/statuses/last"
+        req = get("http://localhost:8080/account/api/v1.3/external/accounts/" + str(user_key["account_id"]) + "/servicelinks/{}/consents/{}/statuses/last"
                   .format(source_slr_id, cr_ids["source_cr_id"]),
                   headers={"Api-Key-User": user_key["Api-Key-User"]})
         response = json.dumps(json.loads(req.text), indent=2)
