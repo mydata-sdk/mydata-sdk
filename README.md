@@ -1,7 +1,7 @@
 ---
 
 # MyData SDK Components
-This is a part of MyData-SDK implementation of MyData Architecture.
+This is core part of MyData-SDK, containing the code implementation of MyData Architecture Framework 2.0. The code base is not maintained actively since September 2017, try it at your own risk.
 
 
 Components are split to their own folders
@@ -13,7 +13,7 @@ Components are split to their own folders
 
 
 ## Version
-2.0 beta release, final release will be made in September 2017
+2.0 beta release.
 
 ## Prerequisites
 - [Flask](http://flask.pocoo.org/)
@@ -43,7 +43,7 @@ python ui_flow_local.py --skip_data
 
 ### Known issues
 
-Note that data transfer is currently not working. 
+Note that implementation of actual data transfer between data source and sink interfaces is not implemented in the beta version. 
 
 ## Deployment
 
@@ -57,8 +57,8 @@ Deployment instructions for each component can be found from module's documentat
 ## Contributing/Contact
 
 - Via GitHub issues
-- Contact: Harri Honko (harri.honko@tut.fi) or Antti Poikola (antti.poikola@hiit.fi)
+- Contact: Harri Honko (harri.honko@tut.fi).
 
 
 ## Copying and License
-This code is licensed under [MIT License](LICENSE)
+This code is licensed under [MIT License](LICENSE).
